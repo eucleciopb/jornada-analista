@@ -21,19 +21,16 @@
 
 <main class="card wide">
 
-  <!-- Sinal de vida do JS -->
-  <div id="boot" class="msg" style="font-weight:1000;">JS ainda não iniciou...</div>
-  <div id="msg" class="msg">—</div>
+  <div id="msg" class="msg" style="font-weight:1000;">JS iniciando...</div>
 
   <section>
     <h3>Novo Chamado</h3>
-    <p class="hint">Crie para 1 pessoa ou para todos (analistas/admins).</p>
+    <p class="hint">Crie para 1 pessoa ou para todos (analistas/admins). O sistema cria 1 chamado por usuário.</p>
 
     <div class="grid-3">
       <div>
         <label class="lbl">Destinatário</label>
         <select id="selDestinatario"></select>
-        <div class="hint" style="margin-top:6px;">Se estiver vazio: é Rules/Permissão em /usuarios.</div>
       </div>
 
       <div>
@@ -56,7 +53,7 @@
 
     <div style="margin-top:10px;">
       <label class="lbl">Título</label>
-      <input id="txtTitulo" placeholder="Ex: Atualizar base / Ajustar agenda / Revisar painel..." />
+      <input id="txtTitulo" placeholder="Ex: Revisar agenda / Ajustar painel / Suporte base..." />
     </div>
 
     <div style="margin-top:10px;">

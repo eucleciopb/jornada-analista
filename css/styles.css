@@ -1653,3 +1653,10 @@ body.bg {
 }
 /* Chamados - melhora leitura */
 .table td strong { font-weight: 1000; }
+/* ADMIN TODOS - destaque linhas concluídas */
+.row-ok td {
+  background: #ecfdf5 !important;
+}
+.row-ok td strong {
+  color: #065f46;
+}

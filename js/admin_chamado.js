@@ -1,12 +1,12 @@
 import { auth, db } from "./firebase.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 import {
-  collection, addDoc, getDocs, updateDoc, doc, serverTimestamp
+  collection, getDocs, addDoc, updateDoc, doc,
+  serverTimestamp, writeBatch
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 const $ = (id) => document.getElementById(id);
 
-const boot = $("boot");
 const msg = $("msg");
 const userInfo = $("userInfo");
 
@@ -28,17 +28,12 @@ const btnLogout = $("btnLogout");
 let currentUser = null;
 let usuarios = [];
 
-function setBoot(text, ok=false){
-  boot.textContent = text;
-  boot.style.color = ok ? "#065f46" : "#b91c1c";
-}
+function safe(v){ return (v ?? "").toString().trim(); }
 
 function setMsg(text, ok=false){
   msg.textContent = text || "";
   msg.style.color = ok ? "#065f46" : "#b91c1c";
 }
-
-function safe(v){ return (v ?? "").toString().trim(); }
 
 function isAdminUser(u){
   return safe(u.tipo).toLowerCase() === "admin";
@@ -48,26 +43,26 @@ function isAnalistaUser(u){
 }
 
 async function carregarUsuarios(){
-  setMsg("Carregando usuários (coleção: usuarios)...", true);
+  setMsg("Carregando usuários...", true);
 
   const snap = await getDocs(collection(db, "usuarios"));
-  usuarios = snap.docs.map(d => ({ id:d.id, ...(d.data()||{}) }))
+  usuarios = snap.docs
+    .map(d => ({ id:d.id, ...(d.data()||{}) }))
     .filter(u => safe(u.email));
 
-  // opções especiais
-  const opt = [
+  const especiais = [
     `<option value="__ALL_ANALISTAS__">TODOS (Analistas)</option>`,
     `<option value="__ALL_ADMINS__">TODOS (Admins)</option>`,
     `<option value="__ALL_TODOS__">TODOS (Analistas + Admins)</option>`,
     `<option value="__SEP__" disabled>────────────</option>`
   ];
 
-  const list = usuarios
+  const individuais = usuarios
     .slice()
     .sort((a,b)=> safe(a.email).localeCompare(safe(b.email)))
     .map(u => `<option value="${u.email}">${u.email}</option>`);
 
-  selDestinatario.innerHTML = opt.join("") + list.join("");
+  selDestinatario.innerHTML = especiais.join("") + individuais.join("");
 
   setMsg(`Usuários carregados: ${usuarios.length}`, true);
 }
@@ -76,7 +71,6 @@ function resolveRecipients(value){
   if (value === "__ALL_ANALISTAS__") return usuarios.filter(isAnalistaUser).map(u => u.email);
   if (value === "__ALL_ADMINS__") return usuarios.filter(isAdminUser).map(u => u.email);
   if (value === "__ALL_TODOS__") return usuarios.map(u => u.email);
-  if (value === "__SEP__") return [];
   return [value];
 }
 
@@ -92,36 +86,28 @@ async function criarChamado(){
 
   const recipients = resolveRecipients(destValue).filter(Boolean);
 
-  if (recipients.length === 0){
+  if(!recipients.length){
     alert("Selecione um destinatário válido.");
     return;
   }
 
-  setMsg(`Criando chamado para ${recipients.length} destinatário(s)...`, true);
+  setMsg(`Criando chamado para ${recipients.length} pessoa(s)...`, true);
 
-  // documento pai (macro)
-  const parentRef = await addDoc(collection(db, "chamados_admin"), {
-    criadoPorUid: currentUser.uid,
-    criadoPorEmail: currentUser.email,
-    scope: destValue,
-    totalDestinatarios: recipients.length,
-    tipo,
-    prioridade,
-    titulo,
-    descricao,
-    status: "ABERTO",
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp()
-  });
+  // ✅ Cria 1 doc por destinatário (lote para ser rápido)
+  const batch = writeBatch(db);
+  const col = collection(db, "chamados");
 
-  // cria documentos individuais
+  const dispatchId = `${Date.now()}_${Math.random().toString(16).slice(2)}`; // id do disparo (para agrupar)
+
   for (const email of recipients){
-    await addDoc(collection(db, "chamados"), {
-      parentId: parentRef.id,
+    const ref = doc(col); // id automático
+    batch.set(ref, {
+      dispatchId,                  // agrupa o disparo (para você filtrar depois)
       criadoPorUid: currentUser.uid,
       criadoPorEmail: currentUser.email,
 
       destinatarioEmail: email,
+
       tipo,
       prioridade,
       titulo,
@@ -134,13 +120,13 @@ async function criarChamado(){
     });
   }
 
+  await batch.commit();
+
   txtTitulo.value = "";
   txtDescricao.value = "";
-  selPrioridade.value = "MEDIA";
-  selTipo.value = "SUPORTE";
 
   await carregarChamados();
-  setMsg(`Chamado criado ✅ para ${recipients.length} pessoa(s).`, true);
+  setMsg(`Chamado criado ✅ (${recipients.length} destinatários)`, true);
 }
 
 async function carregarChamados(){
@@ -149,8 +135,9 @@ async function carregarChamados(){
   const snap = await getDocs(collection(db, "chamados"));
   const list = snap.docs.map(d => ({ id:d.id, ...(d.data()||{}) }));
 
-  // abertos primeiro
-  list.sort((a,b)=> safe(a.status).localeCompare(safe(b.status)));
+  // Abertos primeiro (ABERTO antes de ENCERRADO)
+  const weight = (s) => (safe(s) === "ABERTO" ? 0 : 1);
+  list.sort((a,b) => weight(a.status) - weight(b.status));
 
   tbodyChamados.innerHTML = list.length
     ? list.map(c => `
@@ -193,14 +180,11 @@ function bind(){
     try { await criarChamado(); }
     catch(e){
       console.error(e);
-      setMsg(`Erro ao criar chamado: ${e.code || e.message}`, false);
+      setMsg(`Erro ao criar: ${e.code || e.message}`, false);
     }
   };
 
-  btnLimpar.onclick = () => {
-    txtTitulo.value = "";
-    txtDescricao.value = "";
-  };
+  btnLimpar.onclick = () => { txtTitulo.value = ""; txtDescricao.value = ""; };
 
   btnRecarregar.onclick = async () => {
     try { await carregarUsuarios(); }
@@ -219,24 +203,18 @@ function bind(){
   };
 }
 
-setBoot("JS iniciou ✅", true);
-
 onAuthStateChanged(auth, async (user) => {
+  if (!user) return window.location.href = "./index.html";
+  currentUser = user;
+
+  userInfo.textContent = `Logado como: ${(user.email||"").toLowerCase()}`;
+  bind();
+
   try{
-    if (!user) return window.location.href = "./index.html";
-    currentUser = user;
-    userInfo.textContent = `Logado como: ${(user.email||"").toLowerCase()}`;
-
-    bind();
-
-    // Se rules estiverem bloqueando, vai cair no catch com permission-denied
     await carregarUsuarios();
     await carregarChamados();
   }catch(e){
     console.error(e);
     setMsg(`ERRO: ${e.code || e.message}`, false);
-    if (e?.code === "permission-denied") {
-      setMsg("Permissão negada nas Rules. Ajuste Rules para admin ler /usuarios e /chamados.", false);
-    }
   }
 });
