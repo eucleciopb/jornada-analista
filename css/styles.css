@@ -1,0 +1,1070 @@
+/* =========================
+   RESET / BASE
+========================= */
+* { box-sizing: border-box; }
+:root { font-family: system-ui, Arial, sans-serif; }
+body { margin: 0; }
+
+/* =========================
+   BACKGROUND / LAYOUT
+========================= */
+.bg {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0b0f17;
+}
+
+/* =========================
+   CARDS
+========================= */
+.card {
+  background: #ffffff;
+  width: min(420px, 92vw);
+  padding: 24px;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+}
+.card.wide { width: min(1100px, 96vw); }
+
+/* =========================
+   TIPOGRAFIA
+========================= */
+h1, h2, h3 { margin: 0 0 14px; color: #111; }
+p { margin: 0; }
+
+/* =========================
+   FORMULÁRIOS
+========================= */
+.form { display: flex; flex-direction: column; gap: 10px; }
+.form-inline { display: flex; gap: 10px; flex-wrap: wrap; }
+
+label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111;
+}
+
+input, select {
+  padding: 12px;
+  border: 1px solid #d5d8df;
+  border-radius: 10px;
+  outline: none;
+  font-size: 14px;
+  min-width: 220px;
+  background: #fff;
+}
+
+input:disabled {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+/* =========================
+   BOTÕES
+========================= */
+button {
+  padding: 12px 14px;
+  border: 0;
+  border-radius: 10px;
+  cursor: pointer;
+  background: #2563eb;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.btn-secondary { background: #111827; }
+
+.btn-small{
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 13px;
+}
+
+/* =========================
+   MENSAGENS / SEPARADOR
+========================= */
+.msg {
+  margin-top: 10px;
+  min-height: 18px;
+  color: #b91c1c;
+  font-size: 14px;
+}
+
+.hint {
+  margin-top: 6px;
+  color: #4b5563;
+  font-size: 13px;
+}
+
+.sep {
+  border: 0;
+  border-top: 1px solid #eef0f4;
+  margin: 16px 0;
+}
+
+/* =========================
+   TOPO (MENU/PÁGINAS)
+========================= */
+.topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 64px; /* ajuste se seu header for maior */
+  z-index: 100;
+}
+main {
+  margin-top: 80px; /* altura do header + folga */
+}
+
+
+
+
+
+/* =========================
+   MENU PRINCIPAL
+========================= */
+.menu-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.menu-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 110px;
+  border-radius: 14px;
+  background: #f3f4f6;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 16px;
+  color: #111;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.menu-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+}
+
+/* =========================
+   AÇÕES DE PÁGINA
+========================= */
+.page-actions {
+  margin-top: 18px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* =========================
+   TABELAS
+========================= */
+.table-wrap{
+  margin-top: 14px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #eef0f4;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #ffffff;
+}
+
+.table th, .table td {
+  text-align: left;
+  padding: 12px;
+  border-bottom: 1px solid #eef0f4;
+  color: #111;
+  vertical-align: middle;
+}
+
+.table thead th {
+  background: #f3f4f6;
+  font-weight: 700;
+}
+
+/* cabeçalho fixo (melhor visual) */
+.table-sticky thead th{
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+/* zebra */
+.table tbody tr:nth-child(even){
+  background: #fafafa;
+}
+
+/* =========================
+   UTIL
+========================= */
+.row-between{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  flex-wrap:wrap;
+}
+
+/* =========================
+   AGENDA - VISUAL INTUITIVO
+========================= */
+.agenda-row.is-today{
+  outline: 2px solid rgba(37, 99, 235, 0.35);
+  outline-offset: -2px;
+  background: #eef2ff !important;
+}
+
+.agenda-row.is-sunday{
+  background: #f3f4f6 !important;
+  color: #6b7280;
+}
+
+.pill{
+  display:inline-flex;
+  align-items:center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+}
+
+.pill-analyst{
+  background:#111827;
+  border-color:#111827;
+  color:#fff;
+}
+
+.sunday-note{
+  display:inline-block;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #e5e7eb;
+  color: #374151;
+  font-weight: 700;
+}
+/* =========================
+   AGENDA – STATUS VISUAL
+========================= */
+
+/* Linha com agenda preenchida */
+.agenda-ok {
+  background-color: #ecfdf5; /* verde bem claro */
+}
+
+/* destaque sutil na borda esquerda */
+.agenda-ok td:first-child {
+  border-left: 4px solid #22c55e; /* verde */
+}
+
+/* Domingo continua neutro */
+.is-sunday {
+  background-color: #f3f4f6 !important;
+}
+
+/* Hoje (se quiser manter destaque) */
+.is-today:not(.agenda-ok) {
+  background-color: #eef2ff;
+}
+.agenda-ok {
+  background-color: #ecfdf5;
+}
+.agenda-ok td:first-child {
+  border-left: 4px solid #22c55e;
+}
+/* Se estiver OK, o verde deve prevalecer mesmo se for "hoje" */
+.agenda-row.is-today.agenda-ok {
+  background-color: #ecfdf5 !important;
+}
+
+.agenda-row.is-today.agenda-ok td:first-child {
+  border-left: 4px solid #22c55e !important;
+}
+.is-today {
+  background-color: transparent !important;
+  outline: 2px solid #93c5fd;
+  outline-offset: -2px;
+}
+/* =========================
+   SEMANA – CARDS (5 colunas)
+========================= */
+.week-grid{
+  display:grid;
+  grid-template-columns: repeat(5, minmax(220px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.week-card{
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+  padding: 12px;
+  box-shadow: 0 1px 10px rgba(0,0,0,.04);
+  min-height: 170px;
+}
+
+.week-card.ok{
+  background: #ecfdf5; /* verde claro */
+  border-color: #bbf7d0;
+}
+
+.week-card .hdr{
+  display:flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.week-card .day{
+  font-weight: 800;
+  font-size: 16px;
+}
+
+.week-card .date{
+  font-size: 12px;
+  color:#6b7280;
+  font-weight: 600;
+}
+
+.week-card .kv{
+  display:flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.week-card .label{
+  color:#6b7280;
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.week-card .value{
+  font-weight: 700;
+  color:#111827;
+}
+
+.week-card .muted{
+  color:#6b7280;
+  font-weight: 600;
+}
+
+.week-weekend{
+  margin-top: 12px;
+  display:grid;
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.week-card.blocked{
+  background:#f3f4f6;
+  border-color:#e5e7eb;
+}
+
+/* Responsivo */
+@media (max-width: 1200px){
+  .week-grid{ grid-template-columns: repeat(3, minmax(220px, 1fr)); }
+}
+@media (max-width: 820px){
+  .week-grid{ grid-template-columns: repeat(1, minmax(220px, 1fr)); }
+  .week-weekend{ grid-template-columns: repeat(1, minmax(220px, 1fr)); }
+}
+/* =========================
+   SEMANA – CARDS MODERNOS
+========================= */
+
+.wk-grid{
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.wk-card{
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.06);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 12px 35px rgba(0,0,0,.25);
+  overflow: hidden;
+  transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+  position: relative;
+}
+
+.wk-card:hover{
+  transform: translateY(-2px);
+  box-shadow: 0 16px 45px rgba(0,0,0,.30);
+  border-color: rgba(255,255,255,.18);
+}
+
+/* faixa lateral de status */
+.wk-card::before{
+  content:"";
+  position:absolute;
+  left:0; top:0; bottom:0;
+  width: 6px;
+  background: rgba(148,163,184,.45); /* pending */
+}
+
+.wk-card.ok::before{
+  background: rgba(34,197,94,.95); /* green */
+}
+
+/* header */
+.wk-hdr{
+  padding: 14px 14px 10px 14px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.wk-day{
+  font-size: 18px;
+  font-weight: 900;
+  color: #fff;
+  line-height: 1.1;
+}
+
+.wk-date{
+  font-size: 12px;
+  font-weight: 800;
+  color: rgba(255,255,255,.70);
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.12);
+}
+
+/* body */
+.wk-body{
+  padding: 0 14px 14px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* chips */
+.wk-chips{
+  display:flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.wk-chip{
+  display:inline-flex;
+  align-items:center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 800;
+  color: rgba(255,255,255,.92);
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.12);
+  max-width: 100%;
+}
+
+.wk-chip .dot{
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(148,163,184,.9);
+}
+
+.wk-card.ok .wk-chip .dot{
+  background: rgba(34,197,94,.95);
+}
+
+.wk-chip .txt{
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
+}
+
+/* observação */
+.wk-note{
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.05);
+  color: rgba(255,255,255,.78);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 40px;
+}
+
+/* badge status */
+.wk-status{
+  margin-top: 2px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.68);
+}
+
+.wk-card.ok .wk-status{
+  color: rgba(34,197,94,.95);
+}
+
+/* responsivo */
+@media (max-width: 1300px){
+  .wk-grid{ grid-template-columns: repeat(3, minmax(220px, 1fr)); }
+}
+@media (max-width: 900px){
+  .wk-grid{ grid-template-columns: repeat(2, minmax(220px, 1fr)); }
+}
+@media (max-width: 650px){
+  .wk-grid{ grid-template-columns: repeat(1, minmax(220px, 1fr)); }
+}
+/* =========================
+   SEMANA – CARDS MODERNOS (LEGÍVEL)
+========================= */
+
+.wk-grid{
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.wk-card{
+  border-radius: 18px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;              /* fundo branco */
+  box-shadow: 0 10px 28px rgba(0,0,0,.10);
+  overflow: hidden;
+  transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+  position: relative;
+  min-height: 160px;
+}
+
+.wk-card:hover{
+  transform: translateY(-2px);
+  box-shadow: 0 14px 36px rgba(0,0,0,.14);
+  border-color: #d1d5db;
+}
+
+/* faixa lateral de status */
+.wk-card::before{
+  content:"";
+  position:absolute;
+  left:0; top:0; bottom:0;
+  width: 6px;
+  background: #cbd5e1; /* pendente */
+}
+
+.wk-card.ok::before{
+  background: #22c55e; /* ok */
+}
+
+/* header */
+.wk-hdr{
+  padding: 14px 14px 10px 14px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.wk-day{
+  font-size: 18px;
+  font-weight: 900;
+  color: #111827;  /* texto escuro */
+  line-height: 1.1;
+}
+
+.wk-status{
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: #6b7280;  /* cinza */
+}
+
+.wk-card.ok .wk-status{
+  color: #16a34a; /* verde */
+}
+
+.wk-date{
+  font-size: 12px;
+  font-weight: 800;
+  color: #111827;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+}
+
+/* chips */
+.wk-body{
+  padding: 0 14px 14px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.wk-chips{
+  display:flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.wk-chip{
+  display:inline-flex;
+  align-items:center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #111827;        /* texto escuro */
+  background: #f9fafb;   /* fundo claro */
+  border: 1px solid #e5e7eb;
+  max-width: 100%;
+}
+
+.wk-chip .dot{
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #94a3b8; /* pendente */
+}
+
+.wk-card.ok .wk-chip .dot{
+  background: #22c55e; /* ok */
+}
+
+.wk-chip .txt{
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+}
+
+/* observação */
+.wk-note{
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  color: #374151; /* texto */
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 44px;
+}
+
+/* responsivo */
+@media (max-width: 1300px){
+  .wk-grid{ grid-template-columns: repeat(3, minmax(220px, 1fr)); }
+}
+@media (max-width: 900px){
+  .wk-grid{ grid-template-columns: repeat(2, minmax(220px, 1fr)); }
+}
+@media (max-width: 650px){
+  .wk-grid{ grid-template-columns: repeat(1, minmax(220px, 1fr)); }
+}
+/* Chamados */
+.grid-2{ display:grid; grid-template-columns: repeat(2, minmax(240px, 1fr)); gap:12px; }
+@media (max-width: 800px){ .grid-2{ grid-template-columns: 1fr; } }
+
+.lbl{ display:block; font-weight:800; margin-bottom:6px; }
+textarea{ width:100%; padding:10px; border-radius:12px; border:1px solid #e5e7eb; }
+input, select{ width:100%; padding:10px; border-radius:12px; border:1px solid #e5e7eb; }
+
+.box{ background:#f9fafb; border:1px solid #e5e7eb; border-radius:14px; padding:12px; }
+
+.btn-mini{
+  padding:8px 10px; border-radius:10px;
+  border:1px solid #e5e7eb; background:#111827; color:#fff;
+  font-weight:800; cursor:pointer;
+}
+
+.badge{ display:inline-block; padding:6px 10px; border-radius:999px; font-weight:900; font-size:11px; }
+.badge-red{ background:#fee2e2; color:#991b1b; }
+.badge-blue{ background:#dbeafe; color:#1d4ed8; }
+.badge-amber{ background:#fef3c7; color:#92400e; }
+.badge-green{ background:#dcfce7; color:#166534; }
+
+.row-unread{ background:#eef2ff; }
+
+.msgs{ margin-top:10px; display:flex; flex-direction:column; gap:10px; }
+.msg-item{ background:#fff; border:1px solid #e5e7eb; border-radius:14px; padding:10px; }
+.msg-who{ font-weight:900; font-size:12px; color:#111827; }
+.msg-text{ font-weight:700; color:#374151; margin-top:6px; }
+.btn-mini{
+  padding:8px 10px; border-radius:10px;
+  border:1px solid #e5e7eb; background:#111827; color:#fff;
+  font-weight:800; cursor:pointer;
+}
+
+.badge{ display:inline-block; padding:6px 10px; border-radius:999px; font-weight:900; font-size:11px; background:#f3f4f6; color:#111827; border:1px solid #e5e7eb; }
+.badge-red{ background:#fee2e2; color:#991b1b; border-color:#fecaca; }
+.badge-blue{ background:#dbeafe; color:#1d4ed8; border-color:#bfdbfe; }
+.badge-amber{ background:#fef3c7; color:#92400e; border-color:#fde68a; }
+.badge-green{ background:#dcfce7; color:#166534; border-color:#bbf7d0; }
+
+.row-unread{ background:#eef2ff; }
+.menu-grid{
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(240px, 1fr));
+  gap: 14px;
+}
+
+.menu-card{
+  display:block;
+  text-decoration: none;
+  border-radius: 18px;
+  border: 1px solid #e5e7eb;
+  background:#ffffff;
+  box-shadow: 0 10px 28px rgba(0,0,0,.10);
+  padding: 14px;
+  transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+  color:#111827;
+}
+
+.menu-card:hover{
+  transform: translateY(-2px);
+  box-shadow: 0 14px 36px rgba(0,0,0,.14);
+  border-color:#d1d5db;
+}
+
+.menu-title{
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.menu-desc{
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color:#6b7280;
+}
+
+@media (max-width: 1000px){
+  .menu-grid{ grid-template-columns: repeat(2, minmax(240px, 1fr)); }
+}
+@media (max-width: 650px){
+  .menu-grid{ grid-template-columns: 1fr; }
+}
+.menu-grid-v2{
+  display:grid;
+  grid-template-columns: repeat(3, minmax(240px, 1fr));
+  gap: 16px;
+  margin-top: 6px;
+}
+
+.menu-card-v2{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  text-decoration:none;
+  color:#111827;
+  box-shadow: 0 8px 18px rgba(0,0,0,.08);
+  transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+  min-height: 64px;
+}
+
+.menu-card-v2:hover{
+  transform: translateY(-2px);
+  box-shadow: 0 12px 26px rgba(0,0,0,.12);
+  border-color:#d1d5db;
+}
+
+.menu-ico{
+  width: 28px;
+  height: 28px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size: 18px;
+}
+
+.menu-title{
+  font-weight: 900;
+  font-size: 14px;
+}
+
+@media (max-width: 1000px){
+  .menu-grid-v2{ grid-template-columns: repeat(2, minmax(240px, 1fr)); }
+}
+@media (max-width: 650px){
+  .menu-grid-v2{ grid-template-columns: 1fr; }
+}
+.grid-3{ display:grid; grid-template-columns: repeat(3, minmax(220px, 1fr)); gap:12px; }
+@media (max-width: 900px){ .grid-3{ grid-template-columns: 1fr; } }
+
+.swot-grid{
+  display:grid;
+  grid-template-columns: repeat(2, minmax(260px, 1fr));
+  gap: 12px;
+}
+@media (max-width: 900px){ .swot-grid{ grid-template-columns: 1fr; } }
+
+.swot-card{
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+  background:#ffffff;
+  padding: 12px;
+  box-shadow: 0 10px 24px rgba(0,0,0,.08);
+}
+.swot-title{
+  font-weight: 900;
+  margin-bottom: 8px;
+}
+
+.swot-green{ border-left: 6px solid #22c55e; }
+.swot-red{ border-left: 6px solid #ef4444; }
+.swot-blue{ border-left: 6px solid #3b82f6; }
+.swot-amber{ border-left: 6px solid #f59e0b; }
+/* =========================
+   ROTA – SELETOR DE MODO
+========================= */
+.mode-bar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  background: #ffffff;
+}
+
+.mode-title{ font-weight: 900; font-size: 14px; }
+
+.mode-actions{ display:flex; gap: 10px; flex-wrap:wrap; }
+
+.btn-active{
+  background:#111827 !important;
+  color:#ffffff !important;
+  border-color:#111827 !important;
+}
+
+/* =========================
+   MODO MOBILE (mesmo HTML)
+========================= */
+.mode-mobile .card.wide{
+  padding: 12px;
+}
+
+.mode-mobile h2{ font-size: 20px; }
+.mode-mobile h3{ font-size: 16px; }
+
+.mode-mobile .lbl{ font-size: 14px; }
+.mode-mobile input,
+.mode-mobile select,
+.mode-mobile textarea{
+  font-size: 16px;  /* evita zoom do iPhone */
+  padding: 12px;
+  border-radius: 14px;
+}
+
+.mode-mobile .rota-grid{
+  display: block !important;
+}
+
+.mode-mobile .grid-2,
+.mode-mobile .grid-3{
+  grid-template-columns: 1fr !important;
+}
+
+.mode-mobile .swot-grid{
+  grid-template-columns: 1fr !important;
+}
+
+.mode-mobile .rota-actions button{
+  width: 100%;
+  padding: 14px;
+  font-size: 16px;
+  border-radius: 16px;
+}
+
+/* deixa tabela rolável no mobile */
+.mode-mobile .table-wrap{
+  overflow-x: auto;
+}
+
+/* responsivo automático também (mesmo sem escolher) */
+@media (max-width: 700px){
+  .mode-bar{ flex-direction: column; align-items: flex-start; }
+}
+.grid-4{
+  display:grid;
+  grid-template-columns: repeat(4, minmax(200px, 1fr));
+  gap:12px;
+}
+@media (max-width: 1000px){
+  .grid-4{ grid-template-columns: repeat(2, minmax(200px, 1fr)); }
+}
+@media (max-width: 650px){
+  .grid-4{ grid-template-columns: 1fr; }
+}
+
+.kpi-grid{
+  display:grid;
+  grid-template-columns: repeat(4, minmax(200px, 1fr));
+  gap:12px;
+}
+@media (max-width: 1000px){
+  .kpi-grid{ grid-template-columns: repeat(2, minmax(200px, 1fr)); }
+}
+@media (max-width: 650px){
+  .kpi-grid{ grid-template-columns: 1fr; }
+}
+.kpi-card{
+  background:#fff;
+  border:1px solid #e5e7eb;
+  border-radius:16px;
+  padding:12px;
+  box-shadow: 0 10px 24px rgba(0,0,0,.08);
+}
+.kpi-label{
+  font-weight:900;
+  color:#6b7280;
+  font-size:12px;
+}
+.kpi-value{
+  font-weight:900;
+  font-size:22px;
+  margin-top:6px;
+}
+.chip{
+  display:inline-flex;
+  align-items:center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background:#f9fafb;
+  font-weight: 900;
+  font-size: 12px;
+  margin: 4px 6px 0 0;
+}
+
+.kpi-grid{
+  display:grid;
+  grid-template-columns: repeat(4, minmax(200px, 1fr));
+  gap:12px;
+}
+@media (max-width: 1000px){
+  .kpi-grid{ grid-template-columns: repeat(2, minmax(200px, 1fr)); }
+}
+@media (max-width: 650px){
+  .kpi-grid{ grid-template-columns: 1fr; }
+}
+.kpi-card{
+  background:#fff;
+  border:1px solid #e5e7eb;
+  border-radius:16px;
+  padding:12px;
+  box-shadow: 0 10px 24px rgba(0,0,0,.08);
+}
+.kpi-label{
+  font-weight:900;
+  color:#6b7280;
+  font-size:12px;
+}
+.kpi-value{
+  font-weight:900;
+  font-size:18px;
+  margin-top:6px;
+}
+/* =========================
+   ROTA - MODO MOBILE
+========================= */
+#pageRota.rota-mobile .card.wide{
+  width: min(980px, 96vw);
+  padding: 14px;
+}
+
+#pageRota.rota-mobile .grid-3{
+  grid-template-columns: 1fr !important;
+}
+
+#pageRota.rota-mobile .grid-2{
+  grid-template-columns: 1fr !important;
+}
+
+#pageRota.rota-mobile .swot-grid{
+  grid-template-columns: 1fr !important;
+}
+
+#pageRota.rota-mobile .table-wrap{
+  overflow-x: auto;
+}
+
+#pageRota.rota-mobile .table{
+  min-width: 900px;
+}
+
+/* Botões de modo mais “selected” */
+#pageRota .mode-actions .btn-primary{
+  border: 1px solid rgba(255,255,255,.22);
+}
+/* =========================
+   ROTA - MODO MOBILE
+========================= */
+#pageRota.rota-mobile .card.wide{
+  width: min(980px, 96vw);
+  padding: 14px;
+}
+
+#pageRota.rota-mobile .grid-3{
+  grid-template-columns: 1fr !important;
+}
+
+#pageRota.rota-mobile .grid-2{
+  grid-template-columns: 1fr !important;
+}
+
+#pageRota.rota-mobile .swot-grid{
+  grid-template-columns: 1fr !important;
+}
+
+#pageRota.rota-mobile .table-wrap{
+  overflow-x: auto;
+}
+
+#pageRota.rota-mobile .table{
+  min-width: 900px;
+}
+
+/* Botões de modo mais “selected” */
+#pageRota .mode-actions .btn-primary{
+  border: 1px solid rgba(255,255,255,.22);
+}
