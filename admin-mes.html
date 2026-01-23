@@ -4,23 +4,97 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Admin - Agenda do Mês</title>
-  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="./css/styles.css" />
 </head>
+
 <body class="bg">
-  <header class="topbar">
+
+<header class="topbar">
+  <div>
     <h2>Admin - Agenda do Mês</h2>
-    <button id="btnLogout" class="btn-secondary">Sair</button>
-  </header>
+    <div id="userInfo" class="hint" style="margin-top:4px;"></div>
+  </div>
+  <button id="btnLogout" type="button" class="btn-secondary">Sair</button>
+</header>
 
-  <main class="card wide">
-    <h3>Em construção</h3>
-    <p class="hint">Visão mensal completa para o admin.</p>
+<main class="card wide">
 
-    <div class="page-actions">
-      <button id="btnAdminMenu" class="btn-secondary">Voltar ao Menu Admin</button>
+  <section class="row-between">
+    <div>
+      <h3>Resumo geral (todos os analistas)</h3>
+      <p class="hint">Visão mensal administrativa.</p>
     </div>
-  </main>
+    <button id="btnMenu" type="button" class="btn-secondary">Voltar ao Menu</button>
+  </section>
 
-  <script type="module" src="js/admin-page.js"></script>
+  <hr class="sep" />
+
+  <p id="msg" class="msg"></p>
+
+  <div class="grid-3">
+    <div>
+      <label class="lbl">Mês</label>
+      <input id="inpMes" type="month" />
+      <div id="lblPeriodo" class="hint" style="margin-top:6px;"></div>
+    </div>
+
+    <div>
+      <label class="lbl">Filtro CD</label>
+      <input id="inpFiltroCD" placeholder="Digite parte do CD..." />
+    </div>
+
+    <div>
+      <label class="lbl">Filtro Analista</label>
+      <input id="inpFiltroAnalista" placeholder="Digite nome ou e-mail..." />
+    </div>
+  </div>
+
+  <div class="row" style="gap:10px; margin-top:14px;">
+    <button id="btnCarregar" type="button" class="btn-primary">Carregar mês</button>
+    <button id="btnLimpar" type="button" class="btn-secondary">Limpar filtros</button>
+  </div>
+
+  <hr class="sep" />
+
+  <section>
+    <h3>Resumo por Analista e CD</h3>
+    <div class="table-wrap">
+      <table class="table table-sticky">
+        <thead>
+          <tr>
+            <th>Analista</th>
+            <th>CD</th>
+            <th>Dias</th>
+            <th>Datas</th>
+          </tr>
+        </thead>
+        <tbody id="tbodyResumo"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <hr class="sep" />
+
+  <section>
+    <h3>Detalhado</h3>
+    <div class="table-wrap">
+      <table class="table table-sticky">
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Analista</th>
+            <th>CD</th>
+            <th>Atividade</th>
+            <th>Observações</th>
+          </tr>
+        </thead>
+        <tbody id="tbodyDet"></tbody>
+      </table>
+    </div>
+  </section>
+
+</main>
+
+<script type="module" src="./js/admin_mes.js"></script>
 </body>
 </html>
