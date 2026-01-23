@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Área Logada</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body class="bg">
+  <header class="topbar">
+    <h2>Área Logada</h2>
+    <button id="btnLogout" class="btn-secondary">Sair</button>
+  </header>
+
+  <main class="card wide">
+    <h3>Meu perfil (Firestore /usuarios)</h3>
+    <div class="profile">
+      <div><b>Email:</b> <span id="pEmail">-</span></div>
+      <div><b>Tipo:</b> <span id="pTipo">-</span></div>
+    </div>
+
+    <hr class="sep"/>
+
+    <h3>Exemplo de “tabela” no Firestore</h3>
+    <p class="hint">Coleção: <b>clientes</b> (a gente troca pelo nome real depois)</p>
+
+    <form id="addForm" class="form-inline">
+      <input id="nome" placeholder="Nome do cliente" required />
+      <input id="telefone" placeholder="Telefone" />
+      <button type="submit">Adicionar</button>
+    </form>
+
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>Telefone</th>
+          <th>Criado em</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+
+    <p id="status" class="msg"></p>
+  </main>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Criar Agenda</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body class="bg">
+  <header class="topbar">
+    <div>
+      <h2>Criar Agenda</h2>
+      <div id="userInfo" class="hint" style="color:#d1d5db;margin-top:4px;"></div>
+    </div>
+    <button id="btnLogout" class="btn-secondary" type="button">Sair</button>
+  </header>
+
+  <main class="card wide">
+    <section class="row-between">
+      <div>
+        <h3>Agenda do Mês</h3>
+        <p class="hint">Digite o CD para pesquisar. Domingos aparecem bloqueados.</p>
+      </div>
+
+      <div class="page-actions" style="margin-top:0;">
+        <button id="btnMenu" class="btn-secondary" type="button">Voltar ao Menu</button>
+      </div>
+    </section>
+
+    <hr class="sep" />
+
+    <section class="row-between" style="align-items:flex-end;">
+      <div>
+        <label for="monthPicker">Mês</label>
+        <input id="monthPicker" type="month" />
+      </div>
+
+      <div class="page-actions" style="margin-top:0;">
+        <button id="btnSalvar" type="button">Salvar alterações</button>
+      </div>
+    </section>
+
+    <p id="msg" class="msg"></p>
+
+    <!-- IMPORTANTE: sem isso a pesquisa de CD não funciona -->
+    <datalist id="cdList"></datalist>
+
+    <div class="table-wrap">
+      <table class="table table-sticky">
+        <thead>
+          <tr>
+            <th style="width:140px;">Data</th>
+            <th style="width:110px;">Dia</th>
+            <th style="width:220px;">Analista</th>
+            <th style="width:260px;">CD</th>
+            <th style="width:290px;">Atividade</th>
+            <th>Observações</th>
+          </tr>
+        </thead>
+        <tbody id="tbodyAgenda"></tbody>
+      </table>
+    </div>
+  </main>
+
+  <script type="module" src="js/agenda.js"></script>
+</body>
+</html>

@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Agenda - Mês</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body class="bg">
+  <header class="topbar">
+    <div>
+      <h2>Agenda - Mês (Resumo)</h2>
+      <div id="userInfo" class="hint" style="color:#d1d5db;margin-top:4px;"></div>
+    </div>
+    <button id="btnLogout" class="btn-secondary" type="button">Sair</button>
+  </header>
+
+  <main class="card wide">
+    <section class="row-between">
+      <div>
+        <h3>Resumo do mês por CD</h3>
+        <p class="hint">Mostra onde você estará no mês, resumido por CD e quantidade de dias.</p>
+      </div>
+      <div class="page-actions" style="margin-top:0;">
+        <button id="btnMenu" class="btn-secondary" type="button">Voltar ao Menu</button>
+      </div>
+    </section>
+
+    <hr class="sep" />
+
+    <p id="msg" class="msg"></p>
+
+    <div class="grid-3">
+      <div>
+        <label class="lbl">Mês</label>
+        <input id="inpMes" type="month" />
+        <div id="lblPeriodo" class="hint" style="margin-top:6px;"></div>
+      </div>
+
+      <div>
+        <label class="lbl">Filtro CD (opcional)</label>
+        <input id="inpFiltroCD" placeholder="Digite parte do CD..." />
+      </div>
+
+      <div style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap;">
+        <button id="btnCarregar" class="btn-primary" type="button">Carregar</button>
+        <button id="btnLimpar" class="btn-secondary" type="button">Limpar filtros</button>
+      </div>
+    </div>
+
+    <hr class="sep" />
+
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">Dias lançados</div>
+        <div id="kpiDias" class="kpi-value">0</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">CDs com agenda</div>
+        <div id="kpiCds" class="kpi-value">0</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Maior CD</div>
+        <div id="kpiMaior" class="kpi-value">—</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Menor CD</div>
+        <div id="kpiMenor" class="kpi-value">—</div>
+      </div>
+    </div>
+
+    <hr class="sep" />
+
+    <section>
+      <h3>Resumo por CD</h3>
+      <p class="hint">Dias por CD e as datas (compacto).</p>
+
+      <div class="table-wrap">
+        <table class="table table-sticky">
+          <thead>
+            <tr>
+              <th>CD</th>
+              <th style="width:120px;">Dias</th>
+              <th>Datas</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyCD"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <hr class="sep" />
+
+    <section>
+      <h3>Detalhado do mês</h3>
+      <p class="hint">Somente dias que você lançou.</p>
+
+      <div class="table-wrap">
+        <table class="table table-sticky">
+          <thead>
+            <tr>
+              <th style="width:120px;">Data</th>
+              <th style="width:220px;">CD</th>
+              <th style="width:240px;">Atividade</th>
+              <th>Observações</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyDet"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="js/mes.js"></script>
+</body>
+</html>

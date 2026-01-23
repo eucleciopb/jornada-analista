@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin - Criar Usuário</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body class="bg">
+  <header class="topbar">
+    <h2>Admin - Usuários</h2>
+    <button id="btnLogout" class="btn-secondary" type="button">Sair</button>
+  </header>
+
+  <main class="card wide">
+    <section class="row-between">
+      <div>
+        <h3>Gestão de Usuários</h3>
+        <p class="hint">Cria usuário (Auth) + salva perfil (Firestore: <b>usuarios</b>).</p>
+      </div>
+
+      <div class="page-actions" style="margin-top:0;">
+        <button id="btnNovoUsuario" type="button">+ Novo Usuário</button>
+        <button id="btnAdminMenu" class="btn-secondary" type="button">Voltar ao Menu Admin</button>
+      </div>
+    </section>
+
+    <hr class="sep"/>
+
+    <!-- NOVO USUÁRIO -->
+    <section id="boxForm" style="display:none;">
+      <h3>Novo Usuário</h3>
+
+      <form id="formNovoUsuario" class="form">
+        <label>Email</label>
+        <input id="nuEmail" type="email" required placeholder="novo@email.com" />
+
+        <label>Senha (mín. 6)</label>
+        <input id="nuSenha" type="password" minlength="6" required placeholder="mínimo 6 caracteres" />
+
+        <label>Tipo</label>
+        <select id="nuTipo" required>
+          <option value="analista" selected>analista</option>
+          <option value="vendedor">vendedor</option>
+          <option value="admin">admin</option>
+        </select>
+
+        <div class="page-actions">
+          <button type="submit">Criar</button>
+          <button type="button" id="btnCancelar" class="btn-secondary">Cancelar</button>
+        </div>
+
+        <p id="msgNovo" class="msg"></p>
+      </form>
+
+      <hr class="sep"/>
+    </section>
+
+    <!-- EDITAR USUÁRIO -->
+    <section id="boxEdit" style="display:none;">
+      <h3>Editar Usuário</h3>
+      <p class="hint">Aqui você altera o <b>tipo</b> do usuário (perfil no Firestore).</p>
+
+      <form id="formEditarUsuario" class="form">
+        <input id="euUid" type="hidden" />
+
+        <label>Email</label>
+        <input id="euEmail" type="text" disabled />
+
+        <label>Tipo</label>
+        <select id="euTipo" required>
+          <option value="analista">analista</option>
+          <option value="vendedor">vendedor</option>
+          <option value="admin">admin</option>
+        </select>
+
+        <div class="page-actions">
+          <button type="submit">Salvar</button>
+          <button type="button" id="btnCancelarEdit" class="btn-secondary">Cancelar</button>
+        </div>
+
+        <p id="msgEdit" class="msg"></p>
+      </form>
+
+      <hr class="sep"/>
+    </section>
+
+    <!-- LISTA / TABELA -->
+    <section>
+      <h3>Usuários cadastrados</h3>
+      <p class="hint">Fonte: coleção <b>usuarios</b> no Firestore.</p>
+
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Email</th>
+            <th>Tipo</th>
+            <th>Criado em</th>
+            <th style="width:140px;">Ações</th>
+          </tr>
+        </thead>
+        <tbody id="tbodyUsers"></tbody>
+      </table>
+
+      <p id="msgLista" class="msg"></p>
+    </section>
+  </main>
+
+  <!-- Proteção de admin/master + sair + voltar -->
+  <script type="module" src="js/admin-page.js"></script>
+  <!-- Lógica desta tela (listar/criar/editar) -->
+  <script type="module" src="js/admin-users.js"></script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Login</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body class="bg">
+  <main class="card">
+    <h1>Entrar</h1>
+
+    <form id="loginForm" class="form">
+      <label>Email</label>
+      <input id="email" type="email" required placeholder="seu@email.com" />
+
+      <label>Senha</label>
+      <input id="password" type="password" required placeholder="••••••••" />
+
+      <button type="submit">Login</button>
+      <p id="msg" class="msg"></p>
+    </form>
+  </main>
+
+  <script type="module" src="js/auth.js"></script>
+</body>
+</html>

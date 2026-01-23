@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Criar Chamado</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body class="bg">
+  <header class="topbar">
+    <div>
+      <h2>Criar Chamado</h2>
+      <div id="userInfo" class="hint" style="color:#d1d5db;margin-top:4px;"></div>
+    </div>
+    <button id="btnLogout" class="btn-secondary" type="button">Sair</button>
+  </header>
+
+  <main class="card wide">
+    <section class="row-between">
+      <div>
+        <h3>Solicitar para outro usuário</h3>
+        <p class="hint">Crie um chamado (SUPORTE ou TAREFA). O destinatário verá como notificação no menu.</p>
+      </div>
+      <div class="page-actions" style="margin-top:0;">
+        <button id="btnMenu" class="btn-secondary" type="button">Voltar ao Menu</button>
+      </div>
+    </section>
+
+    <hr class="sep" />
+
+    <p id="msg" class="msg"></p>
+
+    <div class="grid-2">
+      <div>
+        <label class="lbl">Para (usuário)</label>
+        <input id="inpPara" list="usersList" placeholder="Digite para pesquisar..." />
+        <datalist id="usersList"></datalist>
+        <div class="hint" style="margin-top:6px;">Selecione o usuário exatamente da lista.</div>
+      </div>
+
+      <div>
+        <label class="lbl">Tipo</label>
+        <select id="selTipo">
+          <option value="SUPORTE">SUPORTE</option>
+          <option value="TAREFA">TAREFA</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="lbl">Prioridade</label>
+        <select id="selPrioridade">
+          <option value="BAIXA">BAIXA</option>
+          <option value="MEDIA" selected>MÉDIA</option>
+          <option value="ALTA">ALTA</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="lbl">CD (opcional)</label>
+        <input id="inpCD" placeholder="Ex: CD - Conde" />
+      </div>
+    </div>
+
+    <div style="margin-top:10px;">
+      <label class="lbl">Título</label>
+      <input id="inpTitulo" placeholder="Ex: Ajustar agenda do mês / Erro no acesso / Solicitação de análise..." />
+    </div>
+
+    <div style="margin-top:10px;">
+      <label class="lbl">Descrição</label>
+      <textarea id="inpDescricao" rows="5" placeholder="Descreva o pedido com detalhes objetivos..."></textarea>
+    </div>
+
+    <div class="row" style="gap:10px; margin-top:14px;">
+      <button id="btnCriar" class="btn-primary" type="button">Criar Chamado</button>
+      <button id="btnLimpar" class="btn-secondary" type="button">Limpar</button>
+    </div>
+  </main>
+
+  <script type="module" src="js/chamado.js"></script>
+</body>
+</html>

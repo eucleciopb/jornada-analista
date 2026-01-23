@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Rota em Campo</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body class="bg" id="pageRota">
+
+<header class="topbar">
+  <div>
+    <h2>Rota em Campo</h2>
+    <div id="userInfo" class="hint" style="color:#d1d5db;margin-top:4px;"></div>
+  </div>
+  <button id="btnLogout" class="btn-secondary" type="button">Sair</button>
+</header>
+
+<main class="card wide">
+
+  <!-- ✅ MODO (SITE / MOBILE) -->
+  <section class="mode-bar">
+    <div>
+      <div class="mode-title">Modo de uso</div>
+      <div class="hint">Escolha antes de começar. Isso ajusta layout, tamanho e facilidade de preenchimento.</div>
+    </div>
+
+    <div class="mode-actions">
+      <button id="btnModeSite" class="btn-secondary" type="button">Site</button>
+      <button id="btnModeMobile" class="btn-secondary" type="button">Mobile</button>
+    </div>
+  </section>
+
+  <hr class="sep" />
+
+  <section class="row-between">
+    <div>
+      <h3>Registro de visita por PDV (SWOT + Feedback)</h3>
+      <p class="hint">CD é preenchido automaticamente pela Agenda do dia.</p>
+    </div>
+    <div class="page-actions" style="margin-top:0;">
+      <button id="btnMenu" class="btn-secondary" type="button">Voltar ao Menu</button>
+    </div>
+  </section>
+
+  <hr class="sep" />
+
+  <p id="msg" class="msg"></p>
+
+  <!-- BLOCO: CONTEXTO -->
+  <div class="grid-3 rota-grid">
+    <div>
+      <label class="lbl">Data da Visita</label>
+      <input id="inpData" type="date" />
+    </div>
+
+    <div>
+      <label class="lbl">CD (auto pela agenda)</label>
+      <input id="inpCD" placeholder="Preenchido automaticamente" />
+    </div>
+
+    <div>
+      <label class="lbl">Tipo de Dia</label>
+      <select id="selTipoDia">
+        <option value="ROTA" selected>ROTA</option>
+        <option value="DIA_INTERNO">DIA INTERNO</option>
+        <option value="ANALISE_INTERNA">ANÁLISE INTERNA</option>
+      </select>
+    </div>
+  </div>
+
+  <hr class="sep" />
+
+  <!-- BLOCO: PDV -->
+  <div class="grid-3 rota-grid">
+    <div>
+      <label class="lbl">PDV (Nome)</label>
+      <input id="inpPdvNome" placeholder="Ex: Bar do Zé / Mercado X" />
+    </div>
+    <div>
+      <label class="lbl">CNPJ (opcional)</label>
+      <input id="inpPdvCnpj" placeholder="00.000.000/0000-00" />
+    </div>
+    <div>
+      <label class="lbl">Cidade (opcional)</label>
+      <input id="inpPdvCidade" placeholder="Ex: Sorocaba" />
+    </div>
+  </div>
+
+  <!-- TEMPO DE ATENDIMENTO -->
+  <div class="grid-3 rota-grid" style="margin-top:10px;">
+    <div>
+      <label class="lbl">Hora início</label>
+      <input id="inpInicio" type="time" />
+    </div>
+    <div>
+      <label class="lbl">Hora fim</label>
+      <input id="inpFim" type="time" />
+    </div>
+    <div>
+      <label class="lbl">Duração (min)</label>
+      <input id="inpDuracao" type="number" readonly placeholder="auto" />
+      <div class="hint" style="margin-top:6px;">Preencha início e fim para calcular automaticamente.</div>
+    </div>
+  </div>
+
+  <hr class="sep" />
+
+  <!-- SWOT -->
+  <div class="swot-grid rota-grid">
+    <div class="swot-card swot-green">
+      <div class="swot-title">Forças (Interno GP)</div>
+      <textarea id="txtForcas" rows="5"></textarea>
+    </div>
+
+    <div class="swot-card swot-red">
+      <div class="swot-title">Fraquezas (Interno GP)</div>
+      <textarea id="txtFraquezas" rows="5"></textarea>
+    </div>
+
+    <div class="swot-card swot-blue">
+      <div class="swot-title">Oportunidades (Mercado)</div>
+      <textarea id="txtOportunidades" rows="5"></textarea>
+    </div>
+
+    <div class="swot-card swot-amber">
+      <div class="swot-title">Ameaças (Mercado)</div>
+      <textarea id="txtAmeacas" rows="5"></textarea>
+    </div>
+  </div>
+
+  <hr class="sep" />
+
+  <!-- INTERNO -->
+  <div class="grid-2 rota-grid">
+    <div>
+      <label class="lbl">Feedback do Vendedor (interno)</label>
+      <textarea id="txtFeedbackVendedor" rows="4"></textarea>
+    </div>
+    <div>
+      <label class="lbl">Feedback do Supervisor (interno)</label>
+      <textarea id="txtFeedbackSupervisor" rows="4"></textarea>
+    </div>
+  </div>
+
+  <div style="margin-top:10px;" class="rota-grid">
+    <label class="lbl">Pontos a desenvolver do time</label>
+    <textarea id="txtPontosTime" rows="4"></textarea>
+  </div>
+
+  <hr class="sep" />
+
+  <!-- RESULTADO -->
+  <div class="grid-2 rota-grid">
+    <div>
+      <label class="lbl">Principais oportunidades (resumo)</label>
+      <textarea id="txtResumoOpp" rows="4"></textarea>
+    </div>
+    <div>
+      <label class="lbl">Próximos passos / Plano</label>
+      <textarea id="txtProximos" rows="4"></textarea>
+    </div>
+  </div>
+
+  <div class="row rota-actions" style="gap:10px; margin-top:14px;">
+    <button id="btnSalvar" class="btn-primary" type="button">Salvar Visita</button>
+    <button id="btnLimpar" class="btn-secondary" type="button">Limpar</button>
+  </div>
+
+  <hr class="sep" />
+
+  <!-- LISTA DO DIA -->
+  <section class="rota-grid">
+    <h3 style="margin-bottom:6px;">Visitas do dia</h3>
+    <p class="hint">Tudo que você já lançou nessa data.</p>
+
+    <div class="table-wrap">
+      <table class="table table-sticky">
+        <thead>
+          <tr>
+            <th style="width:90px;">Início</th>
+            <th style="width:90px;">Fim</th>
+            <th style="width:110px;">Duração</th>
+            <th>PDV</th>
+            <th style="width:180px;">CD</th>
+            <th style="width:120px;">Ação</th>
+          </tr>
+        </thead>
+        <tbody id="tbodyDia"></tbody>
+      </table>
+    </div>
+  </section>
+
+</main>
+
+<script type="module" src="js/rota.js"></script>
+</body>
+</html>

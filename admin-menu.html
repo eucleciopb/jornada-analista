@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Menu Admin</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body class="bg">
+  <header class="topbar">
+    <h2>Menu Admin</h2>
+    <button id="btnLogout" class="btn-secondary">Sair</button>
+  </header>
+
+  <main class="card wide">
+    <h3>Opções do Administrador</h3>
+    <p class="hint">Acesso restrito: somente usuários com tipo <b>admin</b>.</p>
+
+    <div class="menu-grid">
+      <a href="admin-criar-usuario.html" class="menu-card">👤 Criar Usuário</a>
+      <a href="admin-mes.html" class="menu-card">🗓️ Visualizar Agenda do Mês</a>
+      <a href="admin-diaria.html" class="menu-card">📅 Visualizar Agenda Diária</a>
+      <a href="admin-semanal.html" class="menu-card">📆 Visualizar Agenda Semanal</a>
+      <a href="admin-chamado.html" class="menu-card">🛠️ Criar Chamado (Admin)</a>
+      <a href="admin-todos.html" class="menu-card">✅ Notificações / ToDos do Gestor</a>
+      <a href="admin-rota.html" class="menu-card">📍 Análise Rota em Campo</a>
+    </div>
+
+    <hr class="sep" />
+
+    <div class="page-actions">
+      <button id="btnMenuUser" class="btn-secondary">Voltar ao Menu Geral</button>
+    </div>
+  </main>
+
+  <script type="module" src="js/admin-menu.js"></script>
+</body>
+</html>

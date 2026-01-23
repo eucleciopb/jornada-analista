@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ToDos</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body class="bg">
+  <header class="topbar">
+    <div>
+      <h2>ToDos</h2>
+      <div id="userInfo" class="hint" style="color:#d1d5db;margin-top:4px;"></div>
+    </div>
+    <button id="btnLogout" class="btn-secondary" type="button">Sair</button>
+  </header>
+
+  <main class="card wide">
+    <section class="row-between">
+      <div>
+        <h3>Minhas Pendências</h3>
+        <p class="hint">Aqui aparece tudo que está <b>ABERTO</b> ou <b>EM ANDAMENTO</b> atribuído para você.</p>
+      </div>
+      <div class="page-actions" style="margin-top:0;">
+        <button id="btnMenu" class="btn-secondary" type="button">Voltar ao Menu</button>
+      </div>
+    </section>
+
+    <hr class="sep" />
+
+    <p id="msg" class="msg"></p>
+
+    <div class="row-between" style="margin:10px 0;">
+      <div class="row" style="gap:10px; flex-wrap:wrap;">
+        <select id="selFiltro">
+          <option value="PENDENTES" >Pendentes</option>
+          <option value="TODOS"selected>Todos</option>
+          <option value="CONCLUIDOS">Concluídos</option>
+        </select>
+      </div>
+
+      <div class="hint">
+        <span id="countLabel">0</span> item(ns)
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table class="table table-sticky">
+        <thead>
+          <tr>
+            <th style="width:110px;">Status</th>
+            <th style="width:110px;">Tipo</th>
+            <th style="width:110px;">Prior.</th>
+            <th style="width:220px;">De</th>
+            <th>Título</th>
+            <th style="width:170px;">CD</th>
+            <th style="width:110px;">Ação</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </main>
+
+  <script type="module" src="js/todos.js"></script>
+</body>
+</html>
