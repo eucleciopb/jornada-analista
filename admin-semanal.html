@@ -4,23 +4,87 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Admin - Agenda Semanal</title>
-  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="./css/styles.css" />
 </head>
+
 <body class="bg">
-  <header class="topbar">
+<header class="topbar">
+  <div class="topbar-left">
     <h2>Admin - Agenda Semanal</h2>
-    <button id="btnLogout" class="btn-secondary">Sair</button>
-  </header>
+    <div id="userInfo" class="hint">Carregando...</div>
+  </div>
 
-  <main class="card wide">
-    <h3>Em construção</h3>
-    <p class="hint">Visão semanal (admin).</p>
+  <div class="topbar-right">
+    <button id="btnMenu" type="button" class="btn-secondary">Voltar ao Menu Admin</button>
+    <button id="btnLogout" type="button" class="btn-secondary">Sair</button>
+  </div>
+</header>
 
-    <div class="page-actions">
-      <button id="btnAdminMenu" class="btn-secondary">Voltar ao Menu Admin</button>
+<main class="card wide">
+  <section class="row-between">
+    <div>
+      <h3>Semana (Seg–Sex) — visão geral por analista</h3>
+      <p class="hint">Cada linha é um analista. Cada coluna mostra CD + atividade + observações do dia.</p>
     </div>
-  </main>
+  </section>
 
-  <script type="module" src="js/admin-page.js"></script>
+  <hr class="sep" />
+
+  <div id="msg" class="msg">Inicializando...</div>
+
+  <div class="grid-3">
+    <div>
+      <label class="lbl">Semana (selecione qualquer dia)</label>
+      <input id="inpRef" type="date" />
+      <div id="lblPeriodo" class="hint" style="margin-top:6px;"></div>
+    </div>
+
+    <div>
+      <label class="lbl">Filtro CD (opcional)</label>
+      <input id="inpFiltroCD" placeholder="Digite parte do CD..." />
+    </div>
+
+    <div>
+      <label class="lbl">Filtro Analista (opcional)</label>
+      <input id="inpFiltroAnalista" placeholder="Digite parte do e-mail..." />
+    </div>
+  </div>
+
+  <div class="row" style="gap:10px; margin-top:14px; flex-wrap:wrap;">
+    <button id="btnPrev" type="button" class="btn-secondary">◀ Semana anterior</button>
+    <button id="btnNow" type="button" class="btn-secondary">Semana atual</button>
+    <button id="btnNext" type="button" class="btn-secondary">Próxima semana ▶</button>
+
+    <div style="flex:1"></div>
+
+    <button id="btnCarregar" type="button" class="btn-primary">Carregar semana</button>
+  </div>
+
+  <hr class="sep" />
+
+  <section>
+    <h3>Agenda semanal (tabela)</h3>
+
+    <div class="table-wrap">
+      <table class="table table-sticky table-week">
+        <thead>
+          <tr>
+            <th style="width:260px;">Analista</th>
+            <th id="thD1">Seg</th>
+            <th id="thD2">Ter</th>
+            <th id="thD3">Qua</th>
+            <th id="thD4">Qui</th>
+            <th id="thD5">Sex</th>
+          </tr>
+        </thead>
+        <tbody id="tbodySemana">
+          <tr><td colspan="6" class="muted">Carregue uma semana.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<script type="module" src="./js/admin_semana.js"></script>
 </body>
 </html>

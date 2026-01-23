@@ -1143,3 +1143,513 @@ button {
   font-weight: 700;
   margin: 10px 0;
 }
+
+:root{
+  --bg:#0b1220;
+  --card:#ffffff;
+  --text:#0f172a;
+  --muted:#6b7280;
+  --line:#e5e7eb;
+  --primary:#2563eb;
+  --btn:#111827;
+  --btnText:#fff;
+  --shadow:0 18px 40px rgba(0,0,0,.20);
+}
+
+*{ box-sizing:border-box; }
+body{ margin:0; font-family:system-ui, -apple-system, Segoe UI, Roboto, Arial; }
+
+.bg{
+  background: radial-gradient(1200px 700px at 20% 10%, #1f2a44 0%, rgba(31,42,68,0) 60%),
+              radial-gradient(900px 500px at 90% 20%, #1b3a6b 0%, rgba(27,58,107,0) 55%),
+              var(--bg);
+  min-height:100vh;
+  padding:24px;
+}
+
+.topbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  color:#fff;
+  padding:14px 18px;
+  border-radius:16px;
+  background: rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.12);
+  margin: 0 auto 14px auto;
+  max-width: 1200px;
+}
+
+.topbar h2{ margin:0; font-size:18px; font-weight:900; }
+.topbar .hint{ color:#d1d5db; font-weight:700; font-size:12px; }
+
+.topbar-left{ display:flex; flex-direction:column; }
+.topbar-right{ display:flex; gap:10px; flex-wrap:wrap; }
+
+.card{
+  background: var(--card);
+  color: var(--text);
+  border-radius:18px;
+  box-shadow: var(--shadow);
+  border:1px solid var(--line);
+  padding:18px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.wide{ width:100%; }
+
+.row{ display:flex; align-items:center; }
+.row-between{ display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+
+.sep{ border:none; border-top:1px solid var(--line); margin:14px 0; }
+
+.lbl{ display:block; font-weight:900; font-size:12px; margin-bottom:6px; color:#111827; }
+
+.hint{ color:var(--muted); font-weight:700; font-size:12px; margin:0; }
+
+input, select, textarea{
+  width:100%;
+  padding:10px 12px;
+  border-radius:12px;
+  border:1px solid var(--line);
+  outline:none;
+  font-weight:700;
+  background:#fff;
+}
+
+input:focus, select:focus, textarea:focus{
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 4px rgba(147,197,253,.35);
+}
+
+.btn-primary, #btnSalvar{
+  background: var(--primary);
+  color:#fff;
+  border:none;
+  padding:10px 14px;
+  border-radius:12px;
+  font-weight:900;
+  cursor:pointer;
+}
+
+.btn-secondary{
+  background: var(--btn);
+  color: var(--btnText);
+  border:none;
+  padding:10px 14px;
+  border-radius:12px;
+  font-weight:900;
+  cursor:pointer;
+}
+
+.btn-primary:hover{ filter:brightness(1.05); }
+.btn-secondary:hover{ filter:brightness(1.08); }
+
+.grid-3{
+  display:grid;
+  grid-template-columns: repeat(3, minmax(220px, 1fr));
+  gap:12px;
+}
+
+@media (max-width: 900px){
+  .grid-3{ grid-template-columns: 1fr; }
+}
+
+.msg{
+  margin: 0 0 10px 0;
+  font-weight:900;
+}
+
+.table-wrap{
+  overflow:auto;
+  border:1px solid var(--line);
+  border-radius:14px;
+}
+
+.table{
+  width:100%;
+  border-collapse:collapse;
+  background:#fff;
+}
+
+.table th, .table td{
+  padding:12px;
+  border-bottom:1px solid var(--line);
+  text-align:left;
+  vertical-align:top;
+  font-size:13px;
+}
+
+.table th{
+  background:#f9fafb;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  font-weight:900;
+}
+
+.muted{
+  color:var(--muted);
+  font-weight:800;
+  padding:14px !important;
+}
+
+.chip{
+  display:inline-block;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background:#f3f4f6;
+  border:1px solid var(--line);
+  font-weight:900;
+  font-size:12px;
+  margin: 4px 6px 0 0;
+}
+
+/* =========================
+   TOPBAR FIXA (STICKY) – GLOBAL
+   ========================= */
+
+/* garante que o body tenha espaço e não fique "por baixo" do header */
+body.bg{
+  padding-top: 92px; /* espaço reservado para a topbar fixa */
+}
+
+/* barra fixa no topo */
+.topbar{
+  position: fixed;
+  top: 14px;
+  left: 0;
+  right: 0;
+  z-index: 999;
+
+  max-width: 1200px;
+  margin: 0 auto;
+
+  padding: 14px 18px;
+  border-radius: 18px;
+
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+
+  background: rgba(255,255,255,.10);
+  border: 1px solid rgba(255,255,255,.14);
+  backdrop-filter: blur(10px);
+
+  box-shadow: 0 16px 38px rgba(0,0,0,.22);
+}
+
+/* esquerda */
+.topbar-left{
+  min-width: 0;
+}
+
+.topbar-left h2{
+  margin: 0;
+  font-size: 20px;
+  font-weight: 1000;
+  line-height: 1.15;
+  color: #fff;
+}
+
+.topbar-left .hint{
+  margin-top: 6px;
+  color: #d1d5db;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+/* direita */
+.topbar-right{
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.topbar-right .btn-secondary{
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+/* responsivo */
+@media (max-width: 900px){
+  body.bg{ padding-top: 132px; } /* topbar cresce no mobile */
+
+  .topbar{
+    top: 10px;
+    padding: 12px 14px;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .topbar-right{
+    justify-content: flex-end;
+    width: 100%;
+  }
+}
+
+/* =========================================================
+   ADMIN – AGENDA DIÁRIA (CSS ISOLADO)
+   ========================================================= */
+
+/* Espaço para header fixo */
+body.bg {
+  padding-top: 110px;
+}
+
+/* ---------- HEADER FIXO ---------- */
+.topbar {
+  position: fixed;
+  top: 14px;
+  left: 0;
+  right: 0;
+  z-index: 999;
+
+  max-width: 1200px;
+  margin: 0 auto;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+
+  padding: 14px 18px;
+  border-radius: 18px;
+
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+
+  box-shadow: 0 18px 40px rgba(0,0,0,.25);
+}
+
+/* Lado esquerdo */
+.topbar-left {
+  min-width: 0;
+}
+
+.topbar-left h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 900;
+  line-height: 1.2;
+  color: #ffffff;
+}
+
+.topbar-left .hint {
+  margin-top: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #d1d5db;
+  word-break: break-word;
+}
+
+/* Lado direito */
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.topbar-right .btn-secondary {
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+/* ---------- KPIs ---------- */
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(160px, 1fr));
+  gap: 14px;
+  margin-top: 10px;
+}
+
+.kpi {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 14px;
+  border: 1px solid #e5e7eb;
+}
+
+.kpi-title {
+  font-size: 12px;
+  font-weight: 800;
+  color: #6b7280;
+}
+
+.kpi-value {
+  margin-top: 6px;
+  font-size: 26px;
+  font-weight: 1000;
+  color: #0f172a;
+}
+
+/* ---------- TABELA ---------- */
+.table-wrap {
+  margin-top: 10px;
+  overflow: auto;
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #ffffff;
+}
+
+.table th,
+.table td {
+  padding: 12px;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 13px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.table th {
+  background: #f9fafb;
+  font-weight: 900;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+/* ---------- STATUS ---------- */
+.badge {
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 900;
+  border: 1px solid transparent;
+}
+
+.badge-ok {
+  background: #ecfdf5;
+  color: #065f46;
+  border-color: #a7f3d0;
+}
+
+.badge-warn {
+  background: #fff7ed;
+  color: #9a3412;
+  border-color: #fdba74;
+}
+
+/* Linhas */
+.row-ok td {
+  background: #f0fdf4;
+}
+
+.row-warn td {
+  background: #fff7ed;
+}
+
+/* ---------- RESPONSIVO ---------- */
+@media (max-width: 900px) {
+  body.bg {
+    padding-top: 150px;
+  }
+
+  .topbar {
+    flex-direction: column;
+    align-items: stretch;
+    top: 10px;
+  }
+
+  .topbar-right {
+    justify-content: flex-end;
+    width: 100%;
+  }
+
+  .kpi-row {
+    grid-template-columns: 1fr;
+  }
+}
+/* =========================================================
+   ADMIN - SEMANA (tabela)
+   ========================================================= */
+
+.table-week td{
+  min-width: 220px;
+}
+
+.col-analista{
+  background: #fff;
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  border-right: 1px solid #e5e7eb;
+}
+
+.td-ok{
+  background: #f0fdf4;
+}
+.td-nao{
+  background: #fff7ed;
+}
+
+.cell-ok, .cell-nao, .cell-filtrado{
+  border-radius: 14px;
+  padding: 10px 10px;
+  border: 1px solid #e5e7eb;
+  background: rgba(255,255,255,.9);
+}
+
+.cell-ok{
+  border-left: 6px solid #22c55e;
+}
+
+.cell-nao{
+  border-left: 6px solid #fb923c;
+  background: rgba(255,247,237,.9);
+}
+
+.cell-filtrado{
+  border-left: 6px solid #cbd5e1;
+  background: rgba(248,250,252,.95);
+}
+
+.cell-title{
+  font-weight: 1000;
+  font-size: 13px;
+  color: #0f172a;
+  line-height: 1.1;
+}
+
+.cell-sub{
+  margin-top: 6px;
+  font-weight: 900;
+  font-size: 12px;
+  color: #334155;
+}
+
+.cell-obs{
+  margin-top: 6px;
+  font-size: 12px;
+  color: #475569;
+
+  display: -webkit-box;
+  -webkit-line-clamp: 3;       /* limita linhas */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+@media (max-width: 900px){
+  .table-week td{ min-width: 200px; }
+}
+/* Chamados - melhora leitura */
+.table td strong { font-weight: 1000; }
