@@ -3,112 +3,110 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Admin - Criar Usuário</title>
+  <title>Admin - Usuários</title>
   <link rel="stylesheet" href="css/styles.css" />
 </head>
-<body class="bg">
-  <header class="topbar">
-    <h2>Admin - Usuários</h2>
+
+<body class="bg" id="pageAdminUsers">
+<header class="topbar">
+  <div>
+    <h2>Gestão de Usuários</h2>
+    <div id="userInfo" class="hint" style="color:#d1d5db;margin-top:4px;">Carregando...</div>
+  </div>
+
+  <div class="row" style="gap:10px;flex-wrap:wrap;">
+    <button id="btnMenu" class="btn-secondary" type="button">Voltar ao Menu Admin</button>
     <button id="btnLogout" class="btn-secondary" type="button">Sair</button>
-  </header>
+  </div>
+</header>
 
-  <main class="card wide">
-    <section class="row-between">
+<main class="card wide">
+
+  <section class="row-between" style="align-items:flex-end;">
+    <div>
+      <h3 style="margin-bottom:6px;">Usuários</h3>
+      <p class="hint">
+        Crie usuários, altere o tipo e <strong>resetar senha</strong> (envia e-mail de redefinição do Firebase).
+      </p>
+    </div>
+
+    <div class="row" style="gap:10px;flex-wrap:wrap;">
+      <button id="btnNovo" class="btn-primary" type="button">+ Novo Usuário</button>
+      <button id="btnCancelar" class="btn-secondary" type="button" style="display:none;">Cancelar</button>
+    </div>
+  </section>
+
+  <p id="msg" class="msg"></p>
+
+  <!-- FORM: CRIAR / EDITAR -->
+  <section id="formWrap" class="admin-form" style="display:none;">
+    <div class="grid-3">
       <div>
-        <h3>Gestão de Usuários</h3>
-        <p class="hint">Cria usuário (Auth) + salva perfil (Firestore: <b>usuarios</b>).</p>
+        <label class="lbl">E-mail</label>
+        <input id="inpEmail" type="email" placeholder="ex: analista@empresa.com" autocomplete="off" />
+        <div class="hint" style="margin-top:6px;">Para editar usuário existente, o e-mail fica travado.</div>
       </div>
 
-      <div class="page-actions" style="margin-top:0;">
-        <button id="btnNovoUsuario" type="button">+ Novo Usuário</button>
-        <button id="btnAdminMenu" class="btn-secondary" type="button">Voltar ao Menu Admin</button>
+      <div>
+        <label class="lbl">Senha (apenas para criar)</label>
+        <input id="inpSenha" type="password" placeholder="mínimo 6 caracteres" autocomplete="new-password" />
+        <div class="hint" style="margin-top:6px;">Para alterar senha use o botão “Resetar senha”.</div>
       </div>
-    </section>
 
-    <hr class="sep"/>
-
-    <!-- NOVO USUÁRIO -->
-    <section id="boxForm" style="display:none;">
-      <h3>Novo Usuário</h3>
-
-      <form id="formNovoUsuario" class="form">
-        <label>Email</label>
-        <input id="nuEmail" type="email" required placeholder="novo@email.com" />
-
-        <label>Senha (mín. 6)</label>
-        <input id="nuSenha" type="password" minlength="6" required placeholder="mínimo 6 caracteres" />
-
-        <label>Tipo</label>
-        <select id="nuTipo" required>
+      <div>
+        <label class="lbl">Tipo</label>
+        <select id="selTipo">
           <option value="analista" selected>analista</option>
-          <option value="vendedor">vendedor</option>
           <option value="admin">admin</option>
         </select>
+      </div>
+    </div>
 
-        <div class="page-actions">
-          <button type="submit">Criar</button>
-          <button type="button" id="btnCancelar" class="btn-secondary">Cancelar</button>
-        </div>
+    <div class="row" style="gap:10px;margin-top:12px;flex-wrap:wrap;">
+      <button id="btnSalvar" class="btn-primary" type="button">Salvar</button>
+      <button id="btnResetSenha" class="btn-secondary" type="button">Resetar senha (e-mail)</button>
+      <button id="btnFecharForm" class="btn-secondary" type="button">Fechar</button>
+    </div>
 
-        <p id="msgNovo" class="msg"></p>
-      </form>
+    <hr class="sep" />
+  </section>
 
-      <hr class="sep"/>
-    </section>
+  <!-- BUSCA -->
+  <section class="row-between" style="align-items:flex-end;">
+    <div style="flex:1;">
+      <label class="lbl">Buscar (e-mail)</label>
+      <input id="inpBusca" placeholder="Digite para filtrar usuários..." />
+    </div>
+    <div class="row" style="gap:10px;flex-wrap:wrap;">
+      <button id="btnRecarregar" class="btn-secondary" type="button">Recarregar lista</button>
+    </div>
+  </section>
 
-    <!-- EDITAR USUÁRIO -->
-    <section id="boxEdit" style="display:none;">
-      <h3>Editar Usuário</h3>
-      <p class="hint">Aqui você altera o <b>tipo</b> do usuário (perfil no Firestore).</p>
+  <hr class="sep" />
 
-      <form id="formEditarUsuario" class="form">
-        <input id="euUid" type="hidden" />
+  <!-- TABELA -->
+  <section>
+    <h3 style="margin-bottom:6px;">Lista de Usuários</h3>
+    <p class="hint">Ações: editar tipo, resetar senha (envia e-mail), excluir (se habilitado no JS/Rules).</p>
 
-        <label>Email</label>
-        <input id="euEmail" type="text" disabled />
-
-        <label>Tipo</label>
-        <select id="euTipo" required>
-          <option value="analista">analista</option>
-          <option value="vendedor">vendedor</option>
-          <option value="admin">admin</option>
-        </select>
-
-        <div class="page-actions">
-          <button type="submit">Salvar</button>
-          <button type="button" id="btnCancelarEdit" class="btn-secondary">Cancelar</button>
-        </div>
-
-        <p id="msgEdit" class="msg"></p>
-      </form>
-
-      <hr class="sep"/>
-    </section>
-
-    <!-- LISTA / TABELA -->
-    <section>
-      <h3>Usuários cadastrados</h3>
-      <p class="hint">Fonte: coleção <b>usuarios</b> no Firestore.</p>
-
-      <table class="table">
+    <div class="table-wrap">
+      <table class="table table-sticky">
         <thead>
           <tr>
-            <th>Email</th>
-            <th>Tipo</th>
-            <th>Criado em</th>
-            <th style="width:140px;">Ações</th>
+            <th style="width:320px;">E-mail</th>
+            <th style="width:140px;">Tipo</th>
+            <th style="width:180px;">Ações</th>
           </tr>
         </thead>
-        <tbody id="tbodyUsers"></tbody>
+        <tbody id="tbodyUsers">
+          <tr><td colspan="3" class="muted">Carregando...</td></tr>
+        </tbody>
       </table>
+    </div>
+  </section>
 
-      <p id="msgLista" class="msg"></p>
-    </section>
-  </main>
+</main>
 
-  <!-- Proteção de admin/master + sair + voltar -->
-  <script type="module" src="js/admin-page.js"></script>
-  <!-- Lógica desta tela (listar/criar/editar) -->
-  <script type="module" src="js/admin-users.js"></script>
+<script type="module" src="js/admin-users.js"></script>
 </body>
 </html>
