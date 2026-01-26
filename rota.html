@@ -6,6 +6,7 @@
   <title>Rota em Campo</title>
   <link rel="stylesheet" href="css/styles.css" />
 </head>
+
 <body class="bg" id="pageRota">
 
 <header class="topbar">
@@ -35,8 +36,8 @@
 
   <section class="row-between">
     <div>
-      <h3>Registro de visita por PDV (SWOT + Feedback)</h3>
-      <p class="hint">CD é preenchido automaticamente pela Agenda do dia.</p>
+      <h3>Registro de visita por PDV (SWOT)</h3>
+      <p class="hint">CD é preenchido automaticamente pela Agenda do dia (se houver).</p>
     </div>
     <div class="page-actions" style="margin-top:0;">
       <button id="btnMenu" class="btn-secondary" type="button">Voltar ao Menu</button>
@@ -47,39 +48,26 @@
 
   <p id="msg" class="msg"></p>
 
-  <!-- BLOCO: CONTEXTO -->
+  <!-- CONTEXTO -->
   <div class="grid-3 rota-grid">
     <div>
       <label class="lbl">Data da Visita</label>
       <input id="inpData" type="date" />
     </div>
 
-    <div>
+    <div style="grid-column: span 2;">
       <label class="lbl">CD (auto pela agenda)</label>
-      <input id="inpCD" placeholder="Preenchido automaticamente" />
-    </div>
-
-    <div>
-      <label class="lbl">Tipo de Dia</label>
-      <select id="selTipoDia">
-        <option value="ROTA" selected>ROTA</option>
-        <option value="DIA_INTERNO">DIA INTERNO</option>
-        <option value="ANALISE_INTERNA">ANÁLISE INTERNA</option>
-      </select>
+      <input id="inpCD" placeholder="Preenchido automaticamente (ou digite manualmente)" />
     </div>
   </div>
 
   <hr class="sep" />
 
-  <!-- BLOCO: PDV -->
-  <div class="grid-3 rota-grid">
+  <!-- PDV -->
+  <div class="grid-2 rota-grid" style="margin-top:10px;">
     <div>
       <label class="lbl">PDV (Nome)</label>
       <input id="inpPdvNome" placeholder="Ex: Bar do Zé / Mercado X" />
-    </div>
-    <div>
-      <label class="lbl">CNPJ (opcional)</label>
-      <input id="inpPdvCnpj" placeholder="00.000.000/0000-00" />
     </div>
     <div>
       <label class="lbl">Cidade (opcional)</label>
@@ -110,56 +98,31 @@
   <div class="swot-grid rota-grid">
     <div class="swot-card swot-green">
       <div class="swot-title">Forças (Interno GP)</div>
-      <textarea id="txtForcas" rows="5"></textarea>
+      <textarea id="txtForcas" rows="5" placeholder="O que está bom internamente (time, processo, execução)?"></textarea>
     </div>
 
     <div class="swot-card swot-red">
       <div class="swot-title">Fraquezas (Interno GP)</div>
-      <textarea id="txtFraquezas" rows="5"></textarea>
+      <textarea id="txtFraquezas" rows="5" placeholder="O que está ruim/atrapalhando internamente?"></textarea>
     </div>
 
     <div class="swot-card swot-blue">
       <div class="swot-title">Oportunidades (Mercado)</div>
-      <textarea id="txtOportunidades" rows="5"></textarea>
+      <textarea id="txtOportunidades" rows="5" placeholder="Oportunidades no PDV / mercado (ganho de espaço, preço, execução, mix)..."></textarea>
     </div>
 
     <div class="swot-card swot-amber">
       <div class="swot-title">Ameaças (Mercado)</div>
-      <textarea id="txtAmeacas" rows="5"></textarea>
+      <textarea id="txtAmeacas" rows="5" placeholder="Concorrência, risco, ruptura, barreiras, ações do mercado..."></textarea>
     </div>
-  </div>
-
-  <hr class="sep" />
-
-  <!-- INTERNO -->
-  <div class="grid-2 rota-grid">
-    <div>
-      <label class="lbl">Feedback do Vendedor (interno)</label>
-      <textarea id="txtFeedbackVendedor" rows="4"></textarea>
-    </div>
-    <div>
-      <label class="lbl">Feedback do Supervisor (interno)</label>
-      <textarea id="txtFeedbackSupervisor" rows="4"></textarea>
-    </div>
-  </div>
-
-  <div style="margin-top:10px;" class="rota-grid">
-    <label class="lbl">Pontos a desenvolver do time</label>
-    <textarea id="txtPontosTime" rows="4"></textarea>
   </div>
 
   <hr class="sep" />
 
   <!-- RESULTADO -->
-  <div class="grid-2 rota-grid">
-    <div>
-      <label class="lbl">Principais oportunidades (resumo)</label>
-      <textarea id="txtResumoOpp" rows="4"></textarea>
-    </div>
-    <div>
-      <label class="lbl">Próximos passos / Plano</label>
-      <textarea id="txtProximos" rows="4"></textarea>
-    </div>
+  <div class="rota-grid">
+    <label class="lbl">Principais oportunidades (resumo)</label>
+    <textarea id="txtResumoOpp" rows="4" placeholder="Resumo objetivo do que fazer / oportunidade principal do PDV."></textarea>
   </div>
 
   <div class="row rota-actions" style="gap:10px; margin-top:14px;">
