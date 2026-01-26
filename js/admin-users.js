@@ -1,228 +1,358 @@
 // js/admin-users.js
-import { auth, db } from "./firebase.js";
+import { auth, db, firebaseConfig } from "./firebase.js";
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+import {
+  onAuthStateChanged,
+  signOut,
+  sendPasswordResetEmail,
+  getAuth,
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+
 import {
   collection,
-  query,
-  orderBy,
-  onSnapshot,
+  getDocs,
+  doc,
   setDoc,
   updateDoc,
-  doc,
+  deleteDoc,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-const MASTER_EMAIL = "euclecio.santos@gmail.com";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+import { createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 
-// --- UI: criar novo ---
-const btnNovo = document.getElementById("btnNovoUsuario");
-const boxForm = document.getElementById("boxForm");
-const btnCancelar = document.getElementById("btnCancelar");
-const formNovo = document.getElementById("formNovoUsuario");
-const msgNovo = document.getElementById("msgNovo");
+const $ = (id) => document.getElementById(id);
 
-// --- UI: editar ---
-const boxEdit = document.getElementById("boxEdit");
-const formEdit = document.getElementById("formEditarUsuario");
-const btnCancelarEdit = document.getElementById("btnCancelarEdit");
-const msgEdit = document.getElementById("msgEdit");
+// ====== ELEMENTOS ======
+const userInfo = $("userInfo");
+const msg = $("msg");
 
-const euUid = document.getElementById("euUid");
-const euEmail = document.getElementById("euEmail");
-const euTipo = document.getElementById("euTipo");
+const btnMenu = $("btnMenu");
+const btnLogout = $("btnLogout");
 
-// --- UI: lista ---
-const tbody = document.getElementById("tbodyUsers");
-const msgLista = document.getElementById("msgLista");
+const btnNovo = $("btnNovo");
+const btnCancelar = $("btnCancelar");
 
-console.log("[ADMIN-USERS] carregou ✅");
+const formWrap = $("formWrap");
+const inpEmail = $("inpEmail");
+const inpSenha = $("inpSenha");
+const selTipo = $("selTipo");
 
-// Helpers de mensagens
-function setMsg(el, text, type) {
-  if (!el) return;
-  el.textContent = text || "";
-  el.style.color = type === "success" ? "#065f46" : "#b91c1c";
+const btnSalvar = $("btnSalvar");
+const btnResetSenha = $("btnResetSenha");
+const btnFecharForm = $("btnFecharForm");
+
+const inpBusca = $("inpBusca");
+const btnRecarregar = $("btnRecarregar");
+
+const tbodyUsers = $("tbodyUsers");
+
+// ====== ESTADO ======
+let currentUser = null;
+let usersCache = []; // { uidDoc, email, tipo }
+let editUid = null;  // quando está editando um usuário existente (uid do doc)
+let editEmail = null;
+
+// ====== UTIL ======
+function safe(v) { return (v ?? "").toString().trim(); }
+function lower(v) { return safe(v).toLowerCase(); }
+
+function setMsg(text, ok = false) {
+  msg.textContent = text || "";
+  msg.style.color = ok ? "#065f46" : "#b91c1c";
 }
 
-// ========== NOVO USUÁRIO ==========
-btnNovo?.addEventListener("click", () => {
-  boxEdit.style.display = "none";
-  boxForm.style.display = "block";
-  setMsg(msgNovo, "", "error");
-});
+function showForm(open) {
+  formWrap.style.display = open ? "block" : "none";
+  btnCancelar.style.display = open ? "inline-block" : "none";
+}
 
-btnCancelar?.addEventListener("click", () => {
-  boxForm.style.display = "none";
-  setMsg(msgNovo, "", "error");
-  formNovo.reset();
-  document.getElementById("nuTipo").value = "analista";
-});
+function resetForm() {
+  editUid = null;
+  editEmail = null;
 
-formNovo?.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  setMsg(msgNovo, "", "error");
+  inpEmail.value = "";
+  inpSenha.value = "";
+  selTipo.value = "analista";
 
-  const email = (document.getElementById("nuEmail")?.value || "").trim().toLowerCase();
-  const senha = document.getElementById("nuSenha")?.value || "";
-  const tipo = document.getElementById("nuTipo")?.value || "";
+  inpEmail.disabled = false;
+  inpSenha.disabled = false;
 
-  if (!email.includes("@") || !email.includes(".")) return setMsg(msgNovo, "Email inválido.", "error");
-  if (senha.length < 6) return setMsg(msgNovo, "Senha precisa ter pelo menos 6 caracteres.", "error");
-  if (!["admin", "analista", "vendedor"].includes(tipo)) return setMsg(msgNovo, "Tipo inválido.", "error");
-  if (email === MASTER_EMAIL) return setMsg(msgNovo, "Esse email é MASTER. Não crie por aqui.", "error");
+  btnResetSenha.disabled = true; // só habilita quando estiver editando alguém (tem e-mail)
+}
+
+function isMaster(email) {
+  return lower(email) === "euclecio.santos@gmail.com";
+}
+
+// ====== NAVEGAÇÃO ======
+function bindTopButtons() {
+  btnMenu.onclick = () => {
+    // ajuste para seu arquivo real de menu admin
+    window.location.href = "./admin-menu.html";
+  };
+
+  btnLogout.onclick = async () => {
+    await signOut(auth);
+    window.location.href = "./index.html";
+  };
+}
+
+// ====== LISTAR USUÁRIOS ======
+async function loadUsers() {
+  setMsg("Carregando usuários...", true);
+
+  const snap = await getDocs(collection(db, "usuarios"));
+  usersCache = snap.docs.map(d => {
+    const data = d.data() || {};
+    return {
+      uidDoc: d.id,
+      email: safe(data.email),
+      tipo: safe(data.tipo) || "analista"
+    };
+  }).filter(u => u.email);
+
+  usersCache.sort((a, b) => lower(a.email).localeCompare(lower(b.email)));
+
+  renderUsers();
+  setMsg(`Usuários carregados: ${usersCache.length}`, true);
+}
+
+function renderUsers() {
+  const q = lower(inpBusca.value);
+
+  const filtered = !q
+    ? usersCache
+    : usersCache.filter(u => lower(u.email).includes(q));
+
+  if (!filtered.length) {
+    tbodyUsers.innerHTML = `<tr><td colspan="3" class="muted">Nenhum usuário encontrado.</td></tr>`;
+    return;
+  }
+
+  tbodyUsers.innerHTML = filtered.map(u => `
+    <tr>
+      <td><strong>${safe(u.email)}</strong></td>
+      <td>${safe(u.tipo)}</td>
+      <td style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn-secondary" type="button" onclick="window.__editUser('${u.uidDoc}')">Editar</button>
+        <button class="btn-secondary" type="button" onclick="window.__resetPass('${safe(u.email).replace(/'/g, "\\'")}')">Resetar senha</button>
+        <button class="btn-secondary" type="button" onclick="window.__deleteUser('${u.uidDoc}','${safe(u.email).replace(/'/g, "\\'")}')">Excluir</button>
+      </td>
+    </tr>
+  `).join("");
+}
+
+// ====== EDITAR USUÁRIO (Firestore) ======
+function openEdit(uidDoc) {
+  const u = usersCache.find(x => x.uidDoc === uidDoc);
+  if (!u) {
+    setMsg("Usuário não encontrado no cache.", false);
+    return;
+  }
+
+  editUid = u.uidDoc;
+  editEmail = u.email;
+
+  inpEmail.value = u.email;
+  selTipo.value = u.tipo || "analista";
+
+  // senha não é editada aqui (seguro)
+  inpSenha.value = "";
+  inpEmail.disabled = true;   // não editar e-mail no Firestore
+  inpSenha.disabled = true;   // senha só via reset e-mail
+  btnResetSenha.disabled = false;
+
+  showForm(true);
+  setMsg(`Editando: ${u.email}`, true);
+}
+
+// ====== RESETAR SENHA (E-MAIL) ======
+async function resetPasswordByEmail(email) {
+  const e = lower(email);
+  if (!e || !e.includes("@")) {
+    alert("E-mail inválido para reset.");
+    return;
+  }
+
+  if (!confirm(`Enviar e-mail de redefinição de senha para:\n\n${e}\n\nConfirmar?`)) return;
 
   try {
-    const mainConfig = auth.app.options;
-    const secondaryApp = initializeApp(mainConfig, "secondary_" + Date.now());
-    const secondaryAuth = getAuth(secondaryApp);
+    // envia pelo Auth do app principal (o admin permanece logado)
+    await sendPasswordResetEmail(auth, e);
+    alert(`E-mail de redefinição enviado para:\n${e}`);
+    setMsg(`Reset enviado para ${e}`, true);
+  } catch (err) {
+    console.error(err);
+    setMsg(`Erro ao enviar reset: ${err.code || err.message}`, false);
+    alert(`Erro ao enviar reset:\n${err.code || err.message}`);
+  }
+}
 
-    const cred = await createUserWithEmailAndPassword(secondaryAuth, email, senha);
+// ====== CRIAR USUÁRIO (Auth + Firestore) ======
+// ✅ IMPORTANTE: usar app secundário para não deslogar o admin
+let secondaryApp = null;
+let secondaryAuth = null;
 
-    await setDoc(doc(db, "usuarios", cred.user.uid), {
-      email: cred.user.email,
+function ensureSecondaryAuth() {
+  if (secondaryAuth) return secondaryAuth;
+
+  secondaryApp = initializeApp(firebaseConfig, "secondary-admin-create");
+  secondaryAuth = getAuth(secondaryApp);
+  return secondaryAuth;
+}
+
+async function createUserFlow() {
+  const email = lower(inpEmail.value);
+  const senha = safe(inpSenha.value);
+  const tipo = safe(selTipo.value) || "analista";
+
+  if (!email || !email.includes("@")) return alert("Informe um e-mail válido.");
+  if (!senha || senha.length < 6) return alert("Senha precisa ter no mínimo 6 caracteres.");
+  if (!tipo) return alert("Selecione o tipo.");
+
+  setMsg("Criando usuário no Auth...", true);
+
+  try {
+    const secAuth = ensureSecondaryAuth();
+    const cred = await createUserWithEmailAndPassword(secAuth, email, senha);
+    const uid = cred.user.uid;
+
+    // grava perfil em /usuarios/{uid}
+    await setDoc(doc(db, "usuarios", uid), {
+      email,
       tipo,
       createdAt: serverTimestamp(),
-      criadoPorUid: auth.currentUser?.uid || null
-    });
+      updatedAt: serverTimestamp()
+    }, { merge: true });
 
-    setMsg(msgNovo, "Usuário criado com sucesso! ✅", "success");
-    formNovo.reset();
-    document.getElementById("nuTipo").value = "analista";
-    boxForm.style.display = "none";
+    // limpa e atualiza lista
+    resetForm();
+    showForm(false);
+
+    await loadUsers();
+    setMsg(`Usuário criado: ${email}`, true);
+    alert(`Usuário criado:\n${email}`);
   } catch (err) {
-    console.error("[ADMIN-USERS] erro criar usuário:", err);
-    setMsg(msgNovo, traduzErro(err), "error");
+    console.error(err);
+    setMsg(`Erro ao criar: ${err.code || err.message}`, false);
+    alert(`Erro ao criar usuário:\n${err.code || err.message}`);
   }
-});
-
-// ========== LISTA / TABELA ==========
-const usersRef = collection(db, "usuarios");
-const q = query(usersRef, orderBy("createdAt", "desc"));
-
-onSnapshot(
-  q,
-  (snap) => {
-    tbody.innerHTML = "";
-    setMsg(msgLista, "", "error");
-
-    if (snap.empty) {
-      setMsg(msgLista, "Nenhum usuário encontrado na coleção usuarios.", "error");
-      return;
-    }
-
-    snap.forEach((d) => {
-      const data = d.data();
-      const uid = d.id;
-
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${escapeHtml(data.email ?? "")}</td>
-        <td>${escapeHtml(String(data.tipo ?? ""))}</td>
-        <td>${formatDate(data.createdAt?.toDate?.() ?? null)}</td>
-        <td>
-          <button type="button" class="btn-small" data-action="edit" data-uid="${uid}">
-            Editar
-          </button>
-        </td>
-      `;
-      tbody.appendChild(tr);
-    });
-  },
-  (err) => {
-    console.error("[ADMIN-USERS] erro listagem:", err);
-    setMsg(msgLista, "Falha ao carregar usuários (Rules ou conexão).", "error");
-  }
-);
-
-// Clique em "Editar" na tabela (event delegation)
-tbody?.addEventListener("click", (e) => {
-  const btn = e.target?.closest?.("button[data-action='edit']");
-  if (!btn) return;
-
-  const uid = btn.getAttribute("data-uid");
-  if (!uid) return;
-
-  // pega dados diretamente da linha
-  const row = btn.closest("tr");
-  const email = row?.children?.[0]?.textContent || "";
-  const tipo = row?.children?.[1]?.textContent || "analista";
-
-  abrirEdicao({ uid, email, tipo });
-});
-
-function abrirEdicao({ uid, email, tipo }) {
-  boxForm.style.display = "none";
-  boxEdit.style.display = "block";
-  setMsg(msgEdit, "", "error");
-
-  euUid.value = uid;
-  euEmail.value = email;
-  euTipo.value = ["admin", "analista", "vendedor"].includes(tipo) ? tipo : "analista";
-
-  // scroll até o editor (melhor UX)
-  boxEdit.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-// Cancelar edição
-btnCancelarEdit?.addEventListener("click", () => {
-  boxEdit.style.display = "none";
-  setMsg(msgEdit, "", "error");
-  formEdit.reset();
-});
+// ====== SALVAR (EDITAR TIPO) ======
+async function saveEditFlow() {
+  if (!editUid) {
+    // se não está editando, é criar
+    return createUserFlow();
+  }
 
-// Salvar edição (update no Firestore)
-formEdit?.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  setMsg(msgEdit, "", "error");
-
-  const uid = euUid.value;
-  const tipo = euTipo.value;
-
-  if (!uid) return setMsg(msgEdit, "UID inválido.", "error");
-  if (!["admin", "analista", "vendedor"].includes(tipo)) return setMsg(msgEdit, "Tipo inválido.", "error");
+  // edição apenas tipo
+  const tipo = safe(selTipo.value) || "analista";
+  if (!tipo) return alert("Selecione o tipo.");
 
   try {
-    await updateDoc(doc(db, "usuarios", uid), {
+    await updateDoc(doc(db, "usuarios", editUid), {
       tipo,
-      atualizadoEm: serverTimestamp(),
-      atualizadoPorUid: auth.currentUser?.uid || null
+      updatedAt: serverTimestamp()
     });
 
-    setMsg(msgEdit, "Tipo atualizado com sucesso! ✅", "success");
-    // fecha depois de salvar
-    setTimeout(() => {
-      boxEdit.style.display = "none";
-      setMsg(msgEdit, "", "error");
-    }, 500);
+    await loadUsers();
+    setMsg(`Tipo atualizado: ${editEmail} => ${tipo}`, true);
+    alert(`Tipo atualizado:\n${editEmail}\n=> ${tipo}`);
   } catch (err) {
-    console.error("[ADMIN-USERS] erro update:", err);
-    setMsg(msgEdit, traduzErro(err), "error");
+    console.error(err);
+    setMsg(`Erro ao salvar: ${err.code || err.message}`, false);
+    alert(`Erro ao salvar:\n${err.code || err.message}`);
+  }
+}
+
+// ====== EXCLUIR (somente Firestore doc) ======
+// Observação: deletar o usuário do AUTH via front-end não é permitido/seguro.
+// Aqui removemos o perfil do Firestore. Se quiser remover do Auth, precisa Cloud Function.
+async function deleteUserDoc(uidDoc, email) {
+  if (!confirm(`Excluir o perfil do Firestore do usuário:\n\n${email}\n\nIsso NÃO remove do Auth.\nConfirmar?`)) return;
+
+  try {
+    await deleteDoc(doc(db, "usuarios", uidDoc));
+    await loadUsers();
+    setMsg(`Perfil removido do Firestore: ${email}`, true);
+  } catch (err) {
+    console.error(err);
+    setMsg(`Erro ao excluir: ${err.code || err.message}`, false);
+    alert(`Erro ao excluir:\n${err.code || err.message}`);
+  }
+}
+
+// ====== EVENTS ======
+function bindPageActions() {
+  btnNovo.onclick = () => {
+    resetForm();
+    showForm(true);
+    setMsg("Modo: criar novo usuário", true);
+  };
+
+  btnCancelar.onclick = () => {
+    resetForm();
+    showForm(false);
+    setMsg("", true);
+  };
+
+  btnFecharForm.onclick = () => {
+    resetForm();
+    showForm(false);
+    setMsg("", true);
+  };
+
+  btnSalvar.onclick = async () => {
+    // se editUid existe => editar tipo
+    // senão => criar
+    await saveEditFlow();
+  };
+
+  btnResetSenha.onclick = async () => {
+    // reset apenas quando estiver editando
+    if (!editEmail) return alert("Abra um usuário para editar e então resete a senha.");
+    await resetPasswordByEmail(editEmail);
+  };
+
+  inpBusca.oninput = () => renderUsers();
+
+  btnRecarregar.onclick = async () => {
+    try { await loadUsers(); }
+    catch (err) {
+      console.error(err);
+      setMsg(`Erro ao carregar: ${err.code || err.message}`, false);
+    }
+  };
+
+  // handlers globais usados nos botões da tabela
+  window.__editUser = (uidDoc) => openEdit(uidDoc);
+  window.__resetPass = (email) => resetPasswordByEmail(email);
+  window.__deleteUser = (uidDoc, email) => deleteUserDoc(uidDoc, email);
+}
+
+// ====== BOOT ======
+onAuthStateChanged(auth, async (user) => {
+  if (!user) return (window.location.href = "./index.html");
+  currentUser = user;
+
+  userInfo.textContent = `Logado como: ${lower(user.email)}`;
+
+  // Segurança básica: se não for master, ao menos alerta
+  if (!isMaster(user.email)) {
+    setMsg("Atenção: você não é MASTER. Se Rules estiverem restritas, pode dar permission-denied.", false);
+  } else {
+    setMsg("Pronto. Você é MASTER.", true);
+  }
+
+  bindTopButtons();
+  bindPageActions();
+
+  try {
+    await loadUsers();
+  } catch (err) {
+    console.error(err);
+    setMsg(`Erro ao carregar usuários: ${err.code || err.message}`, false);
   }
 });
-
-// ========== helpers ==========
-function formatDate(dt) {
-  if (!dt) return "-";
-  return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(dt);
-}
-
-function escapeHtml(str) {
-  return String(str)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-function traduzErro(err) {
-  const code = err?.code || "";
-  if (code === "auth/email-already-in-use") return "Esse email já está em uso.";
-  if (code === "auth/invalid-email") return "Email inválido.";
-  if (code === "auth/weak-password") return "Senha fraca. Use pelo menos 6 caracteres.";
-  if (code === "auth/operation-not-allowed") return "Email/senha não está habilitado no Firebase Auth.";
-  if (code === "permission-denied") return "Permissão negada no Firestore (Rules).";
-  return "Falha. Veja o console.";
-}

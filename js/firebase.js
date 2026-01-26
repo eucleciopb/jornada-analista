@@ -3,7 +3,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/fireba
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-const firebaseConfig = {
+// ✅ SEU firebaseConfig (o mesmo que você já usa)
+export const firebaseConfig = {
   apiKey: "AIzaSyAtvu2xpkvrFbxid5CGN0qAxUwVGw7XEsU",
   authDomain: "meu-site-login-b5d66.firebaseapp.com",
   projectId: "meu-site-login-b5d66",
