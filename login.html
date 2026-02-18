@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Login | Jornada GP</title>
+  <link rel="stylesheet" href="./css/styles.css" />
+</head>
+
+<body>
+
+  <main class="container">
+
+    <section class="card">
+
+      <div class="header">
+        <div class="logo">GP</div>
+        <div>
+          <h1>Bem-vindo</h1>
+          <p>Selecione seu nome para acessar o sistema</p>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <label class="label">Usuário</label>
+
+      <div class="select-wrapper">
+        <select id="userSelect">
+          <option value="" disabled selected>Escolha seu nome...</option>
+          <option>Emerson</option>
+          <option>Euclecio</option>
+          <option>Joice</option>
+          <option>Michel</option>
+          <option>Muller</option>
+          <option>Pedro</option>
+          <option>Ricardo</option>
+          <option>Robert</option>
+          <option>Rodrigo</option>
+          <option>Rosilene</option>
+        </select>
+      </div>
+
+      <button id="btnContinue" class="btn-primary" disabled>
+        Continuar
+      </button>
+
+      <p id="msg" class="message"></p>
+
+    </section>
+
+  </main>
+
+<script type="module" src="./js/login.js"></script>
+
+
+</body>
+</html>

@@ -24,7 +24,7 @@ const ATIVIDADES = [
 ];
 
 /* =========================
-   CDs – EXATAMENTE OS SEUS
+   CDs – EXATAMENTE OS SEUS (COM TRATAMENTO)
 ========================= */
 const CDS_RAW = [
   "CD - Alagoinhas",
@@ -171,7 +171,12 @@ const CDS_RAW = [
   "CD - Volta Redonda"
 ];
 
-const CDS = Array.from(new Set(CDS_RAW.map(s => s.trim())))
+// normaliza e remove duplicados
+const normalize = (s) => String(s || "")
+  .replace(/\s+/g, " ")
+  .trim();
+
+const CDS = Array.from(new Set(CDS_RAW.map(normalize)))
   .filter(Boolean)
   .sort((a, b) => a.localeCompare(b, "pt-BR"));
 
@@ -275,13 +280,17 @@ onAuthStateChanged(auth, async (user) => {
   }
 
   currentUser = user;
-  analystLabel = user.displayName?.trim() || (user.email || "").toLowerCase();
+ analystLabel = (localStorage.getItem("usuarioLogado") || "").trim() || `uid:${user.uid.slice(0,6)}`;
+
+
   userInfo.textContent = `Logado como: ${analystLabel}`;
 
   if (!cdList) {
-    setMsg("ERRO: faltou <datalist id='cdList'></datalist> no agenda.html", "error");
+    setMsg("ERRO: faltou <datalist id='cdList'></datalist> no criar-agenda.html", "error");
     return;
   }
+
+  // ✅ carrega TODOS os CDs no datalist
   cdList.innerHTML = CDS.map((cd) => `<option value="${cd}"></option>`).join("");
 
   const now = new Date();
@@ -312,8 +321,10 @@ btnSalvar?.addEventListener("click", async () => {
       const atividade = tr.querySelector("select[data-field='atividade']")?.value || "";
       const obs = tr.querySelector("input[data-field='obs']")?.value?.trim() || "";
 
+      // pula linha vazia
       if (!cd && !atividade && !obs) continue;
 
+      // valida CD/Atividade
       if (cd && !CDS.includes(cd)) {
         throw new Error(`CD inválido no dia ${dateISO}. Use a pesquisa e selecione um CD da lista.`);
       }

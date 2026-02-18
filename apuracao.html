@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Apuração de Treinamentos</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+
+<body class="bg">
+
+<header class="topbar">
+  <div>
+    <h2>Apuração de Treinamentos</h2>
+    <div id="userInfo" class="hint" style="color:#d1d5db;margin-top:4px;"></div>
+  </div>
+
+  <div class="top-actions">
+    <button id="btnMenu" class="btn-secondary" type="button">Voltar ao Menu</button>
+    <button id="btnLogout" class="btn-secondary" type="button">Sair</button>
+  </div>
+</header>
+
+<main class="card wide">
+  <section class="row-between" style="align-items:flex-end;">
+    <div>
+      <h3>Time de Avaliadores</h3>
+      <p class="hint">
+        Preencha se o desafio foi executado (fez ou não fez) e se performou (deu certo ou não).
+      </p>
+    </div>
+
+    <div style="min-width:260px;">
+      <label for="monthPicker">Mês</label>
+      <input id="monthPicker" type="month" />
+    </div>
+  </section>
+
+  <p id="msg" class="msg"></p>
+
+  <hr class="sep" />
+
+  <section class="row-between" style="align-items:flex-end;">
+    <div style="flex:1; min-width:260px;">
+      <label for="busca">Buscar</label>
+      <input id="busca" type="text" placeholder="Treinamento, CD, desafio, meta..." />
+    </div>
+
+    <div style="min-width:220px;">
+      <label for="fPublico">Público</label>
+      <select id="fPublico">
+        <option value="">Todos</option>
+        <option value="Gestor">Gestor</option>
+        <option value="Vendedor">Vendedor</option>
+      </select>
+    </div>
+
+    <div style="min-width:260px;">
+      <label for="fCd">CD</label>
+      <input id="fCd" type="text" list="cdList" placeholder="Filtrar por CD..." />
+      <datalist id="cdList"></datalist>
+    </div>
+
+    <div style="min-width:240px;">
+      <label for="fStatus">Status</label>
+      <select id="fStatus">
+        <option value="">Todos</option>
+        <option value="pendente">Pendente</option>
+        <option value="executouSim">Executou (Sim)</option>
+        <option value="executouNao">Executou (Não)</option>
+        <option value="performouSim">Performou (Sim)</option>
+        <option value="performouNao">Performou (Não)</option>
+      </select>
+    </div>
+  </section>
+
+  <div class="table-wrap" style="margin-top:12px;">
+    <table class="table table-sticky">
+      <thead>
+        <tr>
+          <th style="width:110px;">Data</th>
+          <th style="width:120px;">Público</th>
+          <th style="width:260px;">Treinamento</th>
+          <th style="width:230px;">CD</th>
+          <th style="width:260px;">Desafio</th>
+          <th style="width:260px;">Meta</th>
+          <th style="width:90px;">Pessoas</th>
+          <th style="width:80px;">Nota</th>
+
+          <th style="width:160px;">Executou?</th>
+          <th style="width:160px;">Performou?</th>
+          <th style="width:240px;">Comentário</th>
+
+          <th style="width:160px;">Avaliador</th>
+          <th style="width:160px;">Atualizado</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+  <div class="page-actions" style="margin-top:12px; justify-content:flex-end; gap:10px;">
+    <button id="btnSalvar" type="button">Salvar Apurações</button>
+  </div>
+
+</main>
+
+<script>
+/* =========================
+   SESSÃO
+========================= */
+const usuario = (localStorage.getItem("usuarioLogado") || "").trim();
+if (!usuario) window.location.href = "index.html";
+document.getElementById("userInfo").textContent = `Avaliador: ${usuario}`;
+
+document.getElementById("btnMenu").onclick = () => window.location.href = "menu.html";
+document.getElementById("btnLogout").onclick = () => {
+  localStorage.removeItem("usuarioLogado");
+  window.location.href = "index.html";
+};
+
+/* =========================
+   UI
+========================= */
+const monthPicker = document.getElementById("monthPicker");
+const busca = document.getElementById("busca");
+const fPublico = document.getElementById("fPublico");
+const fCd = document.getElementById("fCd");
+const fStatus = document.getElementById("fStatus");
+const tbody = document.getElementById("tbody");
+const btnSalvar = document.getElementById("btnSalvar");
+const msg = document.getElementById("msg");
+const cdList = document.getElementById("cdList");
+
+/* =========================
+   HELPERS
+========================= */
+function setMsg(text, type="info"){
+  msg.textContent = text || "";
+  msg.style.color = type === "success" ? "#22c55e" : (type === "error" ? "#ef4444" : "#d1d5db");
+}
+
+function pad2(n){ return String(n).padStart(2,"0"); }
+function toMonthKey(d){ return `${d.getFullYear()}-${pad2(d.getMonth()+1)}`; }
+function toBR(iso){
+  if (!iso) return "-";
+  const [y,m,d] = iso.split("-");
+  return `${d}/${m}/${y}`;
+}
+function normalize(s){ return (s || "").replace(/\s+/g," ").trim(); }
+
+function nowBR(){
+  const d = new Date();
+  return `${pad2(d.getDate())}/${pad2(d.getMonth()+1)}/${d.getFullYear()} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+}
+
+/* =========================
+   PUXA TODOS OS TREINOS DO LOCALSTORAGE
+   - varre chaves treinamentos_realizados_<usuario>
+========================= */
+function listTreinosAllUsers(){
+  const all = [];
+
+  for (let i = 0; i < localStorage.length; i++){
+    const k = localStorage.key(i);
+    if (!k || !k.startsWith("treinamentos_realizados_")) continue;
+
+    const owner = k.replace("treinamentos_realizados_", "") || "desconhecido";
+
+    try{
+      const arr = JSON.parse(localStorage.getItem(k) || "[]");
+      if (!Array.isArray(arr)) continue;
+
+      for (const t of arr){
+        if (!t || !t.id || !t.data) continue;
+        all.push({ ...t, _owner: owner });
+      }
+    } catch {}
+  }
+
+  return all;
+}
+
+/* =========================
+   APURAÇÕES (banco único no navegador)
+   shape: { [treinoId]: { executou:"sim"|"nao"|"pendente", performou:"sim"|"nao"|"pendente", comentario:"", avaliador:"", updatedAt:"" } }
+========================= */
+const APURACAO_KEY = "apuracoes_treinamentos";
+
+function loadApuracoes(){
+  const raw = localStorage.getItem(APURACAO_KEY);
+  if (!raw) return {};
+  try {
+    const obj = JSON.parse(raw);
+    return obj && typeof obj === "object" ? obj : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveApuracoes(obj){
+  localStorage.setItem(APURACAO_KEY, JSON.stringify(obj));
+}
+
+/* =========================
+   CDs (para filtro) - mesma lista
+========================= */
+const CDS_RAW = [
+  "CD - Alagoinhas","CD - Andradina","CD - Angra dos Reis","CD - Aparecida de Goiânia","CD - Araçatuba","CD - Arapiraca","CD - Araraquara",
+  "CD - Balsas","CD - Barbalha","CD - Barra do Garca","CD - Barreiras","CD - Barretos","CD - Barueri","CD - Bauru","CD - Belém","CD - Boituva",
+  "CD - Bom Jesus da Lapa","CD - Brumado","CD - Cachoeiro de Itapemirim","CD - Camaçari","CD - Campina Grande","CD - Campinas","CD - Campo Grande MS",
+  "CD - Campo Grande RJ","CD - Campos dos Goytacazes","CD - Caraguatatuba","CD - Cariacica","CD - Carpina","CD - Caruaru","CD - Cascavel","CD - Catanduva",
+  "CD - Caucaia","CD - Caxias","CD - Coimbra","CD - Conde","CD - Conselheiro Lafaiete","CD - Contagem","CD - Coxim","CD - Cuiabá",
+  "CD - Divinópolis","CD - Dourados","CD - Duque de Caxias","CD - Eunápolis","CD - Eusebio","CD - Feira de Santana",
+  "CD - Fernandópolis","CD - Floriano","CD - Garanhuns","CD - Governador Valadares","CD - Guarujá",
+  "CD - Guarulhos Taboão","CD - Iguatu","CD - Imperatriz","CD - Interlagos","CD - Iporá","CD - Irece","CD - Itabaiana","CD - Itaberaba","CD - Itabuna",
+  "CD - Itapeva","CD - Itapissuma","CD - Itumbiara","CD - Jaboatão dos Guararapes","CD - Jacobina","CD - Jaguaré","CD - Jequié","CD - Juazeiro","CD - Juiz de Fora",
+  "CD - Jundiaí","CD - Londrina","CD - Macaiba","CD - Maceió","CD - Marília","CD - Mogi-Mirim","CD - Montes Claros","CD - Mossoró","CD - Muriaé",
+  "CD - Nossa Senhora do Socorro","CD - Nova Friburgo","CD - Palhoça","CD - Paranaíba","CD - Parnaiba","CD - Passos","CD - Patos",
+  "CD - Paulo Afonso","CD - Petrolina","CD - Petrópolis","CD - Picos","CD - Piracicaba","CD - Poços de Caldas","CD - Porto Velho",
+  "CD - Pouso Alegre","CD - Presidente Prudente","CD - Recife","CD - Registro","CD - Ribeirão Preto","CD - Rio Branco","CD - Rio das Ostras","CD - Rio Verde",
+  "CD - Rondonópolis","CD - Salto","CD - Salvador","CD - Salvador Leste","CD - Santa Inês","CD - Santo Antonio de Jesus","CD - São Bernardo","CD - São Cristovão",
+  "CD - São Gonçalo","CD - São João de Meriti","CD - São José do Rio Preto","CD - São José dos Campos","CD - São José dos Pinhais","CD - São Luis","CD - São Mateus",
+  "CD - São Pedro da Aldeia","CD - Sapucaia do Sul","CD - Serra Talhada","CD - Serrinha","CD - Sete Lagoas","CD - Sinop","CD - Sobral","CD - Sousa",
+  "CD - Taboão da Serra","CD - Taguatinga","CD - Taubaté","CD - Teixeira de Freitas","CD - Teresina","CD - Três Lagoas","CD - Uberaba","CD - Varginha",
+  "CD - Vila Guilherme","CD - Vitória da Conquista","CD - Volta Redonda"
+];
+
+const CDS = Array.from(new Set(CDS_RAW.map(normalize))).filter(Boolean).sort((a,b)=>a.localeCompare(b,"pt-BR"));
+cdList.innerHTML = CDS.map(cd => `<option value="${cd}"></option>`).join("");
+
+/* =========================
+   RENDER
+========================= */
+function render(){
+  const monthKey = monthPicker.value;
+  const q = (busca.value || "").toLowerCase();
+  const pub = fPublico.value;
+  const cdFilter = normalize(fCd.value);
+  const status = fStatus.value;
+
+  const allTreinos = listTreinosAllUsers()
+    .filter(t => String(t.data || "").slice(0,7) === monthKey)
+    .filter(t => !pub || t.publico === pub)
+    .filter(t => !cdFilter || normalize(t.cd) === cdFilter);
+
+  const apur = loadApuracoes();
+
+  let rows = allTreinos.map(t => {
+    const a = apur[t.id] || {
+      executou:"pendente",
+      performou:"pendente",
+      comentario:"",
+      avaliador:"",
+      updatedAt:""
+    };
+    return { t, a };
+  });
+
+  if (q){
+    rows = rows.filter(({t}) => {
+      const blob = [t.treinamento, t.cd, t.desafio, t.meta, t.obs, t._owner].join(" ").toLowerCase();
+      return blob.includes(q);
+    });
+  }
+
+  if (status){
+    rows = rows.filter(({a}) => {
+      if (status === "pendente") return a.executou === "pendente" || a.performou === "pendente";
+      if (status === "executouSim") return a.executou === "sim";
+      if (status === "executouNao") return a.executou === "nao";
+      if (status === "performouSim") return a.performou === "sim";
+      if (status === "performouNao") return a.performou === "nao";
+      return true;
+    });
+  }
+
+  rows.sort((x,y) => {
+    const d = String(y.t.data).localeCompare(String(x.t.data));
+    if (d !== 0) return d;
+    return String(x.t.cd||"").localeCompare(String(y.t.cd||""),"pt-BR");
+  });
+
+  tbody.innerHTML = "";
+
+  if (rows.length === 0){
+    tbody.innerHTML = `<tr><td colspan="13" style="opacity:.8;">Sem registros para este mês/filtros.</td></tr>`;
+    return;
+  }
+
+  for (const {t, a} of rows){
+    const tr = document.createElement("tr");
+    tr.dataset.id = t.id;
+
+    // destaque
+    if (a.performou === "sim") tr.classList.add("row-good");
+    if (a.performou === "nao") tr.classList.add("row-bad");
+
+    tr.innerHTML = `
+      <td>${toBR(t.data)}</td>
+      <td><span class="pill">${t.publico || "-"}</span></td>
+      <td>${t.treinamento || "-"}</td>
+      <td>${t.cd || "-"}</td>
+      <td>${t.desafio || "-"}</td>
+      <td>${t.meta || "-"}</td>
+      <td style="text-align:center;">${t.totalPessoas ?? "-"}</td>
+      <td style="text-align:center;">${t.notaMedia ?? "-"}</td>
+
+      <td>
+        <select data-executou>
+          <option value="pendente" ${a.executou==="pendente"?"selected":""}>Pendente</option>
+          <option value="sim" ${a.executou==="sim"?"selected":""}>Sim</option>
+          <option value="nao" ${a.executou==="nao"?"selected":""}>Não</option>
+        </select>
+      </td>
+
+      <td>
+        <select data-performou>
+          <option value="pendente" ${a.performou==="pendente"?"selected":""}>Pendente</option>
+          <option value="sim" ${a.performou==="sim"?"selected":""}>Sim</option>
+          <option value="nao" ${a.performou==="nao"?"selected":""}>Não</option>
+        </select>
+      </td>
+
+      <td>
+        <input data-comentario type="text" maxlength="140"
+          placeholder="Comentário..." value="${a.comentario || ""}">
+      </td>
+
+      <td style="opacity:.9;">${a.avaliador || "-"}</td>
+      <td style="opacity:.9;">${a.updatedAt || "-"}</td>
+    `;
+
+    tbody.appendChild(tr);
+  }
+}
+
+/* =========================
+   SAVE
+========================= */
+btnSalvar.onclick = () => {
+  const apur = loadApuracoes();
+  const trs = [...tbody.querySelectorAll("tr[data-id]")];
+
+  for (const tr of trs){
+    const id = tr.dataset.id;
+
+    const executou = tr.querySelector("[data-executou]")?.value || "pendente";
+    const performou = tr.querySelector("[data-performou]")?.value || "pendente";
+    const comentario = normalize(tr.querySelector("[data-comentario]")?.value || "");
+
+    apur[id] = {
+      executou,
+      performou,
+      comentario,
+      avaliador: usuario,
+      updatedAt: nowBR()
+    };
+  }
+
+  saveApuracoes(apur);
+  setMsg("Apurações salvas ✅", "success");
+  render();
+};
+
+/* =========================
+   INIT / listeners
+========================= */
+monthPicker.value = toMonthKey(new Date());
+render();
+
+monthPicker.addEventListener("change", render);
+busca.addEventListener("input", render);
+fPublico.addEventListener("change", render);
+fCd.addEventListener("input", render);
+fStatus.addEventListener("change", render);
+</script>
+
+<style>
+/* Melhorias visuais locais (seu styles.css continua valendo) */
+.table-wrap{ overflow:auto; }
+.table{ min-width: 1600px; }
+
+tbody select, tbody input{
+  width: 100%;
+  padding: 10px 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.04);
+  color: rgba(255,255,255,.95);
+  outline: none;
+}
+
+tbody select:focus, tbody input:focus{
+  border-color: rgba(255,59,59,.55);
+  box-shadow: 0 0 0 4px rgba(217,27,46,.18);
+}
+
+.pill{
+  display:inline-flex;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.04);
+  font-weight: 800;
+  font-size: 12px;
+}
+
+.row-good{ background: rgba(34,197,94,.10) !important; }
+.row-bad{ background: rgba(239,68,68,.10) !important; }
+</style>
+
+</body>
+</html>

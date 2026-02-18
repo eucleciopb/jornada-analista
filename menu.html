@@ -1,71 +1,85 @@
 <!doctype html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Menu</title>
-  <link rel="stylesheet" href="css/styles.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Menu | Jornada</title>
+  <link rel="stylesheet" href="./css/styles.css" />
 </head>
-<body class="bg">
 
-<header class="topbar">
-  <div>
-    <h2>Menu</h2>
-    <p class="hint">Escolha uma opção para continuar.</p>
-    <div id="userInfo" class="hint" style="color:#d1d5db;margin-top:4px;"></div>
-  </div>
+<body>
 
-  <button id="btnLogout" class="btn-secondary" type="button">Sair</button>
-</header>
+  <main class="container">
 
-<main class="card wide">
-  <div class="menu-grid-v2">
-    <a class="menu-card-v2" href="./agenda.html">
-      <div class="menu-ico">🗓️</div>
-      <div class="menu-title">Criar Agenda</div>
-    </a>
+    <section class="card">
 
-    <a class="menu-card-v2" href="./mes.html">
-      <div class="menu-ico">🗓️</div>
-      <div class="menu-title">Visualizar Mês</div>
-    </a>
+      <div class="header">
+        <div class="logo">GP</div>
+        <div>
+          <h1 id="welcomeText">Carregando...</h1>
+          <p>Menu Principal</p>
+        </div>
+      </div>
 
-    <a class="menu-card-v2" href="./semana.html">
-      <div class="menu-ico">🗓️</div>
-      <div class="menu-title">Visualizar Semana</div>
-    </a>
+      <div class="divider"></div>
 
-    <a class="menu-card-v2" href="./todos.html">
-      <div class="menu-ico">✅</div>
-      <div class="menu-title">Notificações / ToDos</div>
-    </a>
+      <div class="menu-buttons">
 
-    <!-- ✅ NOVO BOTÃO -->
-    <a class="menu-card-v2" href="./minhas-solicitacoes.html">
-      <div class="menu-ico">📨</div>
-      <div class="menu-title">Minhas Solicitações</div>
-    </a>
+        <button class="menu-btn" onclick="goTo('criar-agenda.html')">
+          Criar Agenda
+        </button>
+
+        <button class="menu-btn" onclick="goTo('agenda.html')">
+          Agenda
+        </button>
+
+        <button class="menu-btn" onclick="goTo('treinamentos.html')">
+          Treinamentos Realizados
+        </button>
+
+        <button class="menu-btn" onclick="goTo('resultados.html')">
+          Resultados dos Treinamentos
+        </button>
+        <button class="menu-btn" onclick="goTo('biblioteca-treinamentos.html')">
+  Biblioteca de Treinamentos
+</button>
 
 
+      </div>
 
-    <a class="menu-card-v2" href="./chamado.html">
-      <div class="menu-ico">🛠️</div>
-      <div class="menu-title">Criar um Chamado</div>
-    </a>
+      <div class="divider"></div>
 
-    <a class="menu-card-v2" href="./rota.html">
-      <div class="menu-ico">🚗</div>
-      <div class="menu-title">Rota em Campo</div>
-    </a>
+      <button id="btnLogout" class="btn-logout">
+        Sair
+      </button>
 
-    <a class="menu-card-v2" href="./analise-rota.html">
-  <div class="menu-ico">📊</div>
-  <div class="menu-title">Análise de Rota</div>
-</a>
+    </section>
 
-  </div>
-</main>
+  </main>
 
-<script type="module" src="js/menu.js"></script>
+  <script>
+    // 🔐 Verifica usuário
+    const usuario = localStorage.getItem("usuarioLogado");
+    const welcomeText = document.getElementById("welcomeText");
+    const btnLogout = document.getElementById("btnLogout");
+
+    if (!usuario) {
+      window.location.href = "index.html";
+    } else {
+      welcomeText.textContent = `Olá, ${usuario}`;
+    }
+
+    function goTo(page) {
+      window.location.href = page;
+    }
+
+    btnLogout.addEventListener("click", () => {
+      localStorage.removeItem("usuarioLogado");
+      window.location.href = "index.html";
+    });
+  </script>
+
+
+
 </body>
 </html>

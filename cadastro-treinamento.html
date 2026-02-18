@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Cadastro de Treinamentos</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+
+<body class="bg">
+
+<header class="topbar">
+  <div>
+    <h2>Cadastro de Treinamentos</h2>
+    <div id="userInfo" class="hint" style="color:#d1d5db;margin-top:4px;"></div>
+  </div>
+
+  <div class="top-actions">
+    <button id="btnMenu" class="btn-secondary" type="button">Voltar ao Menu</button>
+    <button id="btnLogout" class="btn-secondary" type="button">Sair</button>
+  </div>
+</header>
+
+<main class="card wide">
+
+  <section class="row-between">
+    <div>
+      <h3 id="formTitle">Novo Treinamento</h3>
+      <p class="hint">Cadastre o nome e os links relacionados.</p>
+    </div>
+  </section>
+
+  <hr class="sep" />
+
+  <section class="form-grid">
+
+    <div>
+      <label>Nome do treinamento</label>
+      <input id="nomeTreino" type="text" maxlength="100" placeholder="Ex: Coaching no PDV" />
+    </div>
+
+    <div>
+      <label>Link do Treinamento</label>
+      <input id="linkTreino" type="url" placeholder="https://..." />
+    </div>
+
+    <div>
+      <label>Link do Forms</label>
+      <input id="linkForms" type="url" placeholder="https://forms.gle/..." />
+    </div>
+
+    <div class="page-actions" style="grid-column:1/-1; justify-content:flex-end; gap:10px;">
+      <button id="btnCancelar" class="btn-secondary" type="button" style="display:none;">Cancelar</button>
+      <button id="btnSalvar" type="button">Adicionar</button>
+    </div>
+
+  </section>
+
+  <p id="msg" class="msg"></p>
+
+  <hr class="sep" />
+
+  <section class="row-between">
+    <div>
+      <h3>Treinamentos Cadastrados</h3>
+    </div>
+
+    <div>
+      <label>Buscar</label>
+      <input id="busca" type="text" placeholder="Digite para filtrar..." />
+    </div>
+  </section>
+
+  <div class="table-wrap" style="margin-top:12px;">
+    <table class="table table-sticky">
+      <thead>
+        <tr>
+          <th style="width:70px;">#</th>
+          <th>Nome</th>
+          <th style="width:140px;">Treinamento</th>
+          <th style="width:120px;">Forms</th>
+          <th style="width:220px;">Ações</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+</main>
+
+<script>
+/* =========================
+   CONTROLE DE ACESSO
+========================= */
+const usuario = (localStorage.getItem("usuarioLogado") || "").trim();
+if (!usuario) window.location.href = "index.html";
+document.getElementById("userInfo").textContent = `Usuário: ${usuario}`;
+
+// 🔒 opcional: só você cadastra
+if (usuario.toLowerCase() !== "euclecio") {
+  window.location.href = "menu.html";
+}
+
+document.getElementById("btnMenu").onclick = () => window.location.href = "menu.html";
+document.getElementById("btnLogout").onclick = () => {
+  localStorage.removeItem("usuarioLogado");
+  window.location.href = "index.html";
+};
+
+/* =========================
+   APP
+========================= */
+const STORAGE_KEY = "catalogo_treinamentos";
+
+const formTitle = document.getElementById("formTitle");
+const nomeInput = document.getElementById("nomeTreino");
+const linkTreinoInput = document.getElementById("linkTreino");
+const linkFormsInput = document.getElementById("linkForms");
+const btnSalvar = document.getElementById("btnSalvar");
+const btnCancelar = document.getElementById("btnCancelar");
+const tbody = document.getElementById("tbody");
+const busca = document.getElementById("busca");
+const msg = document.getElementById("msg");
+
+let editId = null;
+
+function setMsg(text, type="info"){
+  msg.textContent = text || "";
+  msg.style.color = type === "success" ? "#22c55e" : (type === "error" ? "#ef4444" : "#d1d5db");
+}
+
+function normalize(s){
+  return (s || "").replace(/\s+/g, " ").trim();
+}
+
+function load(){
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return [];
+  try {
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr : [];
+  } catch {
+    return [];
+  }
+}
+
+function save(data){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function resetForm(){
+  editId = null;
+  formTitle.textContent = "Novo Treinamento";
+  btnSalvar.textContent = "Adicionar";
+  btnCancelar.style.display = "none";
+  nomeInput.value = "";
+  linkTreinoInput.value = "";
+  linkFormsInput.value = "";
+  nomeInput.focus();
+}
+
+function startEdit(id){
+  const data = load();
+  const item = data.find(x => x.id === id);
+  if (!item) return;
+
+  editId = id;
+  formTitle.textContent = "Editar Treinamento";
+  btnSalvar.textContent = "Salvar edição";
+  btnCancelar.style.display = "inline-flex";
+
+  nomeInput.value = item.nome || "";
+  linkTreinoInput.value = item.linkTreino || "";
+  linkFormsInput.value = item.linkForms || "";
+
+  setMsg("Editando: ajuste os campos e clique em “Salvar edição”.", "info");
+  nomeInput.focus();
+}
+
+function removeItem(id){
+  const data = load().filter(x => x.id !== id);
+  save(data);
+  setMsg("Removido ✅", "success");
+  render();
+  if (editId === id) resetForm();
+}
+
+function render(){
+  const q = (busca.value || "").toLowerCase();
+  const data = load().sort((a,b) => a.nome.localeCompare(b.nome,"pt-BR"));
+
+  const filtered = q ? data.filter(x => (x.nome || "").toLowerCase().includes(q)) : data;
+
+  tbody.innerHTML = "";
+  if (filtered.length === 0){
+    tbody.innerHTML = `<tr><td colspan="5" style="opacity:.8;">Nenhum treinamento cadastrado.</td></tr>`;
+    return;
+  }
+
+  filtered.forEach((t, i) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${i+1}</td>
+      <td>${t.nome}</td>
+      <td>${t.linkTreino ? `<a href="${t.linkTreino}" target="_blank" rel="noopener">Abrir</a>` : "-"}</td>
+      <td>${t.linkForms ? `<a href="${t.linkForms}" target="_blank" rel="noopener">Abrir</a>` : "-"}</td>
+      <td style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="btn-secondary" type="button" data-edit="${t.id}">Editar</button>
+        <button class="btn-secondary" type="button" data-del="${t.id}"
+          style="border-color: rgba(255,59,59,.25);">
+          Excluir
+        </button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  tbody.querySelectorAll("[data-edit]").forEach(btn => {
+    btn.onclick = () => startEdit(btn.getAttribute("data-edit"));
+  });
+
+  tbody.querySelectorAll("[data-del]").forEach(btn => {
+    btn.onclick = () => removeItem(btn.getAttribute("data-del"));
+  });
+}
+
+btnSalvar.onclick = () => {
+  setMsg("");
+
+  const nome = normalize(nomeInput.value);
+  const linkTreino = normalize(linkTreinoInput.value);
+  const linkForms = normalize(linkFormsInput.value);
+
+  if (!nome){
+    setMsg("Digite o nome do treinamento.", "error");
+    return;
+  }
+
+  const data = load();
+
+  // valida duplicado por nome (exceto quando estiver editando o próprio)
+  const duplicated = data.some(x =>
+    (x.nome || "").toLowerCase() === nome.toLowerCase() && x.id !== editId
+  );
+  if (duplicated){
+    setMsg("Já existe um treinamento com esse nome.", "error");
+    return;
+  }
+
+  if (editId) {
+    const idx = data.findIndex(x => x.id === editId);
+    if (idx >= 0) {
+      data[idx] = { ...data[idx], nome, linkTreino, linkForms };
+      save(data);
+      setMsg("Edição salva ✅", "success");
+      resetForm();
+      render();
+    } else {
+      setMsg("Não encontrei o item para editar.", "error");
+    }
+    return;
+  }
+
+  data.push({
+    id: `${Date.now()}_${Math.random().toString(16).slice(2)}`,
+    nome,
+    linkTreino,
+    linkForms
+  });
+
+  save(data);
+  setMsg("Treinamento adicionado ✅", "success");
+  resetForm();
+  render();
+};
+
+btnCancelar.onclick = () => {
+  resetForm();
+  setMsg("");
+};
+
+nomeInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") { e.preventDefault(); btnSalvar.click(); }
+});
+
+busca.addEventListener("input", render);
+
+// init
+resetForm();
+render();
+</script>
+
+</body>
+</html>

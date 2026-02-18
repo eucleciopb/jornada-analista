@@ -3,25 +3,158 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Login</title>
+  <title>Portal de Treinamentos</title>
   <link rel="stylesheet" href="css/styles.css" />
 </head>
+
 <body class="bg">
-  <main class="card">
-    <h1>Entrar</h1>
 
-    <form id="loginForm" class="form">
-      <label>Email</label>
-      <input id="email" type="email" required placeholder="seu@email.com" />
+<main class="center-wrapper">
 
-      <label>Senha</label>
-      <input id="password" type="password" required placeholder="••••••••" />
+  <div class="login-card">
 
-      <button type="submit">Login</button>
-      <p id="msg" class="msg"></p>
-    </form>
-  </main>
+    <div class="logo-box">GP</div>
 
-  <script type="module" src="js/auth.js"></script>
+    <h2>Bem-vindo</h2>
+    <p class="hint">Selecione seu nome para acessar o sistema</p>
+
+    <div class="form-group">
+      <label for="usuario">Usuário</label>
+      <select id="usuario">
+        <option value="" disabled selected>Selecione...</option>
+        <option>Emerson</option>
+        <option>Euclecio</option>
+        <option>Joice</option>
+        <option>Michel</option>
+        <option>Muller</option>
+        <option>Pedro</option>
+        <option>Ricardo</option>
+        <option>Robert</option>
+        <option>Rodrigo</option>
+        <option>Rosilene</option>
+      </select>
+    </div>
+
+    <button id="btnEntrar" class="btn-primary">Entrar</button>
+
+    <button id="btnLogin" class="btn-secondary full-width">
+      Ir para Login
+    </button>
+
+    <p id="msg" class="msg"></p>
+
+  </div>
+
+</main>
+
+<script>
+const usuarioSelect = document.getElementById("usuario");
+const btnEntrar = document.getElementById("btnEntrar");
+const btnLogin = document.getElementById("btnLogin");
+const msg = document.getElementById("msg");
+
+btnEntrar.onclick = () => {
+  const usuario = usuarioSelect.value;
+
+  if (!usuario) {
+    msg.textContent = "Selecione um usuário.";
+    msg.style.color = "#ef4444";
+    return;
+  }
+
+  localStorage.setItem("usuarioLogado", usuario);
+  window.location.href = "menu.html";
+};
+
+btnLogin.onclick = () => {
+  window.location.href = "login.html";
+};
+</script>
+
+<style>
+/* Layout centralizado */
+.center-wrapper{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+}
+
+.login-card{
+  width:360px;
+  padding:30px;
+  border-radius:20px;
+  background:rgba(23,25,29,.85);
+  border:1px solid rgba(255,255,255,.08);
+  box-shadow:0 20px 40px rgba(0,0,0,.4);
+  text-align:center;
+}
+
+.logo-box{
+  width:70px;
+  height:70px;
+  margin:0 auto 20px auto;
+  border-radius:18px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:900;
+  font-size:22px;
+  color:#fff;
+  background:linear-gradient(135deg,#d91b2e,#ff3b3b);
+}
+
+.form-group{
+  margin-top:20px;
+  text-align:left;
+}
+
+.form-group select{
+  width:100%;
+  padding:12px;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.05);
+  color:#fff;
+  margin-top:6px;
+}
+
+.btn-primary{
+  width:100%;
+  margin-top:20px;
+  padding:12px;
+  border:none;
+  border-radius:14px;
+  font-weight:800;
+  background:linear-gradient(135deg,#d91b2e,#ff3b3b);
+  color:#fff;
+  cursor:pointer;
+}
+
+.btn-secondary{
+  margin-top:12px;
+  padding:10px;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.15);
+  background:rgba(255,255,255,.04);
+  color:#fff;
+  cursor:pointer;
+}
+
+.full-width{
+  width:100%;
+}
+
+.msg{
+  margin-top:12px;
+  font-size:12px;
+}
+
+.hint{
+  font-size:13px;
+  opacity:.7;
+}
+</style>
+
 </body>
 </html>

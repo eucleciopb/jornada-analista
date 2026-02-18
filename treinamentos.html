@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Treinamentos Realizados</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+
+<body class="bg">
+  <header class="topbar">
+    <div>
+      <h2>Treinamentos Realizados</h2>
+      <div id="userInfo" class="hint" style="color:#d1d5db;margin-top:4px;"></div>
+    </div>
+
+    <div class="top-actions">
+      <button id="btnMenu" class="btn-secondary" type="button">Voltar ao Menu</button>
+      <button id="btnLogout" class="btn-secondary" type="button">Sair</button>
+    </div>
+  </header>
+
+  <main class="card wide">
+    <section class="row-between">
+      <div>
+        <h3>Registrar Treinamento</h3>
+        <p class="hint">Preencha os dados do treinamento realizado. Isso fica salvo no seu navegador.</p>
+      </div>
+    </section>
+
+    <hr class="sep" />
+
+    <section class="form-grid">
+      <div>
+        <label for="dataTreino">Data</label>
+        <input id="dataTreino" type="date" />
+      </div>
+
+      <div>
+        <label for="publico">Público-alvo</label>
+        <select id="publico" required>
+          <option value="" disabled selected>Selecione...</option>
+          <option value="Gestor">Gestor</option>
+          <option value="Vendedor">Vendedor</option>
+        </select>
+      </div>
+
+      <div style="grid-column: 1 / -1;">
+        <label for="treinamento">Treinamento realizado</label>
+        <select id="treinamento" required>
+          <option value="" disabled selected>Carregando treinamentos...</option>
+        </select>
+        <div class="hint" id="hintTreinos" style="margin-top:6px; opacity:.9;"></div>
+      </div>
+
+      <div style="grid-column: 1 / -1;">
+        <label for="cd">CD treinado</label>
+        <input id="cd" type="text" list="cdList" placeholder="Digite e selecione na lista..." required />
+        <datalist id="cdList"></datalist>
+      </div>
+
+      <div>
+        <label for="totalPessoas">Total de pessoas treinadas</label>
+        <input id="totalPessoas" type="number" min="1" step="1" placeholder="Ex: 18" required />
+      </div>
+
+      <div>
+        <label for="notaMedia">Nota média do treinamento</label>
+        <input id="notaMedia" type="number" min="0" max="10" step="0.1" placeholder="Ex: 8.7" required />
+      </div>
+
+      <div style="grid-column: 1 / -1;">
+        <label for="obs">Observações</label>
+        <input id="obs" type="text" maxlength="220" placeholder="Opcional" />
+      </div>
+
+      <div style="grid-column: 1 / -1;">
+        <label for="desafio">Desafio</label>
+        <input id="desafio" type="text" maxlength="160" placeholder="Ex: Aumentar adesão ao ritual da matinal..." required />
+      </div>
+
+      <div style="grid-column: 1 / -1;">
+        <label for="metaDesafio">Meta do desafio</label>
+        <input id="metaDesafio" type="text" maxlength="160" placeholder="Ex: 90% de participação + checklist padrão por 30 dias" required />
+      </div>
+
+      <div class="page-actions" style="grid-column: 1 / -1; justify-content:flex-end; gap:10px;">
+        <button id="btnSalvar" type="button">Salvar Treinamento</button>
+      </div>
+    </section>
+
+    <p id="msg" class="msg"></p>
+
+    <hr class="sep" />
+
+    <section class="row-between" style="align-items:flex-end;">
+      <div>
+        <h3>Meu Histórico</h3>
+        <p class="hint">Registros do usuário logado.</p>
+      </div>
+      <div style="min-width:260px;">
+        <label for="busca">Buscar</label>
+        <input id="busca" type="text" placeholder="Treinamento, CD, desafio..." />
+      </div>
+    </section>
+
+    <div class="table-wrap" style="margin-top:12px;">
+      <table class="table table-sticky">
+        <thead>
+          <tr>
+            <th style="width:120px;">Data</th>
+            <th style="width:130px;">Público</th>
+            <th style="width:260px;">Treinamento</th>
+            <th style="width:240px;">CD</th>
+            <th style="width:130px;">Pessoas</th>
+            <th style="width:120px;">Nota</th>
+            <th style="width:260px;">Desafio</th>
+            <th style="width:260px;">Meta</th>
+            <th>Obs</th>
+            <th style="width:140px;">Ações</th>
+          </tr>
+        </thead>
+        <tbody id="tbodyHist"></tbody>
+      </table>
+    </div>
+  </main>
+
+  <script>
+    // =========================
+    // Sessão / nav
+    // =========================
+    const usuario = (localStorage.getItem("usuarioLogado") || "").trim();
+    const userInfo = document.getElementById("userInfo");
+    const btnMenu = document.getElementById("btnMenu");
+    const btnLogout = document.getElementById("btnLogout");
+
+    if (!usuario) window.location.href = "index.html";
+    userInfo.textContent = `Usuário: ${usuario}`;
+
+    btnMenu.onclick = () => window.location.href = "menu.html";
+    btnLogout.onclick = () => {
+      localStorage.removeItem("usuarioLogado");
+      window.location.href = "index.html";
+    };
+
+    // =========================
+    // UI refs
+    // =========================
+    const dataTreino = document.getElementById("dataTreino");
+    const publico = document.getElementById("publico");
+    const treinamento = document.getElementById("treinamento");
+    const hintTreinos = document.getElementById("hintTreinos");
+    const cd = document.getElementById("cd");
+    const cdList = document.getElementById("cdList");
+    const totalPessoas = document.getElementById("totalPessoas");
+    const notaMedia = document.getElementById("notaMedia");
+    const obs = document.getElementById("obs");
+    const desafio = document.getElementById("desafio");
+    const metaDesafio = document.getElementById("metaDesafio");
+    const btnSalvar = document.getElementById("btnSalvar");
+    const msg = document.getElementById("msg");
+    const busca = document.getElementById("busca");
+    const tbodyHist = document.getElementById("tbodyHist");
+
+    // =========================
+    // Helpers
+    // =========================
+    function setMsg(text, type="info"){
+      msg.textContent = text || "";
+      msg.style.color = type === "success" ? "#22c55e" : (type === "error" ? "#ef4444" : "#d1d5db");
+    }
+
+    function pad2(n){ return String(n).padStart(2,"0"); }
+
+    function todayISO(){
+      const d = new Date();
+      return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+    }
+
+    function toBR(iso){
+      if (!iso) return "-";
+      const [y,m,d] = iso.split("-");
+      return `${d}/${m}/${y}`;
+    }
+
+    function normalize(s){
+      return (s || "").replace(/\s+/g," ").trim();
+    }
+
+    function storageKeyHist(){
+      return `treinamentos_realizados_${usuario}`;
+    }
+
+    function loadHist(){
+      const raw = localStorage.getItem(storageKeyHist());
+      if (!raw) return [];
+      try {
+        const arr = JSON.parse(raw);
+        return Array.isArray(arr) ? arr : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function saveHist(arr){
+      localStorage.setItem(storageKeyHist(), JSON.stringify(arr));
+    }
+
+    // =========================
+    // Biblioteca de treinamentos (catalogo_treinamentos)
+    // =========================
+    function loadCatalogo(){
+      const raw = localStorage.getItem("catalogo_treinamentos");
+      if (!raw) return [];
+      try {
+        const arr = JSON.parse(raw);
+        return Array.isArray(arr) ? arr : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function renderTreinosSelect(){
+      const catalogo = loadCatalogo()
+        .filter(x => x && x.nome)
+        .sort((a,b) => String(a.nome).localeCompare(String(b.nome),"pt-BR"));
+
+      treinamento.innerHTML = "";
+
+      if (catalogo.length === 0){
+        treinamento.innerHTML = `<option value="" disabled selected>Nenhum treinamento cadastrado (peça para o Euclecio cadastrar)</option>`;
+        hintTreinos.textContent = "Dica: cadastre primeiro os treinamentos na tela de Cadastro/Biblioteca.";
+        return;
+      }
+
+      treinamento.innerHTML = `<option value="" disabled selected>Selecione...</option>`
+        + catalogo.map(t => `<option value="${t.nome}">${t.nome}</option>`).join("");
+
+      hintTreinos.textContent = `Total na biblioteca: ${catalogo.length}`;
+    }
+
+    // =========================
+    // CDs (lista completa)
+    // =========================
+    const CDS_RAW = [
+      "CD - Alagoinhas","CD - Andradina","CD - Angra dos Reis","CD - Aparecida de Goiânia","CD - Araçatuba","CD - Arapiraca","CD - Araraquara",
+      "CD - Balsas","CD - Barbalha","CD - Barra do Garca","CD - Barreiras","CD - Barretos","CD - Barueri","CD - Bauru","CD - Belém","CD - Boituva",
+      "CD - Bom Jesus da Lapa","CD - Brumado","CD - Cachoeiro de Itapemirim","CD - Camaçari","CD - Campina Grande","CD - Campinas","CD - Campo Grande MS",
+      "CD - Campo Grande RJ","CD - Campos dos Goytacazes","CD - Caraguatatuba","CD - Cariacica","CD - Carpina","CD - Caruaru","CD - Cascavel","CD - Catanduva",
+      "CD - Caucaia","CD - Caxias","CD - Coimbra","CD - Conde","CD - Conselheiro Lafaiete","CD - Conselheiro Lafaiete","CD - Contagem","CD - Coxim","CD - Cuiabá",
+      "CD - Divinópolis","CD - Dourados","CD - Duque de Caxias","CD - Eunápolis","CD - Eusebio","CD - Feira de Santana","CD - Feira de Santana",
+      "CD - Fernandópolis","CD - Fernandópolis","CD - Fernandópolis","CD - Fernandópolis","CD - Floriano","CD - Garanhuns","CD - Governador Valadares","CD - Guarujá",
+      "CD - Guarulhos Taboão","CD - Iguatu","CD - Imperatriz","CD - Interlagos","CD - Iporá","CD - Irece","CD - Itabaiana","CD - Itaberaba","CD - Itabuna",
+      "CD - Itapeva","CD - Itapissuma","CD - Itumbiara","CD - Jaboatão dos Guararapes","CD - Jacobina","CD - Jaguaré","CD - Jequié","CD - Juazeiro","CD - Juiz de Fora",
+      "CD - Jundiaí","CD - Londrina","CD - Macaiba","CD - Maceió","CD - Marília","CD - Mogi-Mirim","CD - Montes Claros","CD - Mossoró","CD - Muriaé",
+      "CD - Nossa Senhora do Socorro","CD - Nova Friburgo","CD - Palhoça","CD - Paranaíba","CD - Parnaiba","CD - Parnaiba","CD - Passos","CD - Passos","CD - Patos",
+      "CD - Paulo Afonso","CD - Petrolina","CD - Petrópolis","CD - Picos","CD - Piracicaba","CD - Poços de Caldas","CD - Poços de Caldas","CD - Porto Velho",
+      "CD - Pouso Alegre","CD - Presidente Prudente","CD - Recife","CD - Registro","CD - Ribeirão Preto","CD - Rio Branco","CD - Rio das Ostras","CD - Rio Verde",
+      "CD - Rondonópolis","CD - Salto","CD - Salvador","CD - Salvador Leste","CD - Santa Inês","CD - Santo Antonio de Jesus","CD - São Bernardo","CD - São Cristovão",
+      "CD - São Gonçalo","CD - São João de Meriti","CD - São José do Rio Preto","CD - São José dos Campos","CD - São José dos Pinhais","CD - São Luis","CD - São Mateus",
+      "CD - São Pedro da Aldeia","CD - Sapucaia do Sul","CD - Serra Talhada","CD - Serrinha","CD - Sete Lagoas","CD - Sete Lagoas","CD - Sinop","CD - Sobral","CD - Sousa",
+      "CD - Taboão da Serra","CD - Taguatinga","CD - Taubaté","CD - Teixeira de Freitas","CD - Teresina","CD - Três Lagoas","CD - Uberaba","CD - Varginha",
+      "CD - Vila Guilherme","CD - Vitória da Conquista","CD - Volta Redonda"
+    ];
+
+    const CDS = Array.from(new Set(CDS_RAW.map(s => normalize(s)))).filter(Boolean).sort((a,b)=>a.localeCompare(b,"pt-BR"));
+    cdList.innerHTML = CDS.map(x => `<option value="${x}"></option>`).join("");
+
+    // =========================
+    // Render Histórico
+    // =========================
+    function renderHist(){
+      const q = (busca.value || "").toLowerCase();
+      const data = loadHist().sort((a,b)=> String(b.data).localeCompare(String(a.data)));
+
+      const filtered = q ? data.filter(x =>
+        [x.treinamento, x.cd, x.publico, x.desafio, x.meta, x.obs].join(" ").toLowerCase().includes(q)
+      ) : data;
+
+      tbodyHist.innerHTML = "";
+
+      if (filtered.length === 0){
+        tbodyHist.innerHTML = `<tr><td colspan="10" style="opacity:.8;">Nenhum registro ainda.</td></tr>`;
+        return;
+      }
+
+      filtered.forEach(item => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${toBR(item.data)}</td>
+          <td>${item.publico || "-"}</td>
+          <td>${item.treinamento || "-"}</td>
+          <td>${item.cd || "-"}</td>
+          <td>${item.totalPessoas ?? "-"}</td>
+          <td>${item.notaMedia ?? "-"}</td>
+          <td>${item.desafio || "-"}</td>
+          <td>${item.meta || "-"}</td>
+          <td>${item.obs || "-"}</td>
+          <td>
+            <button class="btn-secondary" type="button" data-del="${item.id}"
+              style="border-color: rgba(255,59,59,.25);">Excluir</button>
+          </td>
+        `;
+        tbodyHist.appendChild(tr);
+      });
+
+      tbodyHist.querySelectorAll("[data-del]").forEach(btn => {
+        btn.onclick = () => {
+          const id = btn.getAttribute("data-del");
+          const next = loadHist().filter(x => x.id !== id);
+          saveHist(next);
+          setMsg("Registro excluído ✅", "success");
+          renderHist();
+        };
+      });
+    }
+
+    // =========================
+    // Salvar
+    // =========================
+    btnSalvar.onclick = () => {
+      setMsg("");
+
+      const payload = {
+        id: `${Date.now()}_${Math.random().toString(16).slice(2)}`,
+        data: dataTreino.value || todayISO(),
+        publico: publico.value,
+        treinamento: treinamento.value,
+        cd: normalize(cd.value),
+        totalPessoas: Number(totalPessoas.value),
+        notaMedia: Number(notaMedia.value),
+        obs: normalize(obs.value),
+        desafio: normalize(desafio.value),
+        meta: normalize(metaDesafio.value)
+      };
+
+      if (!payload.publico || !payload.treinamento || !payload.cd || !payload.desafio || !payload.meta){
+        setMsg("Preencha: Público, Treinamento, CD, Desafio e Meta.", "error");
+        return;
+      }
+      if (!Number.isFinite(payload.totalPessoas) || payload.totalPessoas < 1){
+        setMsg("Total de pessoas deve ser 1 ou mais.", "error");
+        return;
+      }
+      if (!Number.isFinite(payload.notaMedia) || payload.notaMedia < 0 || payload.notaMedia > 10){
+        setMsg("Nota média deve estar entre 0 e 10.", "error");
+        return;
+      }
+      if (!CDS.includes(payload.cd)){
+        setMsg("Selecione um CD válido da lista.", "error");
+        return;
+      }
+
+      const hist = loadHist();
+      hist.push(payload);
+      saveHist(hist);
+
+      setMsg("Treinamento registrado ✅", "success");
+
+      // limpa campos (mantém data)
+      publico.value = "";
+      treinamento.value = "";
+      cd.value = "";
+      totalPessoas.value = "";
+      notaMedia.value = "";
+      obs.value = "";
+      desafio.value = "";
+      metaDesafio.value = "";
+
+      renderHist();
+    };
+
+    // init
+    dataTreino.value = todayISO();
+    renderTreinosSelect();
+    renderHist();
+    busca.addEventListener("input", renderHist);
+  </script>
+</body>
+</html>

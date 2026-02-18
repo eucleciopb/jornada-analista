@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Biblioteca de Treinamentos</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+
+<body class="bg">
+
+<header class="topbar">
+  <div>
+    <h2>Biblioteca de Treinamentos</h2>
+    <div id="userInfo" class="hint" style="color:#d1d5db;margin-top:4px;"></div>
+  </div>
+
+  <div class="top-actions">
+    <button id="btnMenu" class="btn-secondary" type="button">Voltar ao Menu</button>
+    <button id="btnLogout" class="btn-secondary" type="button">Sair</button>
+  </div>
+</header>
+
+<main class="card wide">
+
+  <section class="row-between" style="align-items:flex-end;">
+    <div>
+      <h3>Treinamentos disponíveis</h3>
+      <p class="hint">Aqui você encontra todos os treinamentos cadastrados e seus links.</p>
+    </div>
+
+    <div style="min-width:260px;">
+      <label for="busca">Buscar</label>
+      <input id="busca" type="text" placeholder="Digite o nome do treinamento..." />
+    </div>
+  </section>
+
+  <p id="msg" class="msg"></p>
+
+  <div class="table-wrap" style="margin-top:12px;">
+    <table class="table table-sticky">
+      <thead>
+        <tr>
+          <th style="width:70px;">#</th>
+          <th>Treinamento</th>
+          <th style="width:170px;">Link Treinamento</th>
+          <th style="width:140px;">Link Forms</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+</main>
+
+<script>
+/* =========================
+   SESSÃO
+========================= */
+const usuario = (localStorage.getItem("usuarioLogado") || "").trim();
+if (!usuario) window.location.href = "index.html";
+document.getElementById("userInfo").textContent = `Usuário: ${usuario}`;
+
+document.getElementById("btnMenu").onclick = () => window.location.href = "menu.html";
+document.getElementById("btnLogout").onclick = () => {
+  localStorage.removeItem("usuarioLogado");
+  window.location.href = "index.html";
+};
+
+/* =========================
+   APP
+========================= */
+const STORAGE_KEY = "catalogo_treinamentos";
+const tbody = document.getElementById("tbody");
+const busca = document.getElementById("busca");
+const msg = document.getElementById("msg");
+
+function setMsg(text){
+  msg.textContent = text || "";
+  msg.style.color = "#d1d5db";
+}
+
+function load(){
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return [];
+  try {
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr : [];
+  } catch {
+    return [];
+  }
+}
+
+function safeLink(url){
+  const u = (url || "").trim();
+  if (!u) return "";
+  // aceita http/https
+  if (!/^https?:\/\//i.test(u)) return "";
+  return u;
+}
+
+function render(){
+  const q = (busca.value || "").trim().toLowerCase();
+  const data = load().sort((a,b) => (a.nome || "").localeCompare((b.nome || ""), "pt-BR"));
+
+  const filtered = q
+    ? data.filter(x => (x.nome || "").toLowerCase().includes(q))
+    : data;
+
+  tbody.innerHTML = "";
+
+  if (filtered.length === 0){
+    setMsg("Nenhum treinamento cadastrado ainda.");
+    tbody.innerHTML = `<tr><td colspan="4" style="opacity:.8;">Sem dados.</td></tr>`;
+    return;
+  }
+
+  setMsg("");
+
+  filtered.forEach((t, i) => {
+    const linkTreino = safeLink(t.linkTreino);
+    const linkForms = safeLink(t.linkForms);
+
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${i+1}</td>
+      <td>${t.nome || "-"}</td>
+      <td>
+        ${linkTreino
+          ? `<a href="${linkTreino}" target="_blank" rel="noopener">Abrir Treinamento</a>`
+          : `<span style="opacity:.7;">-</span>`
+        }
+      </td>
+      <td>
+        ${linkForms
+          ? `<a href="${linkForms}" target="_blank" rel="noopener">Abrir Forms</a>`
+          : `<span style="opacity:.7;">-</span>`
+        }
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+busca.addEventListener("input", render);
+render();
+</script>
+
+</body>
+</html>
