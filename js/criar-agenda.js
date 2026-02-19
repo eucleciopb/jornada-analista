@@ -5,6 +5,31 @@ import {
 } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
 /* =========================
+   CDs (lista completa) - FALLBACK GARANTIDO
+   - vamos deduplicar e ordenar antes de usar
+========================= */
+const CDS_RAW = [
+  "CD - Alagoinhas","CD - Andradina","CD - Angra dos Reis","CD - Aparecida de Goiânia","CD - Araçatuba","CD - Arapiraca","CD - Araraquara",
+  "CD - Balsas","CD - Barbalha","CD - Barra do Garca","CD - Barreiras","CD - Barretos","CD - Barueri","CD - Bauru","CD - Belém","CD - Boituva",
+  "CD - Bom Jesus da Lapa","CD - Brumado","CD - Cachoeiro de Itapemirim","CD - Camaçari","CD - Campina Grande","CD - Campinas","CD - Campo Grande MS",
+  "CD - Campo Grande RJ","CD - Campos dos Goytacazes","CD - Caraguatatuba","CD - Cariacica","CD - Carpina","CD - Caruaru","CD - Cascavel","CD - Catanduva",
+  "CD - Caucaia","CD - Caxias","CD - Coimbra","CD - Conde","CD - Conselheiro Lafaiete","CD - Conselheiro Lafaiete","CD - Contagem","CD - Coxim","CD - Cuiabá",
+  "CD - Divinópolis","CD - Dourados","CD - Duque de Caxias","CD - Eunápolis","CD - Eusebio","CD - Feira de Santana","CD - Feira de Santana",
+  "CD - Fernandópolis","CD - Fernandópolis","CD - Fernandópolis","CD - Fernandópolis","CD - Floriano","CD - Garanhuns","CD - Governador Valadares","CD - Guarujá",
+  "CD - Guarulhos Taboão","CD - Iguatu","CD - Imperatriz","CD - Interlagos","CD - Iporá","CD - Irece","CD - Itabaiana","CD - Itaberaba","CD - Itabuna",
+  "CD - Itapeva","CD - Itapissuma","CD - Itumbiara","CD - Jaboatão dos Guararapes","CD - Jacobina","CD - Jaguaré","CD - Jequié","CD - Juazeiro","CD - Juiz de Fora",
+  "CD - Jundiaí","CD - Londrina","CD - Macaiba","CD - Maceió","CD - Marília","CD - Mogi-Mirim","CD - Montes Claros","CD - Mossoró","CD - Muriaé",
+  "CD - Nossa Senhora do Socorro","CD - Nova Friburgo","CD - Palhoça","CD - Paranaíba","CD - Parnaiba","CD - Parnaiba","CD - Passos","CD - Passos","CD - Patos",
+  "CD - Paulo Afonso","CD - Petrolina","CD - Petrópolis","CD - Picos","CD - Piracicaba","CD - Poços de Caldas","CD - Poços de Caldas","CD - Porto Velho",
+  "CD - Pouso Alegre","CD - Presidente Prudente","CD - Recife","CD - Registro","CD - Ribeirão Preto","CD - Rio Branco","CD - Rio das Ostras","CD - Rio Verde",
+  "CD - Rondonópolis","CD - Salto","CD - Salvador","CD - Salvador Leste","CD - Santa Inês","CD - Santo Antonio de Jesus","CD - São Bernardo","CD - São Cristovão",
+  "CD - São Gonçalo","CD - São João de Meriti","CD - São José do Rio Preto","CD - São José dos Campos","CD - São José dos Pinhais","CD - São Luis","CD - São Mateus",
+  "CD - São Pedro da Aldeia","CD - Sapucaia do Sul","CD - Serra Talhada","CD - Serrinha","CD - Sete Lagoas","CD - Sete Lagoas","CD - Sinop","CD - Sobral","CD - Sousa",
+  "CD - Taboão da Serra","CD - Taguatinga","CD - Taubaté","CD - Teixeira de Freitas","CD - Teresina","CD - Três Lagoas","CD - Uberaba","CD - Varginha",
+  "CD - Vila Guilherme","CD - Vitória da Conquista","CD - Volta Redonda"
+];
+
+/* =========================
    FIREBASE CONFIG (SEU)
 ========================= */
 const firebaseConfig = {
@@ -116,6 +141,11 @@ function atividadeOptions(selected = "") {
   return opts.join("");
 }
 
+function normalizeCDList(arr) {
+  return [...new Set((arr || []).map(s => (s || "").trim()).filter(Boolean))]
+    .sort((a,b) => a.localeCompare(b, "pt-BR"));
+}
+
 /* =========================
    1) SEMPRE RENDERIZA O MÊS
 ========================= */
@@ -169,44 +199,45 @@ function renderMonthSkeleton(yyyyMM) {
 }
 
 /* =========================
-   2) CDs (opcional do Firestore)
+   2) CDs
+   - tenta Firestore
+   - se falhar ou vazio: usa CDS_RAW (sua lista completa)
 ========================= */
 async function loadCDsToDatalist() {
   if (!cdList) return;
 
-  const fallback = [
-    "CD - Aparecida de Goiânia",
-    "CD - Boituva",
-    "CD - Jaguaré",
-    "CD - Salvador",
-    "CD - Fernandópolis"
-  ];
+  setStatus("carregando CDs…");
 
-  let cds = [];
+  let cdsFromFirestore = [];
   try {
+    // tenta ativos
     const snap = await getDocs(query(collection(db, CDS_COLLECTION), where("ativo", "==", true)));
     snap.forEach(d => {
       const data = d.data();
       const nome = (data?.nome || data?.cd || "").trim();
-      if (nome) cds.push(nome);
+      if (nome) cdsFromFirestore.push(nome);
     });
 
-    if (cds.length === 0) {
+    // se vazio, tenta tudo
+    if (cdsFromFirestore.length === 0) {
       const snapAll = await getDocs(collection(db, CDS_COLLECTION));
       snapAll.forEach(d => {
         const data = d.data();
         const nome = (data?.nome || data?.cd || "").trim();
-        if (nome) cds.push(nome);
+        if (nome) cdsFromFirestore.push(nome);
       });
     }
   } catch (e) {
-    // ignora e usa fallback
+    // ignora
   }
 
-  if (cds.length === 0) cds = fallback;
-  cds = [...new Set(cds)].sort((a,b)=>a.localeCompare(b,"pt-BR"));
+  // ✅ fallback garantido com sua lista
+  const cdsFinal = normalizeCDList(
+    cdsFromFirestore.length > 0 ? cdsFromFirestore : CDS_RAW
+  );
 
-  cdList.innerHTML = cds.map(cd => `<option value="${cd}"></option>`).join("");
+  cdList.innerHTML = cdsFinal.map(cd => `<option value="${cd}"></option>`).join("");
+  setStatus(`CDs carregados: ${cdsFinal.length}`);
 }
 
 /* =========================
@@ -286,11 +317,11 @@ async function saveMonthToFirestore(yyyyMM) {
 }
 
 /* =========================
-   EVENTOS (✅ AJUSTADOS)
+   EVENTOS
 ========================= */
 if (btnMenu) {
   btnMenu.addEventListener("click", () => {
-    window.location.href = PATH_MENU; // ✅ correto
+    window.location.href = PATH_MENU;
   });
 }
 
@@ -298,7 +329,7 @@ if (btnLogout) {
   btnLogout.addEventListener("click", () => {
     localStorage.removeItem("usuarioLogado");
     localStorage.removeItem("usuarioKey");
-    window.location.href = PATH_INDEX; // ✅ correto
+    window.location.href = PATH_INDEX;
   });
 }
 
@@ -346,7 +377,7 @@ if (monthPicker) {
     // 1) mês aparece sempre
     renderMonthSkeleton(monthPicker.value);
 
-    // 2) cds
+    // 2) CDs (agora com CDS_RAW completo como fallback)
     await loadCDsToDatalist();
 
     // 3) carregar do firebase (se falhar, não bloqueia)
