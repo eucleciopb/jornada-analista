@@ -10,9 +10,7 @@
 <body class="bg">
 
 <main class="center-wrapper">
-
   <div class="login-card">
-
     <div class="logo-box">GP</div>
 
     <h2>Bem-vindo</h2>
@@ -35,40 +33,87 @@
       </select>
     </div>
 
-    <button id="btnEntrar" class="btn-primary">Entrar</button>
+    <button id="btnEntrar" class="btn-primary" type="button">Entrar</button>
 
-    <button id="btnLogin" class="btn-secondary full-width">
+    <button id="btnLogin" class="btn-secondary full-width" type="button">
       Ir para Login
     </button>
 
     <p id="msg" class="msg"></p>
-
   </div>
-
 </main>
 
-<script>
-const usuarioSelect = document.getElementById("usuario");
-const btnEntrar = document.getElementById("btnEntrar");
-const btnLogin = document.getElementById("btnLogin");
-const msg = document.getElementById("msg");
+<!-- Firebase + Firestore (CDN) -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+  import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-btnEntrar.onclick = () => {
-  const usuario = usuarioSelect.value;
+  // ✅ SUA CONFIG (ok para front-end)
+  const firebaseConfig = {
+    apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
+    authDomain: "jornada-portal.firebaseapp.com",
+    projectId: "jornada-portal",
+    storageBucket: "jornada-portal.firebasestorage.app",
+    messagingSenderId: "669362296644",
+    appId: "1:669362296644:web:f590d9834a8e4e60012911"
+  };
 
-  if (!usuario) {
-    msg.textContent = "Selecione um usuário.";
-    msg.style.color = "#ef4444";
-    return;
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  const usuarioSelect = document.getElementById("usuario");
+  const btnEntrar = document.getElementById("btnEntrar");
+  const btnLogin = document.getElementById("btnLogin");
+  const msg = document.getElementById("msg");
+
+  function setMsg(text, ok = false){
+    msg.textContent = text || "";
+    msg.style.color = ok ? "#22c55e" : "#ef4444";
   }
 
-  localStorage.setItem("usuarioLogado", usuario);
-  window.location.href = "menu.html";
-};
+  btnEntrar.onclick = async () => {
+    const usuario = (usuarioSelect.value || "").trim();
 
-btnLogin.onclick = () => {
-  window.location.href = "login.html";
-};
+    if (!usuario) {
+      setMsg("Selecione um usuário.");
+      return;
+    }
+
+    btnEntrar.disabled = true;
+    btnEntrar.style.opacity = ".7";
+    setMsg("Entrando...", true);
+
+    try {
+      // 1) salva no localStorage
+      localStorage.setItem("usuarioLogado", usuario);
+
+      // 2) grava log no Firestore (auditoria)
+      // coleção sugerida: acessos
+      await addDoc(collection(db, "acessos"), {
+        usuario,
+        origem: "index.html",
+        evento: "LOGIN_SEM_AUTH",
+        criadoEm: serverTimestamp(),
+        userAgent: navigator.userAgent || null
+      });
+
+      // 3) redireciona
+      // ✅ TROQUE AQUI se seu menu estiver em outro caminho
+      // Exemplo pela sua estrutura: "html menus/menu.html"
+      window.location.href = "html menus/menu.html";
+      // Se o seu menu for na raiz: window.location.href = "menu.html";
+
+    } catch (e) {
+      console.error(e);
+      setMsg("Falha ao gravar no Firebase. Verifique regras do Firestore.");
+      btnEntrar.disabled = false;
+      btnEntrar.style.opacity = "1";
+    }
+  };
+
+  btnLogin.onclick = () => {
+    window.location.href = "login.html";
+  };
 </script>
 
 <style>

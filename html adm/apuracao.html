@@ -113,7 +113,7 @@ const usuario = (localStorage.getItem("usuarioLogado") || "").trim();
 if (!usuario) window.location.href = "index.html";
 document.getElementById("userInfo").textContent = `Avaliador: ${usuario}`;
 
-document.getElementById("btnMenu").onclick = () => window.location.href = "menu.html";
+document.getElementById("btnMenu").onclick = () => window.location.href = "menuadm.html";
 document.getElementById("btnLogout").onclick = () => {
   localStorage.removeItem("usuarioLogado");
   window.location.href = "index.html";

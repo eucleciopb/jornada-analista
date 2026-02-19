@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Menu | Jornada</title>
+  <link rel="stylesheet" href="../css/styles.css" />
+</head>
+
+<body>
+
+  <main class="container">
+
+    <section class="card">
+
+      <div class="header">
+        <div class="logo">GP</div>
+        <div>
+          <h1 id="welcomeText">Carregando...</h1>
+          <p>Menu Principal</p>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="menu-buttons">
+
+        <button class="menu-btn" onclick="goTo('../html usuarios/criar-agenda.html')">
+          Criar Agenda
+        </button>
+
+        <button class="menu-btn" onclick="goTo('../html usuarios/agenda.html')">
+          Agenda
+        </button>
+
+        <button class="menu-btn" onclick="goTo('../html usuarios/treinamentos.html')">
+          Treinamentos Realizados
+        </button>
+
+        <button class="menu-btn" onclick="goTo('../html adm/apuracao.html')">
+          Resultados dos Treinamentos
+        </button>
+
+        <button class="menu-btn" onclick="goTo('../html usuarios/biblioteca-treinamentos.html')">
+          Biblioteca de Treinamentos
+        </button>
+
+      </div>
+
+      <div class="divider"></div>
+
+      <button id="btnLogout" class="btn-logout" type="button">
+        Sair
+      </button>
+
+    </section>
+
+  </main>
+
+  <script>
+    // 🔐 Verifica usuário
+    const usuario = localStorage.getItem("usuarioLogado");
+    const welcomeText = document.getElementById("welcomeText");
+    const btnLogout = document.getElementById("btnLogout");
+
+    if (!usuario) {
+      window.location.href = "../index.html";
+    } else {
+      welcomeText.textContent = `Olá, ${usuario}`;
+    }
+
+    function goTo(page) {
+      window.location.href = page;
+    }
+
+    btnLogout.addEventListener("click", () => {
+      localStorage.removeItem("usuarioLogado");
+      window.location.href = "../index.html";
+    });
+  </script>
+
+</body>
+</html>
