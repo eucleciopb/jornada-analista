@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Treinamentos Realizados</title>
-  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="../css/styles.css" />
 </head>
 
 <body class="bg">
@@ -24,7 +24,7 @@
     <section class="row-between">
       <div>
         <h3>Registrar Treinamento</h3>
-        <p class="hint">Preencha os dados do treinamento realizado. Isso fica salvo no seu navegador.</p>
+        <p class="hint">Preencha os dados do treinamento realizado. Salva no Firebase (Firestore).</p>
       </div>
     </section>
 
@@ -96,7 +96,7 @@
     <section class="row-between" style="align-items:flex-end;">
       <div>
         <h3>Meu Histórico</h3>
-        <p class="hint">Registros do usuário logado.</p>
+        <p class="hint">Registros do usuário logado (Firebase).</p>
       </div>
       <div style="min-width:260px;">
         <label for="busca">Buscar</label>
@@ -125,27 +125,82 @@
     </div>
   </main>
 
-  <script>
-    // =========================
-    // Sessão / nav
-    // =========================
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import {
+      getFirestore,
+      collection,
+      doc,
+      setDoc,
+      deleteDoc,
+      getDocs,
+      query,
+      where,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+    /* =========================
+       Firebase config (SEU)
+    ========================= */
+    const firebaseConfig = {
+      apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
+      authDomain: "jornada-portal.firebaseapp.com",
+      projectId: "jornada-portal",
+      storageBucket: "jornada-portal.firebasestorage.app",
+      messagingSenderId: "669362296644",
+      appId: "1:669362296644:web:f590d9834a8e4e60012911"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    /* =========================
+       Coleções
+    ========================= */
+    const TREINOS_COLLECTION = "treinamentos_realizados";
+
+    // ✅ Robusto: tenta várias coleções onde sua biblioteca pode estar
+    const CATALOGO_COLLECTIONS = [
+      "catalogo_treinamentos",
+      "biblioteca_treinamentos",
+      "treinamentos",
+      "biblioteca"
+    ];
+
+    // ✅ Robusto: tenta vários nomes de campo possíveis
+    const CATALOGO_FIELDS = ["nome", "treinamento", "titulo", "name"];
+
+    /* =========================
+       Paths corretos (arquivo em html usuarios/)
+    ========================= */
+    const PATH_INDEX = "../index.html";
+    const PATH_MENU  = "../html menus/menu.html";
+
+    /* =========================
+       Sessão / nav
+    ========================= */
     const usuario = (localStorage.getItem("usuarioLogado") || "").trim();
     const userInfo = document.getElementById("userInfo");
     const btnMenu = document.getElementById("btnMenu");
     const btnLogout = document.getElementById("btnLogout");
 
-    if (!usuario) window.location.href = "index.html";
+    if (!usuario) window.location.href = PATH_INDEX;
     userInfo.textContent = `Usuário: ${usuario}`;
 
-    btnMenu.onclick = () => window.location.href = "menu.html";
+    btnMenu.onclick = () => window.location.href = PATH_MENU;
     btnLogout.onclick = () => {
       localStorage.removeItem("usuarioLogado");
-      window.location.href = "index.html";
+      localStorage.removeItem("usuarioKey");
+      window.location.href = PATH_INDEX;
     };
 
-    // =========================
-    // UI refs
-    // =========================
+    // chave estável (sem Auth)
+    const usuarioKey = (localStorage.getItem("usuarioKey") || slug(usuario)).trim();
+    localStorage.setItem("usuarioKey", usuarioKey);
+
+    /* =========================
+       UI refs
+    ========================= */
     const dataTreino = document.getElementById("dataTreino");
     const publico = document.getElementById("publico");
     const treinamento = document.getElementById("treinamento");
@@ -162,9 +217,9 @@
     const busca = document.getElementById("busca");
     const tbodyHist = document.getElementById("tbodyHist");
 
-    // =========================
-    // Helpers
-    // =========================
+    /* =========================
+       Helpers
+    ========================= */
     function setMsg(text, type="info"){
       msg.textContent = text || "";
       msg.style.color = type === "success" ? "#22c55e" : (type === "error" ? "#ef4444" : "#d1d5db");
@@ -187,61 +242,22 @@
       return (s || "").replace(/\s+/g," ").trim();
     }
 
-    function storageKeyHist(){
-      return `treinamentos_realizados_${usuario}`;
+    function slug(s) {
+      return (s || "")
+        .toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, "");
     }
 
-    function loadHist(){
-      const raw = localStorage.getItem(storageKeyHist());
-      if (!raw) return [];
-      try {
-        const arr = JSON.parse(raw);
-        return Array.isArray(arr) ? arr : [];
-      } catch {
-        return [];
-      }
+    function makeId(){
+      if (globalThis.crypto?.randomUUID) return crypto.randomUUID();
+      return `${Date.now()}_${Math.random().toString(16).slice(2)}`;
     }
 
-    function saveHist(arr){
-      localStorage.setItem(storageKeyHist(), JSON.stringify(arr));
-    }
-
-    // =========================
-    // Biblioteca de treinamentos (catalogo_treinamentos)
-    // =========================
-    function loadCatalogo(){
-      const raw = localStorage.getItem("catalogo_treinamentos");
-      if (!raw) return [];
-      try {
-        const arr = JSON.parse(raw);
-        return Array.isArray(arr) ? arr : [];
-      } catch {
-        return [];
-      }
-    }
-
-    function renderTreinosSelect(){
-      const catalogo = loadCatalogo()
-        .filter(x => x && x.nome)
-        .sort((a,b) => String(a.nome).localeCompare(String(b.nome),"pt-BR"));
-
-      treinamento.innerHTML = "";
-
-      if (catalogo.length === 0){
-        treinamento.innerHTML = `<option value="" disabled selected>Nenhum treinamento cadastrado (peça para o Euclecio cadastrar)</option>`;
-        hintTreinos.textContent = "Dica: cadastre primeiro os treinamentos na tela de Cadastro/Biblioteca.";
-        return;
-      }
-
-      treinamento.innerHTML = `<option value="" disabled selected>Selecione...</option>`
-        + catalogo.map(t => `<option value="${t.nome}">${t.nome}</option>`).join("");
-
-      hintTreinos.textContent = `Total na biblioteca: ${catalogo.length}`;
-    }
-
-    // =========================
-    // CDs (lista completa)
-    // =========================
+    /* =========================
+       CDs (lista completa)
+    ========================= */
     const CDS_RAW = [
       "CD - Alagoinhas","CD - Andradina","CD - Angra dos Reis","CD - Aparecida de Goiânia","CD - Araçatuba","CD - Arapiraca","CD - Araraquara",
       "CD - Balsas","CD - Barbalha","CD - Barra do Garca","CD - Barreiras","CD - Barretos","CD - Barueri","CD - Bauru","CD - Belém","CD - Boituva",
@@ -262,19 +278,115 @@
       "CD - Taboão da Serra","CD - Taguatinga","CD - Taubaté","CD - Teixeira de Freitas","CD - Teresina","CD - Três Lagoas","CD - Uberaba","CD - Varginha",
       "CD - Vila Guilherme","CD - Vitória da Conquista","CD - Volta Redonda"
     ];
-
     const CDS = Array.from(new Set(CDS_RAW.map(s => normalize(s)))).filter(Boolean).sort((a,b)=>a.localeCompare(b,"pt-BR"));
     cdList.innerHTML = CDS.map(x => `<option value="${x}"></option>`).join("");
 
-    // =========================
-    // Render Histórico
-    // =========================
+    /* =========================
+       Catálogo - LocalStorage fallback
+    ========================= */
+    function loadCatalogoLocal(){
+      const raw = localStorage.getItem("catalogo_treinamentos");
+      if (!raw) return [];
+      try {
+        const arr = JSON.parse(raw);
+        return Array.isArray(arr) ? arr : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function pickNomeFromDoc(data){
+      for (const f of CATALOGO_FIELDS){
+        const v = (data?.[f] || "").toString().trim();
+        if (v) return v;
+      }
+      return "";
+    }
+
+    async function loadCatalogoFirestoreRobusto(){
+      // tenta cada coleção até achar algo
+      for (const colName of CATALOGO_COLLECTIONS){
+        try{
+          const snap = await getDocs(collection(db, colName));
+          const out = [];
+          snap.forEach(d => {
+            const nome = pickNomeFromDoc(d.data());
+            if (nome) out.push({ nome });
+          });
+          if (out.length > 0){
+            return { source: colName, data: out };
+          }
+        }catch(e){
+          // continua tentando outras coleções
+        }
+      }
+      return { source: null, data: [] };
+    }
+
+    async function renderTreinosSelect(){
+      treinamento.innerHTML = `<option value="" disabled selected>Carregando treinamentos...</option>`;
+      hintTreinos.textContent = "";
+
+      const fire = await loadCatalogoFirestoreRobusto();
+
+      // se não veio nada do Firestore, usa localStorage
+      let catalogo = fire.data;
+      let origem = fire.source;
+
+      if (!catalogo || catalogo.length === 0){
+        const local = loadCatalogoLocal();
+        catalogo = (local || []).map(x => ({ nome: (x?.nome || x?.treinamento || x?.titulo || x?.name || "").toString().trim() })).filter(x => x.nome);
+        origem = "localStorage";
+      }
+
+      // limpa, deduplica e ordena
+      const nomes = Array.from(
+        new Set((catalogo || []).map(x => (x?.nome || "").toString().trim()).filter(Boolean))
+      ).sort((a,b)=>a.localeCompare(b,"pt-BR"));
+
+      if (nomes.length === 0){
+        treinamento.innerHTML = `<option value="" disabled selected>Nenhum treinamento cadastrado</option>`;
+        hintTreinos.textContent = "Cadastre primeiro na Biblioteca (Firestore) ou salve em localStorage (catalogo_treinamentos).";
+        return;
+      }
+
+      treinamento.innerHTML =
+        `<option value="" disabled selected>Selecione...</option>` +
+        nomes.map(nome => `<option value="${nome}">${nome}</option>`).join("");
+
+      hintTreinos.textContent = `Treinamentos: ${nomes.length} | Origem: ${origem || "-"}`;
+    }
+
+    /* =========================
+       Histórico Firestore (SEM índice)
+    ========================= */
+    let HIST_CACHE = [];
+
+    async function loadHistFromFirebase(){
+      const q = query(
+        collection(db, TREINOS_COLLECTION),
+        where("uidKey", "==", usuarioKey)
+      );
+
+      const snap = await getDocs(q);
+      const arr = [];
+      snap.forEach(d => arr.push({ id: d.id, ...d.data() }));
+
+      // ordena no front
+      arr.sort((a,b) => String(b.data || "").localeCompare(String(a.data || "")));
+
+      HIST_CACHE = arr;
+      return arr;
+    }
+
     function renderHist(){
       const q = (busca.value || "").toLowerCase();
-      const data = loadHist().sort((a,b)=> String(b.data).localeCompare(String(a.data)));
+      const data = (HIST_CACHE || []).slice();
 
       const filtered = q ? data.filter(x =>
-        [x.treinamento, x.cd, x.publico, x.desafio, x.meta, x.obs].join(" ").toLowerCase().includes(q)
+        [
+          x.treinamento, x.cd, x.publico, x.desafio, x.meta, x.obs, x.usuarioNome
+        ].join(" ").toLowerCase().includes(q)
       ) : data;
 
       tbodyHist.innerHTML = "";
@@ -305,24 +417,32 @@
       });
 
       tbodyHist.querySelectorAll("[data-del]").forEach(btn => {
-        btn.onclick = () => {
+        btn.onclick = async () => {
           const id = btn.getAttribute("data-del");
-          const next = loadHist().filter(x => x.id !== id);
-          saveHist(next);
-          setMsg("Registro excluído ✅", "success");
-          renderHist();
+          if (!id) return;
+
+          try{
+            setMsg("Excluindo…");
+            await deleteDoc(doc(db, TREINOS_COLLECTION, id));
+            HIST_CACHE = HIST_CACHE.filter(x => x.id !== id);
+            renderHist();
+            setMsg("Registro excluído ✅", "success");
+          }catch(e){
+            console.error(e);
+            setMsg("Erro ao excluir no Firebase. Verifique Rules.", "error");
+          }
         };
       });
     }
 
-    // =========================
-    // Salvar
-    // =========================
-    btnSalvar.onclick = () => {
+    /* =========================
+       Salvar Firestore
+    ========================= */
+    btnSalvar.onclick = async () => {
       setMsg("");
 
       const payload = {
-        id: `${Date.now()}_${Math.random().toString(16).slice(2)}`,
+        id: makeId(),
         data: dataTreino.value || todayISO(),
         publico: publico.value,
         treinamento: treinamento.value,
@@ -351,29 +471,66 @@
         return;
       }
 
-      const hist = loadHist();
-      hist.push(payload);
-      saveHist(hist);
+      try{
+        setMsg("Salvando no Firebase…");
 
-      setMsg("Treinamento registrado ✅", "success");
+        const ref = doc(db, TREINOS_COLLECTION, payload.id);
+        await setDoc(ref, {
+          uidKey: usuarioKey,
+          usuarioNome: usuario,
 
-      // limpa campos (mantém data)
-      publico.value = "";
-      treinamento.value = "";
-      cd.value = "";
-      totalPessoas.value = "";
-      notaMedia.value = "";
-      obs.value = "";
-      desafio.value = "";
-      metaDesafio.value = "";
+          data: payload.data,
+          publico: payload.publico,
+          treinamento: payload.treinamento,
+          cd: payload.cd,
+          totalPessoas: payload.totalPessoas,
+          notaMedia: payload.notaMedia,
+          obs: payload.obs || null,
+          desafio: payload.desafio,
+          meta: payload.meta,
 
-      renderHist();
+          criadoEm: serverTimestamp(),
+          atualizadoEm: serverTimestamp()
+        }, { merge: true });
+
+        setMsg("Treinamento registrado ✅ (Firebase)", "success");
+
+        // limpa (mantém data)
+        publico.value = "";
+        treinamento.value = "";
+        cd.value = "";
+        totalPessoas.value = "";
+        notaMedia.value = "";
+        obs.value = "";
+        desafio.value = "";
+        metaDesafio.value = "";
+
+        await loadHistFromFirebase();
+        renderHist();
+
+      }catch(e){
+        console.error(e);
+        setMsg("Erro ao salvar no Firebase. Normalmente é RULES (PERMISSION_DENIED).", "error");
+      }
     };
 
-    // init
+    /* =========================
+       INIT
+    ========================= */
     dataTreino.value = todayISO();
-    renderTreinosSelect();
-    renderHist();
+    await renderTreinosSelect();
+
+    try{
+      setMsg("Carregando histórico…");
+      await loadHistFromFirebase();
+      setMsg("");
+      renderHist();
+    }catch(e){
+      console.error(e);
+      setMsg("Falha ao carregar do Firebase. Normalmente é RULES (permissão).", "error");
+      renderHist();
+    }
+
     busca.addEventListener("input", renderHist);
   </script>
 </body>
