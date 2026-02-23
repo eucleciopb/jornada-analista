@@ -72,10 +72,36 @@ const PATH_INDEX = "../index.html";
 const PATH_MENU  = "../html menus/menu.html";
 
 /* =========================
-   LOGIN (SEU PADRÃO)
+   LOGIN (PADRÃO NOVO + LEGADO)
+   - novo: user_session (JSON)
+   - legado: usuarioLogado (string)
+   - mantém usuarioKey (slug) como você já faz
 ========================= */
-const usuarioNome = (localStorage.getItem("usuarioLogado") || "").trim();
-if (!usuarioNome) window.location.href = PATH_INDEX;
+function safeParse(raw){
+  try { return JSON.parse(raw); } catch { return null; }
+}
+function slug(s) {
+  return (s || "")
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+function getCurrentUser(){
+  const rawSession = localStorage.getItem("user_session");
+  if (rawSession) {
+    const s = safeParse(rawSession);
+    if (s?.nome) return { nome: s.nome };
+  }
+  const u = (localStorage.getItem("usuarioLogado") || "").trim();
+  if (u) return { nome: u };
+  return null;
+}
+
+const session = getCurrentUser();
+if (!session) window.location.href = PATH_INDEX;
+
+const usuarioNome = session.nome;
 
 // chave estável para salvar docs (não depende de auth)
 const usuarioKey = (localStorage.getItem("usuarioKey") || slug(usuarioNome)).trim();
@@ -96,7 +122,7 @@ const ATIVIDADES = [
 ];
 
 /* =========================
-   HELPERS
+   HELPERS (mantidos)
 ========================= */
 function showErr(text) {
   if (!errBox) return;
@@ -124,14 +150,6 @@ function daysInMonth(y, m0) { return new Date(y, m0 + 1, 0).getDate(); }
 function weekdayPt(d) { return ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"][d.getDay()]; }
 function isoDate(y, m1, d) { return `${y}-${pad2(m1)}-${pad2(d)}`; }
 function brDate(y, m1, d) { return `${pad2(d)}/${pad2(m1)}/${y}`; }
-
-function slug(s) {
-  return (s || "")
-    .toLowerCase()
-    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
-}
 
 function atividadeOptions(selected = "") {
   const opts = [`<option value="">-- selecione --</option>`];
@@ -210,7 +228,6 @@ async function loadCDsToDatalist() {
 
   let cdsFromFirestore = [];
   try {
-    // tenta ativos
     const snap = await getDocs(query(collection(db, CDS_COLLECTION), where("ativo", "==", true)));
     snap.forEach(d => {
       const data = d.data();
@@ -218,7 +235,6 @@ async function loadCDsToDatalist() {
       if (nome) cdsFromFirestore.push(nome);
     });
 
-    // se vazio, tenta tudo
     if (cdsFromFirestore.length === 0) {
       const snapAll = await getDocs(collection(db, CDS_COLLECTION));
       snapAll.forEach(d => {
@@ -228,10 +244,9 @@ async function loadCDsToDatalist() {
       });
     }
   } catch (e) {
-    // ignora
+    // ignora e usa fallback
   }
 
-  // ✅ fallback garantido com sua lista
   const cdsFinal = normalizeCDList(
     cdsFromFirestore.length > 0 ? cdsFromFirestore : CDS_RAW
   );
@@ -294,7 +309,6 @@ async function saveMonthToFirestore(yyyyMM) {
 
     const ref = doc(db, AGENDA_COLLECTION, `${usuarioKey}_${dataISO}`);
 
-    // se tudo vazio, remove (limpa)
     if (!cd && !atividade && !obs) {
       batch.delete(ref);
       continue;
@@ -327,6 +341,8 @@ if (btnMenu) {
 
 if (btnLogout) {
   btnLogout.addEventListener("click", () => {
+    // limpa novo + legado
+    localStorage.removeItem("user_session");
     localStorage.removeItem("usuarioLogado");
     localStorage.removeItem("usuarioKey");
     window.location.href = PATH_INDEX;
@@ -377,7 +393,7 @@ if (monthPicker) {
     // 1) mês aparece sempre
     renderMonthSkeleton(monthPicker.value);
 
-    // 2) CDs (agora com CDS_RAW completo como fallback)
+    // 2) CDs (fallback garantido)
     await loadCDsToDatalist();
 
     // 3) carregar do firebase (se falhar, não bloqueia)

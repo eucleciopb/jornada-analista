@@ -3,299 +3,134 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Agenda do Analista</title>
+  <title>Agenda - Resumo do Analista</title>
 
   <style>
     :root{
-      --bg:#0b1220;
-      --card:#0f1b2e;
-      --line:rgba(255,255,255,.10);
+      --bg:#0b0f14;
+      --card:rgba(255,255,255,.06);
+      --border:rgba(255,255,255,.10);
       --text:#e5e7eb;
       --muted:#9ca3af;
-      --primary:#2563eb;
+      --danger:#ef4444;
       --ok:#22c55e;
       --warn:#f59e0b;
-      --danger:#ef4444;
+      --field:rgba(0,0,0,.30);
     }
     *{box-sizing:border-box}
-    body{
-      margin:0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      background:
-        radial-gradient(1200px 600px at 20% 10%, rgba(37,99,235,.18), transparent 55%),
-        radial-gradient(900px 500px at 80% 80%, rgba(34,197,94,.12), transparent 55%),
-        var(--bg);
-      color:var(--text);
-      min-height:100vh;
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto;background:var(--bg);color:var(--text)}
+    .topbar{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:18px 22px}
+    .topbar h2{margin:0;font-size:18px}
+    .hint{color:var(--muted);font-size:12px;margin-top:4px}
+    .err{color:var(--danger);font-weight:900;font-size:12px;margin-top:6px;display:none;white-space:pre-wrap}
+    .wrap{max-width:1200px;margin:0 auto;padding:0 18px 30px}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:18px}
+    .row{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;justify-content:space-between}
+    label{font-size:12px;color:var(--muted);display:block;margin-bottom:6px}
+    input[type="month"]{
+      padding:10px 12px;border-radius:12px;border:1px solid var(--border);
+      background:var(--field);color:var(--text)
     }
-    .topbar{
-      position:sticky; top:0; z-index:10;
-      background:rgba(11,18,32,.85);
-      backdrop-filter: blur(10px);
-      border-bottom:1px solid var(--line);
-      padding:14px 16px;
-    }
-    .wrap{width:min(1100px, 100%); margin:0 auto; padding:18px 16px 28px;}
-    .row{display:flex; gap:12px; flex-wrap:wrap; align-items:center;}
-    h1{font-size:18px; margin:0; letter-spacing:.2px;}
-    .hint{color:var(--muted); font-size:12px; line-height:1.35;}
-    .card{
-      margin-top:14px;
-      background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
-      border:1px solid var(--line);
-      border-radius:16px;
-      padding:14px;
-      box-shadow:0 18px 40px rgba(0,0,0,.35);
-    }
-    .controls{
-      display:flex; gap:10px; flex-wrap:wrap; align-items:end;
-      justify-content:space-between;
-    }
-    .control{
-      display:flex; flex-direction:column; gap:6px;
-      min-width:220px;
-    }
-    label{font-size:12px; color:var(--muted);}
-    input, select, textarea{
-      width:100%;
-      border-radius:12px;
-      border:1px solid var(--line);
-      background:rgba(0,0,0,.18);
-      color:var(--text);
-      padding:10px 12px;
-      outline:none;
-    }
-    textarea{min-height:92px; resize:vertical;}
-    .btn{
-      border:0;
-      border-radius:12px;
-      padding:10px 12px;
-      cursor:pointer;
-      color:var(--text);
-      font-weight:800;
-      letter-spacing:.2px;
-      transition: transform .06s ease, filter .15s ease;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      gap:10px;
-      min-width:150px;
-      background:rgba(255,255,255,.06);
-      border:1px solid var(--line);
-    }
-    .btn:active{transform:scale(.99)}
-    .btn.primary{background:var(--primary); border-color:transparent;}
-    .btn.danger{background:rgba(239,68,68,.12); border-color:rgba(239,68,68,.25)}
-    .btn.small{min-width:auto; padding:8px 10px; font-size:13px;}
-    .tableWrap{overflow:auto; margin-top:12px; border-radius:14px; border:1px solid var(--line);}
-    table{width:100%; border-collapse:collapse; min-width:980px; background:rgba(0,0,0,.10);}
-    th, td{padding:10px 10px; border-bottom:1px solid var(--line); vertical-align:top;}
-    th{font-size:12px; color:var(--muted); text-align:left; background:rgba(255,255,255,.03); position:sticky; top:0;}
-    td{font-size:13px;}
+    .btn{border:1px solid var(--border);border-radius:12px;padding:10px 14px;font-weight:900;cursor:pointer;background:transparent;color:var(--text)}
+    .btn-primary{background:var(--danger);border-color:transparent}
+    .btn-primary:hover{filter:brightness(1.06)}
+    .pill{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;border:1px solid var(--border);font-size:12px;color:var(--muted)}
+    .dot{width:8px;height:8px;border-radius:50%}
+    .dot.ok{background:var(--ok)}
+    .dot.warn{background:var(--warn)}
+    .dot.danger{background:var(--danger)}
+    .cardsMini{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:12px}
+    .mini{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:14px;padding:12px}
+    .mini .t{font-size:12px;color:var(--muted)}
+    .mini .v{margin-top:6px;font-size:18px;font-weight:1000}
+    .table-wrap{overflow:auto;margin-top:14px;border-radius:14px;border:1px solid var(--border)}
+    table{width:100%;border-collapse:collapse;min-width:980px;background:rgba(255,255,255,.03)}
+    thead th{position:sticky;top:0;background:rgba(0,0,0,.35);backdrop-filter:blur(8px);text-align:left;font-size:12px;color:var(--muted);padding:12px;border-bottom:1px solid var(--border)}
+    tbody td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.06);vertical-align:top}
+    tbody tr:hover{background:rgba(255,255,255,.04)}
+    .badge{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;border:1px solid var(--border);font-size:12px;color:var(--muted)}
     .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;}
-    .badge{
-      display:inline-flex; align-items:center; gap:8px;
-      padding:4px 10px; border-radius:999px;
-      border:1px solid var(--line);
-      font-weight:800; font-size:12px;
-      background:rgba(0,0,0,.12);
-    }
-    .badge.ok{border-color:rgba(34,197,94,.35); background:rgba(34,197,94,.10); color:#bbf7d0;}
-    .badge.warn{border-color:rgba(245,158,11,.35); background:rgba(245,158,11,.10); color:#fde68a;}
-    .actions{display:flex; gap:8px; flex-wrap:wrap;}
-    .empty{
-      padding:14px;
-      color:var(--muted);
-      text-align:center;
-    }
-    .alert{
-      margin-top:12px;
-      border:1px solid rgba(239,68,68,.30);
-      background:rgba(239,68,68,.10);
-      color:#fecaca;
-      padding:10px 12px;
-      border-radius:12px;
-      display:none;
-      white-space:pre-wrap;
-      font-size:13px;
-    }
-
-    /* Modal */
-    .modalBack{
-      position:fixed; inset:0; background:rgba(0,0,0,.60);
-      display:none; align-items:center; justify-content:center;
-      padding:18px; z-index:50;
-    }
-    .modal{
-      width:min(780px, 100%);
-      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
-      border:1px solid var(--line);
-      border-radius:16px;
-      padding:14px;
-      box-shadow:0 20px 60px rgba(0,0,0,.55);
-    }
-    .modalHeader{display:flex; justify-content:space-between; align-items:center; gap:10px;}
-    .grid{
-      margin-top:12px;
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:10px;
-    }
-    @media (max-width:760px){
-      .grid{grid-template-columns: 1fr;}
-      table{min-width:900px;}
+    .empty{padding:14px;text-align:center;color:var(--muted)}
+    @media (max-width:720px){
+      .topbar{flex-direction:column;align-items:flex-start}
+      table{min-width:860px}
     }
   </style>
 </head>
 
 <body>
   <header class="topbar">
-    <div class="wrap row" style="justify-content:space-between;">
-      <div>
-        <h1>Agenda do Analista</h1>
-        <div id="userInfo" class="hint">—</div>
-      </div>
-      <div class="row">
-        <button class="btn small" id="btnVoltar">Voltar</button>
-        <button class="btn small danger" id="btnSair" title="Remove a sessão do navegador">Sair</button>
-      </div>
+    <div>
+      <h2>Agenda (Resumo)</h2>
+      <div class="hint" id="userInfo"></div>
+      <div class="err" id="errBox"></div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <!-- ✅ você está em /html usuarios/ então volta 1 nível e entra em /html menus/ -->
+      <button class="btn" id="btnMenu" type="button">Voltar ao Menu</button>
+      <button class="btn" id="btnLogout" type="button">Sair</button>
     </div>
   </header>
 
-  <main class="wrap">
-    <section class="card">
-      <div class="controls">
-        <div class="row" style="gap:10px; flex:1;">
-          <div class="control" style="min-width:220px;">
-            <label>Mês</label>
-            <input id="mesRef" type="month" />
-          </div>
-
-          <div class="control" style="min-width:280px;">
-            <label>Filtrar por tipo</label>
-            <select id="filtroTipo">
-              <option value="">Todos</option>
-              <option value="Reunião">Reunião</option>
-              <option value="Campo">Campo</option>
-              <option value="Treinamento">Treinamento</option>
-              <option value="Administrativo">Administrativo</option>
-              <option value="Outros">Outros</option>
-            </select>
-          </div>
+  <div class="wrap">
+    <main class="card">
+      <div class="row">
+        <div>
+          <h3 style="margin:0 0 6px">Minha agenda do mês</h3>
+          <div class="hint">Mostra o resumo do que foi registrado no Firestore para o seu usuário.</div>
+          <div class="hint">Fonte: coleção <span class="mono">agenda_dias</span>.</div>
         </div>
 
-        <div class="row">
-          <button class="btn primary" id="btnHoje">Ir para Hoje</button>
-          <button class="btn" id="btnRecarregar">Recarregar</button>
+        <div class="pill" id="statusPill"><span class="dot warn"></span> Status: aguardando</div>
+      </div>
+
+      <hr style="border:none;height:1px;background:rgba(255,255,255,.10);margin:16px 0">
+
+      <div class="row">
+        <div>
+          <label for="monthPicker">Mês</label>
+          <input id="monthPicker" type="month" />
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-primary" id="btnRecarregar" type="button">Recarregar</button>
         </div>
       </div>
 
-      <div id="alert" class="alert"></div>
+      <div class="cardsMini" id="cardsMini"></div>
 
-      <div class="tableWrap">
+      <div class="table-wrap">
         <table>
           <thead>
             <tr>
               <th style="width:140px;">Data</th>
-              <th style="width:120px;">Status</th>
-              <th style="width:160px;">Horário</th>
-              <th style="width:160px;">Tipo</th>
-              <th>Título / Local / Observações</th>
-              <th style="width:190px;">Ações</th>
+              <th style="width:110px;">Dia</th>
+              <th style="width:280px;">CD</th>
+              <th style="width:260px;">Atividade</th>
+              <th>Observações</th>
             </tr>
           </thead>
-          <tbody id="tbody">
-            <tr><td colspan="6" class="empty">Carregando…</td></tr>
+          <tbody id="tbodyAgenda">
+            <tr><td colspan="5" class="empty">Carregando…</td></tr>
           </tbody>
         </table>
       </div>
 
       <div class="hint" style="margin-top:10px;">
-        A agenda só abre com usuário autenticado (localStorage <span class="mono">user_session</span>). Se não houver sessão válida, redireciona para <span class="mono">login.html</span>.
+        Se não aparecer nada, pode ser porque ainda não existe registro seu nesse mês em <span class="mono">agenda_dias</span>.
       </div>
-    </section>
-  </main>
-
-  <!-- Modal editar dia -->
-  <div class="modalBack" id="modalBack">
-    <div class="modal">
-      <div class="modalHeader">
-        <div>
-          <div style="font-weight:900;">Editar dia</div>
-          <div class="hint mono" id="modalData">—</div>
-        </div>
-        <button class="btn small" id="btnFecharModal">Fechar</button>
-      </div>
-
-      <div class="grid">
-        <div class="control">
-          <label>Status</label>
-          <select id="mStatus">
-            <option value="Livre">Livre</option>
-            <option value="Ocupado">Ocupado</option>
-          </select>
-        </div>
-
-        <div class="control">
-          <label>Tipo</label>
-          <select id="mTipo">
-            <option value="Reunião">Reunião</option>
-            <option value="Campo">Campo</option>
-            <option value="Treinamento">Treinamento</option>
-            <option value="Administrativo">Administrativo</option>
-            <option value="Outros">Outros</option>
-          </select>
-        </div>
-
-        <div class="control">
-          <label>Início</label>
-          <input id="mInicio" type="time" />
-        </div>
-
-        <div class="control">
-          <label>Fim</label>
-          <input id="mFim" type="time" />
-        </div>
-
-        <div class="control" style="grid-column:1/-1;">
-          <label>Título</label>
-          <input id="mTitulo" type="text" placeholder="Ex: Reunião Matinal, Campo com SV, Treinamento CD..." />
-        </div>
-
-        <div class="control" style="grid-column:1/-1;">
-          <label>Local ou Link</label>
-          <input id="mLocal" type="text" placeholder="Ex: CD Boituva / Link do Teams / Endereço..." />
-        </div>
-
-        <div class="control" style="grid-column:1/-1;">
-          <label>Observações</label>
-          <textarea id="mObs" placeholder="Anotações rápidas do dia..."></textarea>
-        </div>
-      </div>
-
-      <div class="row" style="margin-top:12px; justify-content:space-between;">
-        <button class="btn danger" id="btnExcluirDia">Excluir registro</button>
-        <div class="row">
-          <button class="btn" id="btnSalvar">Salvar</button>
-          <button class="btn primary" id="btnSalvarFechar">Salvar e Fechar</button>
-        </div>
-      </div>
-
-      <div class="hint" style="margin-top:10px;" id="modalHint">—</div>
-    </div>
+    </main>
   </div>
 
   <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+    import {
+      getFirestore, collection, query, orderBy, startAt, endAt, getDocs,
+      Timestamp
+    } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
     /* =========================
        FIREBASE CONFIG (SEU)
     ========================= */
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-    import {
-      getFirestore, doc, getDoc, setDoc, deleteDoc,
-      collection, query, orderBy, startAt, endAt, getDocs,
-      Timestamp, serverTimestamp
-    } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
-
     const firebaseConfig = {
       apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
       authDomain: "jornada-portal.firebaseapp.com",
@@ -309,312 +144,249 @@
     const db = getFirestore(app);
 
     /* =========================
-       SESSÃO (B)
+       LOGIN CHECK (B)
+       - usa user_session
+       - fallback: usuarioLogado
     ========================= */
     const SESSION_KEY = "user_session";
 
-    function safeReadSession(){
-      const raw = localStorage.getItem(SESSION_KEY);
-      if(!raw) return null;
-      try{
-        const s = JSON.parse(raw);
-        if(!s?.matricula || !s?.nome) return null;
-        return s;
-      }catch{
-        return null;
-      }
+    function safeParse(raw){
+      try{ return JSON.parse(raw); } catch { return null; }
     }
 
-    const session = safeReadSession();
+    function readSession(){
+      const raw = localStorage.getItem(SESSION_KEY);
+      if(raw){
+        const s = safeParse(raw);
+        if(s?.nome) return s;
+      }
+      // fallback legado
+      const u = (localStorage.getItem("usuarioLogado") || "").trim();
+      if(u){
+        return { nome: u, matricula: u, perfil: "analista", cd: "" };
+      }
+      return null;
+    }
+
+    const session = readSession();
     if(!session){
-      // IMPORTANTE: agenda depende do login
-      window.location.href = "login.html";
+      // você está em /html usuarios/
+      window.location.href = "../index.html";
     }
 
     /* =========================
-       UI Helpers
+       UI
     ========================= */
     const $ = (id) => document.getElementById(id);
-    const alertBox = $("alert");
-    function showError(msg){
-      alertBox.style.display = "block";
-      alertBox.textContent = msg;
+    const errBox = $("errBox");
+    const statusPill = $("statusPill");
+    const userInfo = $("userInfo");
+    const monthPicker = $("monthPicker");
+    const tbody = $("tbodyAgenda");
+    const cardsMini = $("cardsMini");
+
+    userInfo.textContent = `Usuário: ${session.nome} • Perfil: ${session.perfil || "—"} • CD: ${session.cd || "—"}`;
+
+    function setStatus(kind, text){
+      const dotClass = kind === "ok" ? "ok" : (kind === "danger" ? "danger" : "warn");
+      statusPill.innerHTML = `<span class="dot ${dotClass}"></span> ${text}`;
     }
-    function clearError(){
-      alertBox.style.display = "none";
-      alertBox.textContent = "";
+    function showErr(msg){
+      errBox.style.display = "block";
+      errBox.textContent = msg;
+    }
+    function clearErr(){
+      errBox.style.display = "none";
+      errBox.textContent = "";
     }
 
     function pad(n){ return String(n).padStart(2,"0"); }
-    function ymd(d){ return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
-    function brDate(d){
-      return d.toLocaleDateString("pt-BR", { weekday:"short", day:"2-digit", month:"2-digit", year:"numeric" });
-    }
-    function escapeHtml(str){
-      return String(str ?? "").replace(/[&<>"']/g, s => ({
-        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
-      }[s]));
-    }
-    function statusBadge(status){
-      const cls = (status === "Ocupado") ? "warn" : "ok";
-      const txt = status || "Livre";
-      return `<span class="badge ${cls}">${txt}</span>`;
-    }
+    function startOfMonth(y, mIdx){ return new Date(y, mIdx, 1, 0,0,0,0); }
+    function endOfMonth(y, mIdx){ return new Date(y, mIdx+1, 0, 23,59,59,999); }
+    function weekdayShort(d){ return d.toLocaleDateString("pt-BR",{weekday:"short"}); }
+    function brDate(d){ return d.toLocaleDateString("pt-BR"); }
 
-    $("userInfo").textContent = `Usuário: ${session.nome} (${session.matricula}) • CD: ${session.cd || "—"} • Perfil: ${session.perfil || "—"}`;
+    // Tenta reconhecer o "dono" do registro com vários nomes de campo
+    function isMine(data){
+      const nome = (session.nome || "").toLowerCase();
+      const matricula = (session.matricula || "").toLowerCase();
 
-    /* =========================
-       DATA MODEL (Recomendado)
-       agendas/{matricula}/dias/{YYYY-MM-DD}
-    ========================= */
-    const analistaId = session.matricula;
+      const a1 = (data.analista || "").toLowerCase();
+      const a2 = (data.usuario || "").toLowerCase();
+      const a3 = (data.nomeAnalista || "").toLowerCase();
+      const a4 = (data.analistaId || "").toLowerCase();
+      const a5 = (data.matricula || "").toLowerCase();
 
-    function diasColRef(){
-      return collection(db, "agendas", analistaId, "dias");
-    }
-    function diaDocRef(dayKey){
-      return doc(db, "agendas", analistaId, "dias", dayKey);
+      return [a1,a2,a3,a4,a5].some(v => v && (v === nome || v === matricula));
     }
 
-    /* =========================
-       STATE
-    ========================= */
-    const tbody = $("tbody");
-    let currentMonth = "";
-    let currentMonthDays = [];
-    let agendaMap = new Map(); // key YYYY-MM-DD -> data
-    let modalDayKey = null;
+    function getDateFromDoc(data){
+      // prioridade: Timestamp 'data'
+      if(data?.data?.toDate) return data.data.toDate();
+      // fallback: dataString "YYYY-MM-DD"
+      if(typeof data?.dataString === "string" && data.dataString.includes("-")){
+        const dt = new Date(data.dataString + "T00:00:00");
+        if(!isNaN(dt)) return dt;
+      }
+      // fallback: "dia" number + "mes" string (se existir)
+      return null;
+    }
 
-    function startOfMonth(year, monthIndex){ return new Date(year, monthIndex, 1, 0, 0, 0, 0); }
-    function endOfMonth(year, monthIndex){ return new Date(year, monthIndex+1, 0, 23, 59, 59, 999); }
+    function getField(data, ...keys){
+      for(const k of keys){
+        if(data && data[k] != null && String(data[k]).trim() !== "") return String(data[k]).trim();
+      }
+      return "";
+    }
 
-    function renderTable(){
-      const filtroTipo = $("filtroTipo").value;
+    function renderSummary(items){
+      const diasComAgenda = items.length;
 
-      const rows = currentMonthDays.map(d=>{
-        const key = ymd(d);
-        const item = agendaMap.get(key) || null;
+      const cds = new Set();
+      const atividades = new Map(); // atividade -> count
 
-        const status = item?.status || "Livre";
-        const tipo = item?.tipo || "—";
-        const titulo = item?.titulo || "";
-        const inicio = item?.inicio || "";
-        const fim = item?.fim || "";
-        const local = item?.localOuLink || "";
-        const obs = item?.observacoes || "";
+      items.forEach(it=>{
+        const cd = getField(it, "cd", "CD", "centroDistribuicao");
+        if(cd) cds.add(cd);
 
-        if(filtroTipo){
-          if(!item) return "";
-          if(item.tipo !== filtroTipo) return "";
-        }
+        const atv = getField(it, "atividade", "Atividade", "tipo", "acao");
+        const k = atv || "—";
+        atividades.set(k, (atividades.get(k) || 0) + 1);
+      });
 
-        const horario = (inicio || fim) ? `${inicio || "—"} → ${fim || "—"}` : "—";
+      // top atividade
+      let topAtv = "—";
+      let topQtd = 0;
+      for(const [k,v] of atividades.entries()){
+        if(v > topQtd){ topQtd = v; topAtv = k; }
+      }
 
-        const detalhe = `
-          <div style="font-weight:900;">${titulo ? escapeHtml(titulo) : "<span style='color:var(--muted)'>Sem título</span>"}</div>
-          <div style="color:var(--muted); margin-top:4px;">
-            <span class="mono">${escapeHtml(local || "—")}</span>
-          </div>
-          ${obs ? `<div style="margin-top:6px; color:var(--muted)">${escapeHtml(obs)}</div>` : ""}
-        `;
+      cardsMini.innerHTML = `
+        <div class="mini">
+          <div class="t">Dias com agenda</div>
+          <div class="v">${diasComAgenda}</div>
+        </div>
+        <div class="mini">
+          <div class="t">CDs no mês</div>
+          <div class="v">${cds.size}</div>
+        </div>
+        <div class="mini">
+          <div class="t">Atividade mais comum</div>
+          <div class="v" style="font-size:14px;line-height:1.2">${topAtv}</div>
+        </div>
+        <div class="mini">
+          <div class="t">Registros carregados</div>
+          <div class="v">${items.length}</div>
+        </div>
+      `;
+    }
+
+    function renderTable(items){
+      if(items.length === 0){
+        tbody.innerHTML = `<tr><td colspan="5" class="empty">Sem registros para este mês.</td></tr>`;
+        return;
+      }
+
+      const rows = items.map(it=>{
+        const dt = getDateFromDoc(it);
+        const cd = getField(it, "cd", "CD", "centroDistribuicao") || "—";
+        const atividade = getField(it, "atividade", "Atividade", "tipo", "acao") || "—";
+        const obs = getField(it, "observacoes", "observacao", "obs", "Observações") || "";
 
         return `
           <tr>
-            <td class="mono">${brDate(d)}</td>
-            <td>${statusBadge(status)}</td>
-            <td class="mono">${escapeHtml(horario)}</td>
-            <td>${escapeHtml(tipo)}</td>
-            <td>${detalhe}</td>
-            <td>
-              <div class="actions">
-                <button class="btn small" data-edit="${key}">Editar</button>
-                ${item ? `<button class="btn small danger" data-del="${key}">Excluir</button>` : ""}
-              </div>
-            </td>
+            <td class="mono">${dt ? brDate(dt) : "—"}</td>
+            <td>${dt ? weekdayShort(dt) : "—"}</td>
+            <td>${cd}</td>
+            <td>${atividade}</td>
+            <td>${obs}</td>
           </tr>
         `;
-      }).filter(Boolean).join("");
+      }).join("");
 
-      tbody.innerHTML = rows || `<tr><td colspan="6" class="empty">Sem itens para este filtro/mês.</td></tr>`;
-
-      tbody.querySelectorAll("[data-edit]").forEach(btn=>{
-        btn.addEventListener("click", ()=> openModal(btn.getAttribute("data-edit")));
-      });
-      tbody.querySelectorAll("[data-del]").forEach(btn=>{
-        btn.addEventListener("click", ()=> quickDelete(btn.getAttribute("data-del")));
-      });
+      tbody.innerHTML = rows;
     }
 
     async function loadMonth(monthStr){
-      clearError();
-      currentMonth = monthStr;
+      clearErr();
+      setStatus("warn","Status: carregando…");
+      tbody.innerHTML = `<tr><td colspan="5" class="empty">Carregando…</td></tr>`;
+      cardsMini.innerHTML = "";
 
       const [y, m] = monthStr.split("-").map(Number);
       const start = startOfMonth(y, m-1);
       const end = endOfMonth(y, m-1);
 
-      currentMonthDays = [];
-      for(let d = new Date(start); d <= end; d.setDate(d.getDate()+1)){
-        currentMonthDays.push(new Date(d));
-      }
-
       try{
-        // range por 'data' evita índice composto
+        // ✅ Sem índice composto: busca por range em "data" e filtra no front por analista.
         const q = query(
-          diasColRef(),
+          collection(db, "agenda_dias"),
           orderBy("data"),
           startAt(Timestamp.fromDate(start)),
           endAt(Timestamp.fromDate(end))
         );
 
         const snap = await getDocs(q);
-        agendaMap = new Map();
-        snap.forEach(ds => agendaMap.set(ds.id, ds.data()));
 
-        renderTable();
+        const all = [];
+        snap.forEach(ds=>{
+          const data = ds.data();
+          // filtra só o que é do usuário logado
+          if(isMine(data)){
+            all.push(data);
+          }
+        });
+
+        // ordena por data (se algum doc veio sem Timestamp)
+        all.sort((a,b)=>{
+          const da = getDateFromDoc(a)?.getTime() || 0;
+          const dbb = getDateFromDoc(b)?.getTime() || 0;
+          return da - dbb;
+        });
+
+        renderSummary(all);
+        renderTable(all);
+        setStatus("ok", `Status: ok • ${all.length} registro(s)`);
+
       }catch(err){
         console.error(err);
-        showError(
-          "Erro ao carregar a agenda.\n\n" +
-          "Possíveis causas:\n" +
-          "1) Rules não permitem acesso\n" +
-          "2) Você abriu fora da pasta correta (GitHub Pages/Live Server)\n" +
-          "3) Firestore sem permissão/erro de rede\n\n" +
-          "Detalhe do erro (console): " + (err?.message || err)
+        setStatus("danger","Status: erro");
+        showErr(
+          "Não consegui carregar a agenda.\n\n" +
+          "Causas mais comuns:\n" +
+          "1) Seus docs em agenda_dias não possuem o campo 'data' (Timestamp)\n" +
+          "2) Você está salvando com outro nome de coleção\n" +
+          "3) A página está em host diferente do login (localStorage não bate)\n\n" +
+          "Detalhe: " + (err?.message || err)
         );
-        tbody.innerHTML = `<tr><td colspan="6" class="empty">Não foi possível carregar a agenda.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" class="empty">Erro ao carregar.</td></tr>`;
       }
     }
 
-    /* =========================
-       MODAL
-    ========================= */
-    const modalBack = $("modalBack");
+    // =========================
+    // NAV
+    // =========================
+    $("btnMenu").addEventListener("click", ()=>{
+      // está em /html usuarios/
+      window.location.href = "../html menus/menu.html";
+    });
 
-    function openModal(dayKey){
-      modalDayKey = dayKey;
-      const item = agendaMap.get(dayKey) || null;
+    $("btnLogout").addEventListener("click", ()=>{
+      localStorage.removeItem("user_session");
+      localStorage.removeItem("usuarioLogado");
+      window.location.href = "../index.html";
+    });
 
-      $("modalData").textContent = dayKey;
-
-      $("mStatus").value = item?.status || "Livre";
-      $("mTipo").value = item?.tipo || "Reunião";
-      $("mInicio").value = item?.inicio || "";
-      $("mFim").value = item?.fim || "";
-      $("mTitulo").value = item?.titulo || "";
-      $("mLocal").value = item?.localOuLink || "";
-      $("mObs").value = item?.observacoes || "";
-
-      $("modalHint").textContent = item ? "Registro existente (você pode atualizar)." : "Novo registro para este dia.";
-
-      modalBack.style.display = "flex";
-    }
-
-    function closeModal(){
-      modalBack.style.display = "none";
-      modalDayKey = null;
-    }
-
-    $("btnFecharModal").addEventListener("click", closeModal);
-    modalBack.addEventListener("click", (e)=>{ if(e.target === modalBack) closeModal(); });
-
-    async function saveModal(closeAfter){
-      clearError();
-      if(!modalDayKey) return;
-
-      const status = $("mStatus").value;
-      const tipo = $("mTipo").value;
-      const inicio = $("mInicio").value || "";
-      const fim = $("mFim").value || "";
-      const titulo = ($("mTitulo").value || "").trim();
-      const localOuLink = ($("mLocal").value || "").trim();
-      const observacoes = ($("mObs").value || "").trim();
-
-      if(status === "Ocupado" && !titulo){
-        showError("Se o dia está OCUPADO, informe um TÍTULO.");
-        return;
-      }
-
-      try{
-        await setDoc(diaDocRef(modalDayKey), {
-          data: Timestamp.fromDate(new Date(modalDayKey + "T00:00:00")),
-          status,
-          tipo,
-          inicio,
-          fim,
-          titulo,
-          localOuLink,
-          observacoes,
-          updatedAt: serverTimestamp(),
-          updatedBy: `${session.nome} (${session.matricula})`
-        }, { merge: true });
-
-        await loadMonth(currentMonth);
-        if(closeAfter) closeModal();
-      }catch(err){
-        console.error(err);
-        showError("Erro ao salvar.\n\nDetalhe: " + (err?.message || err));
-      }
-    }
-
-    async function deleteDay(){
-      clearError();
-      if(!modalDayKey) return;
-      if(!confirm(`Excluir o registro do dia ${modalDayKey}?`)) return;
-
-      try{
-        await deleteDoc(diaDocRef(modalDayKey));
-        await loadMonth(currentMonth);
-        closeModal();
-      }catch(err){
-        console.error(err);
-        showError("Erro ao excluir.\n\nDetalhe: " + (err?.message || err));
-      }
-    }
-
-    async function quickDelete(dayKey){
-      clearError();
-      if(!confirm(`Excluir o registro do dia ${dayKey}?`)) return;
-      try{
-        await deleteDoc(diaDocRef(dayKey));
-        await loadMonth(currentMonth);
-      }catch(err){
-        console.error(err);
-        showError("Erro ao excluir.\n\nDetalhe: " + (err?.message || err));
-      }
-    }
-
-    $("btnSalvar").addEventListener("click", ()=> saveModal(false));
-    $("btnSalvarFechar").addEventListener("click", ()=> saveModal(true));
-    $("btnExcluirDia").addEventListener("click", deleteDay);
-
-    /* =========================
-       CONTROLES
-    ========================= */
+    // =========================
+    // INIT
+    // =========================
     const now = new Date();
     const defaultMonth = `${now.getFullYear()}-${pad(now.getMonth()+1)}`;
-    $("mesRef").value = defaultMonth;
+    monthPicker.value = defaultMonth;
 
-    $("mesRef").addEventListener("change", ()=> loadMonth($("mesRef").value));
-    $("filtroTipo").addEventListener("change", renderTable);
+    monthPicker.addEventListener("change", ()=> loadMonth(monthPicker.value));
+    $("btnRecarregar").addEventListener("click", ()=> loadMonth(monthPicker.value));
 
-    $("btnHoje").addEventListener("click", ()=>{
-      $("mesRef").value = defaultMonth;
-      loadMonth(defaultMonth);
-    });
-
-    $("btnRecarregar").addEventListener("click", ()=> loadMonth(currentMonth));
-
-    $("btnVoltar").addEventListener("click", ()=> { window.location.href = "admin.html"; });
-
-    $("btnSair").addEventListener("click", ()=>{
-      localStorage.removeItem(SESSION_KEY);
-      window.location.href = "login.html";
-    });
-
-    /* =========================
-       INIT
-    ========================= */
     loadMonth(defaultMonth);
   </script>
 </body>

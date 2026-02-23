@@ -10,7 +10,6 @@
 <body>
 
   <main class="container">
-
     <section class="card">
 
       <div class="header">
@@ -54,19 +53,42 @@
       </button>
 
     </section>
-
   </main>
 
   <script>
-    // 🔐 Verifica usuário
-    const usuario = localStorage.getItem("usuarioLogado");
+    // =========================================================
+    // ✅ CHECK DE SESSÃO (aceita padrão novo e legado)
+    // - novo: user_session (JSON)
+    // - legado: usuarioLogado (string)
+    // =========================================================
     const welcomeText = document.getElementById("welcomeText");
     const btnLogout = document.getElementById("btnLogout");
 
-    if (!usuario) {
+    function safeParse(raw){
+      try { return JSON.parse(raw); } catch { return null; }
+    }
+
+    function getCurrentUser(){
+      // 1) padrão novo
+      const rawSession = localStorage.getItem("user_session");
+      if (rawSession) {
+        const s = safeParse(rawSession);
+        if (s?.nome) return { nome: s.nome };
+      }
+
+      // 2) legado
+      const u = (localStorage.getItem("usuarioLogado") || "").trim();
+      if (u) return { nome: u };
+
+      return null;
+    }
+
+    const user = getCurrentUser();
+
+    if (!user) {
       window.location.href = "../index.html";
     } else {
-      welcomeText.textContent = `Olá, ${usuario}`;
+      welcomeText.textContent = `Olá, ${user.nome}`;
     }
 
     function goTo(page) {
@@ -74,7 +96,9 @@
     }
 
     btnLogout.addEventListener("click", () => {
+      // limpa tudo
       localStorage.removeItem("usuarioLogado");
+      localStorage.removeItem("user_session");
       window.location.href = "../index.html";
     });
   </script>
