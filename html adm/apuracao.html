@@ -5,6 +5,147 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Apuração de Treinamentos</title>
   <link rel="stylesheet" href="../css/styles.css" />
+
+  <style>
+    .table-wrap{ overflow:auto; }
+    .table{ min-width: 1200px; }
+
+    .status-pill{
+      display:inline-flex;
+      align-items:center;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.04);
+      font-weight: 900;
+      font-size: 12px;
+      white-space:nowrap;
+    }
+    .status-validado{ color:#22c55e; border-color: rgba(34,197,94,.35); background: rgba(34,197,94,.10); }
+    .status-atrasado{ color:#ef4444; border-color: rgba(239,68,68,.35); background: rgba(239,68,68,.10); }
+    .status-pendente{ color:#facc15; border-color: rgba(250,204,21,.35); background: rgba(250,204,21,.10); }
+
+    .btn-mini{
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.04);
+      color: rgba(255,255,255,.95);
+      font-weight: 900;
+      cursor:pointer;
+      white-space:nowrap;
+    }
+    .btn-mini.primary{
+      border-color: transparent;
+      background: rgba(217,27,46,.95);
+    }
+    .btn-mini:hover{ filter: brightness(1.08); }
+
+    /* ===== Modal ===== */
+    .modal-backdrop{
+      position:fixed; inset:0;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding: 18px;
+      background: rgba(0,0,0,.60);
+      z-index: 9999;
+    }
+    .modal{
+      width: min(920px, 100%);
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(17,24,39,.96);
+      box-shadow: 0 24px 60px rgba(0,0,0,.55);
+      overflow:hidden;
+    }
+    .modal-header{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap: 12px;
+      padding: 16px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+    .modal-header h3{ margin:0; font-size: 16px; }
+    .modal-header .sub{
+      margin-top:6px;
+      font-size: 12px;
+      opacity:.85;
+      line-height: 1.35;
+    }
+    .modal-close{
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.04);
+      color: rgba(255,255,255,.9);
+      border-radius: 12px;
+      padding: 10px 12px;
+      cursor:pointer;
+      font-weight: 900;
+    }
+    .modal-body{
+      padding: 14px 16px 16px 16px;
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .box{
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+      border-radius: 16px;
+      padding: 12px;
+    }
+    .box label{
+      display:block;
+      font-size: 12px;
+      opacity:.75;
+      margin-bottom: 6px;
+    }
+    .box .val{
+      font-size: 13px;
+      font-weight: 900;
+      line-height: 1.35;
+      white-space: pre-wrap;
+    }
+    .field{
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.04);
+      color: rgba(255,255,255,.95);
+      outline:none;
+    }
+    .field:focus{
+      border-color: rgba(255,59,59,.55);
+      box-shadow: 0 0 0 4px rgba(217,27,46,.18);
+    }
+    .modal-actions{
+      display:flex;
+      gap: 10px;
+      justify-content:flex-end;
+      padding: 12px 16px 16px 16px;
+      border-top: 1px solid rgba(255,255,255,.08);
+      flex-wrap: wrap;
+    }
+    .btn-state{
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.04);
+      color: rgba(255,255,255,.95);
+      font-weight: 900;
+      cursor:pointer;
+    }
+    .btn-state.ok{ border-color: rgba(34,197,94,.35); background: rgba(34,197,94,.12); }
+    .btn-state.bad{ border-color: rgba(239,68,68,.35); background: rgba(239,68,68,.12); }
+    .btn-state.muted{ border-color: rgba(255,255,255,.12); background: rgba(255,255,255,.03); }
+
+    @media (max-width: 840px){
+      .modal-body{ grid-template-columns: 1fr; }
+      .table{ min-width: 980px; }
+    }
+  </style>
 </head>
 
 <body class="bg">
@@ -24,11 +165,8 @@
 <main class="card wide">
   <section class="row-between" style="align-items:flex-end;">
     <div>
-      <h3>Time de Avaliadores</h3>
-      <p class="hint">
-        Preencha se o desafio foi executado (fez ou não fez) e se performou (deu certo ou não).
-      </p>
-      <p class="hint" id="hintFonte" style="opacity:.85;"></p>
+      <h3>Resumo para Apuração</h3>
+      <p class="hint">Status na tabela: <b>Validado</b>, <b>Atrasado</b> ou <b>Pendente</b>. Clique em <b>Validar</b> para marcar se atingiu a meta ou não.</p>
     </div>
 
     <div style="min-width:260px;">
@@ -44,7 +182,7 @@
   <section class="row-between" style="align-items:flex-end;">
     <div style="flex:1; min-width:260px;">
       <label for="busca">Buscar</label>
-      <input id="busca" type="text" placeholder="Treinamento, CD, desafio, meta..." />
+      <input id="busca" type="text" placeholder="Usuário, treinamento, CD..." />
     </div>
 
     <div style="min-width:220px;">
@@ -66,11 +204,9 @@
       <label for="fStatus">Status</label>
       <select id="fStatus">
         <option value="">Todos</option>
+        <option value="validado">Validado</option>
+        <option value="atrasado">Atrasado</option>
         <option value="pendente">Pendente</option>
-        <option value="executouSim">Executou (Sim)</option>
-        <option value="executouNao">Executou (Não)</option>
-        <option value="performouSim">Performou (Sim)</option>
-        <option value="performouNao">Performou (Não)</option>
       </select>
     </div>
   </section>
@@ -79,34 +215,73 @@
     <table class="table table-sticky">
       <thead>
         <tr>
-          <th style="width:110px;">Data</th>
-          <th style="width:120px;">Público</th>
-          <th style="width:260px;">Treinamento</th>
-          <th style="width:230px;">CD</th>
-          <th style="width:260px;">Desafio</th>
-          <th style="width:260px;">Meta</th>
-          <th style="width:90px;">Pessoas</th>
-          <th style="width:80px;">Nota</th>
-
-          <th style="width:160px;">Executou?</th>
-          <th style="width:160px;">Performou?</th>
-          <th style="width:240px;">Comentário</th>
-
-          <th style="width:160px;">Avaliador</th>
-          <th style="width:160px;">Atualizado</th>
+          <th style="width:160px;">Usuário</th>
+          <th style="width:120px;">Data</th>
+          <th style="width:260px;">CD</th>
+          <th>Treinamento</th>
+          <th style="width:160px;">Prazo Apuração</th>
+          <th style="width:160px;">Status</th>
+          <th style="width:140px;">Ação</th>
         </tr>
       </thead>
       <tbody id="tbody">
-        <tr><td colspan="13" style="opacity:.8;">Carregando…</td></tr>
+        <tr><td colspan="7" style="opacity:.8;">Carregando…</td></tr>
       </tbody>
     </table>
   </div>
-
-  <div class="page-actions" style="margin-top:12px; justify-content:flex-end; gap:10px;">
-    <button id="btnSalvar" type="button">Salvar Apurações</button>
-  </div>
-
 </main>
+
+<!-- ===== MODAL VALIDAR ===== -->
+<div id="modalBackdrop" class="modal-backdrop" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <h3 id="mTitle">Validar Meta</h3>
+        <div class="sub" id="mSub"></div>
+      </div>
+      <button class="modal-close" id="mClose" type="button">Fechar</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="box">
+        <label>Desafio</label>
+        <div class="val" id="mDesafio">-</div>
+      </div>
+
+      <div class="box">
+        <label>Meta</label>
+        <div class="val" id="mMeta">-</div>
+      </div>
+
+      <div class="box">
+        <label>Data limite apuração</label>
+        <div class="val" id="mPrazoData">-</div>
+      </div>
+
+      <div class="box">
+        <label>Em dia ou atrasado?</label>
+        <div class="val" id="mPrazoStatus">-</div>
+      </div>
+
+      <div class="box" style="grid-column: 1 / -1;">
+        <label>Comentário do avaliador</label>
+        <input id="mComentario" class="field" maxlength="140" placeholder="Ex.: Evidência confirmada no painel/rota..." />
+      </div>
+
+      <div class="box" style="grid-column: 1 / -1;">
+        <label>Data em que foi apurado (opcional)</label>
+        <input id="mDataApurada" class="field" type="date" />
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-state muted" id="btnPendente" type="button">Pendente</button>
+      <button class="btn-state bad" id="btnNaoAtingiu" type="button">Não atingiu a meta</button>
+      <button class="btn-state ok" id="btnAtingiu" type="button">Atingiu a meta</button>
+      <button class="btn-mini primary" id="btnSalvarModal" type="button">Salvar</button>
+    </div>
+  </div>
+</div>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
@@ -115,7 +290,7 @@
     collection,
     getDocs,
     doc,
-    writeBatch,
+    setDoc,
     serverTimestamp
   } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
@@ -135,7 +310,7 @@
   const db = getFirestore(app);
 
   /* =========================
-     COLEÇÕES (Firestore)
+     COLEÇÕES
   ========================= */
   const TREINOS_COLLECTION = "treinamentos_realizados";
   const APURACOES_COLLECTION = "apuracoes_treinamentos";
@@ -147,16 +322,9 @@
   const PATH_MENU  = "../html menus/menu.html";
 
   /* =========================
-     SESSÃO PADRONIZADA
+     SESSÃO (mesmo padrão do seu sistema)
   ========================= */
   function safeParse(raw){ try { return JSON.parse(raw); } catch { return null; } }
-  function slug(s) {
-    return (s || "")
-      .toLowerCase()
-      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)/g, "");
-  }
   function getCurrentUserName(){
     const raw = localStorage.getItem("user_session");
     if(raw){
@@ -166,10 +334,10 @@
     return (localStorage.getItem("usuarioLogado") || "").trim();
   }
 
-  const usuario = getCurrentUserName();
-  if (!usuario) window.location.href = PATH_INDEX;
+  const avaliador = getCurrentUserName();
+  if (!avaliador) window.location.href = PATH_INDEX;
 
-  document.getElementById("userInfo").textContent = `Avaliador: ${usuario}`;
+  document.getElementById("userInfo").textContent = `Avaliador: ${avaliador}`;
   document.getElementById("btnMenu").onclick = () => window.location.href = PATH_MENU;
   document.getElementById("btnLogout").onclick = () => {
     localStorage.removeItem("user_session");
@@ -186,29 +354,63 @@
   const fCd = document.getElementById("fCd");
   const fStatus = document.getElementById("fStatus");
   const tbody = document.getElementById("tbody");
-  const btnSalvar = document.getElementById("btnSalvar");
   const msg = document.getElementById("msg");
   const cdList = document.getElementById("cdList");
-  const hintFonte = document.getElementById("hintFonte");
 
-  /* =========================
-     HELPERS
-  ========================= */
+  /* Modal */
+  const modalBackdrop = document.getElementById("modalBackdrop");
+  const mClose = document.getElementById("mClose");
+  const mTitle = document.getElementById("mTitle");
+  const mSub = document.getElementById("mSub");
+  const mDesafio = document.getElementById("mDesafio");
+  const mMeta = document.getElementById("mMeta");
+  const mPrazoData = document.getElementById("mPrazoData");
+  const mPrazoStatus = document.getElementById("mPrazoStatus");
+  const mComentario = document.getElementById("mComentario");
+  const mDataApurada = document.getElementById("mDataApurada");
+
+  const btnPendente = document.getElementById("btnPendente");
+  const btnNaoAtingiu = document.getElementById("btnNaoAtingiu");
+  const btnAtingiu = document.getElementById("btnAtingiu");
+  const btnSalvarModal = document.getElementById("btnSalvarModal");
+
   function setMsg(text, type="info"){
     msg.textContent = text || "";
     msg.style.color = type === "success" ? "#22c55e" : (type === "error" ? "#ef4444" : "#d1d5db");
   }
+
   function pad2(n){ return String(n).padStart(2,"0"); }
   function toMonthKey(d){ return `${d.getFullYear()}-${pad2(d.getMonth()+1)}`; }
+  function normalize(s){ return (s || "").replace(/\s+/g," ").trim(); }
+
   function toBR(iso){
     if (!iso) return "-";
     const [y,m,d] = String(iso).split("-");
+    if (!y || !m || !d) return String(iso);
     return `${d}/${m}/${y}`;
   }
-  function normalize(s){ return (s || "").replace(/\s+/g," ").trim(); }
+
+  function todayISO(){
+    const d = new Date();
+    return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+  }
+
+  function isLate(dataApuracao){
+    if (!dataApuracao) return false;
+    return todayISO() > String(dataApuracao);
+  }
+
+  // ✅ STATUS DA TABELA: só 3 (validado/atrasado/pendente)
+  function computeStatusTabela(dataApuracao, metaAtingida){
+    // metaAtingida: "atingiu" | "nao_atingiu" | "pendente" | undefined
+    const m = metaAtingida || "pendente";
+    if (m !== "pendente") return { key:"validado", label:"Validado", cls:"status-validado" };
+    if (isLate(dataApuracao)) return { key:"atrasado", label:"Atrasado", cls:"status-atrasado" };
+    return { key:"pendente", label:"Pendente", cls:"status-pendente" };
+  }
 
   /* =========================
-     CDs (para filtro)
+     CDs (filtro)
   ========================= */
   const CDS_RAW = [
     "CD - Alagoinhas","CD - Andradina","CD - Angra dos Reis","CD - Aparecida de Goiânia","CD - Araçatuba","CD - Arapiraca","CD - Araraquara",
@@ -233,20 +435,13 @@
   const CDS = Array.from(new Set(CDS_RAW.map(normalize))).filter(Boolean).sort((a,b)=>a.localeCompare(b,"pt-BR"));
   cdList.innerHTML = CDS.map(cd => `<option value="${cd}"></option>`).join("");
 
-  function nowBR(){
-    const d = new Date();
-    return `${pad2(d.getDate())}/${pad2(d.getMonth()+1)}/${d.getFullYear()} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
-  }
-
   /* =========================
      CACHE
   ========================= */
   let TREINOS_CACHE = [];
-  let APURACOES_MAP = {}; // { [treinoId]: { executou, performou, comentario, avaliador, updatedAt } }
+  let APURACOES_MAP = {}; // { [treinoId]: { metaAtingida, comentario, avaliador, updatedAtText, dataApurada } }
 
-  async function loadTreinosFromFirestore(){
-    // Estratégia robusta: carrega tudo e filtra no front pelo mês (projeto pequeno/médio)
-    // (se quiser otimizar depois, adicionamos campo yyyyMM no registro do treino e fazemos query direta)
+  async function loadTreinos(){
     const snap = await getDocs(collection(db, TREINOS_COLLECTION));
     const arr = [];
     snap.forEach(d => arr.push({ id: d.id, ...d.data() }));
@@ -254,17 +449,112 @@
     return arr;
   }
 
-  async function loadApuracoesFromFirestore(){
+  async function loadApuracoes(){
     const snap = await getDocs(collection(db, APURACOES_COLLECTION));
     const map = {};
-    snap.forEach(d => {
-      const data = d.data();
-      const treinoId = d.id;
-      map[treinoId] = data || {};
-    });
+    snap.forEach(d => map[d.id] = (d.data() || {}));
     APURACOES_MAP = map;
     return map;
   }
+
+  /* =========================
+     MODAL STATE
+  ========================= */
+  let CURRENT_T = null;
+  let CURRENT_META = "pendente"; // "atingiu" | "nao_atingiu" | "pendente"
+
+  function openModal(t){
+    CURRENT_T = t;
+
+    const ap = APURACOES_MAP[t.id] || {};
+    CURRENT_META = ap.metaAtingida || "pendente";
+
+    const usuarioNome = t.usuarioNome || "-";
+    const treino = t.treinamento || "-";
+    const cd = t.cd || "-";
+    const dataTreino = toBR(t.data);
+
+    mTitle.textContent = "Validar se Atingiu a Meta";
+    mSub.textContent = `${usuarioNome} • ${dataTreino} • ${cd} • ${treino}`;
+
+    mDesafio.textContent = t.desafio || "-";
+    mMeta.textContent = t.meta || "-";
+
+    const prazo = t.dataApuracao || "";
+    mPrazoData.textContent = prazo ? `${toBR(prazo)} (${prazo})` : "Sem data";
+    mPrazoStatus.innerHTML = isLate(prazo)
+      ? `<span class="status-pill status-atrasado">Atrasado</span>`
+      : `<span class="status-pill status-validado" style="opacity:.85;">Em dia</span>`;
+
+    mComentario.value = ap.comentario || "";
+    mDataApurada.value = ap.dataApurada || "";
+
+    modalBackdrop.style.display = "flex";
+  }
+
+  function closeModal(){
+    modalBackdrop.style.display = "none";
+    CURRENT_T = null;
+    CURRENT_META = "pendente";
+  }
+
+  mClose.addEventListener("click", closeModal);
+  modalBackdrop.addEventListener("click", (e) => {
+    if (e.target === modalBackdrop) closeModal();
+  });
+
+  btnPendente.addEventListener("click", () => CURRENT_META = "pendente");
+  btnNaoAtingiu.addEventListener("click", () => CURRENT_META = "nao_atingiu");
+  btnAtingiu.addEventListener("click", () => CURRENT_META = "atingiu");
+
+  /* =========================
+     SAVE MODAL (Firestore)
+  ========================= */
+  async function saveModal(){
+    if (!CURRENT_T?.id) return;
+
+    const comentario = normalize(mComentario.value || "");
+    const dataApurada = (mDataApurada.value || "").trim();
+
+    const ref = doc(db, APURACOES_COLLECTION, CURRENT_T.id);
+
+    await setDoc(ref, {
+      treinoId: CURRENT_T.id,
+
+      // ✅ aqui está o "validar se atingiu a meta ou não"
+      metaAtingida: CURRENT_META, // "atingiu" | "nao_atingiu" | "pendente"
+
+      comentario: comentario || null,
+      dataApurada: dataApurada || null,
+
+      avaliador: avaliador,
+      updatedAtText: new Date().toLocaleString("pt-BR"),
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+
+    APURACOES_MAP[CURRENT_T.id] = {
+      ...(APURACOES_MAP[CURRENT_T.id] || {}),
+      metaAtingida: CURRENT_META,
+      comentario: comentario || null,
+      dataApurada: dataApurada || null,
+      avaliador,
+      updatedAtText: new Date().toLocaleString("pt-BR")
+    };
+
+    closeModal();
+    render();
+  }
+
+  btnSalvarModal.addEventListener("click", async () => {
+    try{
+      setMsg("Salvando validação…");
+      await saveModal();
+      setMsg("Salvo ✅", "success");
+    }catch(e){
+      console.error(e);
+      setMsg("Erro ao salvar no Firebase. Verifique RULES.", "error");
+    }
+  });
 
   /* =========================
      RENDER
@@ -274,161 +564,87 @@
     const q = (busca.value || "").toLowerCase();
     const pub = fPublico.value;
     const cdFilter = normalize(fCd.value);
-    const status = fStatus.value;
+    const statusFilter = fStatus.value;
 
-    const allTreinos = (TREINOS_CACHE || [])
+    const base = (TREINOS_CACHE || [])
       .filter(t => String(t.data || "").slice(0,7) === monthKey)
       .filter(t => !pub || t.publico === pub)
       .filter(t => !cdFilter || normalize(t.cd) === cdFilter);
 
-    let rows = allTreinos.map(t => {
-      const a = APURACOES_MAP[t.id] || {
-        executou:"pendente",
-        performou:"pendente",
-        comentario:"",
-        avaliador:"",
-        updatedAt:""
-      };
-      return { t, a };
+    let rows = base.map(t => {
+      const ap = APURACOES_MAP[t.id] || {};
+      const metaAtingida = ap.metaAtingida || "pendente";
+      const st = computeStatusTabela(t.dataApuracao, metaAtingida);
+      return { t, ap, st };
     });
 
     if (q){
       rows = rows.filter(({t}) => {
-        const blob = [t.treinamento, t.cd, t.desafio, t.meta, t.obs, t.usuarioNome].join(" ").toLowerCase();
+        const blob = [t.usuarioNome, t.treinamento, t.cd, t.publico].join(" ").toLowerCase();
         return blob.includes(q);
       });
     }
 
-    if (status){
-      rows = rows.filter(({a}) => {
-        if (status === "pendente") return a.executou === "pendente" || a.performou === "pendente";
-        if (status === "executouSim") return a.executou === "sim";
-        if (status === "executouNao") return a.executou === "nao";
-        if (status === "performouSim") return a.performou === "sim";
-        if (status === "performouNao") return a.performou === "nao";
-        return true;
-      });
+    if (statusFilter){
+      rows = rows.filter(({st}) => st.key === statusFilter);
     }
 
-    rows.sort((x,y) => {
-      const d = String(y.t.data || "").localeCompare(String(x.t.data || ""));
+    rows.sort((a,b) => {
+      const d = String(b.t.data || "").localeCompare(String(a.t.data || ""));
       if (d !== 0) return d;
-      return String(x.t.cd||"").localeCompare(String(y.t.cd||""),"pt-BR");
+      return String(a.t.usuarioNome || "").localeCompare(String(b.t.usuarioNome || ""), "pt-BR");
     });
 
     tbody.innerHTML = "";
 
     if (rows.length === 0){
-      tbody.innerHTML = `<tr><td colspan="13" style="opacity:.8;">Sem registros para este mês/filtros.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="7" style="opacity:.8;">Sem registros para este mês/filtros.</td></tr>`;
       return;
     }
 
-    for (const {t, a} of rows){
+    for (const {t, ap, st} of rows){
+      const prazo = t.dataApuracao ? toBR(t.dataApuracao) : "-";
       const tr = document.createElement("tr");
-      tr.dataset.id = t.id;
-
-      if (a.performou === "sim") tr.classList.add("row-good");
-      if (a.performou === "nao") tr.classList.add("row-bad");
 
       tr.innerHTML = `
+        <td>${t.usuarioNome || "-"}</td>
         <td>${toBR(t.data)}</td>
-        <td><span class="pill">${t.publico || "-"}</span></td>
-        <td>${t.treinamento || "-"}</td>
         <td>${t.cd || "-"}</td>
-        <td>${t.desafio || "-"}</td>
-        <td>${t.meta || "-"}</td>
-        <td style="text-align:center;">${t.totalPessoas ?? "-"}</td>
-        <td style="text-align:center;">${t.notaMedia ?? "-"}</td>
-
+        <td>${t.treinamento || "-"}</td>
+        <td>${prazo}</td>
+        <td><span class="status-pill ${st.cls}">${st.label}</span></td>
         <td>
-          <select data-executou>
-            <option value="pendente" ${a.executou==="pendente"?"selected":""}>Pendente</option>
-            <option value="sim" ${a.executou==="sim"?"selected":""}>Sim</option>
-            <option value="nao" ${a.executou==="nao"?"selected":""}>Não</option>
-          </select>
+          <button class="btn-mini primary" type="button" data-validate="${t.id}">Validar</button>
         </td>
-
-        <td>
-          <select data-performou>
-            <option value="pendente" ${a.performou==="pendente"?"selected":""}>Pendente</option>
-            <option value="sim" ${a.performou==="sim"?"selected":""}>Sim</option>
-            <option value="nao" ${a.performou==="nao"?"selected":""}>Não</option>
-          </select>
-        </td>
-
-        <td>
-          <input data-comentario type="text" maxlength="140"
-            placeholder="Comentário..." value="${(a.comentario || "").replace(/"/g,"&quot;")}">
-        </td>
-
-        <td style="opacity:.9;">${a.avaliador || "-"}</td>
-        <td style="opacity:.9;">${a.updatedAt || "-"}</td>
       `;
 
       tbody.appendChild(tr);
     }
+
+    tbody.querySelectorAll("[data-validate]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const id = btn.getAttribute("data-validate");
+        const t = TREINOS_CACHE.find(x => x.id === id);
+        if (t) openModal(t);
+      });
+    });
   }
 
   /* =========================
-     SAVE (Firestore)
-  ========================= */
-  btnSalvar.onclick = async () => {
-    try{
-      setMsg("Salvando apurações…");
-      const batch = writeBatch(db);
-      const trs = [...tbody.querySelectorAll("tr[data-id]")];
-
-      for (const tr of trs){
-        const id = tr.dataset.id;
-
-        const executou = tr.querySelector("[data-executou]")?.value || "pendente";
-        const performou = tr.querySelector("[data-performou]")?.value || "pendente";
-        const comentario = normalize(tr.querySelector("[data-comentario]")?.value || "");
-
-        const ref = doc(db, APURACOES_COLLECTION, id);
-
-        batch.set(ref, {
-          treinoId: id,
-          executou,
-          performou,
-          comentario,
-          avaliador: usuario,
-          updatedAtText: nowBR(),
-          updatedAt: serverTimestamp()
-        }, { merge: true });
-      }
-
-      await batch.commit();
-
-      setMsg("Apurações salvas ✅", "success");
-
-      // recarrega apurações do Firestore para refletir na tabela
-      await loadApuracoesFromFirestore();
-      render();
-
-    }catch(e){
-      console.error(e);
-      setMsg("Erro ao salvar no Firebase. Verifique RULES.", "error");
-    }
-  };
-
-  /* =========================
-     INIT / listeners
+     INIT
   ========================= */
   monthPicker.value = toMonthKey(new Date());
 
   try{
     setMsg("Carregando do Firebase…");
-    hintFonte.textContent = "Fonte: Firestore (treinamentos_realizados + apuracoes_treinamentos)";
-
-    await loadTreinosFromFirestore();
-    await loadApuracoesFromFirestore();
-
+    await loadTreinos();
+    await loadApuracoes();
     setMsg("");
     render();
   }catch(e){
     console.error(e);
     setMsg("Erro ao carregar do Firebase. Verifique Rules/Conexão.", "error");
+    tbody.innerHTML = `<tr><td colspan="7" style="opacity:.8;">Falha ao carregar.</td></tr>`;
   }
 
   monthPicker.addEventListener("change", render);
@@ -437,39 +653,6 @@
   fCd.addEventListener("input", render);
   fStatus.addEventListener("change", render);
 </script>
-
-<style>
-.table-wrap{ overflow:auto; }
-.table{ min-width: 1600px; }
-
-tbody select, tbody input{
-  width: 100%;
-  padding: 10px 10px;
-  border-radius: 14px;
-  border: 1px solid rgba(255,255,255,.10);
-  background: rgba(255,255,255,.04);
-  color: rgba(255,255,255,.95);
-  outline: none;
-}
-
-tbody select:focus, tbody input:focus{
-  border-color: rgba(255,59,59,.55);
-  box-shadow: 0 0 0 4px rgba(217,27,46,.18);
-}
-
-.pill{
-  display:inline-flex;
-  padding: 6px 10px;
-  border-radius: 999px;
-  border: 1px solid rgba(255,255,255,.12);
-  background: rgba(255,255,255,.04);
-  font-weight: 800;
-  font-size: 12px;
-}
-
-.row-good{ background: rgba(34,197,94,.10) !important; }
-.row-bad{ background: rgba(239,68,68,.10) !important; }
-</style>
 
 </body>
 </html>

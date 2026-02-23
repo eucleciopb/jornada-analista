@@ -4,15 +4,112 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Biblioteca de Treinamentos</title>
-  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="../css/styles.css" />
+
+  <style>
+    .table-wrap{ overflow:auto; }
+    .table{ min-width: 1050px; }
+
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.04);
+      font-weight: 900;
+      font-size: 12px;
+      white-space:nowrap;
+    }
+
+    .btn-mini{
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.04);
+      color: rgba(255,255,255,.95);
+      font-weight: 900;
+      cursor:pointer;
+      white-space:nowrap;
+    }
+    .btn-mini:hover{ filter: brightness(1.08); }
+
+    .linkcell a{
+      color: rgba(255,255,255,.95);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+    .muted{ opacity:.75; }
+
+    /* Anti-loop: tela de sessão expirada */
+    .blocker{
+      position:fixed; inset:0; z-index:9999;
+      background: rgba(0,0,0,.70);
+      display:none; align-items:center; justify-content:center;
+      padding: 18px;
+    }
+    .blocker .cardx{
+      width:min(560px, 100%);
+      border-radius:18px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(17,24,39,.96);
+      box-shadow:0 24px 60px rgba(0,0,0,.55);
+      padding:16px;
+    }
+    .blocker .cardx h3{ margin:0 0 8px; }
+    .blocker .cardx p{ margin:0 0 12px; opacity:.9; line-height:1.35; }
+    .blocker .actions{ display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap; }
+    .btn{
+      padding: 10px 12px; border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.04);
+      color: rgba(255,255,255,.95);
+      font-weight: 900;
+      cursor:pointer;
+    }
+    .btn.primary{ border-color: transparent; background: rgba(217,27,46,.95); }
+    .btn:hover{ filter:brightness(1.08); }
+
+    code{
+      display:block;
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.10);
+      padding: 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      margin-top: 8px;
+      opacity: .95;
+    }
+  </style>
 </head>
 
 <body class="bg">
+
+  <!-- Anti-loop -->
+  <div id="blocker" class="blocker">
+    <div class="cardx">
+      <h3>Sessão expirada</h3>
+      <p>
+        Eu não encontrei <b>usuarioLogado</b> no seu navegador, então essa página não consegue abrir.
+        Entre pelo <b>Index</b> e depois volte para a Biblioteca.
+      </p>
+      <div class="hint" style="opacity:.9;">
+        Debug (o que encontrei no storage):
+        <code id="debugStorage">...</code>
+      </div>
+      <div class="actions" style="margin-top:12px;">
+        <button id="btnIrIndex" class="btn primary" type="button">Ir para o Index</button>
+      </div>
+    </div>
+  </div>
 
 <header class="topbar">
   <div>
     <h2>Biblioteca de Treinamentos</h2>
     <div id="userInfo" class="hint" style="color:#d1d5db;margin-top:4px;"></div>
+    <div id="hintOrigem" class="hint" style="opacity:.85;">Carregando…</div>
   </div>
 
   <div class="top-actions">
@@ -22,128 +119,288 @@
 </header>
 
 <main class="card wide">
-
   <section class="row-between" style="align-items:flex-end;">
     <div>
-      <h3>Treinamentos disponíveis</h3>
-      <p class="hint">Aqui você encontra todos os treinamentos cadastrados e seus links.</p>
+      <h3>Todos os treinamentos cadastrados</h3>
+      <p class="hint">Aqui você encontra os treinamentos e os links (Treinamento e Forms).</p>
     </div>
 
-    <div style="min-width:260px;">
+    <div style="min-width:320px;">
       <label for="busca">Buscar</label>
-      <input id="busca" type="text" placeholder="Digite o nome do treinamento..." />
+      <input id="busca" type="text" placeholder="Digite nome do treinamento..." />
     </div>
   </section>
 
   <p id="msg" class="msg"></p>
+
+  <hr class="sep" />
 
   <div class="table-wrap" style="margin-top:12px;">
     <table class="table table-sticky">
       <thead>
         <tr>
           <th style="width:70px;">#</th>
-          <th>Treinamento</th>
-          <th style="width:170px;">Link Treinamento</th>
-          <th style="width:140px;">Link Forms</th>
+          <th>Nome</th>
+          <th style="width:200px;">Treinamento</th>
+          <th style="width:160px;">Forms</th>
+          <th style="width:260px;">Ações</th>
         </tr>
       </thead>
-      <tbody id="tbody"></tbody>
+      <tbody id="tbody">
+        <tr><td colspan="5" style="opacity:.8;">Carregando…</td></tr>
+      </tbody>
     </table>
   </div>
 
+  <div class="hint" style="margin-top:10px; opacity:.8;">
+    Se não aparecer nada do Firestore, a página usa fallback do <b>localStorage("catalogo_treinamentos")</b>.
+    Quando você migrar o cadastro do ADM para Firestore, tudo fica 100% online.
+  </div>
 </main>
 
-<script>
-/* =========================
-   SESSÃO
-========================= */
-const usuario = (localStorage.getItem("usuarioLogado") || "").trim();
-if (!usuario) window.location.href = "index.html";
-document.getElementById("userInfo").textContent = `Usuário: ${usuario}`;
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+  import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-document.getElementById("btnMenu").onclick = () => window.location.href = "menu.html";
-document.getElementById("btnLogout").onclick = () => {
-  localStorage.removeItem("usuarioLogado");
-  window.location.href = "index.html";
-};
+  /* =========================
+     PATHS (arquivo em /html usuarios/)
+  ========================= */
+  const PATH_INDEX = "../index.html";
+  const PATH_MENU  = "../html menus/menu.html";
 
-/* =========================
-   APP
-========================= */
-const STORAGE_KEY = "catalogo_treinamentos";
-const tbody = document.getElementById("tbody");
-const busca = document.getElementById("busca");
-const msg = document.getElementById("msg");
+  /* =========================
+     Anti-loop UI
+  ========================= */
+  const blocker = document.getElementById("blocker");
+  const debugStorage = document.getElementById("debugStorage");
+  document.getElementById("btnIrIndex").onclick = () => window.location.href = PATH_INDEX;
 
-function setMsg(text){
-  msg.textContent = text || "";
-  msg.style.color = "#d1d5db";
-}
+  function safeParse(raw){ try { return JSON.parse(raw); } catch { return null; } }
 
-function load(){
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (!raw) return [];
-  try {
-    const arr = JSON.parse(raw);
-    return Array.isArray(arr) ? arr : [];
-  } catch {
-    return [];
-  }
-}
+  function getUserName(){
+    const u1 = (localStorage.getItem("usuarioLogado") || "").trim();
+    if (u1) return u1;
 
-function safeLink(url){
-  const u = (url || "").trim();
-  if (!u) return "";
-  // aceita http/https
-  if (!/^https?:\/\//i.test(u)) return "";
-  return u;
-}
-
-function render(){
-  const q = (busca.value || "").trim().toLowerCase();
-  const data = load().sort((a,b) => (a.nome || "").localeCompare((b.nome || ""), "pt-BR"));
-
-  const filtered = q
-    ? data.filter(x => (x.nome || "").toLowerCase().includes(q))
-    : data;
-
-  tbody.innerHTML = "";
-
-  if (filtered.length === 0){
-    setMsg("Nenhum treinamento cadastrado ainda.");
-    tbody.innerHTML = `<tr><td colspan="4" style="opacity:.8;">Sem dados.</td></tr>`;
-    return;
+    const raw = localStorage.getItem("user_session");
+    const s = raw ? safeParse(raw) : null;
+    const u2 = (s?.nome || "").toString().trim();
+    return u2;
   }
 
-  setMsg("");
+  const usuario = getUserName();
 
-  filtered.forEach((t, i) => {
-    const linkTreino = safeLink(t.linkTreino);
-    const linkForms = safeLink(t.linkForms);
+  if (!usuario){
+    // mostra debug e NÃO fica redirecionando
+    const snapshot = {
+      usuarioLogado: localStorage.getItem("usuarioLogado"),
+      user_session: localStorage.getItem("user_session"),
+      usuarioKey: localStorage.getItem("usuarioKey"),
+      location: window.location.href
+    };
+    debugStorage.textContent = JSON.stringify(snapshot, null, 2);
+    blocker.style.display = "flex";
+    throw new Error("Sem sessão: usuarioLogado / user_session.");
+  }
 
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${i+1}</td>
-      <td>${t.nome || "-"}</td>
-      <td>
-        ${linkTreino
-          ? `<a href="${linkTreino}" target="_blank" rel="noopener">Abrir Treinamento</a>`
-          : `<span style="opacity:.7;">-</span>`
-        }
-      </td>
-      <td>
-        ${linkForms
-          ? `<a href="${linkForms}" target="_blank" rel="noopener">Abrir Forms</a>`
-          : `<span style="opacity:.7;">-</span>`
-        }
-      </td>
-    `;
-    tbody.appendChild(tr);
-  });
-}
+  // padroniza (se veio via user_session)
+  localStorage.setItem("usuarioLogado", usuario);
 
-busca.addEventListener("input", render);
-render();
+  /* =========================
+     Firebase config (SEU)
+  ========================= */
+  const firebaseConfig = {
+    apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
+    authDomain: "jornada-portal.firebaseapp.com",
+    projectId: "jornada-portal",
+    storageBucket: "jornada-portal.firebasestorage.app",
+    messagingSenderId: "669362296644",
+    appId: "1:669362296644:web:f590d9834a8e4e60012911"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  /* =========================
+     Coleções (conforme suas rules)
+  ========================= */
+  const COLECOES_TREINOS = [
+    "biblioteca_treinamentos",
+    "catalogo_treinamentos"
+  ];
+
+  /* =========================
+     UI / sessão
+  ========================= */
+  document.getElementById("userInfo").textContent = `Usuário: ${usuario}`;
+  document.getElementById("btnMenu").onclick = () => window.location.href = PATH_MENU;
+  document.getElementById("btnLogout").onclick = () => {
+    localStorage.removeItem("usuarioLogado");
+    localStorage.removeItem("usuarioKey");
+    localStorage.removeItem("user_session");
+    window.location.href = PATH_INDEX;
+  };
+
+  const tbody = document.getElementById("tbody");
+  const busca = document.getElementById("busca");
+  const msg = document.getElementById("msg");
+  const hintOrigem = document.getElementById("hintOrigem");
+
+  function setMsg(text, type="info"){
+    msg.textContent = text || "";
+    msg.style.color = type === "success" ? "#22c55e" : (type === "error" ? "#ef4444" : "#d1d5db");
+  }
+
+  function normalize(s){ return (s || "").toString().replace(/\s+/g," ").trim(); }
+
+  const FIELDS_NOME = ["nome", "treinamento", "titulo", "name"];
+  const FIELDS_LINK_TREINO = ["linkTreino", "link_treino", "urlTreino", "link", "url"];
+  const FIELDS_LINK_FORMS = ["linkForms", "link_forms", "urlForms", "forms", "url_formulario"];
+
+  function pickField(data, keys){
+    for (const k of keys){
+      const v = normalize(data?.[k]);
+      if (v) return v;
+    }
+    return "";
+  }
+
+  function safeUrl(u){
+    const url = normalize(u);
+    if (!url) return "";
+    return url; // não “conserta” automaticamente para não inventar URL
+  }
+
+  async function loadFromFirestore(){
+    for (const colName of COLECOES_TREINOS){
+      try{
+        const snap = await getDocs(collection(db, colName));
+        const out = [];
+        snap.forEach(d => {
+          const data = d.data() || {};
+          const nome = pickField(data, FIELDS_NOME);
+          if (!nome) return;
+
+          out.push({
+            id: d.id,
+            nome,
+            linkTreino: safeUrl(pickField(data, FIELDS_LINK_TREINO)),
+            linkForms: safeUrl(pickField(data, FIELDS_LINK_FORMS)),
+            _origem: `Firestore:${colName}`
+          });
+        });
+        if (out.length > 0) return { origem: colName, data: out };
+      }catch(e){
+        // tenta próxima
+      }
+    }
+    return { origem: null, data: [] };
+  }
+
+  function loadFromLocalStorage(){
+    const raw = localStorage.getItem("catalogo_treinamentos");
+    if (!raw) return [];
+    try{
+      const arr = JSON.parse(raw);
+      if (!Array.isArray(arr)) return [];
+      return arr
+        .map(x => ({
+          id: x?.id || `${Date.now()}_${Math.random().toString(16).slice(2)}`,
+          nome: normalize(x?.nome),
+          linkTreino: safeUrl(x?.linkTreino),
+          linkForms: safeUrl(x?.linkForms),
+          _origem: "localStorage:catalogo_treinamentos"
+        }))
+        .filter(x => x.nome);
+    }catch{
+      return [];
+    }
+  }
+
+  let CACHE = [];
+
+  function render(){
+    const q = (busca.value || "").toLowerCase();
+
+    const data = (CACHE || [])
+      .slice()
+      .sort((a,b) => a.nome.localeCompare(b.nome,"pt-BR"));
+
+    const filtered = q ? data.filter(x => x.nome.toLowerCase().includes(q)) : data;
+
+    tbody.innerHTML = "";
+
+    if (filtered.length === 0){
+      tbody.innerHTML = `<tr><td colspan="5" style="opacity:.8;">Nenhum treinamento cadastrado.</td></tr>`;
+      return;
+    }
+
+    filtered.forEach((t, i) => {
+      const tr = document.createElement("tr");
+
+      const treinoLink = t.linkTreino
+        ? `<a href="${t.linkTreino}" target="_blank" rel="noopener">Abrir</a>`
+        : `<span class="muted">-</span>`;
+
+      const formsLink = t.linkForms
+        ? `<a href="${t.linkForms}" target="_blank" rel="noopener">Abrir</a>`
+        : `<span class="muted">-</span>`;
+
+      tr.innerHTML = `
+        <td>${i+1}</td>
+        <td>
+          <div style="font-weight:900;">${t.nome}</div>
+          <div class="hint" style="margin-top:6px; opacity:.8;">
+            Origem: <span class="pill">${t._origem || "-"}</span>
+          </div>
+        </td>
+        <td class="linkcell">${treinoLink}</td>
+        <td class="linkcell">${formsLink}</td>
+        <td style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="btn-mini" type="button" data-copy="${t.linkTreino || ""}">Copiar Treino</button>
+          <button class="btn-mini" type="button" data-copy="${t.linkForms || ""}">Copiar Forms</button>
+        </td>
+      `;
+
+      tbody.appendChild(tr);
+    });
+
+    tbody.querySelectorAll("[data-copy]").forEach(btn => {
+      btn.onclick = async () => {
+        const link = btn.getAttribute("data-copy") || "";
+        if (!link){ setMsg("Sem link para copiar.", "error"); return; }
+        await navigator.clipboard.writeText(link);
+        setMsg("Link copiado ✅", "success");
+      };
+    });
+  }
+
+  busca.addEventListener("input", render);
+
+  // INIT
+  try{
+    setMsg("Carregando…");
+    const fire = await loadFromFirestore();
+
+    if (fire.data.length > 0){
+      CACHE = fire.data;
+      hintOrigem.textContent = `Origem: Firestore (${fire.origem}) • Itens: ${CACHE.length}`;
+      setMsg("");
+      render();
+    }else{
+      const local = loadFromLocalStorage();
+      CACHE = local;
+      hintOrigem.textContent = `Origem: localStorage (catalogo_treinamentos) • Itens: ${CACHE.length}`;
+      setMsg("");
+      render();
+    }
+  }catch(e){
+    console.error(e);
+    setMsg("Erro ao carregar a biblioteca. Verifique conexão/rules.", "error");
+    const local = loadFromLocalStorage();
+    CACHE = local;
+    hintOrigem.textContent = `Origem: localStorage (fallback) • Itens: ${CACHE.length}`;
+    render();
+  }
 </script>
 
 </body>
