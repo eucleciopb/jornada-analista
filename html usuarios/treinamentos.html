@@ -37,6 +37,12 @@
       </div>
 
       <div>
+        <label for="dataApuracao">Data para apuração do resultado</label>
+        <input id="dataApuracao" type="date" />
+        <div class="hint" style="margin-top:6px;">Prazo para o avaliador validar se executou/performou.</div>
+      </div>
+
+      <div>
         <label for="publico">Público-alvo</label>
         <select id="publico" required>
           <option value="" disabled selected>Selecione...</option>
@@ -109,6 +115,7 @@
         <thead>
           <tr>
             <th style="width:120px;">Data</th>
+            <th style="width:140px;">Apuração (prazo)</th>
             <th style="width:130px;">Público</th>
             <th style="width:260px;">Treinamento</th>
             <th style="width:240px;">CD</th>
@@ -139,9 +146,6 @@
       serverTimestamp
     } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-    /* =========================
-       Firebase config (SEU)
-    ========================= */
     const firebaseConfig = {
       apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
       authDomain: "jornada-portal.firebaseapp.com",
@@ -154,33 +158,14 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    /* =========================
-       Coleções
-    ========================= */
     const TREINOS_COLLECTION = "treinamentos_realizados";
+    const CATALOGO_COLLECTIONS = ["catalogo_treinamentos","biblioteca_treinamentos","treinamentos","biblioteca"];
+    const CATALOGO_FIELDS = ["nome","treinamento","titulo","name"];
 
-    const CATALOGO_COLLECTIONS = [
-      "catalogo_treinamentos",
-      "biblioteca_treinamentos",
-      "treinamentos",
-      "biblioteca"
-    ];
-
-    const CATALOGO_FIELDS = ["nome", "treinamento", "titulo", "name"];
-
-    /* =========================
-       Paths (arquivo em html usuarios/)
-    ========================= */
     const PATH_INDEX = "../index.html";
     const PATH_MENU  = "../html menus/menu.html";
 
-    /* =========================
-       Helpers base
-    ========================= */
-    function safeParse(raw){
-      try { return JSON.parse(raw); } catch { return null; }
-    }
-
+    function safeParse(raw){ try { return JSON.parse(raw); } catch { return null; } }
     function slug(s) {
       return (s || "")
         .toLowerCase()
@@ -188,43 +173,30 @@
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/(^-|-$)/g, "");
     }
-
     function getCurrentUserName(){
-      // 1) padrão novo
       const raw = localStorage.getItem("user_session");
       if(raw){
         const s = safeParse(raw);
         if(s?.nome) return String(s.nome).trim();
       }
-      // 2) legado
       return (localStorage.getItem("usuarioLogado") || "").trim();
     }
 
-    /* =========================
-       Sessão / nav (CORRIGIDO)
-    ========================= */
     const usuario = getCurrentUserName();
-    const userInfo = document.getElementById("userInfo");
-    const btnMenu = document.getElementById("btnMenu");
-    const btnLogout = document.getElementById("btnLogout");
-
     if (!usuario) window.location.href = PATH_INDEX;
-    userInfo.textContent = `Usuário: ${usuario}`;
+    document.getElementById("userInfo").textContent = `Usuário: ${usuario}`;
 
-    btnMenu.onclick = () => window.location.href = PATH_MENU;
-    btnLogout.onclick = () => {
+    document.getElementById("btnMenu").onclick = () => window.location.href = PATH_MENU;
+    document.getElementById("btnLogout").onclick = () => {
       localStorage.removeItem("user_session");
       localStorage.removeItem("usuarioLogado");
       window.location.href = PATH_INDEX;
     };
 
-    // ✅ chave SEMPRE do usuário atual (não usa localStorage)
     const usuarioKey = slug(usuario);
 
-    /* =========================
-       UI refs
-    ========================= */
     const dataTreino = document.getElementById("dataTreino");
+    const dataApuracao = document.getElementById("dataApuracao");
     const publico = document.getElementById("publico");
     const treinamento = document.getElementById("treinamento");
     const hintTreinos = document.getElementById("hintTreinos");
@@ -240,76 +212,54 @@
     const busca = document.getElementById("busca");
     const tbodyHist = document.getElementById("tbodyHist");
 
-    /* =========================
-       Helpers UI
-    ========================= */
     function setMsg(text, type="info"){
       msg.textContent = text || "";
       msg.style.color = type === "success" ? "#22c55e" : (type === "error" ? "#ef4444" : "#d1d5db");
     }
-
     function pad2(n){ return String(n).padStart(2,"0"); }
-
     function todayISO(){
       const d = new Date();
       return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
     }
-
     function toBR(iso){
       if (!iso) return "-";
-      const [y,m,d] = iso.split("-");
+      const [y,m,d] = String(iso).split("-");
       return `${d}/${m}/${y}`;
     }
-
-    function normalize(s){
-      return (s || "").replace(/\s+/g," ").trim();
-    }
-
+    function normalize(s){ return (s || "").replace(/\s+/g," ").trim(); }
     function makeId(){
       if (globalThis.crypto?.randomUUID) return crypto.randomUUID();
       return `${Date.now()}_${Math.random().toString(16).slice(2)}`;
     }
 
-    /* =========================
-       CDs (lista completa)
-    ========================= */
     const CDS_RAW = [
       "CD - Alagoinhas","CD - Andradina","CD - Angra dos Reis","CD - Aparecida de Goiânia","CD - Araçatuba","CD - Arapiraca","CD - Araraquara",
       "CD - Balsas","CD - Barbalha","CD - Barra do Garca","CD - Barreiras","CD - Barretos","CD - Barueri","CD - Bauru","CD - Belém","CD - Boituva",
       "CD - Bom Jesus da Lapa","CD - Brumado","CD - Cachoeiro de Itapemirim","CD - Camaçari","CD - Campina Grande","CD - Campinas","CD - Campo Grande MS",
       "CD - Campo Grande RJ","CD - Campos dos Goytacazes","CD - Caraguatatuba","CD - Cariacica","CD - Carpina","CD - Caruaru","CD - Cascavel","CD - Catanduva",
-      "CD - Caucaia","CD - Caxias","CD - Coimbra","CD - Conde","CD - Conselheiro Lafaiete","CD - Conselheiro Lafaiete","CD - Contagem","CD - Coxim","CD - Cuiabá",
-      "CD - Divinópolis","CD - Dourados","CD - Duque de Caxias","CD - Eunápolis","CD - Eusebio","CD - Feira de Santana","CD - Feira de Santana",
-      "CD - Fernandópolis","CD - Fernandópolis","CD - Fernandópolis","CD - Fernandópolis","CD - Floriano","CD - Garanhuns","CD - Governador Valadares","CD - Guarujá",
+      "CD - Caucaia","CD - Caxias","CD - Coimbra","CD - Conde","CD - Conselheiro Lafaiete","CD - Contagem","CD - Coxim","CD - Cuiabá",
+      "CD - Divinópolis","CD - Dourados","CD - Duque de Caxias","CD - Eunápolis","CD - Eusebio","CD - Feira de Santana",
+      "CD - Fernandópolis","CD - Floriano","CD - Garanhuns","CD - Governador Valadares","CD - Guarujá",
       "CD - Guarulhos Taboão","CD - Iguatu","CD - Imperatriz","CD - Interlagos","CD - Iporá","CD - Irece","CD - Itabaiana","CD - Itaberaba","CD - Itabuna",
       "CD - Itapeva","CD - Itapissuma","CD - Itumbiara","CD - Jaboatão dos Guararapes","CD - Jacobina","CD - Jaguaré","CD - Jequié","CD - Juazeiro","CD - Juiz de Fora",
       "CD - Jundiaí","CD - Londrina","CD - Macaiba","CD - Maceió","CD - Marília","CD - Mogi-Mirim","CD - Montes Claros","CD - Mossoró","CD - Muriaé",
-      "CD - Nossa Senhora do Socorro","CD - Nova Friburgo","CD - Palhoça","CD - Paranaíba","CD - Parnaiba","CD - Parnaiba","CD - Passos","CD - Passos","CD - Patos",
-      "CD - Paulo Afonso","CD - Petrolina","CD - Petrópolis","CD - Picos","CD - Piracicaba","CD - Poços de Caldas","CD - Poços de Caldas","CD - Porto Velho",
+      "CD - Nossa Senhora do Socorro","CD - Nova Friburgo","CD - Palhoça","CD - Paranaíba","CD - Parnaiba","CD - Passos","CD - Patos",
+      "CD - Paulo Afonso","CD - Petrolina","CD - Petrópolis","CD - Picos","CD - Piracicaba","CD - Poços de Caldas","CD - Porto Velho",
       "CD - Pouso Alegre","CD - Presidente Prudente","CD - Recife","CD - Registro","CD - Ribeirão Preto","CD - Rio Branco","CD - Rio das Ostras","CD - Rio Verde",
       "CD - Rondonópolis","CD - Salto","CD - Salvador","CD - Salvador Leste","CD - Santa Inês","CD - Santo Antonio de Jesus","CD - São Bernardo","CD - São Cristovão",
       "CD - São Gonçalo","CD - São João de Meriti","CD - São José do Rio Preto","CD - São José dos Campos","CD - São José dos Pinhais","CD - São Luis","CD - São Mateus",
-      "CD - São Pedro da Aldeia","CD - Sapucaia do Sul","CD - Serra Talhada","CD - Serrinha","CD - Sete Lagoas","CD - Sete Lagoas","CD - Sinop","CD - Sobral","CD - Sousa",
+      "CD - São Pedro da Aldeia","CD - Sapucaia do Sul","CD - Serra Talhada","CD - Serrinha","CD - Sete Lagoas","CD - Sinop","CD - Sobral","CD - Sousa",
       "CD - Taboão da Serra","CD - Taguatinga","CD - Taubaté","CD - Teixeira de Freitas","CD - Teresina","CD - Três Lagoas","CD - Uberaba","CD - Varginha",
       "CD - Vila Guilherme","CD - Vitória da Conquista","CD - Volta Redonda"
     ];
     const CDS = Array.from(new Set(CDS_RAW.map(s => normalize(s)))).filter(Boolean).sort((a,b)=>a.localeCompare(b,"pt-BR"));
     cdList.innerHTML = CDS.map(x => `<option value="${x}"></option>`).join("");
 
-    /* =========================
-       Catálogo - LocalStorage fallback
-    ========================= */
     function loadCatalogoLocal(){
       const raw = localStorage.getItem("catalogo_treinamentos");
       if (!raw) return [];
-      try {
-        const arr = JSON.parse(raw);
-        return Array.isArray(arr) ? arr : [];
-      } catch {
-        return [];
-      }
+      try { const arr = JSON.parse(raw); return Array.isArray(arr) ? arr : []; } catch { return []; }
     }
-
     function pickNomeFromDoc(data){
       for (const f of CATALOGO_FIELDS){
         const v = (data?.[f] || "").toString().trim();
@@ -317,7 +267,6 @@
       }
       return "";
     }
-
     async function loadCatalogoFirestoreRobusto(){
       for (const colName of CATALOGO_COLLECTIONS){
         try{
@@ -327,22 +276,16 @@
             const nome = pickNomeFromDoc(d.data());
             if (nome) out.push({ nome });
           });
-          if (out.length > 0){
-            return { source: colName, data: out };
-          }
-        }catch(e){
-          // continua
-        }
+          if (out.length > 0) return { source: colName, data: out };
+        }catch(e){}
       }
       return { source: null, data: [] };
     }
-
     async function renderTreinosSelect(){
       treinamento.innerHTML = `<option value="" disabled selected>Carregando treinamentos...</option>`;
       hintTreinos.textContent = "";
 
       const fire = await loadCatalogoFirestoreRobusto();
-
       let catalogo = fire.data;
       let origem = fire.source;
 
@@ -352,13 +295,12 @@
         origem = "localStorage";
       }
 
-      const nomes = Array.from(
-        new Set((catalogo || []).map(x => (x?.nome || "").toString().trim()).filter(Boolean))
-      ).sort((a,b)=>a.localeCompare(b,"pt-BR"));
+      const nomes = Array.from(new Set((catalogo || []).map(x => (x?.nome || "").toString().trim()).filter(Boolean)))
+        .sort((a,b)=>a.localeCompare(b,"pt-BR"));
 
       if (nomes.length === 0){
         treinamento.innerHTML = `<option value="" disabled selected>Nenhum treinamento cadastrado</option>`;
-        hintTreinos.textContent = "Cadastre primeiro na Biblioteca (Firestore) ou salve em localStorage (catalogo_treinamentos).";
+        hintTreinos.textContent = "Cadastre primeiro na Biblioteca.";
         return;
       }
 
@@ -369,23 +311,14 @@
       hintTreinos.textContent = `Treinamentos: ${nomes.length} | Origem: ${origem || "-"}`;
     }
 
-    /* =========================
-       Histórico Firestore
-    ========================= */
     let HIST_CACHE = [];
 
     async function loadHistFromFirebase(){
-      const q = query(
-        collection(db, TREINOS_COLLECTION),
-        where("uidKey", "==", usuarioKey)
-      );
-
+      const q = query(collection(db, TREINOS_COLLECTION), where("uidKey", "==", usuarioKey));
       const snap = await getDocs(q);
       const arr = [];
       snap.forEach(d => arr.push({ id: d.id, ...d.data() }));
-
       arr.sort((a,b) => String(b.data || "").localeCompare(String(a.data || "")));
-
       HIST_CACHE = arr;
       return arr;
     }
@@ -395,15 +328,13 @@
       const data = (HIST_CACHE || []).slice();
 
       const filtered = q ? data.filter(x =>
-        [
-          x.treinamento, x.cd, x.publico, x.desafio, x.meta, x.obs, x.usuarioNome
-        ].join(" ").toLowerCase().includes(q)
+        [x.treinamento, x.cd, x.publico, x.desafio, x.meta, x.obs, x.dataApuracao].join(" ").toLowerCase().includes(q)
       ) : data;
 
       tbodyHist.innerHTML = "";
 
       if (filtered.length === 0){
-        tbodyHist.innerHTML = `<tr><td colspan="10" style="opacity:.8;">Nenhum registro ainda.</td></tr>`;
+        tbodyHist.innerHTML = `<tr><td colspan="11" style="opacity:.8;">Nenhum registro ainda.</td></tr>`;
         return;
       }
 
@@ -411,6 +342,7 @@
         const tr = document.createElement("tr");
         tr.innerHTML = `
           <td>${toBR(item.data)}</td>
+          <td>${toBR(item.dataApuracao)}</td>
           <td>${item.publico || "-"}</td>
           <td>${item.treinamento || "-"}</td>
           <td>${item.cd || "-"}</td>
@@ -446,15 +378,14 @@
       });
     }
 
-    /* =========================
-       Salvar Firestore
-    ========================= */
     btnSalvar.onclick = async () => {
       setMsg("");
 
       const payload = {
         id: makeId(),
         data: dataTreino.value || todayISO(),
+        dataApuracao: dataApuracao.value || "",
+
         publico: publico.value,
         treinamento: treinamento.value,
         cd: normalize(cd.value),
@@ -467,6 +398,10 @@
 
       if (!payload.publico || !payload.treinamento || !payload.cd || !payload.desafio || !payload.meta){
         setMsg("Preencha: Público, Treinamento, CD, Desafio e Meta.", "error");
+        return;
+      }
+      if (!payload.dataApuracao){
+        setMsg("Preencha a Data para apuração do resultado.", "error");
         return;
       }
       if (!Number.isFinite(payload.totalPessoas) || payload.totalPessoas < 1){
@@ -491,6 +426,8 @@
           usuarioNome: usuario,
 
           data: payload.data,
+          dataApuracao: payload.dataApuracao,
+
           publico: payload.publico,
           treinamento: payload.treinamento,
           cd: payload.cd,
@@ -506,7 +443,6 @@
 
         setMsg("Treinamento registrado ✅ (Firebase)", "success");
 
-        // limpa (mantém data)
         publico.value = "";
         treinamento.value = "";
         cd.value = "";
@@ -525,10 +461,8 @@
       }
     };
 
-    /* =========================
-       INIT
-    ========================= */
     dataTreino.value = todayISO();
+    dataApuracao.value = ""; // o usuário escolhe
     await renderTreinosSelect();
 
     try{

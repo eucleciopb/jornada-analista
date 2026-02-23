@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Apuração de Treinamentos</title>
-  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="../css/styles.css" />
 </head>
 
 <body class="bg">
@@ -28,6 +28,7 @@
       <p class="hint">
         Preencha se o desafio foi executado (fez ou não fez) e se performou (deu certo ou não).
       </p>
+      <p class="hint" id="hintFonte" style="opacity:.85;"></p>
     </div>
 
     <div style="min-width:260px;">
@@ -95,7 +96,9 @@
           <th style="width:160px;">Atualizado</th>
         </tr>
       </thead>
-      <tbody id="tbody"></tbody>
+      <tbody id="tbody">
+        <tr><td colspan="13" style="opacity:.8;">Carregando…</td></tr>
+      </tbody>
     </table>
   </div>
 
@@ -105,279 +108,337 @@
 
 </main>
 
-<script>
-/* =========================
-   SESSÃO
-========================= */
-const usuario = (localStorage.getItem("usuarioLogado") || "").trim();
-if (!usuario) window.location.href = "index.html";
-document.getElementById("userInfo").textContent = `Avaliador: ${usuario}`;
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+  import {
+    getFirestore,
+    collection,
+    getDocs,
+    doc,
+    writeBatch,
+    serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-document.getElementById("btnMenu").onclick = () => window.location.href = "menuadm.html";
-document.getElementById("btnLogout").onclick = () => {
-  localStorage.removeItem("usuarioLogado");
-  window.location.href = "index.html";
-};
+  /* =========================
+     FIREBASE CONFIG (SEU)
+  ========================= */
+  const firebaseConfig = {
+    apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
+    authDomain: "jornada-portal.firebaseapp.com",
+    projectId: "jornada-portal",
+    storageBucket: "jornada-portal.firebasestorage.app",
+    messagingSenderId: "669362296644",
+    appId: "1:669362296644:web:f590d9834a8e4e60012911"
+  };
 
-/* =========================
-   UI
-========================= */
-const monthPicker = document.getElementById("monthPicker");
-const busca = document.getElementById("busca");
-const fPublico = document.getElementById("fPublico");
-const fCd = document.getElementById("fCd");
-const fStatus = document.getElementById("fStatus");
-const tbody = document.getElementById("tbody");
-const btnSalvar = document.getElementById("btnSalvar");
-const msg = document.getElementById("msg");
-const cdList = document.getElementById("cdList");
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
 
-/* =========================
-   HELPERS
-========================= */
-function setMsg(text, type="info"){
-  msg.textContent = text || "";
-  msg.style.color = type === "success" ? "#22c55e" : (type === "error" ? "#ef4444" : "#d1d5db");
-}
+  /* =========================
+     COLEÇÕES (Firestore)
+  ========================= */
+  const TREINOS_COLLECTION = "treinamentos_realizados";
+  const APURACOES_COLLECTION = "apuracoes_treinamentos";
 
-function pad2(n){ return String(n).padStart(2,"0"); }
-function toMonthKey(d){ return `${d.getFullYear()}-${pad2(d.getMonth()+1)}`; }
-function toBR(iso){
-  if (!iso) return "-";
-  const [y,m,d] = iso.split("-");
-  return `${d}/${m}/${y}`;
-}
-function normalize(s){ return (s || "").replace(/\s+/g," ").trim(); }
+  /* =========================
+     PATHS (arquivo em /html adm/)
+  ========================= */
+  const PATH_INDEX = "../index.html";
+  const PATH_MENU  = "../html menus/menu.html";
 
-function nowBR(){
-  const d = new Date();
-  return `${pad2(d.getDate())}/${pad2(d.getMonth()+1)}/${d.getFullYear()} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
-}
+  /* =========================
+     SESSÃO PADRONIZADA
+  ========================= */
+  function safeParse(raw){ try { return JSON.parse(raw); } catch { return null; } }
+  function slug(s) {
+    return (s || "")
+      .toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "");
+  }
+  function getCurrentUserName(){
+    const raw = localStorage.getItem("user_session");
+    if(raw){
+      const s = safeParse(raw);
+      if(s?.nome) return String(s.nome).trim();
+    }
+    return (localStorage.getItem("usuarioLogado") || "").trim();
+  }
 
-/* =========================
-   PUXA TODOS OS TREINOS DO LOCALSTORAGE
-   - varre chaves treinamentos_realizados_<usuario>
-========================= */
-function listTreinosAllUsers(){
-  const all = [];
+  const usuario = getCurrentUserName();
+  if (!usuario) window.location.href = PATH_INDEX;
 
-  for (let i = 0; i < localStorage.length; i++){
-    const k = localStorage.key(i);
-    if (!k || !k.startsWith("treinamentos_realizados_")) continue;
+  document.getElementById("userInfo").textContent = `Avaliador: ${usuario}`;
+  document.getElementById("btnMenu").onclick = () => window.location.href = PATH_MENU;
+  document.getElementById("btnLogout").onclick = () => {
+    localStorage.removeItem("user_session");
+    localStorage.removeItem("usuarioLogado");
+    window.location.href = PATH_INDEX;
+  };
 
-    const owner = k.replace("treinamentos_realizados_", "") || "desconhecido";
+  /* =========================
+     UI
+  ========================= */
+  const monthPicker = document.getElementById("monthPicker");
+  const busca = document.getElementById("busca");
+  const fPublico = document.getElementById("fPublico");
+  const fCd = document.getElementById("fCd");
+  const fStatus = document.getElementById("fStatus");
+  const tbody = document.getElementById("tbody");
+  const btnSalvar = document.getElementById("btnSalvar");
+  const msg = document.getElementById("msg");
+  const cdList = document.getElementById("cdList");
+  const hintFonte = document.getElementById("hintFonte");
 
+  /* =========================
+     HELPERS
+  ========================= */
+  function setMsg(text, type="info"){
+    msg.textContent = text || "";
+    msg.style.color = type === "success" ? "#22c55e" : (type === "error" ? "#ef4444" : "#d1d5db");
+  }
+  function pad2(n){ return String(n).padStart(2,"0"); }
+  function toMonthKey(d){ return `${d.getFullYear()}-${pad2(d.getMonth()+1)}`; }
+  function toBR(iso){
+    if (!iso) return "-";
+    const [y,m,d] = String(iso).split("-");
+    return `${d}/${m}/${y}`;
+  }
+  function normalize(s){ return (s || "").replace(/\s+/g," ").trim(); }
+
+  /* =========================
+     CDs (para filtro)
+  ========================= */
+  const CDS_RAW = [
+    "CD - Alagoinhas","CD - Andradina","CD - Angra dos Reis","CD - Aparecida de Goiânia","CD - Araçatuba","CD - Arapiraca","CD - Araraquara",
+    "CD - Balsas","CD - Barbalha","CD - Barra do Garca","CD - Barreiras","CD - Barretos","CD - Barueri","CD - Bauru","CD - Belém","CD - Boituva",
+    "CD - Bom Jesus da Lapa","CD - Brumado","CD - Cachoeiro de Itapemirim","CD - Camaçari","CD - Campina Grande","CD - Campinas","CD - Campo Grande MS",
+    "CD - Campo Grande RJ","CD - Campos dos Goytacazes","CD - Caraguatatuba","CD - Cariacica","CD - Carpina","CD - Caruaru","CD - Cascavel","CD - Catanduva",
+    "CD - Caucaia","CD - Caxias","CD - Coimbra","CD - Conde","CD - Conselheiro Lafaiete","CD - Contagem","CD - Coxim","CD - Cuiabá",
+    "CD - Divinópolis","CD - Dourados","CD - Duque de Caxias","CD - Eunápolis","CD - Eusebio","CD - Feira de Santana",
+    "CD - Fernandópolis","CD - Floriano","CD - Garanhuns","CD - Governador Valadares","CD - Guarujá",
+    "CD - Guarulhos Taboão","CD - Iguatu","CD - Imperatriz","CD - Interlagos","CD - Iporá","CD - Irece","CD - Itabaiana","CD - Itaberaba","CD - Itabuna",
+    "CD - Itapeva","CD - Itapissuma","CD - Itumbiara","CD - Jaboatão dos Guararapes","CD - Jacobina","CD - Jaguaré","CD - Jequié","CD - Juazeiro","CD - Juiz de Fora",
+    "CD - Jundiaí","CD - Londrina","CD - Macaiba","CD - Maceió","CD - Marília","CD - Mogi-Mirim","CD - Montes Claros","CD - Mossoró","CD - Muriaé",
+    "CD - Nossa Senhora do Socorro","CD - Nova Friburgo","CD - Palhoça","CD - Paranaíba","CD - Parnaiba","CD - Passos","CD - Patos",
+    "CD - Paulo Afonso","CD - Petrolina","CD - Petrópolis","CD - Picos","CD - Piracicaba","CD - Poços de Caldas","CD - Porto Velho",
+    "CD - Pouso Alegre","CD - Presidente Prudente","CD - Recife","CD - Registro","CD - Ribeirão Preto","CD - Rio Branco","CD - Rio das Ostras","CD - Rio Verde",
+    "CD - Rondonópolis","CD - Salto","CD - Salvador","CD - Salvador Leste","CD - Santa Inês","CD - Santo Antonio de Jesus","CD - São Bernardo","CD - São Cristovão",
+    "CD - São Gonçalo","CD - São João de Meriti","CD - São José do Rio Preto","CD - São José dos Campos","CD - São José dos Pinhais","CD - São Luis","CD - São Mateus",
+    "CD - São Pedro da Aldeia","CD - Sapucaia do Sul","CD - Serra Talhada","CD - Serrinha","CD - Sete Lagoas","CD - Sinop","CD - Sobral","CD - Sousa",
+    "CD - Taboão da Serra","CD - Taguatinga","CD - Taubaté","CD - Teixeira de Freitas","CD - Teresina","CD - Três Lagoas","CD - Uberaba","CD - Varginha",
+    "CD - Vila Guilherme","CD - Vitória da Conquista","CD - Volta Redonda"
+  ];
+  const CDS = Array.from(new Set(CDS_RAW.map(normalize))).filter(Boolean).sort((a,b)=>a.localeCompare(b,"pt-BR"));
+  cdList.innerHTML = CDS.map(cd => `<option value="${cd}"></option>`).join("");
+
+  function nowBR(){
+    const d = new Date();
+    return `${pad2(d.getDate())}/${pad2(d.getMonth()+1)}/${d.getFullYear()} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+  }
+
+  /* =========================
+     CACHE
+  ========================= */
+  let TREINOS_CACHE = [];
+  let APURACOES_MAP = {}; // { [treinoId]: { executou, performou, comentario, avaliador, updatedAt } }
+
+  async function loadTreinosFromFirestore(){
+    // Estratégia robusta: carrega tudo e filtra no front pelo mês (projeto pequeno/médio)
+    // (se quiser otimizar depois, adicionamos campo yyyyMM no registro do treino e fazemos query direta)
+    const snap = await getDocs(collection(db, TREINOS_COLLECTION));
+    const arr = [];
+    snap.forEach(d => arr.push({ id: d.id, ...d.data() }));
+    TREINOS_CACHE = arr;
+    return arr;
+  }
+
+  async function loadApuracoesFromFirestore(){
+    const snap = await getDocs(collection(db, APURACOES_COLLECTION));
+    const map = {};
+    snap.forEach(d => {
+      const data = d.data();
+      const treinoId = d.id;
+      map[treinoId] = data || {};
+    });
+    APURACOES_MAP = map;
+    return map;
+  }
+
+  /* =========================
+     RENDER
+  ========================= */
+  function render(){
+    const monthKey = monthPicker.value;
+    const q = (busca.value || "").toLowerCase();
+    const pub = fPublico.value;
+    const cdFilter = normalize(fCd.value);
+    const status = fStatus.value;
+
+    const allTreinos = (TREINOS_CACHE || [])
+      .filter(t => String(t.data || "").slice(0,7) === monthKey)
+      .filter(t => !pub || t.publico === pub)
+      .filter(t => !cdFilter || normalize(t.cd) === cdFilter);
+
+    let rows = allTreinos.map(t => {
+      const a = APURACOES_MAP[t.id] || {
+        executou:"pendente",
+        performou:"pendente",
+        comentario:"",
+        avaliador:"",
+        updatedAt:""
+      };
+      return { t, a };
+    });
+
+    if (q){
+      rows = rows.filter(({t}) => {
+        const blob = [t.treinamento, t.cd, t.desafio, t.meta, t.obs, t.usuarioNome].join(" ").toLowerCase();
+        return blob.includes(q);
+      });
+    }
+
+    if (status){
+      rows = rows.filter(({a}) => {
+        if (status === "pendente") return a.executou === "pendente" || a.performou === "pendente";
+        if (status === "executouSim") return a.executou === "sim";
+        if (status === "executouNao") return a.executou === "nao";
+        if (status === "performouSim") return a.performou === "sim";
+        if (status === "performouNao") return a.performou === "nao";
+        return true;
+      });
+    }
+
+    rows.sort((x,y) => {
+      const d = String(y.t.data || "").localeCompare(String(x.t.data || ""));
+      if (d !== 0) return d;
+      return String(x.t.cd||"").localeCompare(String(y.t.cd||""),"pt-BR");
+    });
+
+    tbody.innerHTML = "";
+
+    if (rows.length === 0){
+      tbody.innerHTML = `<tr><td colspan="13" style="opacity:.8;">Sem registros para este mês/filtros.</td></tr>`;
+      return;
+    }
+
+    for (const {t, a} of rows){
+      const tr = document.createElement("tr");
+      tr.dataset.id = t.id;
+
+      if (a.performou === "sim") tr.classList.add("row-good");
+      if (a.performou === "nao") tr.classList.add("row-bad");
+
+      tr.innerHTML = `
+        <td>${toBR(t.data)}</td>
+        <td><span class="pill">${t.publico || "-"}</span></td>
+        <td>${t.treinamento || "-"}</td>
+        <td>${t.cd || "-"}</td>
+        <td>${t.desafio || "-"}</td>
+        <td>${t.meta || "-"}</td>
+        <td style="text-align:center;">${t.totalPessoas ?? "-"}</td>
+        <td style="text-align:center;">${t.notaMedia ?? "-"}</td>
+
+        <td>
+          <select data-executou>
+            <option value="pendente" ${a.executou==="pendente"?"selected":""}>Pendente</option>
+            <option value="sim" ${a.executou==="sim"?"selected":""}>Sim</option>
+            <option value="nao" ${a.executou==="nao"?"selected":""}>Não</option>
+          </select>
+        </td>
+
+        <td>
+          <select data-performou>
+            <option value="pendente" ${a.performou==="pendente"?"selected":""}>Pendente</option>
+            <option value="sim" ${a.performou==="sim"?"selected":""}>Sim</option>
+            <option value="nao" ${a.performou==="nao"?"selected":""}>Não</option>
+          </select>
+        </td>
+
+        <td>
+          <input data-comentario type="text" maxlength="140"
+            placeholder="Comentário..." value="${(a.comentario || "").replace(/"/g,"&quot;")}">
+        </td>
+
+        <td style="opacity:.9;">${a.avaliador || "-"}</td>
+        <td style="opacity:.9;">${a.updatedAt || "-"}</td>
+      `;
+
+      tbody.appendChild(tr);
+    }
+  }
+
+  /* =========================
+     SAVE (Firestore)
+  ========================= */
+  btnSalvar.onclick = async () => {
     try{
-      const arr = JSON.parse(localStorage.getItem(k) || "[]");
-      if (!Array.isArray(arr)) continue;
+      setMsg("Salvando apurações…");
+      const batch = writeBatch(db);
+      const trs = [...tbody.querySelectorAll("tr[data-id]")];
 
-      for (const t of arr){
-        if (!t || !t.id || !t.data) continue;
-        all.push({ ...t, _owner: owner });
+      for (const tr of trs){
+        const id = tr.dataset.id;
+
+        const executou = tr.querySelector("[data-executou]")?.value || "pendente";
+        const performou = tr.querySelector("[data-performou]")?.value || "pendente";
+        const comentario = normalize(tr.querySelector("[data-comentario]")?.value || "");
+
+        const ref = doc(db, APURACOES_COLLECTION, id);
+
+        batch.set(ref, {
+          treinoId: id,
+          executou,
+          performou,
+          comentario,
+          avaliador: usuario,
+          updatedAtText: nowBR(),
+          updatedAt: serverTimestamp()
+        }, { merge: true });
       }
-    } catch {}
+
+      await batch.commit();
+
+      setMsg("Apurações salvas ✅", "success");
+
+      // recarrega apurações do Firestore para refletir na tabela
+      await loadApuracoesFromFirestore();
+      render();
+
+    }catch(e){
+      console.error(e);
+      setMsg("Erro ao salvar no Firebase. Verifique RULES.", "error");
+    }
+  };
+
+  /* =========================
+     INIT / listeners
+  ========================= */
+  monthPicker.value = toMonthKey(new Date());
+
+  try{
+    setMsg("Carregando do Firebase…");
+    hintFonte.textContent = "Fonte: Firestore (treinamentos_realizados + apuracoes_treinamentos)";
+
+    await loadTreinosFromFirestore();
+    await loadApuracoesFromFirestore();
+
+    setMsg("");
+    render();
+  }catch(e){
+    console.error(e);
+    setMsg("Erro ao carregar do Firebase. Verifique Rules/Conexão.", "error");
   }
 
-  return all;
-}
-
-/* =========================
-   APURAÇÕES (banco único no navegador)
-   shape: { [treinoId]: { executou:"sim"|"nao"|"pendente", performou:"sim"|"nao"|"pendente", comentario:"", avaliador:"", updatedAt:"" } }
-========================= */
-const APURACAO_KEY = "apuracoes_treinamentos";
-
-function loadApuracoes(){
-  const raw = localStorage.getItem(APURACAO_KEY);
-  if (!raw) return {};
-  try {
-    const obj = JSON.parse(raw);
-    return obj && typeof obj === "object" ? obj : {};
-  } catch {
-    return {};
-  }
-}
-
-function saveApuracoes(obj){
-  localStorage.setItem(APURACAO_KEY, JSON.stringify(obj));
-}
-
-/* =========================
-   CDs (para filtro) - mesma lista
-========================= */
-const CDS_RAW = [
-  "CD - Alagoinhas","CD - Andradina","CD - Angra dos Reis","CD - Aparecida de Goiânia","CD - Araçatuba","CD - Arapiraca","CD - Araraquara",
-  "CD - Balsas","CD - Barbalha","CD - Barra do Garca","CD - Barreiras","CD - Barretos","CD - Barueri","CD - Bauru","CD - Belém","CD - Boituva",
-  "CD - Bom Jesus da Lapa","CD - Brumado","CD - Cachoeiro de Itapemirim","CD - Camaçari","CD - Campina Grande","CD - Campinas","CD - Campo Grande MS",
-  "CD - Campo Grande RJ","CD - Campos dos Goytacazes","CD - Caraguatatuba","CD - Cariacica","CD - Carpina","CD - Caruaru","CD - Cascavel","CD - Catanduva",
-  "CD - Caucaia","CD - Caxias","CD - Coimbra","CD - Conde","CD - Conselheiro Lafaiete","CD - Contagem","CD - Coxim","CD - Cuiabá",
-  "CD - Divinópolis","CD - Dourados","CD - Duque de Caxias","CD - Eunápolis","CD - Eusebio","CD - Feira de Santana",
-  "CD - Fernandópolis","CD - Floriano","CD - Garanhuns","CD - Governador Valadares","CD - Guarujá",
-  "CD - Guarulhos Taboão","CD - Iguatu","CD - Imperatriz","CD - Interlagos","CD - Iporá","CD - Irece","CD - Itabaiana","CD - Itaberaba","CD - Itabuna",
-  "CD - Itapeva","CD - Itapissuma","CD - Itumbiara","CD - Jaboatão dos Guararapes","CD - Jacobina","CD - Jaguaré","CD - Jequié","CD - Juazeiro","CD - Juiz de Fora",
-  "CD - Jundiaí","CD - Londrina","CD - Macaiba","CD - Maceió","CD - Marília","CD - Mogi-Mirim","CD - Montes Claros","CD - Mossoró","CD - Muriaé",
-  "CD - Nossa Senhora do Socorro","CD - Nova Friburgo","CD - Palhoça","CD - Paranaíba","CD - Parnaiba","CD - Passos","CD - Patos",
-  "CD - Paulo Afonso","CD - Petrolina","CD - Petrópolis","CD - Picos","CD - Piracicaba","CD - Poços de Caldas","CD - Porto Velho",
-  "CD - Pouso Alegre","CD - Presidente Prudente","CD - Recife","CD - Registro","CD - Ribeirão Preto","CD - Rio Branco","CD - Rio das Ostras","CD - Rio Verde",
-  "CD - Rondonópolis","CD - Salto","CD - Salvador","CD - Salvador Leste","CD - Santa Inês","CD - Santo Antonio de Jesus","CD - São Bernardo","CD - São Cristovão",
-  "CD - São Gonçalo","CD - São João de Meriti","CD - São José do Rio Preto","CD - São José dos Campos","CD - São José dos Pinhais","CD - São Luis","CD - São Mateus",
-  "CD - São Pedro da Aldeia","CD - Sapucaia do Sul","CD - Serra Talhada","CD - Serrinha","CD - Sete Lagoas","CD - Sinop","CD - Sobral","CD - Sousa",
-  "CD - Taboão da Serra","CD - Taguatinga","CD - Taubaté","CD - Teixeira de Freitas","CD - Teresina","CD - Três Lagoas","CD - Uberaba","CD - Varginha",
-  "CD - Vila Guilherme","CD - Vitória da Conquista","CD - Volta Redonda"
-];
-
-const CDS = Array.from(new Set(CDS_RAW.map(normalize))).filter(Boolean).sort((a,b)=>a.localeCompare(b,"pt-BR"));
-cdList.innerHTML = CDS.map(cd => `<option value="${cd}"></option>`).join("");
-
-/* =========================
-   RENDER
-========================= */
-function render(){
-  const monthKey = monthPicker.value;
-  const q = (busca.value || "").toLowerCase();
-  const pub = fPublico.value;
-  const cdFilter = normalize(fCd.value);
-  const status = fStatus.value;
-
-  const allTreinos = listTreinosAllUsers()
-    .filter(t => String(t.data || "").slice(0,7) === monthKey)
-    .filter(t => !pub || t.publico === pub)
-    .filter(t => !cdFilter || normalize(t.cd) === cdFilter);
-
-  const apur = loadApuracoes();
-
-  let rows = allTreinos.map(t => {
-    const a = apur[t.id] || {
-      executou:"pendente",
-      performou:"pendente",
-      comentario:"",
-      avaliador:"",
-      updatedAt:""
-    };
-    return { t, a };
-  });
-
-  if (q){
-    rows = rows.filter(({t}) => {
-      const blob = [t.treinamento, t.cd, t.desafio, t.meta, t.obs, t._owner].join(" ").toLowerCase();
-      return blob.includes(q);
-    });
-  }
-
-  if (status){
-    rows = rows.filter(({a}) => {
-      if (status === "pendente") return a.executou === "pendente" || a.performou === "pendente";
-      if (status === "executouSim") return a.executou === "sim";
-      if (status === "executouNao") return a.executou === "nao";
-      if (status === "performouSim") return a.performou === "sim";
-      if (status === "performouNao") return a.performou === "nao";
-      return true;
-    });
-  }
-
-  rows.sort((x,y) => {
-    const d = String(y.t.data).localeCompare(String(x.t.data));
-    if (d !== 0) return d;
-    return String(x.t.cd||"").localeCompare(String(y.t.cd||""),"pt-BR");
-  });
-
-  tbody.innerHTML = "";
-
-  if (rows.length === 0){
-    tbody.innerHTML = `<tr><td colspan="13" style="opacity:.8;">Sem registros para este mês/filtros.</td></tr>`;
-    return;
-  }
-
-  for (const {t, a} of rows){
-    const tr = document.createElement("tr");
-    tr.dataset.id = t.id;
-
-    // destaque
-    if (a.performou === "sim") tr.classList.add("row-good");
-    if (a.performou === "nao") tr.classList.add("row-bad");
-
-    tr.innerHTML = `
-      <td>${toBR(t.data)}</td>
-      <td><span class="pill">${t.publico || "-"}</span></td>
-      <td>${t.treinamento || "-"}</td>
-      <td>${t.cd || "-"}</td>
-      <td>${t.desafio || "-"}</td>
-      <td>${t.meta || "-"}</td>
-      <td style="text-align:center;">${t.totalPessoas ?? "-"}</td>
-      <td style="text-align:center;">${t.notaMedia ?? "-"}</td>
-
-      <td>
-        <select data-executou>
-          <option value="pendente" ${a.executou==="pendente"?"selected":""}>Pendente</option>
-          <option value="sim" ${a.executou==="sim"?"selected":""}>Sim</option>
-          <option value="nao" ${a.executou==="nao"?"selected":""}>Não</option>
-        </select>
-      </td>
-
-      <td>
-        <select data-performou>
-          <option value="pendente" ${a.performou==="pendente"?"selected":""}>Pendente</option>
-          <option value="sim" ${a.performou==="sim"?"selected":""}>Sim</option>
-          <option value="nao" ${a.performou==="nao"?"selected":""}>Não</option>
-        </select>
-      </td>
-
-      <td>
-        <input data-comentario type="text" maxlength="140"
-          placeholder="Comentário..." value="${a.comentario || ""}">
-      </td>
-
-      <td style="opacity:.9;">${a.avaliador || "-"}</td>
-      <td style="opacity:.9;">${a.updatedAt || "-"}</td>
-    `;
-
-    tbody.appendChild(tr);
-  }
-}
-
-/* =========================
-   SAVE
-========================= */
-btnSalvar.onclick = () => {
-  const apur = loadApuracoes();
-  const trs = [...tbody.querySelectorAll("tr[data-id]")];
-
-  for (const tr of trs){
-    const id = tr.dataset.id;
-
-    const executou = tr.querySelector("[data-executou]")?.value || "pendente";
-    const performou = tr.querySelector("[data-performou]")?.value || "pendente";
-    const comentario = normalize(tr.querySelector("[data-comentario]")?.value || "");
-
-    apur[id] = {
-      executou,
-      performou,
-      comentario,
-      avaliador: usuario,
-      updatedAt: nowBR()
-    };
-  }
-
-  saveApuracoes(apur);
-  setMsg("Apurações salvas ✅", "success");
-  render();
-};
-
-/* =========================
-   INIT / listeners
-========================= */
-monthPicker.value = toMonthKey(new Date());
-render();
-
-monthPicker.addEventListener("change", render);
-busca.addEventListener("input", render);
-fPublico.addEventListener("change", render);
-fCd.addEventListener("input", render);
-fStatus.addEventListener("change", render);
+  monthPicker.addEventListener("change", render);
+  busca.addEventListener("input", render);
+  fPublico.addEventListener("change", render);
+  fCd.addEventListener("input", render);
+  fStatus.addEventListener("change", render);
 </script>
 
 <style>
-/* Melhorias visuais locais (seu styles.css continua valendo) */
 .table-wrap{ overflow:auto; }
 .table{ min-width: 1600px; }
 
