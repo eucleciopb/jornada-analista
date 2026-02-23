@@ -72,14 +72,12 @@ const PATH_INDEX = "../index.html";
 const PATH_MENU  = "../html menus/menu.html";
 
 /* =========================
-   LOGIN (PADRÃO NOVO + LEGADO)
-   - novo: user_session (JSON)
-   - legado: usuarioLogado (string)
-   - mantém usuarioKey (slug) como você já faz
+   HELPERS (BASE)
 ========================= */
 function safeParse(raw){
   try { return JSON.parse(raw); } catch { return null; }
 }
+
 function slug(s) {
   return (s || "")
     .toLowerCase()
@@ -87,25 +85,30 @@ function slug(s) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "");
 }
-function getCurrentUser(){
+
+/* =========================
+   LOGIN (PADRÃO NOVO + LEGADO)
+   - novo: user_session (JSON)
+   - legado: usuarioLogado (string)
+========================= */
+function getCurrentUserName(){
+  // 1) padrão novo
   const rawSession = localStorage.getItem("user_session");
   if (rawSession) {
     const s = safeParse(rawSession);
-    if (s?.nome) return { nome: s.nome };
+    if (s?.nome) return String(s.nome).trim();
   }
-  const u = (localStorage.getItem("usuarioLogado") || "").trim();
-  if (u) return { nome: u };
-  return null;
+
+  // 2) legado
+  return (localStorage.getItem("usuarioLogado") || "").trim();
 }
 
-const session = getCurrentUser();
-if (!session) window.location.href = PATH_INDEX;
+const usuarioNome = getCurrentUserName();
+if (!usuarioNome) window.location.href = PATH_INDEX;
 
-const usuarioNome = session.nome;
-
-// chave estável para salvar docs (não depende de auth)
-const usuarioKey = (localStorage.getItem("usuarioKey") || slug(usuarioNome)).trim();
-localStorage.setItem("usuarioKey", usuarioKey);
+// ✅ CORREÇÃO PRINCIPAL: usuarioKey SEMPRE do usuário atual
+// (não reutiliza usuarioKey antigo do localStorage — isso misturava os usuários)
+const usuarioKey = slug(usuarioNome);
 
 if (userInfo) userInfo.textContent = `Usuário: ${usuarioNome}`;
 
@@ -122,7 +125,7 @@ const ATIVIDADES = [
 ];
 
 /* =========================
-   HELPERS (mantidos)
+   HELPERS (UI)
 ========================= */
 function showErr(text) {
   if (!errBox) return;
@@ -228,6 +231,7 @@ async function loadCDsToDatalist() {
 
   let cdsFromFirestore = [];
   try {
+    // tenta ativos
     const snap = await getDocs(query(collection(db, CDS_COLLECTION), where("ativo", "==", true)));
     snap.forEach(d => {
       const data = d.data();
@@ -235,6 +239,7 @@ async function loadCDsToDatalist() {
       if (nome) cdsFromFirestore.push(nome);
     });
 
+    // se vazio, tenta tudo
     if (cdsFromFirestore.length === 0) {
       const snapAll = await getDocs(collection(db, CDS_COLLECTION));
       snapAll.forEach(d => {
@@ -244,9 +249,10 @@ async function loadCDsToDatalist() {
       });
     }
   } catch (e) {
-    // ignora e usa fallback
+    // ignora
   }
 
+  // ✅ fallback garantido com sua lista
   const cdsFinal = normalizeCDList(
     cdsFromFirestore.length > 0 ? cdsFromFirestore : CDS_RAW
   );
@@ -309,6 +315,7 @@ async function saveMonthToFirestore(yyyyMM) {
 
     const ref = doc(db, AGENDA_COLLECTION, `${usuarioKey}_${dataISO}`);
 
+    // se tudo vazio, remove (limpa)
     if (!cd && !atividade && !obs) {
       batch.delete(ref);
       continue;
@@ -341,10 +348,9 @@ if (btnMenu) {
 
 if (btnLogout) {
   btnLogout.addEventListener("click", () => {
-    // limpa novo + legado
+    // ✅ limpa novo + legado
     localStorage.removeItem("user_session");
     localStorage.removeItem("usuarioLogado");
-    localStorage.removeItem("usuarioKey");
     window.location.href = PATH_INDEX;
   });
 }
@@ -393,7 +399,7 @@ if (monthPicker) {
     // 1) mês aparece sempre
     renderMonthSkeleton(monthPicker.value);
 
-    // 2) CDs (fallback garantido)
+    // 2) CDs (agora com CDS_RAW completo como fallback)
     await loadCDsToDatalist();
 
     // 3) carregar do firebase (se falhar, não bloqueia)
