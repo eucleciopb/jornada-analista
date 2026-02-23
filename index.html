@@ -30,25 +30,20 @@
         <option>Robert</option>
         <option>Rodrigo</option>
         <option>Rosilene</option>
+        <option>Tenório</option>
       </select>
     </div>
 
     <button id="btnEntrar" class="btn-primary" type="button">Entrar</button>
 
-    <button id="btnLogin" class="btn-secondary full-width" type="button">
-      Ir para Login
-    </button>
-
     <p id="msg" class="msg"></p>
   </div>
 </main>
 
-<!-- Firebase + Firestore (CDN) -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
   import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-  // ✅ SUA CONFIG (ok para front-end)
   const firebaseConfig = {
     apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
     authDomain: "jornada-portal.firebaseapp.com",
@@ -63,7 +58,6 @@
 
   const usuarioSelect = document.getElementById("usuario");
   const btnEntrar = document.getElementById("btnEntrar");
-  const btnLogin = document.getElementById("btnLogin");
   const msg = document.getElementById("msg");
 
   function setMsg(text, ok = false){
@@ -84,11 +78,16 @@
     setMsg("Entrando...", true);
 
     try {
-      // 1) salva no localStorage
-      localStorage.setItem("usuarioLogado", usuario);
 
-      // 2) grava log no Firestore (auditoria)
-      // coleção sugerida: acessos
+      // Sessão padrão usada pela agenda
+      localStorage.setItem("user_session", JSON.stringify({
+        nome: usuario,
+        matricula: usuario,
+        perfil: "analista",
+        loginAt: Date.now()
+      }));
+
+      // Log de acesso
       await addDoc(collection(db, "acessos"), {
         usuario,
         origem: "index.html",
@@ -97,34 +96,25 @@
         userAgent: navigator.userAgent || null
       });
 
-      // 3) redireciona
-      // ✅ TROQUE AQUI se seu menu estiver em outro caminho
-      // Exemplo pela sua estrutura: "html menus/menu.html"
+      // ✅ CAMINHO CORRETO DO MENU
       window.location.href = "html menus/menu.html";
-      // Se o seu menu for na raiz: window.location.href = "menu.html";
 
     } catch (e) {
       console.error(e);
-      setMsg("Falha ao gravar no Firebase. Verifique regras do Firestore.");
+      setMsg("Erro ao entrar. Verifique o Firebase.");
       btnEntrar.disabled = false;
       btnEntrar.style.opacity = "1";
     }
   };
-
-  btnLogin.onclick = () => {
-    window.location.href = "login.html";
-  };
 </script>
 
 <style>
-/* Layout centralizado */
 .center-wrapper{
   display:flex;
   justify-content:center;
   align-items:center;
   height:100vh;
 }
-
 .login-card{
   width:360px;
   padding:30px;
@@ -134,7 +124,6 @@
   box-shadow:0 20px 40px rgba(0,0,0,.4);
   text-align:center;
 }
-
 .logo-box{
   width:70px;
   height:70px;
@@ -148,12 +137,10 @@
   color:#fff;
   background:linear-gradient(135deg,#d91b2e,#ff3b3b);
 }
-
 .form-group{
   margin-top:20px;
   text-align:left;
 }
-
 .form-group select{
   width:100%;
   padding:12px;
@@ -163,7 +150,6 @@
   color:#fff;
   margin-top:6px;
 }
-
 .btn-primary{
   width:100%;
   margin-top:20px;
@@ -175,26 +161,10 @@
   color:#fff;
   cursor:pointer;
 }
-
-.btn-secondary{
-  margin-top:12px;
-  padding:10px;
-  border-radius:14px;
-  border:1px solid rgba(255,255,255,.15);
-  background:rgba(255,255,255,.04);
-  color:#fff;
-  cursor:pointer;
-}
-
-.full-width{
-  width:100%;
-}
-
 .msg{
   margin-top:12px;
   font-size:12px;
 }
-
 .hint{
   font-size:13px;
   opacity:.7;

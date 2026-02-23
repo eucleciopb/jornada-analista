@@ -3,378 +3,619 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Treinamentos Realizados</title>
-  <link rel="stylesheet" href="css/styles.css" />
+  <title>Agenda do Analista</title>
+
+  <style>
+    :root{
+      --bg:#0b1220;
+      --card:#0f1b2e;
+      --line:rgba(255,255,255,.10);
+      --text:#e5e7eb;
+      --muted:#9ca3af;
+      --primary:#2563eb;
+      --ok:#22c55e;
+      --warn:#f59e0b;
+      --danger:#ef4444;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background:
+        radial-gradient(1200px 600px at 20% 10%, rgba(37,99,235,.18), transparent 55%),
+        radial-gradient(900px 500px at 80% 80%, rgba(34,197,94,.12), transparent 55%),
+        var(--bg);
+      color:var(--text);
+      min-height:100vh;
+    }
+    .topbar{
+      position:sticky; top:0; z-index:10;
+      background:rgba(11,18,32,.85);
+      backdrop-filter: blur(10px);
+      border-bottom:1px solid var(--line);
+      padding:14px 16px;
+    }
+    .wrap{width:min(1100px, 100%); margin:0 auto; padding:18px 16px 28px;}
+    .row{display:flex; gap:12px; flex-wrap:wrap; align-items:center;}
+    h1{font-size:18px; margin:0; letter-spacing:.2px;}
+    .hint{color:var(--muted); font-size:12px; line-height:1.35;}
+    .card{
+      margin-top:14px;
+      background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:14px;
+      box-shadow:0 18px 40px rgba(0,0,0,.35);
+    }
+    .controls{
+      display:flex; gap:10px; flex-wrap:wrap; align-items:end;
+      justify-content:space-between;
+    }
+    .control{
+      display:flex; flex-direction:column; gap:6px;
+      min-width:220px;
+    }
+    label{font-size:12px; color:var(--muted);}
+    input, select, textarea{
+      width:100%;
+      border-radius:12px;
+      border:1px solid var(--line);
+      background:rgba(0,0,0,.18);
+      color:var(--text);
+      padding:10px 12px;
+      outline:none;
+    }
+    textarea{min-height:92px; resize:vertical;}
+    .btn{
+      border:0;
+      border-radius:12px;
+      padding:10px 12px;
+      cursor:pointer;
+      color:var(--text);
+      font-weight:800;
+      letter-spacing:.2px;
+      transition: transform .06s ease, filter .15s ease;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      min-width:150px;
+      background:rgba(255,255,255,.06);
+      border:1px solid var(--line);
+    }
+    .btn:active{transform:scale(.99)}
+    .btn.primary{background:var(--primary); border-color:transparent;}
+    .btn.danger{background:rgba(239,68,68,.12); border-color:rgba(239,68,68,.25)}
+    .btn.small{min-width:auto; padding:8px 10px; font-size:13px;}
+    .tableWrap{overflow:auto; margin-top:12px; border-radius:14px; border:1px solid var(--line);}
+    table{width:100%; border-collapse:collapse; min-width:980px; background:rgba(0,0,0,.10);}
+    th, td{padding:10px 10px; border-bottom:1px solid var(--line); vertical-align:top;}
+    th{font-size:12px; color:var(--muted); text-align:left; background:rgba(255,255,255,.03); position:sticky; top:0;}
+    td{font-size:13px;}
+    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;}
+    .badge{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:4px 10px; border-radius:999px;
+      border:1px solid var(--line);
+      font-weight:800; font-size:12px;
+      background:rgba(0,0,0,.12);
+    }
+    .badge.ok{border-color:rgba(34,197,94,.35); background:rgba(34,197,94,.10); color:#bbf7d0;}
+    .badge.warn{border-color:rgba(245,158,11,.35); background:rgba(245,158,11,.10); color:#fde68a;}
+    .actions{display:flex; gap:8px; flex-wrap:wrap;}
+    .empty{
+      padding:14px;
+      color:var(--muted);
+      text-align:center;
+    }
+    .alert{
+      margin-top:12px;
+      border:1px solid rgba(239,68,68,.30);
+      background:rgba(239,68,68,.10);
+      color:#fecaca;
+      padding:10px 12px;
+      border-radius:12px;
+      display:none;
+      white-space:pre-wrap;
+      font-size:13px;
+    }
+
+    /* Modal */
+    .modalBack{
+      position:fixed; inset:0; background:rgba(0,0,0,.60);
+      display:none; align-items:center; justify-content:center;
+      padding:18px; z-index:50;
+    }
+    .modal{
+      width:min(780px, 100%);
+      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:14px;
+      box-shadow:0 20px 60px rgba(0,0,0,.55);
+    }
+    .modalHeader{display:flex; justify-content:space-between; align-items:center; gap:10px;}
+    .grid{
+      margin-top:12px;
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+    }
+    @media (max-width:760px){
+      .grid{grid-template-columns: 1fr;}
+      table{min-width:900px;}
+    }
+  </style>
 </head>
 
-<body class="bg">
+<body>
   <header class="topbar">
-    <div>
-      <h2>Treinamentos Realizados</h2>
-      <div id="userInfo" class="hint" style="color:#d1d5db;margin-top:4px;"></div>
-    </div>
-
-    <div class="top-actions">
-      <button id="btnMenu" class="btn-secondary" type="button">Voltar ao Menu</button>
-      <button id="btnLogout" class="btn-secondary" type="button">Sair</button>
+    <div class="wrap row" style="justify-content:space-between;">
+      <div>
+        <h1>Agenda do Analista</h1>
+        <div id="userInfo" class="hint">—</div>
+      </div>
+      <div class="row">
+        <button class="btn small" id="btnVoltar">Voltar</button>
+        <button class="btn small danger" id="btnSair" title="Remove a sessão do navegador">Sair</button>
+      </div>
     </div>
   </header>
 
-  <main class="card wide">
-    <section class="row-between">
-      <div>
-        <h3>Registrar Treinamento</h3>
-        <p class="hint">Preencha os dados do treinamento realizado. Isso fica salvo no seu navegador.</p>
+  <main class="wrap">
+    <section class="card">
+      <div class="controls">
+        <div class="row" style="gap:10px; flex:1;">
+          <div class="control" style="min-width:220px;">
+            <label>Mês</label>
+            <input id="mesRef" type="month" />
+          </div>
+
+          <div class="control" style="min-width:280px;">
+            <label>Filtrar por tipo</label>
+            <select id="filtroTipo">
+              <option value="">Todos</option>
+              <option value="Reunião">Reunião</option>
+              <option value="Campo">Campo</option>
+              <option value="Treinamento">Treinamento</option>
+              <option value="Administrativo">Administrativo</option>
+              <option value="Outros">Outros</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row">
+          <button class="btn primary" id="btnHoje">Ir para Hoje</button>
+          <button class="btn" id="btnRecarregar">Recarregar</button>
+        </div>
+      </div>
+
+      <div id="alert" class="alert"></div>
+
+      <div class="tableWrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:140px;">Data</th>
+              <th style="width:120px;">Status</th>
+              <th style="width:160px;">Horário</th>
+              <th style="width:160px;">Tipo</th>
+              <th>Título / Local / Observações</th>
+              <th style="width:190px;">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tbody">
+            <tr><td colspan="6" class="empty">Carregando…</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="hint" style="margin-top:10px;">
+        A agenda só abre com usuário autenticado (localStorage <span class="mono">user_session</span>). Se não houver sessão válida, redireciona para <span class="mono">login.html</span>.
       </div>
     </section>
-
-    <hr class="sep" />
-
-    <section class="form-grid">
-      <div>
-        <label for="dataTreino">Data</label>
-        <input id="dataTreino" type="date" />
-      </div>
-
-      <div>
-        <label for="publico">Público-alvo</label>
-        <select id="publico" required>
-          <option value="" disabled selected>Selecione...</option>
-          <option value="Gestor">Gestor</option>
-          <option value="Vendedor">Vendedor</option>
-        </select>
-      </div>
-
-      <div style="grid-column: 1 / -1;">
-        <label for="treinamento">Treinamento realizado</label>
-        <select id="treinamento" required>
-          <option value="" disabled selected>Carregando treinamentos...</option>
-        </select>
-        <div class="hint" id="hintTreinos" style="margin-top:6px; opacity:.9;"></div>
-      </div>
-
-      <div style="grid-column: 1 / -1;">
-        <label for="cd">CD treinado</label>
-        <input id="cd" type="text" list="cdList" placeholder="Digite e selecione na lista..." required />
-        <datalist id="cdList"></datalist>
-      </div>
-
-      <div>
-        <label for="totalPessoas">Total de pessoas treinadas</label>
-        <input id="totalPessoas" type="number" min="1" step="1" placeholder="Ex: 18" required />
-      </div>
-
-      <div>
-        <label for="notaMedia">Nota média do treinamento</label>
-        <input id="notaMedia" type="number" min="0" max="10" step="0.1" placeholder="Ex: 8.7" required />
-      </div>
-
-      <div style="grid-column: 1 / -1;">
-        <label for="obs">Observações</label>
-        <input id="obs" type="text" maxlength="220" placeholder="Opcional" />
-      </div>
-
-      <div style="grid-column: 1 / -1;">
-        <label for="desafio">Desafio</label>
-        <input id="desafio" type="text" maxlength="160" placeholder="Ex: Aumentar adesão ao ritual da matinal..." required />
-      </div>
-
-      <div style="grid-column: 1 / -1;">
-        <label for="metaDesafio">Meta do desafio</label>
-        <input id="metaDesafio" type="text" maxlength="160" placeholder="Ex: 90% de participação + checklist padrão por 30 dias" required />
-      </div>
-
-      <div class="page-actions" style="grid-column: 1 / -1; justify-content:flex-end; gap:10px;">
-        <button id="btnSalvar" type="button">Salvar Treinamento</button>
-      </div>
-    </section>
-
-    <p id="msg" class="msg"></p>
-
-    <hr class="sep" />
-
-    <section class="row-between" style="align-items:flex-end;">
-      <div>
-        <h3>Meu Histórico</h3>
-        <p class="hint">Registros do usuário logado.</p>
-      </div>
-      <div style="min-width:260px;">
-        <label for="busca">Buscar</label>
-        <input id="busca" type="text" placeholder="Treinamento, CD, desafio..." />
-      </div>
-    </section>
-
-    <div class="table-wrap" style="margin-top:12px;">
-      <table class="table table-sticky">
-        <thead>
-          <tr>
-            <th style="width:120px;">Data</th>
-            <th style="width:130px;">Público</th>
-            <th style="width:260px;">Treinamento</th>
-            <th style="width:240px;">CD</th>
-            <th style="width:130px;">Pessoas</th>
-            <th style="width:120px;">Nota</th>
-            <th style="width:260px;">Desafio</th>
-            <th style="width:260px;">Meta</th>
-            <th>Obs</th>
-            <th style="width:140px;">Ações</th>
-          </tr>
-        </thead>
-        <tbody id="tbodyHist"></tbody>
-      </table>
-    </div>
   </main>
 
-  <script>
-    // =========================
-    // Sessão / nav
-    // =========================
-    const usuario = (localStorage.getItem("usuarioLogado") || "").trim();
-    const userInfo = document.getElementById("userInfo");
-    const btnMenu = document.getElementById("btnMenu");
-    const btnLogout = document.getElementById("btnLogout");
+  <!-- Modal editar dia -->
+  <div class="modalBack" id="modalBack">
+    <div class="modal">
+      <div class="modalHeader">
+        <div>
+          <div style="font-weight:900;">Editar dia</div>
+          <div class="hint mono" id="modalData">—</div>
+        </div>
+        <button class="btn small" id="btnFecharModal">Fechar</button>
+      </div>
 
-    if (!usuario) window.location.href = "index.html";
-    userInfo.textContent = `Usuário: ${usuario}`;
+      <div class="grid">
+        <div class="control">
+          <label>Status</label>
+          <select id="mStatus">
+            <option value="Livre">Livre</option>
+            <option value="Ocupado">Ocupado</option>
+          </select>
+        </div>
 
-    btnMenu.onclick = () => window.location.href = "menu.html";
-    btnLogout.onclick = () => {
-      localStorage.removeItem("usuarioLogado");
-      window.location.href = "index.html";
+        <div class="control">
+          <label>Tipo</label>
+          <select id="mTipo">
+            <option value="Reunião">Reunião</option>
+            <option value="Campo">Campo</option>
+            <option value="Treinamento">Treinamento</option>
+            <option value="Administrativo">Administrativo</option>
+            <option value="Outros">Outros</option>
+          </select>
+        </div>
+
+        <div class="control">
+          <label>Início</label>
+          <input id="mInicio" type="time" />
+        </div>
+
+        <div class="control">
+          <label>Fim</label>
+          <input id="mFim" type="time" />
+        </div>
+
+        <div class="control" style="grid-column:1/-1;">
+          <label>Título</label>
+          <input id="mTitulo" type="text" placeholder="Ex: Reunião Matinal, Campo com SV, Treinamento CD..." />
+        </div>
+
+        <div class="control" style="grid-column:1/-1;">
+          <label>Local ou Link</label>
+          <input id="mLocal" type="text" placeholder="Ex: CD Boituva / Link do Teams / Endereço..." />
+        </div>
+
+        <div class="control" style="grid-column:1/-1;">
+          <label>Observações</label>
+          <textarea id="mObs" placeholder="Anotações rápidas do dia..."></textarea>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:12px; justify-content:space-between;">
+        <button class="btn danger" id="btnExcluirDia">Excluir registro</button>
+        <div class="row">
+          <button class="btn" id="btnSalvar">Salvar</button>
+          <button class="btn primary" id="btnSalvarFechar">Salvar e Fechar</button>
+        </div>
+      </div>
+
+      <div class="hint" style="margin-top:10px;" id="modalHint">—</div>
+    </div>
+  </div>
+
+  <script type="module">
+    /* =========================
+       FIREBASE CONFIG (SEU)
+    ========================= */
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+    import {
+      getFirestore, doc, getDoc, setDoc, deleteDoc,
+      collection, query, orderBy, startAt, endAt, getDocs,
+      Timestamp, serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
+      authDomain: "jornada-portal.firebaseapp.com",
+      projectId: "jornada-portal",
+      storageBucket: "jornada-portal.firebasestorage.app",
+      messagingSenderId: "669362296644",
+      appId: "1:669362296644:web:f590d9834a8e4e60012911"
     };
 
-    // =========================
-    // UI refs
-    // =========================
-    const dataTreino = document.getElementById("dataTreino");
-    const publico = document.getElementById("publico");
-    const treinamento = document.getElementById("treinamento");
-    const hintTreinos = document.getElementById("hintTreinos");
-    const cd = document.getElementById("cd");
-    const cdList = document.getElementById("cdList");
-    const totalPessoas = document.getElementById("totalPessoas");
-    const notaMedia = document.getElementById("notaMedia");
-    const obs = document.getElementById("obs");
-    const desafio = document.getElementById("desafio");
-    const metaDesafio = document.getElementById("metaDesafio");
-    const btnSalvar = document.getElementById("btnSalvar");
-    const msg = document.getElementById("msg");
-    const busca = document.getElementById("busca");
-    const tbodyHist = document.getElementById("tbodyHist");
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-    // =========================
-    // Helpers
-    // =========================
-    function setMsg(text, type="info"){
-      msg.textContent = text || "";
-      msg.style.color = type === "success" ? "#22c55e" : (type === "error" ? "#ef4444" : "#d1d5db");
-    }
+    /* =========================
+       SESSÃO (B)
+    ========================= */
+    const SESSION_KEY = "user_session";
 
-    function pad2(n){ return String(n).padStart(2,"0"); }
-
-    function todayISO(){
-      const d = new Date();
-      return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
-    }
-
-    function toBR(iso){
-      if (!iso) return "-";
-      const [y,m,d] = iso.split("-");
-      return `${d}/${m}/${y}`;
-    }
-
-    function normalize(s){
-      return (s || "").replace(/\s+/g," ").trim();
-    }
-
-    function storageKeyHist(){
-      return `treinamentos_realizados_${usuario}`;
-    }
-
-    function loadHist(){
-      const raw = localStorage.getItem(storageKeyHist());
-      if (!raw) return [];
-      try {
-        const arr = JSON.parse(raw);
-        return Array.isArray(arr) ? arr : [];
-      } catch {
-        return [];
+    function safeReadSession(){
+      const raw = localStorage.getItem(SESSION_KEY);
+      if(!raw) return null;
+      try{
+        const s = JSON.parse(raw);
+        if(!s?.matricula || !s?.nome) return null;
+        return s;
+      }catch{
+        return null;
       }
     }
 
-    function saveHist(arr){
-      localStorage.setItem(storageKeyHist(), JSON.stringify(arr));
+    const session = safeReadSession();
+    if(!session){
+      // IMPORTANTE: agenda depende do login
+      window.location.href = "login.html";
     }
 
-    // =========================
-    // Biblioteca de treinamentos (catalogo_treinamentos)
-    // =========================
-    function loadCatalogo(){
-      const raw = localStorage.getItem("catalogo_treinamentos");
-      if (!raw) return [];
-      try {
-        const arr = JSON.parse(raw);
-        return Array.isArray(arr) ? arr : [];
-      } catch {
-        return [];
-      }
+    /* =========================
+       UI Helpers
+    ========================= */
+    const $ = (id) => document.getElementById(id);
+    const alertBox = $("alert");
+    function showError(msg){
+      alertBox.style.display = "block";
+      alertBox.textContent = msg;
+    }
+    function clearError(){
+      alertBox.style.display = "none";
+      alertBox.textContent = "";
     }
 
-    function renderTreinosSelect(){
-      const catalogo = loadCatalogo()
-        .filter(x => x && x.nome)
-        .sort((a,b) => String(a.nome).localeCompare(String(b.nome),"pt-BR"));
-
-      treinamento.innerHTML = "";
-
-      if (catalogo.length === 0){
-        treinamento.innerHTML = `<option value="" disabled selected>Nenhum treinamento cadastrado (peça para o Euclecio cadastrar)</option>`;
-        hintTreinos.textContent = "Dica: cadastre primeiro os treinamentos na tela de Cadastro/Biblioteca.";
-        return;
-      }
-
-      treinamento.innerHTML = `<option value="" disabled selected>Selecione...</option>`
-        + catalogo.map(t => `<option value="${t.nome}">${t.nome}</option>`).join("");
-
-      hintTreinos.textContent = `Total na biblioteca: ${catalogo.length}`;
+    function pad(n){ return String(n).padStart(2,"0"); }
+    function ymd(d){ return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+    function brDate(d){
+      return d.toLocaleDateString("pt-BR", { weekday:"short", day:"2-digit", month:"2-digit", year:"numeric" });
+    }
+    function escapeHtml(str){
+      return String(str ?? "").replace(/[&<>"']/g, s => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+      }[s]));
+    }
+    function statusBadge(status){
+      const cls = (status === "Ocupado") ? "warn" : "ok";
+      const txt = status || "Livre";
+      return `<span class="badge ${cls}">${txt}</span>`;
     }
 
-    // =========================
-    // CDs (lista completa)
-    // =========================
-    const CDS_RAW = [
-      "CD - Alagoinhas","CD - Andradina","CD - Angra dos Reis","CD - Aparecida de Goiânia","CD - Araçatuba","CD - Arapiraca","CD - Araraquara",
-      "CD - Balsas","CD - Barbalha","CD - Barra do Garca","CD - Barreiras","CD - Barretos","CD - Barueri","CD - Bauru","CD - Belém","CD - Boituva",
-      "CD - Bom Jesus da Lapa","CD - Brumado","CD - Cachoeiro de Itapemirim","CD - Camaçari","CD - Campina Grande","CD - Campinas","CD - Campo Grande MS",
-      "CD - Campo Grande RJ","CD - Campos dos Goytacazes","CD - Caraguatatuba","CD - Cariacica","CD - Carpina","CD - Caruaru","CD - Cascavel","CD - Catanduva",
-      "CD - Caucaia","CD - Caxias","CD - Coimbra","CD - Conde","CD - Conselheiro Lafaiete","CD - Conselheiro Lafaiete","CD - Contagem","CD - Coxim","CD - Cuiabá",
-      "CD - Divinópolis","CD - Dourados","CD - Duque de Caxias","CD - Eunápolis","CD - Eusebio","CD - Feira de Santana","CD - Feira de Santana",
-      "CD - Fernandópolis","CD - Fernandópolis","CD - Fernandópolis","CD - Fernandópolis","CD - Floriano","CD - Garanhuns","CD - Governador Valadares","CD - Guarujá",
-      "CD - Guarulhos Taboão","CD - Iguatu","CD - Imperatriz","CD - Interlagos","CD - Iporá","CD - Irece","CD - Itabaiana","CD - Itaberaba","CD - Itabuna",
-      "CD - Itapeva","CD - Itapissuma","CD - Itumbiara","CD - Jaboatão dos Guararapes","CD - Jacobina","CD - Jaguaré","CD - Jequié","CD - Juazeiro","CD - Juiz de Fora",
-      "CD - Jundiaí","CD - Londrina","CD - Macaiba","CD - Maceió","CD - Marília","CD - Mogi-Mirim","CD - Montes Claros","CD - Mossoró","CD - Muriaé",
-      "CD - Nossa Senhora do Socorro","CD - Nova Friburgo","CD - Palhoça","CD - Paranaíba","CD - Parnaiba","CD - Parnaiba","CD - Passos","CD - Passos","CD - Patos",
-      "CD - Paulo Afonso","CD - Petrolina","CD - Petrópolis","CD - Picos","CD - Piracicaba","CD - Poços de Caldas","CD - Poços de Caldas","CD - Porto Velho",
-      "CD - Pouso Alegre","CD - Presidente Prudente","CD - Recife","CD - Registro","CD - Ribeirão Preto","CD - Rio Branco","CD - Rio das Ostras","CD - Rio Verde",
-      "CD - Rondonópolis","CD - Salto","CD - Salvador","CD - Salvador Leste","CD - Santa Inês","CD - Santo Antonio de Jesus","CD - São Bernardo","CD - São Cristovão",
-      "CD - São Gonçalo","CD - São João de Meriti","CD - São José do Rio Preto","CD - São José dos Campos","CD - São José dos Pinhais","CD - São Luis","CD - São Mateus",
-      "CD - São Pedro da Aldeia","CD - Sapucaia do Sul","CD - Serra Talhada","CD - Serrinha","CD - Sete Lagoas","CD - Sete Lagoas","CD - Sinop","CD - Sobral","CD - Sousa",
-      "CD - Taboão da Serra","CD - Taguatinga","CD - Taubaté","CD - Teixeira de Freitas","CD - Teresina","CD - Três Lagoas","CD - Uberaba","CD - Varginha",
-      "CD - Vila Guilherme","CD - Vitória da Conquista","CD - Volta Redonda"
-    ];
+    $("userInfo").textContent = `Usuário: ${session.nome} (${session.matricula}) • CD: ${session.cd || "—"} • Perfil: ${session.perfil || "—"}`;
 
-    const CDS = Array.from(new Set(CDS_RAW.map(s => normalize(s)))).filter(Boolean).sort((a,b)=>a.localeCompare(b,"pt-BR"));
-    cdList.innerHTML = CDS.map(x => `<option value="${x}"></option>`).join("");
+    /* =========================
+       DATA MODEL (Recomendado)
+       agendas/{matricula}/dias/{YYYY-MM-DD}
+    ========================= */
+    const analistaId = session.matricula;
 
-    // =========================
-    // Render Histórico
-    // =========================
-    function renderHist(){
-      const q = (busca.value || "").toLowerCase();
-      const data = loadHist().sort((a,b)=> String(b.data).localeCompare(String(a.data)));
+    function diasColRef(){
+      return collection(db, "agendas", analistaId, "dias");
+    }
+    function diaDocRef(dayKey){
+      return doc(db, "agendas", analistaId, "dias", dayKey);
+    }
 
-      const filtered = q ? data.filter(x =>
-        [x.treinamento, x.cd, x.publico, x.desafio, x.meta, x.obs].join(" ").toLowerCase().includes(q)
-      ) : data;
+    /* =========================
+       STATE
+    ========================= */
+    const tbody = $("tbody");
+    let currentMonth = "";
+    let currentMonthDays = [];
+    let agendaMap = new Map(); // key YYYY-MM-DD -> data
+    let modalDayKey = null;
 
-      tbodyHist.innerHTML = "";
+    function startOfMonth(year, monthIndex){ return new Date(year, monthIndex, 1, 0, 0, 0, 0); }
+    function endOfMonth(year, monthIndex){ return new Date(year, monthIndex+1, 0, 23, 59, 59, 999); }
 
-      if (filtered.length === 0){
-        tbodyHist.innerHTML = `<tr><td colspan="10" style="opacity:.8;">Nenhum registro ainda.</td></tr>`;
-        return;
-      }
+    function renderTable(){
+      const filtroTipo = $("filtroTipo").value;
 
-      filtered.forEach(item => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${toBR(item.data)}</td>
-          <td>${item.publico || "-"}</td>
-          <td>${item.treinamento || "-"}</td>
-          <td>${item.cd || "-"}</td>
-          <td>${item.totalPessoas ?? "-"}</td>
-          <td>${item.notaMedia ?? "-"}</td>
-          <td>${item.desafio || "-"}</td>
-          <td>${item.meta || "-"}</td>
-          <td>${item.obs || "-"}</td>
-          <td>
-            <button class="btn-secondary" type="button" data-del="${item.id}"
-              style="border-color: rgba(255,59,59,.25);">Excluir</button>
-          </td>
+      const rows = currentMonthDays.map(d=>{
+        const key = ymd(d);
+        const item = agendaMap.get(key) || null;
+
+        const status = item?.status || "Livre";
+        const tipo = item?.tipo || "—";
+        const titulo = item?.titulo || "";
+        const inicio = item?.inicio || "";
+        const fim = item?.fim || "";
+        const local = item?.localOuLink || "";
+        const obs = item?.observacoes || "";
+
+        if(filtroTipo){
+          if(!item) return "";
+          if(item.tipo !== filtroTipo) return "";
+        }
+
+        const horario = (inicio || fim) ? `${inicio || "—"} → ${fim || "—"}` : "—";
+
+        const detalhe = `
+          <div style="font-weight:900;">${titulo ? escapeHtml(titulo) : "<span style='color:var(--muted)'>Sem título</span>"}</div>
+          <div style="color:var(--muted); margin-top:4px;">
+            <span class="mono">${escapeHtml(local || "—")}</span>
+          </div>
+          ${obs ? `<div style="margin-top:6px; color:var(--muted)">${escapeHtml(obs)}</div>` : ""}
         `;
-        tbodyHist.appendChild(tr);
-      });
 
-      tbodyHist.querySelectorAll("[data-del]").forEach(btn => {
-        btn.onclick = () => {
-          const id = btn.getAttribute("data-del");
-          const next = loadHist().filter(x => x.id !== id);
-          saveHist(next);
-          setMsg("Registro excluído ✅", "success");
-          renderHist();
-        };
+        return `
+          <tr>
+            <td class="mono">${brDate(d)}</td>
+            <td>${statusBadge(status)}</td>
+            <td class="mono">${escapeHtml(horario)}</td>
+            <td>${escapeHtml(tipo)}</td>
+            <td>${detalhe}</td>
+            <td>
+              <div class="actions">
+                <button class="btn small" data-edit="${key}">Editar</button>
+                ${item ? `<button class="btn small danger" data-del="${key}">Excluir</button>` : ""}
+              </div>
+            </td>
+          </tr>
+        `;
+      }).filter(Boolean).join("");
+
+      tbody.innerHTML = rows || `<tr><td colspan="6" class="empty">Sem itens para este filtro/mês.</td></tr>`;
+
+      tbody.querySelectorAll("[data-edit]").forEach(btn=>{
+        btn.addEventListener("click", ()=> openModal(btn.getAttribute("data-edit")));
+      });
+      tbody.querySelectorAll("[data-del]").forEach(btn=>{
+        btn.addEventListener("click", ()=> quickDelete(btn.getAttribute("data-del")));
       });
     }
 
-    // =========================
-    // Salvar
-    // =========================
-    btnSalvar.onclick = () => {
-      setMsg("");
+    async function loadMonth(monthStr){
+      clearError();
+      currentMonth = monthStr;
 
-      const payload = {
-        id: `${Date.now()}_${Math.random().toString(16).slice(2)}`,
-        data: dataTreino.value || todayISO(),
-        publico: publico.value,
-        treinamento: treinamento.value,
-        cd: normalize(cd.value),
-        totalPessoas: Number(totalPessoas.value),
-        notaMedia: Number(notaMedia.value),
-        obs: normalize(obs.value),
-        desafio: normalize(desafio.value),
-        meta: normalize(metaDesafio.value)
-      };
+      const [y, m] = monthStr.split("-").map(Number);
+      const start = startOfMonth(y, m-1);
+      const end = endOfMonth(y, m-1);
 
-      if (!payload.publico || !payload.treinamento || !payload.cd || !payload.desafio || !payload.meta){
-        setMsg("Preencha: Público, Treinamento, CD, Desafio e Meta.", "error");
-        return;
-      }
-      if (!Number.isFinite(payload.totalPessoas) || payload.totalPessoas < 1){
-        setMsg("Total de pessoas deve ser 1 ou mais.", "error");
-        return;
-      }
-      if (!Number.isFinite(payload.notaMedia) || payload.notaMedia < 0 || payload.notaMedia > 10){
-        setMsg("Nota média deve estar entre 0 e 10.", "error");
-        return;
-      }
-      if (!CDS.includes(payload.cd)){
-        setMsg("Selecione um CD válido da lista.", "error");
-        return;
+      currentMonthDays = [];
+      for(let d = new Date(start); d <= end; d.setDate(d.getDate()+1)){
+        currentMonthDays.push(new Date(d));
       }
 
-      const hist = loadHist();
-      hist.push(payload);
-      saveHist(hist);
+      try{
+        // range por 'data' evita índice composto
+        const q = query(
+          diasColRef(),
+          orderBy("data"),
+          startAt(Timestamp.fromDate(start)),
+          endAt(Timestamp.fromDate(end))
+        );
 
-      setMsg("Treinamento registrado ✅", "success");
+        const snap = await getDocs(q);
+        agendaMap = new Map();
+        snap.forEach(ds => agendaMap.set(ds.id, ds.data()));
 
-      // limpa campos (mantém data)
-      publico.value = "";
-      treinamento.value = "";
-      cd.value = "";
-      totalPessoas.value = "";
-      notaMedia.value = "";
-      obs.value = "";
-      desafio.value = "";
-      metaDesafio.value = "";
+        renderTable();
+      }catch(err){
+        console.error(err);
+        showError(
+          "Erro ao carregar a agenda.\n\n" +
+          "Possíveis causas:\n" +
+          "1) Rules não permitem acesso\n" +
+          "2) Você abriu fora da pasta correta (GitHub Pages/Live Server)\n" +
+          "3) Firestore sem permissão/erro de rede\n\n" +
+          "Detalhe do erro (console): " + (err?.message || err)
+        );
+        tbody.innerHTML = `<tr><td colspan="6" class="empty">Não foi possível carregar a agenda.</td></tr>`;
+      }
+    }
 
-      renderHist();
-    };
+    /* =========================
+       MODAL
+    ========================= */
+    const modalBack = $("modalBack");
 
-    // init
-    dataTreino.value = todayISO();
-    renderTreinosSelect();
-    renderHist();
-    busca.addEventListener("input", renderHist);
+    function openModal(dayKey){
+      modalDayKey = dayKey;
+      const item = agendaMap.get(dayKey) || null;
+
+      $("modalData").textContent = dayKey;
+
+      $("mStatus").value = item?.status || "Livre";
+      $("mTipo").value = item?.tipo || "Reunião";
+      $("mInicio").value = item?.inicio || "";
+      $("mFim").value = item?.fim || "";
+      $("mTitulo").value = item?.titulo || "";
+      $("mLocal").value = item?.localOuLink || "";
+      $("mObs").value = item?.observacoes || "";
+
+      $("modalHint").textContent = item ? "Registro existente (você pode atualizar)." : "Novo registro para este dia.";
+
+      modalBack.style.display = "flex";
+    }
+
+    function closeModal(){
+      modalBack.style.display = "none";
+      modalDayKey = null;
+    }
+
+    $("btnFecharModal").addEventListener("click", closeModal);
+    modalBack.addEventListener("click", (e)=>{ if(e.target === modalBack) closeModal(); });
+
+    async function saveModal(closeAfter){
+      clearError();
+      if(!modalDayKey) return;
+
+      const status = $("mStatus").value;
+      const tipo = $("mTipo").value;
+      const inicio = $("mInicio").value || "";
+      const fim = $("mFim").value || "";
+      const titulo = ($("mTitulo").value || "").trim();
+      const localOuLink = ($("mLocal").value || "").trim();
+      const observacoes = ($("mObs").value || "").trim();
+
+      if(status === "Ocupado" && !titulo){
+        showError("Se o dia está OCUPADO, informe um TÍTULO.");
+        return;
+      }
+
+      try{
+        await setDoc(diaDocRef(modalDayKey), {
+          data: Timestamp.fromDate(new Date(modalDayKey + "T00:00:00")),
+          status,
+          tipo,
+          inicio,
+          fim,
+          titulo,
+          localOuLink,
+          observacoes,
+          updatedAt: serverTimestamp(),
+          updatedBy: `${session.nome} (${session.matricula})`
+        }, { merge: true });
+
+        await loadMonth(currentMonth);
+        if(closeAfter) closeModal();
+      }catch(err){
+        console.error(err);
+        showError("Erro ao salvar.\n\nDetalhe: " + (err?.message || err));
+      }
+    }
+
+    async function deleteDay(){
+      clearError();
+      if(!modalDayKey) return;
+      if(!confirm(`Excluir o registro do dia ${modalDayKey}?`)) return;
+
+      try{
+        await deleteDoc(diaDocRef(modalDayKey));
+        await loadMonth(currentMonth);
+        closeModal();
+      }catch(err){
+        console.error(err);
+        showError("Erro ao excluir.\n\nDetalhe: " + (err?.message || err));
+      }
+    }
+
+    async function quickDelete(dayKey){
+      clearError();
+      if(!confirm(`Excluir o registro do dia ${dayKey}?`)) return;
+      try{
+        await deleteDoc(diaDocRef(dayKey));
+        await loadMonth(currentMonth);
+      }catch(err){
+        console.error(err);
+        showError("Erro ao excluir.\n\nDetalhe: " + (err?.message || err));
+      }
+    }
+
+    $("btnSalvar").addEventListener("click", ()=> saveModal(false));
+    $("btnSalvarFechar").addEventListener("click", ()=> saveModal(true));
+    $("btnExcluirDia").addEventListener("click", deleteDay);
+
+    /* =========================
+       CONTROLES
+    ========================= */
+    const now = new Date();
+    const defaultMonth = `${now.getFullYear()}-${pad(now.getMonth()+1)}`;
+    $("mesRef").value = defaultMonth;
+
+    $("mesRef").addEventListener("change", ()=> loadMonth($("mesRef").value));
+    $("filtroTipo").addEventListener("change", renderTable);
+
+    $("btnHoje").addEventListener("click", ()=>{
+      $("mesRef").value = defaultMonth;
+      loadMonth(defaultMonth);
+    });
+
+    $("btnRecarregar").addEventListener("click", ()=> loadMonth(currentMonth));
+
+    $("btnVoltar").addEventListener("click", ()=> { window.location.href = "admin.html"; });
+
+    $("btnSair").addEventListener("click", ()=>{
+      localStorage.removeItem(SESSION_KEY);
+      window.location.href = "login.html";
+    });
+
+    /* =========================
+       INIT
+    ========================= */
+    loadMonth(defaultMonth);
   </script>
 </body>
 </html>
