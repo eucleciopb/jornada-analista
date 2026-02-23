@@ -1,137 +1,233 @@
 <!doctype html>
 <html lang="pt-br">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Menu Admin</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Menu Admin | Jornada</title>
 
-<style>
-  body {
-    margin: 0;
-    background: #ffffff;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-  }
-
-  .card {
-    width: 380px;
-    background: #ffffff;
-    border-radius: 28px;
-    padding: 30px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.08);
-  }
-
-  .top {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-  }
-
-  .logo {
-    width: 60px;
-    height: 60px;
-    background: #000;
-    color: #fff;
-    font-weight: 700;
-    border-radius: 18px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 18px;
-  }
-
-  .top h2 {
-    margin: 0;
-    font-size: 18px;
-    color: #000;
-  }
-
-  .top small {
-    color: #666;
-    font-size: 13px;
-  }
-
-  hr {
-    margin: 25px 0;
-    border: none;
-    height: 1px;
-    background: #eee;
-  }
-
-  .btn {
-    width: 100%;
-    padding: 16px;
-    margin-bottom: 15px;
-    border-radius: 18px;
-    border: 1px solid #e5e5e5;
-    background: #f9f9f9;
-    font-size: 15px;
-    font-weight: 600;
-    color: #000;
-    cursor: pointer;
-    transition: 0.2s ease;
-  }
-
-  .btn:hover {
-    background: #000;
-    color: #fff;
-    transform: translateY(-2px);
-  }
-
-  .btn-exit {
-    margin-top: 10px;
-    background: #ffffff;
-    border: 1px solid #ddd;
-  }
-
-  .btn-exit:hover {
-    background: #000;
-    color: #fff;
-  }
-
-</style>
+  <style>
+    :root{
+      --bg:#0b0f14;
+      --card:rgba(255,255,255,.06);
+      --border:rgba(255,255,255,.10);
+      --text:#e5e7eb;
+      --muted:#9ca3af;
+      --danger:#ef4444;
+      --field:rgba(0,0,0,.30);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      background:var(--bg);
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+      color:var(--text);
+      min-height:100vh;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      padding:24px 16px;
+    }
+    .card{
+      width:min(460px, 100%);
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:24px;
+      padding:22px;
+      box-shadow:0 24px 70px rgba(0,0,0,.45);
+    }
+    .top{
+      display:flex;
+      align-items:center;
+      gap:14px;
+    }
+    .logo{
+      width:58px;height:58px;
+      border-radius:18px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-weight:1000;
+      letter-spacing:.02em;
+      background:linear-gradient(135deg,#d91b2e,#ff3b3b);
+      color:#fff;
+      user-select:none;
+    }
+    h2{margin:0;font-size:18px}
+    small{display:block;margin-top:4px;color:var(--muted);font-weight:700}
+    .pill{
+      margin-top:10px;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      background:rgba(255,255,255,.04);
+      color:var(--muted);
+      font-size:12px;
+      font-weight:900;
+      width:fit-content;
+    }
+    hr{
+      margin:18px 0;
+      border:none;
+      height:1px;
+      background:rgba(255,255,255,.10);
+    }
+    .btn{
+      width:100%;
+      padding:14px 14px;
+      border-radius:16px;
+      border:1px solid var(--border);
+      background:rgba(255,255,255,.04);
+      font-size:14px;
+      font-weight:900;
+      color:var(--text);
+      cursor:pointer;
+      transition:.15s;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+    .btn:hover{
+      transform:translateY(-1px);
+      border-color:rgba(255,255,255,.22);
+      background:rgba(255,255,255,.06);
+    }
+    .btn .sub{font-size:12px;color:var(--muted);font-weight:800}
+    .btn-danger{
+      background:rgba(239,68,68,.14);
+      border-color:rgba(239,68,68,.30);
+    }
+    .btn-danger:hover{
+      background:rgba(239,68,68,.22);
+      border-color:rgba(239,68,68,.45);
+    }
+    .grid{
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+    .msg{
+      margin-top:10px;
+      font-size:12px;
+      font-weight:900;
+      color:var(--muted);
+      opacity:.9;
+    }
+  </style>
 </head>
 
 <body>
 
-<div class="card">
-
-  <div class="top">
-    <div class="logo">GP</div>
-    <div>
-      <h2>Olá, Admin</h2>
-      <small>Menu Administrativo</small>
+  <div class="card">
+    <div class="top">
+      <div class="logo">GP</div>
+      <div>
+        <h2 id="hello">Olá, Admin</h2>
+        <small>Menu Administrativo</small>
+        <div class="pill" id="userPill">Sessão: carregando…</div>
+      </div>
     </div>
+
+    <hr>
+
+    <div class="grid">
+      <!-- ✅ paths corretos: você está em /html menus/ e vai para /html adm/ -->
+      <button class="btn" id="btnApuracao" type="button">
+        <div>
+          Apuração
+          <div class="sub">Validar se executou e se performou</div>
+        </div>
+        <span>›</span>
+      </button>
+
+      <button class="btn" id="btnAgendaDia" type="button">
+        <div>
+          Agenda do Dia
+          <div class="sub">Onde está o time hoje (CD + atividade)</div>
+        </div>
+        <span>›</span>
+      </button>
+
+      <button class="btn" id="btnAgendaMensal" type="button">
+        <div>
+          Agenda Mensal
+          <div class="sub">Visão por mês (admin)</div>
+        </div>
+        <span>›</span>
+      </button>
+
+      <button class="btn" id="btnResumoTreinos" type="button">
+        <div>
+          Resumo de Treinamentos
+          <div class="sub">Painel de resultados por treinamento</div>
+        </div>
+        <span>›</span>
+      </button>
+    </div>
+
+    <hr>
+
+    <button class="btn btn-danger" id="btnSair" type="button">
+      <div>
+        Sair
+        <div class="sub">Encerrar sessão</div>
+      </div>
+      <span>⎋</span>
+    </button>
+
+    <div class="msg" id="msg"></div>
   </div>
 
-  <hr>
+<script>
+  // =========================
+  // Paths (base: /html menus/menuadm.html)
+  // =========================
+  const PATH_INDEX = "../index.html";
+  const PATH_APURACAO = "../html adm/apuracao.html";
+  const PATH_AGENDA_DIA = "../html adm/agenda-dia-adm.html";
+  const PATH_AGENDA_MENSAL = "../html adm/agenda-mensal-adm.html";
+  const PATH_RESUMO = "../html adm/treinos-resumo-adm.html";
 
-  <button class="btn" onclick="location.href='apuracao.html'">
-    Apuração
-  </button>
+  // =========================
+  // Sessão
+  // =========================
+  const msg = document.getElementById("msg");
+  const hello = document.getElementById("hello");
+  const userPill = document.getElementById("userPill");
 
-  <button class="btn" onclick="location.href='agenda-dia-adm.html'">
-    Agenda do Dia
-  </button>
+  const usuario = (localStorage.getItem("usuarioLogado") || "").trim();
+  if (!usuario){
+    window.location.href = PATH_INDEX;
+  } else {
+    hello.textContent = `Olá, ${usuario}`;
+    userPill.textContent = `Sessão: ${usuario}`;
+  }
 
-  <button class="btn" onclick="location.href='agenda-mensal-adm.html'">
-    Agenda Mensal
-  </button>
+  function go(path){
+    window.location.href = path;
+  }
 
-  <button class="btn" onclick="location.href='treinos-resumo-adm.html'">
-    Resumo de Treinamentos
-  </button>
+  // =========================
+  // Botões (paths corretos)
+  // =========================
+  document.getElementById("btnApuracao").onclick = () => go(PATH_APURACAO);
+  document.getElementById("btnAgendaDia").onclick = () => go(PATH_AGENDA_DIA);
+  document.getElementById("btnAgendaMensal").onclick = () => go(PATH_AGENDA_MENSAL);
+  document.getElementById("btnResumoTreinos").onclick = () => go(PATH_RESUMO);
 
-  <hr>
-
-  <button class="btn btn-exit" onclick="location.href='login.html'">
-    Sair
-  </button>
-
-</div>
+  // =========================
+  // Sair
+  // =========================
+  document.getElementById("btnSair").onclick = () => {
+    localStorage.removeItem("usuarioLogado");
+    localStorage.removeItem("usuarioKey");
+    localStorage.removeItem("user_session");
+    go(PATH_INDEX);
+  };
+</script>
 
 </body>
 </html>

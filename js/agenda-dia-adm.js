@@ -1,207 +1,173 @@
-import { db } from "./firebase.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import {
+  getFirestore,
   collection,
   getDocs,
   query,
-  where,
-  Timestamp
+  where
 } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-const $ = (id) => document.getElementById(id);
+/* =========================
+   FIREBASE CONFIG (SEU)
+========================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
+  authDomain: "jornada-portal.firebaseapp.com",
+  projectId: "jornada-portal",
+  storageBucket: "jornada-portal.firebasestorage.app",
+  messagingSenderId: "669362296644",
+  appId: "1:669362296644:web:f590d9834a8e4e60012911"
+};
 
-function isoToday() {
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+/* =========================
+   USERS (MESMA LISTA DO INDEX)
+   - Inclui Tenório
+========================= */
+const USERS = [
+  "Emerson",
+  "Euclecio",
+  "Joice",
+  "Michel",
+  "Muller",
+  "Pedro",
+  "Ricardo",
+  "Robert",
+  "Rodrigo",
+  "Rosilene",
+  "Tenório"
+];
+
+/* =========================
+   UI
+========================= */
+const tbody = document.getElementById("tbody");
+const hint = document.getElementById("hint");
+const todayLabel = document.getElementById("todayLabel");
+const errorBox = document.getElementById("errorBox");
+
+const kpiUsers = document.getElementById("kpiUsers");
+const kpiOk = document.getElementById("kpiOk");
+const kpiPend = document.getElementById("kpiPend");
+
+const btnReload = document.getElementById("btnReload");
+
+/* =========================
+   HELPERS (DATA LOCAL - SEM UTC)
+========================= */
+function pad2(n){ return String(n).padStart(2, "0"); }
+
+function todayISO_LOCAL(){
+  // ✅ data local do navegador (Brasil), sem UTC
   const d = new Date();
   const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
+  const m = pad2(d.getMonth() + 1);
+  const day = pad2(d.getDate());
   return `${y}-${m}-${day}`;
 }
 
-function brToday() {
-  const d = new Date();
-  const day = String(d.getDate()).padStart(2, "0");
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const y = d.getFullYear();
-  return `${day}/${m}/${y}`;
+function formatBR(iso){
+  if(!iso) return "-";
+  const [y,m,d] = iso.split("-");
+  return `${d}/${m}/${y}`;
 }
 
-function dayRangeTimestamps() {
-  const now = new Date();
-  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
-  const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
-  return {
-    startTS: Timestamp.fromDate(start),
-    endTS: Timestamp.fromDate(end),
-  };
+function normalize(s){ return (s || "").toString().trim(); }
+
+function showError(text){
+  if (!errorBox) return;
+  errorBox.style.display = text ? "block" : "none";
+  errorBox.textContent = text || "";
 }
 
-function showError(msg) {
-  $("errorBox").style.display = "block";
-  $("errorBox").textContent = msg;
-}
+/* =========================
+   MAIN LOAD
+========================= */
+async function loadAgendaDia(){
+  showError("");
+  const hoje = todayISO_LOCAL();
 
-function clearError() {
-  $("errorBox").style.display = "none";
-  $("errorBox").textContent = "";
-}
+  todayLabel.textContent = "Data: " + formatBR(hoje);
+  hint.textContent = "Buscando agenda do time…";
 
-function pickStatus(a) {
-  return a?.tipoDia || a?.status || a?.tipo || "Registrado";
-}
-
-function pickLocal(a) {
-  return a?.cd || a?.local || a?.cdNome || a?.nomeCD || "-";
-}
-
-async function fetchAgendaDoDia(iso, br) {
-  // Vamos tentar 3 jeitos: data string ISO, data string BR, e Timestamp interval
-  const map = new Map();
-
-  // 1) data == ISO
-  try {
-    const snapISO = await getDocs(
-      query(collection(db, "agenda_dias"), where("data", "==", iso))
+  // 1) Busca tudo que foi lançado HOJE (somente quem registrou)
+  let registros = [];
+  try{
+    const q = query(
+      collection(db, "agenda_dias"),
+      where("data", "==", hoje)
     );
-    snapISO.forEach((doc) => {
-      const a = doc.data();
-      if (a?.uid) map.set(a.uid, a);
-    });
-  } catch (e) {
-    console.warn("[agenda-dia-adm] Falha query ISO (data string):", e);
-  }
 
-  // 2) data == BR
-  try {
-    const snapBR = await getDocs(
-      query(collection(db, "agenda_dias"), where("data", "==", br))
-    );
-    snapBR.forEach((doc) => {
-      const a = doc.data();
-      if (a?.uid) map.set(a.uid, a);
-    });
-  } catch (e) {
-    console.warn("[agenda-dia-adm] Falha query BR (data string):", e);
-  }
-
-  // 3) data Timestamp no intervalo do dia
-  if (map.size === 0) {
-    const { startTS, endTS } = dayRangeTimestamps();
-
-    // tenta campo "data" como Timestamp
-    try {
-      const snapTS = await getDocs(
-        query(
-          collection(db, "agenda_dias"),
-          where("data", ">=", startTS),
-          where("data", "<=", endTS)
-        )
-      );
-      snapTS.forEach((doc) => {
-        const a = doc.data();
-        if (a?.uid) map.set(a.uid, a);
-      });
-    } catch (e) {
-      console.warn("[agenda-dia-adm] Falha query Timestamp em 'data':", e);
-      // tenta createdAt (fallback)
-      try {
-        const snapCreated = await getDocs(
-          query(
-            collection(db, "agenda_dias"),
-            where("createdAt", ">=", startTS),
-            where("createdAt", "<=", endTS)
-          )
-        );
-        snapCreated.forEach((doc) => {
-          const a = doc.data();
-          if (a?.uid) map.set(a.uid, a);
-        });
-      } catch (e2) {
-        console.warn("[agenda-dia-adm] Falha query Timestamp em 'createdAt':", e2);
-      }
-    }
-  }
-
-  return map;
-}
-
-async function fetchUsuarios() {
-  const usersSnap = await getDocs(collection(db, "usuarios"));
-  const users = [];
-
-  usersSnap.forEach((doc) => {
-    const u = doc.data();
-    // mostra todos ativos (se não existir 'ativo', considera ativo)
-    if (u?.ativo === false) return;
-
-    // nome pode estar em "nome" ou "primeiroNome"
-    const nome = u?.nome || u?.primeiroNome || u?.displayName || "(Sem nome)";
-    users.push({ uid: doc.id, nome });
-  });
-
-  users.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
-  return users;
-}
-
-async function load() {
-  clearError();
-
-  const iso = isoToday();
-  const br = brToday();
-
-  $("todayLabel").textContent = `Data: ${iso} (${br})`;
-  $("hint").textContent = "Carregando usuários e agenda do dia…";
-  $("tbody").innerHTML = `<tr><td colspan="3">Carregando…</td></tr>`;
-
-  try {
-    const users = await fetchUsuarios();
-    const agendaMap = await fetchAgendaDoDia(iso, br);
-
-    if (users.length === 0) {
-      $("hint").textContent = "";
-      showError("Nenhum usuário encontrado na coleção 'usuarios'. Para mostrar pendentes, precisa cadastrar todos lá.");
-      $("tbody").innerHTML = `<tr><td colspan="3">Sem usuários.</td></tr>`;
-      return;
-    }
-
-    let ok = 0;
-    let pend = 0;
-
-    const rows = users.map((u) => {
-      const a = agendaMap.get(u.uid);
-
-      if (a) ok++;
-      else pend++;
-
-      const status = a ? pickStatus(a) : "Sem lançamento";
-      const local = a ? pickLocal(a) : "-";
-
-      return `
-        <tr>
-          <td><b>${u.nome}</b></td>
-          <td class="${a ? "ok" : "pend"}">${status}</td>
-          <td>${local}</td>
-        </tr>
-      `;
-    }).join("");
-
-    $("tbody").innerHTML = rows;
-    $("kpiUsers").textContent = String(users.length);
-    $("kpiOk").textContent = String(ok);
-    $("kpiPend").textContent = String(pend);
-
-    $("hint").textContent = `OK. Registros encontrados hoje: ${agendaMap.size} (coleção: agenda_dias)`;
-
-  } catch (err) {
+    const snap = await getDocs(q);
+    snap.forEach(d => registros.push({ id: d.id, ...d.data() }));
+  }catch(err){
     console.error(err);
-    $("hint").textContent = "";
-    showError(`Erro ao carregar: ${err?.message || err}`);
-
-    $("tbody").innerHTML = `<tr><td colspan="3">Falha ao carregar.</td></tr>`;
-    $("kpiUsers").textContent = "0";
-    $("kpiOk").textContent = "0";
-    $("kpiPend").textContent = "0";
+    hint.textContent = "Falha ao buscar no Firestore.";
+    showError(err?.message || String(err));
+    tbody.innerHTML = `<tr><td colspan="4">Erro ao buscar no Firebase.</td></tr>`;
+    kpiUsers.textContent = USERS.length;
+    kpiOk.textContent = "0";
+    kpiPend.textContent = USERS.length;
+    return;
   }
+
+  // 2) Indexa por usuarioNome (e também por uidKey se quiser evoluir)
+  const mapByUser = {};
+  for (const r of registros){
+    const u = normalize(r.usuarioNome);
+    if (!u) continue;
+    // se houver duplicado no mesmo dia, mantém o último (por updatedAt)
+    mapByUser[u.toLowerCase()] = r;
+  }
+
+  // 3) Render: SEMPRE mostra TODOS os usuários
+  tbody.innerHTML = "";
+
+  let okCount = 0;
+
+  for (const user of USERS){
+    const r = mapByUser[user.toLowerCase()] || null;
+
+    const cd = normalize(r?.cd);
+    const atividade = normalize(r?.atividade);
+
+    // ✅ regra: se não tiver doc, é pendente.
+    // ✅ se tiver doc mas vazio, continua "Não preenchido"
+    const hasDoc = !!r;
+    const preenchido = !!(cd || atividade);
+
+    if (hasDoc && preenchido) okCount++;
+
+    const statusText = hasDoc
+      ? (preenchido ? "Lançado" : "Não preenchido")
+      : "Pendente";
+
+    const statusClass = (hasDoc && preenchido) ? "ok" : "pend";
+
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${user}</td>
+      <td class="${statusClass}">${statusText}</td>
+      <td>${cd ? cd : "<span class='empty'>Não preenchido</span>"}</td>
+      <td>${atividade ? atividade : "<span class='empty'>Não preenchido</span>"}</td>
+    `;
+    tbody.appendChild(tr);
+  }
+
+  // 4) KPIs
+  kpiUsers.textContent = String(USERS.length);
+  kpiOk.textContent = String(okCount);
+  kpiPend.textContent = String(USERS.length - okCount);
+
+  hint.textContent = `Atualizado • Registros no Firebase hoje: ${registros.length}`;
 }
 
-$("btnReload").addEventListener("click", load);
-load();
+/* =========================
+   EVENTS
+========================= */
+if (btnReload) btnReload.onclick = loadAgendaDia;
+
+// init
+loadAgendaDia();
