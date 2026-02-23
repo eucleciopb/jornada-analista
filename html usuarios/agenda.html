@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Agenda - Resumo do Analista</title>
+  <title>Agenda do Analista</title>
 
   <style>
     :root{
@@ -14,7 +14,6 @@
       --muted:#9ca3af;
       --danger:#ef4444;
       --ok:#22c55e;
-      --warn:#f59e0b;
       --field:rgba(0,0,0,.30);
     }
     *{box-sizing:border-box}
@@ -35,10 +34,7 @@
     .btn-primary{background:var(--danger);border-color:transparent}
     .btn-primary:hover{filter:brightness(1.06)}
     .pill{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;border:1px solid var(--border);font-size:12px;color:var(--muted)}
-    .dot{width:8px;height:8px;border-radius:50%}
-    .dot.ok{background:var(--ok)}
-    .dot.warn{background:var(--warn)}
-    .dot.danger{background:var(--danger)}
+    .dot{width:8px;height:8px;border-radius:50%;background:var(--ok)}
     .cardsMini{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:12px}
     .mini{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:14px;padding:12px}
     .mini .t{font-size:12px;color:var(--muted)}
@@ -48,9 +44,8 @@
     thead th{position:sticky;top:0;background:rgba(0,0,0,.35);backdrop-filter:blur(8px);text-align:left;font-size:12px;color:var(--muted);padding:12px;border-bottom:1px solid var(--border)}
     tbody td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.06);vertical-align:top}
     tbody tr:hover{background:rgba(255,255,255,.04)}
-    .badge{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;border:1px solid var(--border);font-size:12px;color:var(--muted)}
-    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;}
     .empty{padding:14px;text-align:center;color:var(--muted)}
+    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;}
     @media (max-width:720px){
       .topbar{flex-direction:column;align-items:flex-start}
       table{min-width:860px}
@@ -61,12 +56,11 @@
 <body>
   <header class="topbar">
     <div>
-      <h2>Agenda (Resumo)</h2>
+      <h2>Agenda do Analista</h2>
       <div class="hint" id="userInfo"></div>
       <div class="err" id="errBox"></div>
     </div>
     <div style="display:flex;gap:10px;flex-wrap:wrap">
-      <!-- ✅ você está em /html usuarios/ então volta 1 nível e entra em /html menus/ -->
       <button class="btn" id="btnMenu" type="button">Voltar ao Menu</button>
       <button class="btn" id="btnLogout" type="button">Sair</button>
     </div>
@@ -76,12 +70,10 @@
     <main class="card">
       <div class="row">
         <div>
-          <h3 style="margin:0 0 6px">Minha agenda do mês</h3>
-          <div class="hint">Mostra o resumo do que foi registrado no Firestore para o seu usuário.</div>
-          <div class="hint">Fonte: coleção <span class="mono">agenda_dias</span>.</div>
+          <h3 style="margin:0 0 6px">Resumo do mês</h3>
+          <div class="hint">Mostra somente os dias preenchidos em <span class="mono">agenda_dias</span>.</div>
         </div>
-
-        <div class="pill" id="statusPill"><span class="dot warn"></span> Status: aguardando</div>
+        <div class="pill" id="statusPill"><span class="dot"></span> Status: aguardando</div>
       </div>
 
       <hr style="border:none;height:1px;background:rgba(255,255,255,.10);margin:16px 0">
@@ -91,9 +83,7 @@
           <label for="monthPicker">Mês</label>
           <input id="monthPicker" type="month" />
         </div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap">
-          <button class="btn btn-primary" id="btnRecarregar" type="button">Recarregar</button>
-        </div>
+        <button class="btn btn-primary" id="btnRecarregar" type="button">Recarregar</button>
       </div>
 
       <div class="cardsMini" id="cardsMini"></div>
@@ -114,19 +104,14 @@
           </tbody>
         </table>
       </div>
-
-      <div class="hint" style="margin-top:10px;">
-        Se não aparecer nada, pode ser porque ainda não existe registro seu nesse mês em <span class="mono">agenda_dias</span>.
-      </div>
     </main>
   </div>
 
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
     import {
-      getFirestore, collection, query, orderBy, startAt, endAt, getDocs,
-      Timestamp
-    } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+      getFirestore, collection, getDocs, query, where
+    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
     /* =========================
        FIREBASE CONFIG (SEU)
@@ -144,127 +129,94 @@
     const db = getFirestore(app);
 
     /* =========================
-       LOGIN CHECK (B)
-       - usa user_session
-       - fallback: usuarioLogado
+       PATHS
+       (esta tela está em /html usuarios/)
     ========================= */
-    const SESSION_KEY = "user_session";
+    const PATH_INDEX = "../index.html";
+    const PATH_MENU  = "../html menus/menu.html";
 
+    /* =========================
+       LOGIN PADRONIZADO
+    ========================= */
     function safeParse(raw){
-      try{ return JSON.parse(raw); } catch { return null; }
+      try { return JSON.parse(raw); } catch { return null; }
     }
-
-    function readSession(){
-      const raw = localStorage.getItem(SESSION_KEY);
+    function slug(s) {
+      return (s || "")
+        .toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, "");
+    }
+    function getCurrentUserName(){
+      const raw = localStorage.getItem("user_session");
       if(raw){
         const s = safeParse(raw);
-        if(s?.nome) return s;
+        if(s?.nome) return String(s.nome).trim();
       }
-      // fallback legado
-      const u = (localStorage.getItem("usuarioLogado") || "").trim();
-      if(u){
-        return { nome: u, matricula: u, perfil: "analista", cd: "" };
-      }
-      return null;
+      return (localStorage.getItem("usuarioLogado") || "").trim();
     }
 
-    const session = readSession();
-    if(!session){
-      // você está em /html usuarios/
-      window.location.href = "../index.html";
-    }
+    const usuarioNome = getCurrentUserName();
+    if(!usuarioNome) window.location.href = PATH_INDEX;
+
+    const usuarioKey = slug(usuarioNome);
 
     /* =========================
        UI
     ========================= */
-    const $ = (id) => document.getElementById(id);
+    const $ = (id)=>document.getElementById(id);
+    const userInfo = $("userInfo");
     const errBox = $("errBox");
     const statusPill = $("statusPill");
-    const userInfo = $("userInfo");
     const monthPicker = $("monthPicker");
+    const btnRecarregar = $("btnRecarregar");
     const tbody = $("tbodyAgenda");
     const cardsMini = $("cardsMini");
 
-    userInfo.textContent = `Usuário: ${session.nome} • Perfil: ${session.perfil || "—"} • CD: ${session.cd || "—"}`;
+    userInfo.textContent = `Usuário: ${usuarioNome} • uidKey: ${usuarioKey}`;
 
-    function setStatus(kind, text){
-      const dotClass = kind === "ok" ? "ok" : (kind === "danger" ? "danger" : "warn");
-      statusPill.innerHTML = `<span class="dot ${dotClass}"></span> ${text}`;
+    function showErr(text){
+      errBox.style.display = text ? "block" : "none";
+      errBox.textContent = text || "";
     }
-    function showErr(msg){
-      errBox.style.display = "block";
-      errBox.textContent = msg;
+    function setStatus(text){
+      statusPill.innerHTML = `<span class="dot"></span> Status: ${text}`;
     }
-    function clearErr(){
-      errBox.style.display = "none";
-      errBox.textContent = "";
+    function pad2(n){ return String(n).padStart(2,"0"); }
+    function toMonthKey(d){ return `${d.getFullYear()}-${pad2(d.getMonth()+1)}`; }
+    function weekdayShort(iso){
+      const d = new Date(iso + "T00:00:00");
+      return d.toLocaleDateString("pt-BR",{weekday:"short"});
     }
-
-    function pad(n){ return String(n).padStart(2,"0"); }
-    function startOfMonth(y, mIdx){ return new Date(y, mIdx, 1, 0,0,0,0); }
-    function endOfMonth(y, mIdx){ return new Date(y, mIdx+1, 0, 23,59,59,999); }
-    function weekdayShort(d){ return d.toLocaleDateString("pt-BR",{weekday:"short"}); }
-    function brDate(d){ return d.toLocaleDateString("pt-BR"); }
-
-    // Tenta reconhecer o "dono" do registro com vários nomes de campo
-    function isMine(data){
-      const nome = (session.nome || "").toLowerCase();
-      const matricula = (session.matricula || "").toLowerCase();
-
-      const a1 = (data.analista || "").toLowerCase();
-      const a2 = (data.usuario || "").toLowerCase();
-      const a3 = (data.nomeAnalista || "").toLowerCase();
-      const a4 = (data.analistaId || "").toLowerCase();
-      const a5 = (data.matricula || "").toLowerCase();
-
-      return [a1,a2,a3,a4,a5].some(v => v && (v === nome || v === matricula));
-    }
-
-    function getDateFromDoc(data){
-      // prioridade: Timestamp 'data'
-      if(data?.data?.toDate) return data.data.toDate();
-      // fallback: dataString "YYYY-MM-DD"
-      if(typeof data?.dataString === "string" && data.dataString.includes("-")){
-        const dt = new Date(data.dataString + "T00:00:00");
-        if(!isNaN(dt)) return dt;
-      }
-      // fallback: "dia" number + "mes" string (se existir)
-      return null;
-    }
-
-    function getField(data, ...keys){
-      for(const k of keys){
-        if(data && data[k] != null && String(data[k]).trim() !== "") return String(data[k]).trim();
-      }
-      return "";
+    function brFromIso(iso){
+      const d = new Date(iso + "T00:00:00");
+      return d.toLocaleDateString("pt-BR");
     }
 
     function renderSummary(items){
-      const diasComAgenda = items.length;
+      const dias = items.length;
 
       const cds = new Set();
-      const atividades = new Map(); // atividade -> count
+      const atividadeCount = new Map();
 
-      items.forEach(it=>{
-        const cd = getField(it, "cd", "CD", "centroDistribuicao");
-        if(cd) cds.add(cd);
+      for(const it of items){
+        if(it.cd) cds.add(it.cd);
 
-        const atv = getField(it, "atividade", "Atividade", "tipo", "acao");
-        const k = atv || "—";
-        atividades.set(k, (atividades.get(k) || 0) + 1);
-      });
+        const a = (it.atividade || "—").trim() || "—";
+        atividadeCount.set(a, (atividadeCount.get(a)||0) + 1);
+      }
 
-      // top atividade
       let topAtv = "—";
       let topQtd = 0;
-      for(const [k,v] of atividades.entries()){
+      for(const [k,v] of atividadeCount.entries()){
         if(v > topQtd){ topQtd = v; topAtv = k; }
       }
 
       cardsMini.innerHTML = `
         <div class="mini">
-          <div class="t">Dias com agenda</div>
-          <div class="v">${diasComAgenda}</div>
+          <div class="t">Dias preenchidos</div>
+          <div class="v">${dias}</div>
         </div>
         <div class="mini">
           <div class="t">CDs no mês</div>
@@ -283,23 +235,19 @@
 
     function renderTable(items){
       if(items.length === 0){
-        tbody.innerHTML = `<tr><td colspan="5" class="empty">Sem registros para este mês.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" class="empty">Sem registros neste mês.</td></tr>`;
         return;
       }
 
       const rows = items.map(it=>{
-        const dt = getDateFromDoc(it);
-        const cd = getField(it, "cd", "CD", "centroDistribuicao") || "—";
-        const atividade = getField(it, "atividade", "Atividade", "tipo", "acao") || "—";
-        const obs = getField(it, "observacoes", "observacao", "obs", "Observações") || "";
-
+        const iso = it.data || "";
         return `
           <tr>
-            <td class="mono">${dt ? brDate(dt) : "—"}</td>
-            <td>${dt ? weekdayShort(dt) : "—"}</td>
-            <td>${cd}</td>
-            <td>${atividade}</td>
-            <td>${obs}</td>
+            <td class="mono">${iso ? brFromIso(iso) : "—"}</td>
+            <td>${iso ? weekdayShort(iso) : "—"}</td>
+            <td>${it.cd || "—"}</td>
+            <td>${it.atividade || "—"}</td>
+            <td>${it.obs || ""}</td>
           </tr>
         `;
       }).join("");
@@ -307,87 +255,59 @@
       tbody.innerHTML = rows;
     }
 
-    async function loadMonth(monthStr){
-      clearErr();
-      setStatus("warn","Status: carregando…");
-      tbody.innerHTML = `<tr><td colspan="5" class="empty">Carregando…</td></tr>`;
-      cardsMini.innerHTML = "";
-
-      const [y, m] = monthStr.split("-").map(Number);
-      const start = startOfMonth(y, m-1);
-      const end = endOfMonth(y, m-1);
-
+    async function loadMonth(yyyyMM){
       try{
-        // ✅ Sem índice composto: busca por range em "data" e filtra no front por analista.
-        const q = query(
-          collection(db, "agenda_dias"),
-          orderBy("data"),
-          startAt(Timestamp.fromDate(start)),
-          endAt(Timestamp.fromDate(end))
+        showErr("");
+        setStatus("carregando…");
+        tbody.innerHTML = `<tr><td colspan="5" class="empty">Carregando…</td></tr>`;
+        cardsMini.innerHTML = "";
+
+        const snap = await getDocs(
+          query(
+            collection(db, "agenda_dias"),
+            where("uidKey", "==", usuarioKey),
+            where("yyyyMM", "==", yyyyMM)
+          )
         );
 
-        const snap = await getDocs(q);
-
-        const all = [];
-        snap.forEach(ds=>{
-          const data = ds.data();
-          // filtra só o que é do usuário logado
-          if(isMine(data)){
-            all.push(data);
-          }
+        const items = [];
+        snap.forEach(d=>{
+          items.push(d.data());
         });
 
-        // ordena por data (se algum doc veio sem Timestamp)
-        all.sort((a,b)=>{
-          const da = getDateFromDoc(a)?.getTime() || 0;
-          const dbb = getDateFromDoc(b)?.getTime() || 0;
-          return da - dbb;
-        });
+        // ordena por data ISO
+        items.sort((a,b)=> (a.data||"").localeCompare(b.data||""));
 
-        renderSummary(all);
-        renderTable(all);
-        setStatus("ok", `Status: ok • ${all.length} registro(s)`);
+        renderSummary(items);
+        renderTable(items);
+        setStatus(`ok • ${items.length} registro(s)`);
 
       }catch(err){
         console.error(err);
-        setStatus("danger","Status: erro");
-        showErr(
-          "Não consegui carregar a agenda.\n\n" +
-          "Causas mais comuns:\n" +
-          "1) Seus docs em agenda_dias não possuem o campo 'data' (Timestamp)\n" +
-          "2) Você está salvando com outro nome de coleção\n" +
-          "3) A página está em host diferente do login (localStorage não bate)\n\n" +
-          "Detalhe: " + (err?.message || err)
-        );
+        setStatus("erro");
+        showErr(err?.message || String(err));
         tbody.innerHTML = `<tr><td colspan="5" class="empty">Erro ao carregar.</td></tr>`;
       }
     }
 
-    // =========================
     // NAV
-    // =========================
-    $("btnMenu").addEventListener("click", ()=>{
-      // está em /html usuarios/
-      window.location.href = "../html menus/menu.html";
+    document.getElementById("btnMenu").addEventListener("click", ()=> {
+      window.location.href = PATH_MENU;
     });
 
-    $("btnLogout").addEventListener("click", ()=>{
+    document.getElementById("btnLogout").addEventListener("click", ()=> {
       localStorage.removeItem("user_session");
       localStorage.removeItem("usuarioLogado");
-      window.location.href = "../index.html";
+      window.location.href = PATH_INDEX;
     });
 
-    // =========================
     // INIT
-    // =========================
     const now = new Date();
-    const defaultMonth = `${now.getFullYear()}-${pad(now.getMonth()+1)}`;
-    monthPicker.value = defaultMonth;
+    monthPicker.value = toMonthKey(now);
+    loadMonth(monthPicker.value);
 
     monthPicker.addEventListener("change", ()=> loadMonth(monthPicker.value));
-    $("btnRecarregar").addEventListener("click", ()=> loadMonth(monthPicker.value));
-
-    loadMonth(defaultMonth);
+    btnRecarregar.addEventListener("click", ()=> loadMonth(monthPicker.value));
   </script>
 </body>
 </html>
