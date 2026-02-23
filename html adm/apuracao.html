@@ -7,6 +7,70 @@
   <link rel="stylesheet" href="../css/styles.css" />
 
   <style>
+    /* ===== Topbar sticky (fixo em cima) ===== */
+    .topbar{
+      position: sticky;
+      top: 0;
+      z-index: 999;
+      backdrop-filter: blur(10px);
+      background: rgba(11,15,20,.72);
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      transition: padding .18s ease, background .18s ease, box-shadow .18s ease;
+      padding: 14px 0;
+    }
+
+    .topbar-inner{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:14px;
+      flex-wrap:wrap;
+    }
+
+    .topbar-left h2{
+      margin:0;
+      font-size:18px;
+      line-height:1.15;
+      transition: font-size .18s ease, transform .18s ease;
+    }
+
+    .topbar-left .hint{
+      margin-top:4px;
+      font-size:12px;
+      transition: opacity .18s ease, transform .18s ease;
+    }
+
+    .top-actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:flex-end;
+      transition: transform .18s ease;
+    }
+
+    /* ===== Compact mode (scroll) ===== */
+    .topbar.compact{
+      padding: 8px 0;
+      background: rgba(11,15,20,.86);
+      box-shadow: 0 10px 30px rgba(0,0,0,.28);
+    }
+    .topbar.compact .topbar-left h2{
+      font-size:15px;
+      transform: translateY(1px);
+    }
+    .topbar.compact .topbar-left .hint{
+      opacity:.85;
+      transform: translateY(-1px);
+    }
+    .topbar.compact .top-actions{
+      transform: translateY(1px);
+    }
+
+    @media (max-width: 840px){
+      .top-actions{ justify-content:flex-start; }
+    }
+
     .table-wrap{ overflow:auto; }
     .table{ min-width: 1200px; }
 
@@ -150,15 +214,18 @@
 
 <body class="bg">
 
-<header class="topbar">
-  <div>
-    <h2>Apuração de Treinamentos</h2>
-    <div id="userInfo" class="hint" style="color:#d1d5db;margin-top:4px;"></div>
-  </div>
+<!-- ✅ TOPO FIXO (COMPACTA AO ROLAR) -->
+<header class="topbar" id="topbar">
+  <div class="topbar-inner">
+    <div class="topbar-left">
+      <h2>Apuração de Treinamentos</h2>
+      <div id="userInfo" class="hint" style="color:#d1d5db;"></div>
+    </div>
 
-  <div class="top-actions">
-    <button id="btnMenu" class="btn-secondary" type="button">Voltar ao Menu</button>
-    <button id="btnLogout" class="btn-secondary" type="button">Sair</button>
+    <div class="top-actions">
+      <button id="btnMenu" class="btn-secondary" type="button">Voltar ao Menu</button>
+      <button id="btnLogout" class="btn-secondary" type="button">Sair</button>
+    </div>
   </div>
 </header>
 
@@ -295,6 +362,19 @@
   } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
   /* =========================
+     TOPBAR COMPACT ON SCROLL
+  ========================= */
+  const topbar = document.getElementById("topbar");
+  const COMPACT_AT = 24; // px
+  function updateTopbar(){
+    const y = window.scrollY || document.documentElement.scrollTop || 0;
+    if (y > COMPACT_AT) topbar.classList.add("compact");
+    else topbar.classList.remove("compact");
+  }
+  window.addEventListener("scroll", updateTopbar, { passive:true });
+  updateTopbar();
+
+  /* =========================
      FIREBASE CONFIG (SEU)
   ========================= */
   const firebaseConfig = {
@@ -317,12 +397,13 @@
 
   /* =========================
      PATHS (arquivo em /html adm/)
+     ✅ MENU ADMIN
   ========================= */
   const PATH_INDEX = "../index.html";
-  const PATH_MENU  = "../html menus/menu.html";
+  const PATH_MENUADM = "../html menus/menuadm.html";
 
   /* =========================
-     SESSÃO (mesmo padrão do seu sistema)
+     SESSÃO
   ========================= */
   function safeParse(raw){ try { return JSON.parse(raw); } catch { return null; } }
   function getCurrentUserName(){
@@ -338,7 +419,10 @@
   if (!avaliador) window.location.href = PATH_INDEX;
 
   document.getElementById("userInfo").textContent = `Avaliador: ${avaliador}`;
-  document.getElementById("btnMenu").onclick = () => window.location.href = PATH_MENU;
+
+  // ✅ Voltar ao Menu -> menuadm.html
+  document.getElementById("btnMenu").onclick = () => window.location.href = PATH_MENUADM;
+
   document.getElementById("btnLogout").onclick = () => {
     localStorage.removeItem("user_session");
     localStorage.removeItem("usuarioLogado");
@@ -400,9 +484,7 @@
     return todayISO() > String(dataApuracao);
   }
 
-  // ✅ STATUS DA TABELA: só 3 (validado/atrasado/pendente)
   function computeStatusTabela(dataApuracao, metaAtingida){
-    // metaAtingida: "atingiu" | "nao_atingiu" | "pendente" | undefined
     const m = metaAtingida || "pendente";
     if (m !== "pendente") return { key:"validado", label:"Validado", cls:"status-validado" };
     if (isLate(dataApuracao)) return { key:"atrasado", label:"Atrasado", cls:"status-atrasado" };
@@ -439,7 +521,7 @@
      CACHE
   ========================= */
   let TREINOS_CACHE = [];
-  let APURACOES_MAP = {}; // { [treinoId]: { metaAtingida, comentario, avaliador, updatedAtText, dataApurada } }
+  let APURACOES_MAP = {};
 
   async function loadTreinos(){
     const snap = await getDocs(collection(db, TREINOS_COLLECTION));
@@ -461,7 +543,7 @@
      MODAL STATE
   ========================= */
   let CURRENT_T = null;
-  let CURRENT_META = "pendente"; // "atingiu" | "nao_atingiu" | "pendente"
+  let CURRENT_META = "pendente";
 
   function openModal(t){
     CURRENT_T = t;
@@ -507,9 +589,6 @@
   btnNaoAtingiu.addEventListener("click", () => CURRENT_META = "nao_atingiu");
   btnAtingiu.addEventListener("click", () => CURRENT_META = "atingiu");
 
-  /* =========================
-     SAVE MODAL (Firestore)
-  ========================= */
   async function saveModal(){
     if (!CURRENT_T?.id) return;
 
@@ -520,13 +599,9 @@
 
     await setDoc(ref, {
       treinoId: CURRENT_T.id,
-
-      // ✅ aqui está o "validar se atingiu a meta ou não"
-      metaAtingida: CURRENT_META, // "atingiu" | "nao_atingiu" | "pendente"
-
+      metaAtingida: CURRENT_META,
       comentario: comentario || null,
       dataApurada: dataApurada || null,
-
       avaliador: avaliador,
       updatedAtText: new Date().toLocaleString("pt-BR"),
       updatedAt: serverTimestamp()
@@ -556,9 +631,6 @@
     }
   });
 
-  /* =========================
-     RENDER
-  ========================= */
   function render(){
     const monthKey = monthPicker.value;
     const q = (busca.value || "").toLowerCase();
@@ -575,7 +647,7 @@
       const ap = APURACOES_MAP[t.id] || {};
       const metaAtingida = ap.metaAtingida || "pendente";
       const st = computeStatusTabela(t.dataApuracao, metaAtingida);
-      return { t, ap, st };
+      return { t, st };
     });
 
     if (q){
@@ -602,7 +674,7 @@
       return;
     }
 
-    for (const {t, ap, st} of rows){
+    for (const {t, st} of rows){
       const prazo = t.dataApuracao ? toBR(t.dataApuracao) : "-";
       const tr = document.createElement("tr");
 
@@ -630,9 +702,6 @@
     });
   }
 
-  /* =========================
-     INIT
-  ========================= */
   monthPicker.value = toMonthKey(new Date());
 
   try{
