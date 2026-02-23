@@ -159,7 +159,6 @@
     ========================= */
     const TREINOS_COLLECTION = "treinamentos_realizados";
 
-    // ✅ Robusto: tenta várias coleções onde sua biblioteca pode estar
     const CATALOGO_COLLECTIONS = [
       "catalogo_treinamentos",
       "biblioteca_treinamentos",
@@ -167,19 +166,44 @@
       "biblioteca"
     ];
 
-    // ✅ Robusto: tenta vários nomes de campo possíveis
     const CATALOGO_FIELDS = ["nome", "treinamento", "titulo", "name"];
 
     /* =========================
-       Paths corretos (arquivo em html usuarios/)
+       Paths (arquivo em html usuarios/)
     ========================= */
     const PATH_INDEX = "../index.html";
     const PATH_MENU  = "../html menus/menu.html";
 
     /* =========================
-       Sessão / nav
+       Helpers base
     ========================= */
-    const usuario = (localStorage.getItem("usuarioLogado") || "").trim();
+    function safeParse(raw){
+      try { return JSON.parse(raw); } catch { return null; }
+    }
+
+    function slug(s) {
+      return (s || "")
+        .toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, "");
+    }
+
+    function getCurrentUserName(){
+      // 1) padrão novo
+      const raw = localStorage.getItem("user_session");
+      if(raw){
+        const s = safeParse(raw);
+        if(s?.nome) return String(s.nome).trim();
+      }
+      // 2) legado
+      return (localStorage.getItem("usuarioLogado") || "").trim();
+    }
+
+    /* =========================
+       Sessão / nav (CORRIGIDO)
+    ========================= */
+    const usuario = getCurrentUserName();
     const userInfo = document.getElementById("userInfo");
     const btnMenu = document.getElementById("btnMenu");
     const btnLogout = document.getElementById("btnLogout");
@@ -189,14 +213,13 @@
 
     btnMenu.onclick = () => window.location.href = PATH_MENU;
     btnLogout.onclick = () => {
+      localStorage.removeItem("user_session");
       localStorage.removeItem("usuarioLogado");
-      localStorage.removeItem("usuarioKey");
       window.location.href = PATH_INDEX;
     };
 
-    // chave estável (sem Auth)
-    const usuarioKey = (localStorage.getItem("usuarioKey") || slug(usuario)).trim();
-    localStorage.setItem("usuarioKey", usuarioKey);
+    // ✅ chave SEMPRE do usuário atual (não usa localStorage)
+    const usuarioKey = slug(usuario);
 
     /* =========================
        UI refs
@@ -218,7 +241,7 @@
     const tbodyHist = document.getElementById("tbodyHist");
 
     /* =========================
-       Helpers
+       Helpers UI
     ========================= */
     function setMsg(text, type="info"){
       msg.textContent = text || "";
@@ -240,14 +263,6 @@
 
     function normalize(s){
       return (s || "").replace(/\s+/g," ").trim();
-    }
-
-    function slug(s) {
-      return (s || "")
-        .toLowerCase()
-        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/(^-|-$)/g, "");
     }
 
     function makeId(){
@@ -304,7 +319,6 @@
     }
 
     async function loadCatalogoFirestoreRobusto(){
-      // tenta cada coleção até achar algo
       for (const colName of CATALOGO_COLLECTIONS){
         try{
           const snap = await getDocs(collection(db, colName));
@@ -317,7 +331,7 @@
             return { source: colName, data: out };
           }
         }catch(e){
-          // continua tentando outras coleções
+          // continua
         }
       }
       return { source: null, data: [] };
@@ -329,7 +343,6 @@
 
       const fire = await loadCatalogoFirestoreRobusto();
 
-      // se não veio nada do Firestore, usa localStorage
       let catalogo = fire.data;
       let origem = fire.source;
 
@@ -339,7 +352,6 @@
         origem = "localStorage";
       }
 
-      // limpa, deduplica e ordena
       const nomes = Array.from(
         new Set((catalogo || []).map(x => (x?.nome || "").toString().trim()).filter(Boolean))
       ).sort((a,b)=>a.localeCompare(b,"pt-BR"));
@@ -358,7 +370,7 @@
     }
 
     /* =========================
-       Histórico Firestore (SEM índice)
+       Histórico Firestore
     ========================= */
     let HIST_CACHE = [];
 
@@ -372,7 +384,6 @@
       const arr = [];
       snap.forEach(d => arr.push({ id: d.id, ...d.data() }));
 
-      // ordena no front
       arr.sort((a,b) => String(b.data || "").localeCompare(String(a.data || "")));
 
       HIST_CACHE = arr;
