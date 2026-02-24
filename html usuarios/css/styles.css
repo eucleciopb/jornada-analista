@@ -877,3 +877,81 @@ label{
   font-size: 12px;
   opacity: .95;
 }
+/* ====== Observações maior e confortável de digitar ====== */
+
+/* Dá mais espaço para a coluna Observações e permite o textarea crescer */
+table thead th:last-child {
+  width: 42%;
+}
+
+/* Alinha o conteúdo da última coluna ao topo para não “grudar” no meio da célula */
+#tbodyAgenda td:last-child {
+  vertical-align: top;
+}
+
+/* Aumenta a área de digitação da última coluna (Observações),
+   funcione sendo <textarea> OU <input>, com prioridade (!important) */
+#tbodyAgenda td:last-child .field,
+#tbodyAgenda td:last-child textarea,
+#tbodyAgenda td:last-child input[type="text"],
+#tbodyAgenda td:last-child input {
+  display: block;
+  width: 100%;
+  min-height: 140px !important;   /* altura confortável */
+  height: 140px !important;       /* força altura inicial */
+  max-height: 60vh;               /* não passa da tela */
+  padding: 12px 14px !important;  /* conforto na digitação */
+  border-radius: 12px !important;
+  border: 1px solid var(--border) !important;
+  background: var(--field) !important;
+  color: var(--text) !important;
+  font-size: 14px !important;     /* fonte maior */
+  line-height: 1.5 !important;    /* leitura melhor */
+  box-shadow: none !important;
+  outline: none !important;
+  caret-color: var(--text);
+  overflow: auto;                  /* mostra scroll se precisar */
+  resize: vertical;                /* usuário pode aumentar a altura */
+  /* Esses dois ajudam a quebrar linhas longas (surte efeito pleno em <textarea>) */
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Efeito de foco agradável */
+#tbodyAgenda td:last-child .field:focus,
+#tbodyAgenda td:last-child textarea:focus,
+#tbodyAgenda td:last-child input:focus {
+  border-color: rgba(255,255,255,.30) !important;
+  box-shadow: 0 0 0 3px rgba(255,255,255,.08) !important;
+}
+
+/* Placeholder mais suave no tema escuro */
+#tbodyAgenda td:last-child .field::placeholder,
+#tbodyAgenda td:last-child textarea::placeholder,
+#tbodyAgenda td:last-child input::placeholder {
+  color: rgba(229,231,235,.5);
+}
+
+/* Em mobile, ainda mais alto e com fonte um pouco maior */
+@media (max-width: 720px) {
+  #tbodyAgenda td:last-child .field,
+  #tbodyAgenda td:last-child textarea,
+  #tbodyAgenda td:last-child input {
+    min-height: 180px !important;
+    height: 180px !important;
+    font-size: 15px !important;
+  }
+}
+
+/* (Opcional) scrollbar discreto para o tema escuro */
+#tbodyAgenda td:last-child textarea::-webkit-scrollbar {
+  width: 10px;
+}
+#tbodyAgenda td:last-child textarea::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,.15);
+  border-radius: 10px;
+}
+#tbodyAgenda td:last-child textarea::-webkit-scrollbar-track {
+  background: rgba(255,255,255,.06);
+  border-radius: 10px;
+}
