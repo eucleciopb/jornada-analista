@@ -26,7 +26,7 @@
   <section class="row-between">
     <div>
       <h3 id="formTitle">Novo Treinamento</h3>
-      <p class="hint">Cadastre o nome e os links relacionados.</p>
+      <p class="hint">Cadastre o nome e os links relacionados. Salva no Firebase (Firestore).</p>
     </div>
   </section>
 
@@ -63,6 +63,7 @@
   <section class="row-between">
     <div>
       <h3>Treinamentos Cadastrados</h3>
+      <p class="hint">Lista global (Firestore) — aparece para todos na Biblioteca.</p>
     </div>
 
     <div>
@@ -79,215 +80,285 @@
           <th>Nome</th>
           <th style="width:140px;">Treinamento</th>
           <th style="width:120px;">Forms</th>
+          <th style="width:160px;">Cadastrado por</th>
           <th style="width:220px;">Ações</th>
         </tr>
       </thead>
-      <tbody id="tbody"></tbody>
+      <tbody id="tbody">
+        <tr><td colspan="6" style="opacity:.8;">Carregando…</td></tr>
+      </tbody>
     </table>
   </div>
 
 </main>
 
-<script>
-/* =========================
-   CONTROLE DE ACESSO
-========================= */
-const usuario = (localStorage.getItem("usuarioLogado") || "").trim();
-if (!usuario) window.location.href = "index.html";
-document.getElementById("userInfo").textContent = `Usuário: ${usuario}`;
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+  import {
+    getFirestore,
+    collection,
+    getDocs,
+    doc,
+    setDoc,
+    deleteDoc,
+    serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-// 🔒 opcional: só você cadastra
-if (usuario.toLowerCase() !== "euclecio") {
-  window.location.href = "menu.html";
-}
+  /* =========================
+     FIREBASE CONFIG (SEU)
+  ========================= */
+  const firebaseConfig = {
+    apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
+    authDomain: "jornada-portal.firebaseapp.com",
+    projectId: "jornada-portal",
+    storageBucket: "jornada-portal.firebasestorage.app",
+    messagingSenderId: "669362296644",
+    appId: "1:669362296644:web:f590d9834a8e4e60012911"
+  };
 
-document.getElementById("btnMenu").onclick = () => window.location.href = "menu.html";
-document.getElementById("btnLogout").onclick = () => {
-  localStorage.removeItem("usuarioLogado");
-  window.location.href = "index.html";
-};
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
 
-/* =========================
-   APP
-========================= */
-const STORAGE_KEY = "catalogo_treinamentos";
+  /* =========================
+     PATHS (ajuste se precisar)
+  ========================= */
+  const PATH_INDEX = "index.html";
+  const PATH_MENU  = "menuadm.html"; // ✅ aqui é admin (se seu menu admin tiver outro nome, troque)
 
-const formTitle = document.getElementById("formTitle");
-const nomeInput = document.getElementById("nomeTreino");
-const linkTreinoInput = document.getElementById("linkTreino");
-const linkFormsInput = document.getElementById("linkForms");
-const btnSalvar = document.getElementById("btnSalvar");
-const btnCancelar = document.getElementById("btnCancelar");
-const tbody = document.getElementById("tbody");
-const busca = document.getElementById("busca");
-const msg = document.getElementById("msg");
+  /* =========================
+     CONTROLE DE ACESSO (SEU PADRÃO)
+  ========================= */
+  const usuario = (localStorage.getItem("usuarioLogado") || "").trim();
+  if (!usuario) window.location.href = PATH_INDEX;
 
-let editId = null;
+  document.getElementById("userInfo").textContent = `Usuário: ${usuario}`;
 
-function setMsg(text, type="info"){
-  msg.textContent = text || "";
-  msg.style.color = type === "success" ? "#22c55e" : (type === "error" ? "#ef4444" : "#d1d5db");
-}
-
-function normalize(s){
-  return (s || "").replace(/\s+/g, " ").trim();
-}
-
-function load(){
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (!raw) return [];
-  try {
-    const arr = JSON.parse(raw);
-    return Array.isArray(arr) ? arr : [];
-  } catch {
-    return [];
-  }
-}
-
-function save(data){
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-}
-
-function resetForm(){
-  editId = null;
-  formTitle.textContent = "Novo Treinamento";
-  btnSalvar.textContent = "Adicionar";
-  btnCancelar.style.display = "none";
-  nomeInput.value = "";
-  linkTreinoInput.value = "";
-  linkFormsInput.value = "";
-  nomeInput.focus();
-}
-
-function startEdit(id){
-  const data = load();
-  const item = data.find(x => x.id === id);
-  if (!item) return;
-
-  editId = id;
-  formTitle.textContent = "Editar Treinamento";
-  btnSalvar.textContent = "Salvar edição";
-  btnCancelar.style.display = "inline-flex";
-
-  nomeInput.value = item.nome || "";
-  linkTreinoInput.value = item.linkTreino || "";
-  linkFormsInput.value = item.linkForms || "";
-
-  setMsg("Editando: ajuste os campos e clique em “Salvar edição”.", "info");
-  nomeInput.focus();
-}
-
-function removeItem(id){
-  const data = load().filter(x => x.id !== id);
-  save(data);
-  setMsg("Removido ✅", "success");
-  render();
-  if (editId === id) resetForm();
-}
-
-function render(){
-  const q = (busca.value || "").toLowerCase();
-  const data = load().sort((a,b) => a.nome.localeCompare(b.nome,"pt-BR"));
-
-  const filtered = q ? data.filter(x => (x.nome || "").toLowerCase().includes(q)) : data;
-
-  tbody.innerHTML = "";
-  if (filtered.length === 0){
-    tbody.innerHTML = `<tr><td colspan="5" style="opacity:.8;">Nenhum treinamento cadastrado.</td></tr>`;
-    return;
+  // 🔒 opcional: só você cadastra
+  if (usuario.toLowerCase() !== "euclecio") {
+    window.location.href = PATH_MENU;
   }
 
-  filtered.forEach((t, i) => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${i+1}</td>
-      <td>${t.nome}</td>
-      <td>${t.linkTreino ? `<a href="${t.linkTreino}" target="_blank" rel="noopener">Abrir</a>` : "-"}</td>
-      <td>${t.linkForms ? `<a href="${t.linkForms}" target="_blank" rel="noopener">Abrir</a>` : "-"}</td>
-      <td style="display:flex; gap:8px; flex-wrap:wrap;">
-        <button class="btn-secondary" type="button" data-edit="${t.id}">Editar</button>
-        <button class="btn-secondary" type="button" data-del="${t.id}"
-          style="border-color: rgba(255,59,59,.25);">
-          Excluir
-        </button>
-      </td>
-    `;
-    tbody.appendChild(tr);
-  });
+  document.getElementById("btnMenu").onclick = () => window.location.href = PATH_MENU;
+  document.getElementById("btnLogout").onclick = () => {
+    localStorage.removeItem("usuarioLogado");
+    localStorage.removeItem("usuarioKey");
+    localStorage.removeItem("user_session");
+    window.location.href = PATH_INDEX;
+  };
 
-  tbody.querySelectorAll("[data-edit]").forEach(btn => {
-    btn.onclick = () => startEdit(btn.getAttribute("data-edit"));
-  });
+  /* =========================
+     COLEÇÃO (GLOBAL)
+  ========================= */
+  const COL = "biblioteca_treinamentos";
 
-  tbody.querySelectorAll("[data-del]").forEach(btn => {
-    btn.onclick = () => removeItem(btn.getAttribute("data-del"));
-  });
-}
+  /* =========================
+     UI
+  ========================= */
+  const formTitle = document.getElementById("formTitle");
+  const nomeInput = document.getElementById("nomeTreino");
+  const linkTreinoInput = document.getElementById("linkTreino");
+  const linkFormsInput = document.getElementById("linkForms");
+  const btnSalvar = document.getElementById("btnSalvar");
+  const btnCancelar = document.getElementById("btnCancelar");
+  const tbody = document.getElementById("tbody");
+  const busca = document.getElementById("busca");
+  const msg = document.getElementById("msg");
 
-btnSalvar.onclick = () => {
-  setMsg("");
+  let editId = null;
+  let CACHE = [];
 
-  const nome = normalize(nomeInput.value);
-  const linkTreino = normalize(linkTreinoInput.value);
-  const linkForms = normalize(linkFormsInput.value);
-
-  if (!nome){
-    setMsg("Digite o nome do treinamento.", "error");
-    return;
+  function setMsg(text, type="info"){
+    msg.textContent = text || "";
+    msg.style.color = type === "success" ? "#22c55e" : (type === "error" ? "#ef4444" : "#d1d5db");
   }
 
-  const data = load();
-
-  // valida duplicado por nome (exceto quando estiver editando o próprio)
-  const duplicated = data.some(x =>
-    (x.nome || "").toLowerCase() === nome.toLowerCase() && x.id !== editId
-  );
-  if (duplicated){
-    setMsg("Já existe um treinamento com esse nome.", "error");
-    return;
+  function normalize(s){
+    return (s || "").replace(/\s+/g, " ").trim();
   }
 
-  if (editId) {
-    const idx = data.findIndex(x => x.id === editId);
-    if (idx >= 0) {
-      data[idx] = { ...data[idx], nome, linkTreino, linkForms };
-      save(data);
-      setMsg("Edição salva ✅", "success");
-      resetForm();
-      render();
-    } else {
-      setMsg("Não encontrei o item para editar.", "error");
+  function isValidUrlOrEmpty(v){
+    const x = normalize(v);
+    if (!x) return true;
+    try { new URL(x); return true; } catch { return false; }
+  }
+
+  function makeId(){
+    if (globalThis.crypto?.randomUUID) return crypto.randomUUID();
+    return `${Date.now()}_${Math.random().toString(16).slice(2)}`;
+  }
+
+  function resetForm(){
+    editId = null;
+    formTitle.textContent = "Novo Treinamento";
+    btnSalvar.textContent = "Adicionar";
+    btnCancelar.style.display = "none";
+    nomeInput.value = "";
+    linkTreinoInput.value = "";
+    linkFormsInput.value = "";
+    nomeInput.focus();
+  }
+
+  async function loadAll(){
+    const snap = await getDocs(collection(db, COL));
+    const arr = [];
+    snap.forEach(d => arr.push({ id: d.id, ...d.data() }));
+    arr.sort((a,b)=> String(a.nome||"").localeCompare(String(b.nome||""),"pt-BR"));
+    CACHE = arr;
+    return arr;
+  }
+
+  function render(){
+    const q = (busca.value || "").toLowerCase();
+    const data = (CACHE || []);
+    const filtered = q
+      ? data.filter(x => String(x.nome||"").toLowerCase().includes(q))
+      : data;
+
+    tbody.innerHTML = "";
+
+    if (filtered.length === 0){
+      tbody.innerHTML = `<tr><td colspan="6" style="opacity:.8;">Nenhum treinamento cadastrado.</td></tr>`;
+      return;
     }
-    return;
+
+    filtered.forEach((t, i) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${i+1}</td>
+        <td>${t.nome || "-"}</td>
+        <td>${t.linkTreino ? `<a href="${t.linkTreino}" target="_blank" rel="noopener">Abrir</a>` : "-"}</td>
+        <td>${t.linkForms ? `<a href="${t.linkForms}" target="_blank" rel="noopener">Abrir</a>` : "-"}</td>
+        <td style="opacity:.9;">${t.createdBy || "-"}</td>
+        <td style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="btn-secondary" type="button" data-edit="${t.id}">Editar</button>
+          <button class="btn-secondary" type="button" data-del="${t.id}" style="border-color: rgba(255,59,59,.25);">
+            Excluir
+          </button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    tbody.querySelectorAll("[data-edit]").forEach(btn => {
+      btn.onclick = () => startEdit(btn.getAttribute("data-edit"));
+    });
+
+    tbody.querySelectorAll("[data-del]").forEach(btn => {
+      btn.onclick = () => removeItem(btn.getAttribute("data-del"));
+    });
   }
 
-  data.push({
-    id: `${Date.now()}_${Math.random().toString(16).slice(2)}`,
-    nome,
-    linkTreino,
-    linkForms
+  function startEdit(id){
+    const item = (CACHE || []).find(x => x.id === id);
+    if (!item) return;
+
+    editId = id;
+    formTitle.textContent = "Editar Treinamento";
+    btnSalvar.textContent = "Salvar edição";
+    btnCancelar.style.display = "inline-flex";
+
+    nomeInput.value = item.nome || "";
+    linkTreinoInput.value = item.linkTreino || "";
+    linkFormsInput.value = item.linkForms || "";
+
+    setMsg("Editando: ajuste os campos e clique em “Salvar edição”.", "info");
+    nomeInput.focus();
+  }
+
+  async function removeItem(id){
+    if (!id) return;
+    try{
+      setMsg("Excluindo…");
+      await deleteDoc(doc(db, COL, id));
+      CACHE = (CACHE || []).filter(x => x.id !== id);
+      render();
+      if (editId === id) resetForm();
+      setMsg("Removido ✅", "success");
+    }catch(e){
+      console.error(e);
+      setMsg("Erro ao excluir no Firebase. Verifique Rules.", "error");
+    }
+  }
+
+  btnSalvar.onclick = async () => {
+    setMsg("");
+
+    const nome = normalize(nomeInput.value);
+    const linkTreino = normalize(linkTreinoInput.value);
+    const linkForms = normalize(linkFormsInput.value);
+
+    if (!nome){
+      setMsg("Digite o nome do treinamento.", "error");
+      return;
+    }
+    if (!isValidUrlOrEmpty(linkTreino)){
+      setMsg("Link do Treinamento inválido.", "error");
+      return;
+    }
+    if (!isValidUrlOrEmpty(linkForms)){
+      setMsg("Link do Forms inválido.", "error");
+      return;
+    }
+
+    // valida duplicado por nome (exceto quando estiver editando o próprio)
+    const duplicated = (CACHE || []).some(x =>
+      String(x.nome || "").toLowerCase() === nome.toLowerCase() && x.id !== editId
+    );
+    if (duplicated){
+      setMsg("Já existe um treinamento com esse nome.", "error");
+      return;
+    }
+
+    const id = editId || makeId();
+
+    try{
+      setMsg(editId ? "Salvando edição…" : "Adicionando…");
+
+      await setDoc(doc(db, COL, id), {
+        nome,
+        linkTreino: linkTreino || null,
+        linkForms: linkForms || null,
+
+        createdBy: editId ? ( (CACHE.find(x=>x.id===id)?.createdBy) || usuario ) : usuario,
+        createdAt: editId ? ( (CACHE.find(x=>x.id===id)?.createdAt) || serverTimestamp() ) : serverTimestamp(),
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+
+      setMsg(editId ? "Edição salva ✅" : "Treinamento adicionado ✅", "success");
+      resetForm();
+
+      await loadAll();
+      render();
+
+    }catch(e){
+      console.error(e);
+      setMsg("Erro ao salvar no Firebase. Verifique Rules/Conexão.", "error");
+    }
+  };
+
+  btnCancelar.onclick = () => {
+    resetForm();
+    setMsg("");
+  };
+
+  nomeInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); btnSalvar.click(); }
   });
 
-  save(data);
-  setMsg("Treinamento adicionado ✅", "success");
+  busca.addEventListener("input", render);
+
+  // init
   resetForm();
-  render();
-};
-
-btnCancelar.onclick = () => {
-  resetForm();
-  setMsg("");
-};
-
-nomeInput.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") { e.preventDefault(); btnSalvar.click(); }
-});
-
-busca.addEventListener("input", render);
-
-// init
-resetForm();
-render();
+  try{
+    setMsg("Carregando…");
+    await loadAll();
+    setMsg("");
+    render();
+  }catch(e){
+    console.error(e);
+    setMsg("Erro ao carregar do Firebase. Verifique Rules/Conexão.", "error");
+    tbody.innerHTML = `<tr><td colspan="6" style="opacity:.8;">Falha ao carregar.</td></tr>`;
+  }
 </script>
 
 </body>
