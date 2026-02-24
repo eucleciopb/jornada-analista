@@ -117,7 +117,7 @@ if (userInfo) userInfo.textContent = `Usuário: ${usuarioNome}`;
 ========================= */
 const ATIVIDADES = [
   "Analise Interna",
-  "Dia Interno",
+  "Aplicação de Treinamento",
   "Rota",
   "Plano de Ação com os Gestores",
   "Reunião GRC ou Diretor",
