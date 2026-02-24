@@ -877,3 +877,62 @@ label{
   font-size: 12px;
   opacity: .95;
 }
+/* Torna o campo Observações (textarea) alto, legível e confortável */
+table textarea.field {
+  display: block;
+  width: 100%;
+  min-height: 140px;          /* ↑ altura inicial confortável */
+  max-height: 60vh;           /* evita crescer demais */
+  resize: vertical;           /* permite ajustar a altura */
+  padding: 12px 14px;         /* conforto de digitação */
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--field);
+  color: var(--text);
+  font-size: 14px;            /* aumenta a fonte */
+  line-height: 1.5;           /* melhora a leitura */
+  outline: none;
+  caret-color: var(--text);   /* cursor visível no tema escuro */
+  box-shadow: none;
+  transition: border-color .15s ease, box-shadow .15s ease;
+  overflow: auto;             /* mostra scroll se precisar */
+  white-space: pre-wrap;      /* preserva quebras e quebra linhas longas */
+  word-break: break-word;     /* quebra palavras gigantes */
+}
+
+/* Destaque de foco (acessibilidade e UX) */
+table textarea.field:focus {
+  border-color: rgba(255,255,255,.30);
+  box-shadow: 0 0 0 3px rgba(255,255,255,.08);
+}
+
+/* Placeholder mais suave */
+table textarea.field::placeholder {
+  color: rgba(229,231,235,.5); /* var(--text) com opacidade */
+}
+
+/* Força a coluna Observações a permitir a expansão do textarea */
+table td:last-child {
+  vertical-align: top;          /* alinhado ao topo */
+}
+
+/* Em telas pequenas, aumente ainda mais a altura mínima */
+@media (max-width: 720px) {
+  table textarea.field {
+    min-height: 180px;
+    font-size: 15px;
+  }
+}
+
+/* (Opcional) scrollbar discreto para o tema escuro */
+table textarea.field::-webkit-scrollbar {
+  width: 10px;
+}
+table textarea.field::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,.15);
+  border-radius: 10px;
+}
+table textarea.field::-webkit-scrollbar-track {
+  background: rgba(255,255,255,.06);
+  border-radius: 10px;
+}
