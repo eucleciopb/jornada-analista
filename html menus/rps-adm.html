@@ -19,7 +19,7 @@
     }
 
     .table-wrap{ overflow:auto; border:1px solid var(--border); border-radius:16px; }
-    table{ width:100%; border-collapse:collapse; min-width: 900px; background:rgba(255,255,255,.03); }
+    table{ width:100%; border-collapse:collapse; min-width: 860px; background:rgba(255,255,255,.03); }
     thead th{
       position:sticky; top:0;
       background:rgba(0,0,0,.35); backdrop-filter: blur(8px);
@@ -54,21 +54,6 @@
       width:100%;
     }
     .field:focus{ border-color:rgba(255,59,59,.55); box-shadow:0 0 0 4px rgba(217,27,46,.18); }
-
-    .checks{
-      display:flex; flex-wrap:wrap; gap:10px;
-      padding:10px; border:1px solid rgba(255,255,255,.10);
-      border-radius:14px; background:rgba(255,255,255,.03);
-    }
-    .checks label{
-      display:flex; align-items:center; gap:8px;
-      font-size:13px; font-weight:800;
-      color:rgba(255,255,255,.92);
-      cursor:pointer;
-      margin:0;
-      white-space:nowrap;
-    }
-    .checks input{ width:18px; height:18px; }
 
     /* ===== Modal ===== */
     .modal-backdrop{
@@ -125,7 +110,7 @@
     .box label{ display:block; font-size:12px; opacity:.75; margin-bottom:6px; }
 
     .grid2{ display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    @media(max-width: 900px){ .grid2{ grid-template-columns: 1fr; } table{ min-width: 820px; } }
+    @media(max-width: 900px){ .grid2{ grid-template-columns: 1fr; } table{ min-width: 780px; } }
 
     /* Lista de atividades no modal */
     .act-table-wrap{ overflow:auto; border:1px solid rgba(255,255,255,.10); border-radius:16px; }
@@ -151,7 +136,6 @@
       box-shadow: 0 0 0 4px rgba(217,27,46,.18);
     }
 
-    /* Multi select bonitinho */
     .multi-select{
       height: 46px;
       border-radius: 14px;
@@ -203,7 +187,7 @@
   <section class="row-between" style="align-items:flex-end;">
     <div>
       <h3>Resumo por responsável</h3>
-      <p class="hint">Clique na linha do responsável para lançar/editar atividades (multi-responsável).</p>
+      <p class="hint">Clique no responsável para lançar/editar atividades (multi-responsável).</p>
     </div>
 
     <div class="filters">
@@ -216,12 +200,6 @@
         <label for="searchBox">Buscar</label>
         <input id="searchBox" class="field" type="text" placeholder="Responsável..." />
       </div>
-
-      <div style="min-width:320px;">
-        <label>Mostrar responsáveis</label>
-        <div id="filterResponsaveis" class="checks"></div>
-        <div class="hint">Se nada marcado, mostra todos.</div>
-      </div>
     </div>
   </section>
 
@@ -232,10 +210,10 @@
     <table>
       <thead>
         <tr>
-          <th style="width:210px;">Responsável</th>
-          <th style="width:160px;">Total mapeadas</th>
+          <th style="width:220px;">Responsável</th>
+          <th style="width:160px;">Mapeadas</th>
           <th style="width:160px;">Concluídas</th>
-          <th style="width:180px;">Não realizadas</th>
+          <th style="width:160px;">Pendentes</th>
           <th style="width:170px;">Status</th>
         </tr>
       </thead>
@@ -268,7 +246,7 @@
         <div class="box">
           <label>Adicionar nova atividade</label>
           <button id="btnAddRow" class="btn-mini primary" type="button">+ Adicionar</button>
-          <div class="hint">Na atividade você marca <b>1 ou mais responsáveis</b> pela lista.</div>
+          <div class="hint">Na atividade você marca <b>1 ou mais responsáveis</b> na lista.</div>
         </div>
       </div>
 
@@ -357,7 +335,6 @@
 
   const yearPicker = document.getElementById("yearPicker");
   const searchBox = document.getElementById("searchBox");
-  const filterResponsaveis = document.getElementById("filterResponsaveis");
   const tbodyRows = document.getElementById("tbodyRows");
   const msg = document.getElementById("msg");
 
@@ -428,20 +405,6 @@
     return weeks;
   }
 
-  function renderResponsaveisFilter(){
-    filterResponsaveis.innerHTML = ANALISTAS.map(nome => `
-      <label><input type="checkbox" value="${nome}"> ${nome}</label>
-    `).join("");
-
-    [...filterResponsaveis.querySelectorAll("input[type='checkbox']")].forEach(c => {
-      c.addEventListener("change", renderMainTable);
-    });
-  }
-  function getSelectedResponsaveis(){
-    const checks = [...filterResponsaveis.querySelectorAll("input[type='checkbox']")];
-    return checks.filter(c => c.checked).map(c => c.value);
-  }
-
   let WEEKS = [];
   let RPS_CACHE = [];
 
@@ -453,33 +416,23 @@
     return RPS_CACHE;
   }
 
-  function isNaoRealizado(status){
-    const s = String(status||"").toLowerCase();
-    return s === "não realizado" || s === "nao realizado";
-  }
   function isRealizado(status){
     return String(status||"").toLowerCase() === "realizado";
   }
 
   function computeCountsForResp(responsavel){
-    let total=0, concl=0, nao=0;
-    for(const w of WEEKS){
-      const docs = (RPS_CACHE || [])
-        .filter(d => d.weekKey === w.weekKey)
-        .filter(d => Array.isArray(d.responsaveis) && d.responsaveis.includes(responsavel));
+    const docs = (RPS_CACHE || []).filter(d => Array.isArray(d.responsaveis) && d.responsaveis.includes(responsavel));
 
-      total += docs.length;
-      concl += docs.filter(d => isRealizado(d.status)).length;
-      nao += docs.filter(d => isNaoRealizado(d.status)).length;
-    }
+    const total = docs.length;
+    const concl = docs.filter(d => isRealizado(d.status)).length;
+    const pend = Math.max(0, total - concl);
 
     let st = { cls:"warn", label:"Pendente" };
     if(total === 0) st = { cls:"warn", label:"Sem lançamentos" };
-    else if(nao > 0) st = { cls:"bad", label:"Atenção" };
     else if(concl === total) st = { cls:"ok", label:"Tudo realizado" };
     else st = { cls:"warn", label:"Em andamento" };
 
-    return { total, concl, nao, st };
+    return { total, concl, pend, st };
   }
 
   function getCurrentWeekKey(year){
@@ -493,10 +446,8 @@
 
   function renderMainTable(){
     const q = (searchBox.value || "").toLowerCase().trim();
-    const selected = getSelectedResponsaveis();
-    const responsaveis = (selected.length > 0) ? selected : ANALISTAS;
 
-    const rows = responsaveis
+    const rows = ANALISTAS
       .filter(r => !q || r.toLowerCase().includes(q))
       .map(r => ({ r, ...computeCountsForResp(r) }));
 
@@ -506,9 +457,6 @@
       return;
     }
 
-    const order = new Map(ANALISTAS.map((n,i)=>[n,i]));
-    rows.sort((a,b) => (order.get(a.r) ?? 99) - (order.get(b.r) ?? 99));
-
     for(const s of rows){
       const tr = document.createElement("tr");
       tr.dataset.resp = s.r;
@@ -517,7 +465,7 @@
         <td><b>${s.r}</b></td>
         <td style="text-align:center;"><b>${s.total}</b></td>
         <td style="text-align:center;"><b>${s.concl}</b></td>
-        <td style="text-align:center;"><b>${s.nao}</b></td>
+        <td style="text-align:center;"><b>${s.pend}</b></td>
         <td><span class="pill ${s.st.cls}">${s.st.label}</span></td>
       `;
 
@@ -566,7 +514,6 @@
     tr.className = "act-row";
     tr.dataset.id = data.id || createId();
 
-    // default: se vier vazio e existe foco, já marca o foco
     const selResps = (Array.isArray(data.responsaveis) && data.responsaveis.length > 0)
       ? data.responsaveis
       : (focusResp ? [focusResp] : []);
@@ -582,7 +529,7 @@
         <select data-resps class="multi-select" multiple>
           ${multiSelectOptions(selResps)}
         </select>
-        <div class="hint" style="margin-top:6px;">Dica: no iPhone segure e selecione mais de um.</div>
+        <div class="hint" style="margin-top:6px;">No iPhone: toque/segure para selecionar mais de um.</div>
       </td>
 
       <td>
@@ -632,6 +579,16 @@
   mClose.addEventListener("click", closeModal);
   modalBackdrop.addEventListener("click", (e) => { if(e.target === modalBackdrop) closeModal(); });
 
+  btnAddRow.addEventListener("click", () => {
+    if(mTbodyActs.querySelector("td[colspan]")) mTbodyActs.innerHTML = "";
+    mTbodyActs.appendChild(makeActRow({
+      id: createId(),
+      atividade: "",
+      responsaveis: CURRENT_FOCUS_RESP ? [CURRENT_FOCUS_RESP] : [],
+      status: "Planejado"
+    }, CURRENT_FOCUS_RESP));
+  });
+
   function loadWeekActivitiesToModal(weekKey, focusResp){
     const docs = (RPS_CACHE || []).filter(d => d.weekKey === weekKey);
     docs.sort((a,b) => String(a.atividade||"").localeCompare(String(b.atividade||""), "pt-BR"));
@@ -651,16 +608,6 @@
       }, focusResp));
     }
   }
-
-  btnAddRow.addEventListener("click", () => {
-    if(mTbodyActs.querySelector("td[colspan]")) mTbodyActs.innerHTML = "";
-    mTbodyActs.appendChild(makeActRow({
-      id: createId(),
-      atividade: "",
-      responsaveis: CURRENT_FOCUS_RESP ? [CURRENT_FOCUS_RESP] : [],
-      status: "Planejado"
-    }, CURRENT_FOCUS_RESP));
-  });
 
   async function saveCurrentWeek(){
     if(!CURRENT_WEEKKEY) return;
@@ -718,7 +665,7 @@
       setMsg("Salvando RPS…");
       await saveCurrentWeek();
       setMsg("Salvo ✅", "success");
-      closeModal(); // ✅ salva e fecha
+      closeModal();
     }catch(e){
       console.error(e);
       setMsg(e?.message || "Erro ao salvar no Firebase. Verifique RULES.", "error");
@@ -746,7 +693,6 @@
   }
 
   initYearPicker();
-  renderResponsaveisFilter();
   await reloadYear();
 </script>
 
