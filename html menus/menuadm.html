@@ -15,106 +15,69 @@
       --muted:#9ca3af;
       --danger:#ef4444;
     }
-    body.bg{
-      background: var(--bg);
-      color: var(--text);
-    }
-    .menu-wrap{
-      max-width: 520px;
-      margin: 0 auto;
-      padding: 28px 18px 40px;
-    }
+    body.bg{ background:var(--bg); color:var(--text); }
+
+    .menu-wrap{ max-width:520px; margin:0 auto; padding:28px 18px 40px; }
     .menu-card{
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 22px;
-      padding: 18px;
-      box-shadow: 0 20px 60px rgba(0,0,0,.35);
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:22px;
+      padding:18px;
+      box-shadow:0 20px 60px rgba(0,0,0,.35);
     }
-    .top{
-      display:flex;
-      align-items:center;
-      gap:14px;
-      padding: 8px 8px 14px 8px;
-    }
+    .top{ display:flex; align-items:center; gap:14px; padding:8px 8px 14px; }
     .logo{
-      width:64px;
-      height:64px;
-      border-radius:18px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-weight: 1000;
-      letter-spacing:.02em;
-      background: linear-gradient(135deg,#d91b2e,#ff3b3b);
-      color:#fff;
-      user-select:none;
-      flex: 0 0 auto;
+      width:64px; height:64px; border-radius:18px;
+      display:flex; align-items:center; justify-content:center;
+      font-weight:1000; letter-spacing:.02em;
+      background:linear-gradient(135deg,#d91b2e,#ff3b3b);
+      color:#fff; user-select:none; flex:0 0 auto;
     }
     .top h2{ margin:0; font-size:18px; }
     .top small{ display:block; color:var(--muted); margin-top:4px; }
 
-    .sep{
-      border:none;
-      height:1px;
-      background: rgba(255,255,255,.10);
-      margin: 14px 0;
-    }
-
-    .grid{
-      display:grid;
-      grid-template-columns: 1fr;
-      gap: 10px;
-      padding: 8px;
-    }
+    .sep{ border:none; height:1px; background:rgba(255,255,255,.10); margin:14px 0; }
+    .grid{ display:grid; grid-template-columns:1fr; gap:10px; padding:8px; }
 
     .btn{
       width:100%;
-      padding: 14px 14px;
-      border-radius: 18px;
-      border: 1px solid rgba(255,255,255,.10);
-      background: rgba(255,255,255,.04);
-      color: var(--text);
-      font-weight: 950;
-      font-size: 14px;
+      padding:14px;
+      border-radius:18px;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.04);
+      color:var(--text);
+      font-weight:950;
+      font-size:14px;
       cursor:pointer;
       display:flex;
       align-items:center;
       justify-content:space-between;
-      gap: 10px;
-      transition: .15s ease;
+      gap:10px;
+      transition:.15s ease;
     }
     .btn:hover{
-      transform: translateY(-1px);
-      filter: brightness(1.08);
-      border-color: rgba(255,59,59,.30);
+      transform:translateY(-1px);
+      filter:brightness(1.08);
+      border-color:rgba(255,59,59,.30);
     }
     .btn .tag{
-      font-size: 12px;
-      font-weight: 900;
-      color: rgba(255,255,255,.85);
-      border: 1px solid rgba(255,255,255,.12);
-      background: rgba(255,255,255,.04);
-      padding: 6px 10px;
-      border-radius: 999px;
+      font-size:12px;
+      font-weight:900;
+      color:rgba(255,255,255,.85);
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.04);
+      padding:6px 10px;
+      border-radius:999px;
       white-space:nowrap;
     }
-
     .btn-exit{
-      margin-top: 6px;
-      background: rgba(239,68,68,.12);
-      border-color: rgba(239,68,68,.25);
+      margin-top:6px;
+      background:rgba(239,68,68,.12);
+      border-color:rgba(239,68,68,.25);
     }
-    .btn-exit:hover{
-      border-color: rgba(239,68,68,.45);
-      filter: brightness(1.05);
-    }
+    .btn-exit:hover{ border-color:rgba(239,68,68,.45); filter:brightness(1.05); }
 
-    .hintline{
-      padding: 0 8px 6px 8px;
-      color: var(--muted);
-      font-size: 12px;
-    }
+    .hintline{ padding:0 8px 6px; color:var(--muted); font-size:12px; }
   </style>
 </head>
 
@@ -143,7 +106,7 @@
       </div>
 
       <div class="hintline">
-        Escolha uma opção para administrar agenda, treinamentos, apuração e RPS.
+        Acesse as telas do ADM (sempre em <b>/html adm/</b>).
       </div>
 
       <hr class="sep">
@@ -187,18 +150,8 @@
 
   <script>
     /* =========================
-       PATHS (menuadm.html em /html adm/)
-       - login ADM: index2.html (na raiz)
+       Sessão (aceita user_session ou usuarioLogado)
     ========================= */
-    const PATH_INDEX2 = "../index2.html";
-
-    // páginas dentro de /html adm/
-    const PATH_APURACAO      = "apuracao.html";
-    const PATH_AGENDA_DIA    = "agenda-dia-adm.html";
-    const PATH_AGENDA_MENSAL = "agenda-mensal-adm.html";
-    const PATH_TREINOS_RES   = "treinos-resumo-adm.html";
-    const PATH_RPS           = "rps-adm.html";
-
     function safeParse(raw){ try{ return JSON.parse(raw); } catch{ return null; } }
     function getCurrentUserName(){
       const raw = localStorage.getItem("user_session");
@@ -214,27 +167,48 @@
     const userInfo = document.getElementById("userInfo");
     const hello = document.getElementById("hello");
 
+    // ✅ login ADM (index2.html)
+    const URL_INDEX2 = new URL("../index2.html", location.href).href;
+
     if(!usuario){
-      window.location.href = PATH_INDEX2;
+      location.href = URL_INDEX2;
     }else{
       userInfo.textContent = `Admin: ${usuario}`;
       hello.textContent = `Olá, ${usuario}`;
     }
 
-    // navegação
-    document.getElementById("btnApuracao").onclick = () => location.href = PATH_APURACAO;
-    document.getElementById("btnAgendaDia").onclick = () => location.href = PATH_AGENDA_DIA;
-    document.getElementById("btnAgendaMensal").onclick = () => location.href = PATH_AGENDA_MENSAL;
-    document.getElementById("btnTreinosResumo").onclick = () => location.href = PATH_TREINOS_RES;
-    document.getElementById("btnRps").onclick = () => location.href = PATH_RPS;
+    /* =========================
+       Navegação 100% correta para /html adm/
+       - funciona mesmo se menuadm.html estiver aberto a partir de /html menus/
+       - resolve espaços no nome da pasta (html adm / html usuarios / html menus)
+    ========================= */
+    function goAdm(file){
+      // tenta achar a pasta "html adm" a partir da URL atual
+      // estratégia:
+      // 1) se já estamos em /html adm/, abre só o arquivo
+      // 2) senão, sobe um nível e entra em /html adm/
+      const path = decodeURIComponent(location.pathname);
+      const inAdmFolder = path.includes("/html adm/");
+
+      const target = inAdmFolder
+        ? new URL(file, location.href) // mesma pasta
+        : new URL("../html adm/" + file, location.href); // vai para pasta adm
+
+      location.href = target.href;
+    }
+
+    document.getElementById("btnApuracao").onclick      = () => goAdm("apuracao.html");
+    document.getElementById("btnAgendaDia").onclick     = () => goAdm("agenda-dia-adm.html");
+    document.getElementById("btnAgendaMensal").onclick  = () => goAdm("agenda-mensal-adm.html");
+    document.getElementById("btnTreinosResumo").onclick = () => goAdm("treinos-resumo-adm.html");
+    document.getElementById("btnRps").onclick           = () => goAdm("rps-adm.html");
 
     function logout(){
       localStorage.removeItem("user_session");
       localStorage.removeItem("usuarioLogado");
       localStorage.removeItem("usuarioKey");
-      window.location.href = PATH_INDEX2;
+      location.href = URL_INDEX2;
     }
-
     document.getElementById("btnLogout").onclick = logout;
     document.getElementById("btnLogoutTop").onclick = logout;
   </script>
