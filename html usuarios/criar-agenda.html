@@ -48,6 +48,13 @@
       outline:none;
     }
     select.field{cursor:pointer}
+
+    /* 🔥 AQUI ESTÁ O ÚNICO AJUSTE: campo Observações maior */
+    textarea.field {
+      min-height: 70px;
+      resize: vertical;
+    }
+
     @media (max-width:720px){
       .topbar{flex-direction:column;align-items:flex-start}
       table{min-width:860px}
@@ -111,7 +118,6 @@
     </main>
   </div>
 
-  <!-- ✅ CAMINHO CERTO: volta 1 nível porque o HTML está em /html usuarios/ -->
   <script type="module" src="../js/criar-agenda.js"></script>
 </body>
 </html>
