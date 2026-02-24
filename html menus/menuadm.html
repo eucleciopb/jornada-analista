@@ -6,90 +6,127 @@
   <title>Menu Admin</title>
 
   <style>
+    :root{
+      --bg:#ffffff;
+      --txt:#0b0b0b;
+      --muted:#666;
+      --line:#eee;
+      --btn-bg:#f9f9f9;
+      --btn-br:#e5e5e5;
+      --btn-hover:#000;
+      --btn-hover-txt:#fff;
+      --shadow:0 20px 60px rgba(0,0,0,.08);
+      --radius:22px;
+    }
+
+    *{ box-sizing: border-box; }
+    html,body{ height:100%; }
     body {
       margin: 0;
-      background: #ffffff;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
+      background: var(--bg);
+      color: var(--txt);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      display: grid;
+      place-items: center;
+      padding: 16px;
     }
 
     .card {
-      width: 420px;
-      background: #ffffff;
+      width: 100%;
+      max-width: 440px;
+      background: #fff;
       border-radius: 28px;
-      padding: 30px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.08);
+      padding: 28px;
+      box-shadow: var(--shadow);
     }
 
-    .top {
+    header.top {
       display: flex;
       align-items: center;
-      gap: 15px;
+      gap: 14px;
     }
 
     .logo {
-      width: 60px;
-      height: 60px;
+      inline-size: 60px;
+      block-size: 60px;
       background: #000;
       color: #fff;
       font-weight: 700;
       border-radius: 18px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      display: grid;
+      place-items: center;
       font-size: 18px;
+      user-select: none;
     }
 
-    .top h2 {
+    header.top h1 {
       margin: 0;
       font-size: 18px;
+      line-height: 1.2;
       color: #000;
     }
 
-    .top small {
-      color: #666;
+    header.top small {
+      color: var(--muted);
       font-size: 13px;
+      display: block;
+      margin-top: 2px;
     }
 
     hr {
-      margin: 25px 0;
+      margin: 22px 0;
       border: none;
       height: 1px;
-      background: #eee;
+      background: var(--line);
     }
 
+    nav[aria-label="Menu administrativo"] {
+      display: grid;
+      gap: 12px;
+    }
+
+    /* Link estilizado como botão */
     .btn {
+      appearance: none;
       width: 100%;
-      padding: 16px;
-      margin-bottom: 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 16px 18px;
       border-radius: 18px;
-      border: 1px solid #e5e5e5;
-      background: #f9f9f9;
+      border: 1px solid var(--btn-br);
+      background: var(--btn-bg);
       font-size: 15px;
       font-weight: 600;
       color: #000;
+      text-decoration: none;
       cursor: pointer;
-      transition: 0.2s ease;
+      transition: transform .15s ease, background .15s ease, color .15s ease, border-color .15s ease;
     }
 
-    .btn:hover {
-      background: #000;
-      color: #fff;
+    .btn:hover,
+    .btn:focus-visible {
+      background: var(--btn-hover);
+      color: var(--btn-hover-txt);
       transform: translateY(-2px);
+      outline: none;
+      border-color: #000;
     }
 
     .btn-exit {
-      margin-top: 10px;
-      background: #ffffff;
+      margin-top: 4px;
+      background: #fff;
       border: 1px solid #ddd;
+      color: #111;
+      font-weight: 600;
     }
 
-    .btn-exit:hover {
+    .btn-exit:hover,
+    .btn-exit:focus-visible {
       background: #000;
       color: #fff;
+      border-color: #000;
     }
 
     .user {
@@ -98,68 +135,78 @@
       color: #777;
     }
 
+    @media (prefers-reduced-motion: reduce) {
+      .btn { transition: none; }
+      .btn:hover, .btn:focus-visible { transform: none; }
+    }
   </style>
 </head>
 
 <body>
+  <main class="card" role="main">
+    <header class="top">
+      <div class="logo" aria-hidden="true">GP</div>
+      <div>
+        <h1>Menu Administrativo</h1>
+        <small id="userInfo" class="user" aria-live="polite"></small>
+      </div>
+    </header>
 
-<div class="card">
+    <hr>
 
-  <div class="top">
-    <div class="logo">GP</div>
-    <div>
-      <h2>Menu Administrativo</h2>
-      <small id="userInfo"></small>
-    </div>
-  </div>
+    <!-- Menu principal -->
+    <nav aria-label="Menu administrativo">
+      <!-- Mantive caminhos relativos pois os arquivos estão no mesmo diretório do menu.html -->
+      <a class="btn" href="apuracao.html">Apuração</a>
+      <a class="btn" href="agenda-dia-adm.html">Agenda do Dia</a>
+      <a class="btn" href="agenda-mensal-adm.html">Agenda Mensal</a>
+      <a class="btn" href="treinos-resumo-adm.html">Resumo de Treinamentos</a>
+      <a class="btn" href="rps-adm.html">RPS</a>
+      <a class="btn" href="cadastro-treinamentos.html">Cadastro de Treinamentos</a>
+    </nav>
 
-  <hr>
+    <hr>
 
-  <button class="btn" onclick="location.href='apuracao.html'">
-    Apuração
-  </button>
+    <button class="btn btn-exit" type="button" id="btnSair">Sair</button>
+  </main>
 
-  <button class="btn" onclick="location.href='agenda-dia-adm.html'">
-    Agenda do Dia
-  </button>
+  <script>
+    // Se, no futuro, mover esses HTMLs para uma pasta, basta mudar aqui, ex.: const basePath = "adm/";
+    const basePath = ""; // "" porque seus arquivos estão no mesmo diretório
 
-  <button class="btn" onclick="location.href='agenda-mensal-adm.html'">
-    Agenda Mensal
-  </button>
+    // Validação simples de sessão
+    const usuario = localStorage.getItem("usuarioLogado") || "";
+    if (!usuario) {
+      // Sem usuário: volta para login
+      window.location.replace(basePath + "index.html");
+    }
 
-  <button class="btn" onclick="location.href='treinos-resumo-adm.html'">
-    Resumo de Treinamentos
-  </button>
+    // Saudação
+    const userInfoEl = document.getElementById("userInfo");
+    if (userInfoEl) {
+      userInfoEl.textContent = `Olá, ${usuario}`;
+      userInfoEl.title = `Usuário logado: ${usuario}`;
+    }
 
-  <button class="btn" onclick="location.href='rps-adm.html'">
-    RPS
-  </button>
+    // Sair
+    document.getElementById("btnSair")?.addEventListener("click", () => {
+      try {
+        localStorage.removeItem("usuarioLogado");
+        localStorage.removeItem("user_session");
+      } catch (e) {
+        console.warn("Não foi possível limpar o armazenamento:", e);
+      } finally {
+        window.location.href = basePath + "index.html";
+      }
+    });
 
-  <!-- ✅ NOVO BOTÃO -->
-  <button class="btn" onclick="location.href='cadastro-treinamentos.html'">
-    Cadastro de Treinamentos
-  </button>
-
-  <hr>
-
-  <button class="btn btn-exit" onclick="logout()">
-    Sair
-  </button>
-
-</div>
-
-<script>
-  const usuario = localStorage.getItem("usuarioLogado") || "";
-  if (!usuario) window.location.href = "index.html";
-
-  document.getElementById("userInfo").textContent = `Olá, ${usuario}`;
-
-  function logout(){
-    localStorage.removeItem("usuarioLogado");
-    localStorage.removeItem("user_session");
-    window.location.href = "index.html";
-  }
-</script>
-
+    // Opcional: garantir que todos os links respeitem basePath (se você mudar no futuro)
+    document.querySelectorAll('nav a.btn[href]').forEach(a => {
+      const href = a.getAttribute('href');
+      if (href && !href.startsWith('http') && !href.startsWith(basePath)) {
+        a.setAttribute('href', basePath + href);
+      }
+    });
+  </script>
 </body>
 </html>
