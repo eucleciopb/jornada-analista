@@ -66,7 +66,7 @@
       z-index: 9999;
     }
     .modal{
-      width: min(1100px, 100%);
+      width: min(1150px, 100%);
       border-radius: 18px;
       border: 1px solid rgba(255,255,255,.12);
       background: rgba(17,24,39,.96);
@@ -136,21 +136,6 @@
       box-shadow: 0 0 0 4px rgba(217,27,46,.18);
     }
 
-    .multi-select{
-      height: 46px;
-      border-radius: 14px;
-      border: 1px solid rgba(255,255,255,.10);
-      background: rgba(255,255,255,.04);
-      color: rgba(255,255,255,.95);
-      padding: 8px 10px;
-      outline:none;
-    }
-    .multi-select:focus{
-      border-color: rgba(255,59,59,.55);
-      box-shadow: 0 0 0 4px rgba(217,27,46,.18);
-    }
-    .multi-select option{ background:#111827; color:#fff; }
-
     .btn-mini{
       padding:10px 12px;
       border-radius:14px;
@@ -163,9 +148,57 @@
     }
     .btn-mini.primary{ border-color:transparent; background: rgba(217,27,46,.95); }
     .btn-mini:hover{ filter:brightness(1.08); }
-
     .mini-actions{ display:flex; gap:8px; flex-wrap:wrap; }
     .btn-danger{ border-color:rgba(239,68,68,.35) !important; }
+
+    /* ===== Dropdown multi-checklist (modo suspenso) ===== */
+    .dd{
+      position:relative;
+      width:100%;
+    }
+    .dd-btn{
+      width:100%;
+      text-align:left;
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.04);
+      color:rgba(255,255,255,.95);
+      font-weight:900;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .dd-btn span{ font-weight:900; }
+    .dd-panel{
+      position:absolute;
+      left:0; right:0;
+      top: calc(100% + 8px);
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(17,24,39,.98);
+      box-shadow: 0 18px 40px rgba(0,0,0,.45);
+      padding:10px;
+      z-index: 10;
+      display:none;
+      max-height: 220px;
+      overflow:auto;
+    }
+    .dd.open .dd-panel{ display:block; }
+    .dd-item{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:10px;
+      border-radius:12px;
+      cursor:pointer;
+      border:1px solid transparent;
+    }
+    .dd-item:hover{ background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.08); }
+    .dd-item input{ width:18px; height:18px; }
+    .dd-hint{ margin-top:6px; font-size:12px; opacity:.75; }
   </style>
 </head>
 
@@ -238,26 +271,37 @@
     <div class="modal-body">
       <div class="grid2">
         <div class="box">
-          <label>Responsável selecionado</label>
+          <label>Analista (linha clicada)</label>
           <div id="mRespFocus" style="font-weight:900;">-</div>
-          <div class="hint" style="opacity:.9;">A semana é interna (não aparece aqui), mas salva organizado no Firebase.</div>
+          <div class="hint" style="opacity:.9;">Aqui aparece <b>somente</b> as atividades desse analista (mesmo se forem multi-responsável).</div>
         </div>
 
         <div class="box">
-          <label>Adicionar nova atividade</label>
-          <button id="btnAddRow" class="btn-mini primary" type="button">+ Adicionar</button>
-          <div class="hint">Na atividade você marca <b>1 ou mais responsáveis</b> na lista.</div>
+          <label>Filtro do modal</label>
+          <select id="mFilterStatus" class="field">
+            <option value="pendentes">Pendentes</option>
+            <option value="concluidas">Concluídas</option>
+            <option value="todas">Todas</option>
+          </select>
+          <div class="hint" style="opacity:.9;">Sempre abre em <b>Pendentes</b>.</div>
         </div>
       </div>
 
       <div class="box">
-        <label>Atividades</label>
-        <div class="act-table-wrap">
+        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between;">
+          <div>
+            <label style="margin:0;">Atividades</label>
+            <div class="hint" id="mCountHint" style="opacity:.9; margin-top:6px;">—</div>
+          </div>
+          <button id="btnAddRow" class="btn-mini primary" type="button">+ Adicionar</button>
+        </div>
+
+        <div class="act-table-wrap" style="margin-top:12px;">
           <table class="act-table">
             <thead>
               <tr>
                 <th style="width:360px;">Atividade</th>
-                <th style="width:420px;">Responsáveis (lista)</th>
+                <th style="width:420px;">Responsáveis</th>
                 <th style="width:220px;">Status</th>
                 <th style="width:140px;">Ações</th>
               </tr>
@@ -267,10 +311,10 @@
             </tbody>
           </table>
         </div>
-      </div>
 
-      <div class="hint" style="opacity:.9;">
-        Multi-responsável: se marcar Bruna e Elaine na mesma atividade, ela conta nas duas.
+        <div class="dd-hint" style="opacity:.9; margin-top:10px;">
+          Dica: no “Responsáveis” você marca mais de um e salva. Vai contar pros dois.
+        </div>
       </div>
     </div>
 
@@ -345,6 +389,8 @@
   const btnAddRow = document.getElementById("btnAddRow");
   const btnSalvarModal = document.getElementById("btnSalvarModal");
   const mTbodyActs = document.getElementById("mTbodyActs");
+  const mFilterStatus = document.getElementById("mFilterStatus");
+  const mCountHint = document.getElementById("mCountHint");
 
   function setMsg(text, type="info"){
     msg.textContent = text || "";
@@ -498,25 +544,96 @@
     return STATUS_LIST.map(s => `<option value="${s}" ${s===selected?"selected":""}>${s}</option>`).join("");
   }
 
-  function multiSelectOptions(selected = []){
-    return ANALISTAS.map(n => {
-      const sel = selected.includes(n) ? "selected" : "";
-      return `<option value="${n}" ${sel}>${n}</option>`;
-    }).join("");
+  /* ===== Modal state ===== */
+  let CURRENT_WEEKKEY = null;
+  let CURRENT_FOCUS_RESP = "";
+  let CURRENT_WEEK_DOCS_FOR_RESP = []; // docs dessa semana que contém o analista
+  let CURRENT_REMOVABLE_IDS = new Set(); // ids que pertencem ao analista e podem ser deletados se remover da lista
+  let CURRENT_DIRTY = false;
+
+  function closeAllDropdowns(){
+    document.querySelectorAll(".dd.open").forEach(el => el.classList.remove("open"));
+  }
+  document.addEventListener("click", (e) => {
+    const isInside = e.target.closest(".dd");
+    if(!isInside) closeAllDropdowns();
+  });
+
+  function ddLabelFromSelected(arr){
+    const sel = (arr || []).filter(Boolean);
+    if(sel.length === 0) return "Selecione...";
+    if(sel.length === 1) return sel[0];
+    return `${sel.length} responsáveis`;
   }
 
-  function getMultiSelected(selectEl){
-    return [...selectEl.options].filter(o => o.selected).map(o => o.value);
+  function renderRespDropdown(selected = [], focusResp = ""){
+    const selSet = new Set((selected || []).filter(Boolean));
+
+    // garante o foco marcado se estiver vazio
+    if(selSet.size === 0 && focusResp) selSet.add(focusResp);
+
+    const id = `dd_${createId().replaceAll("-","")}`;
+
+    return `
+      <div class="dd" data-dd>
+        <button class="dd-btn" type="button" data-dd-btn>
+          <span data-dd-label>${escapeHtml(ddLabelFromSelected([...selSet]))}</span>
+          <span style="opacity:.75;">▾</span>
+        </button>
+        <div class="dd-panel" data-dd-panel>
+          ${ANALISTAS.map(n => {
+            const checked = selSet.has(n) ? "checked" : "";
+            return `
+              <label class="dd-item">
+                <input type="checkbox" value="${escapeHtml(n)}" ${checked} data-dd-chk />
+                <span>${escapeHtml(n)}</span>
+              </label>
+            `;
+          }).join("")}
+          <div class="dd-hint">Marque 1 ou mais responsáveis.</div>
+        </div>
+        <input type="hidden" data-dd-hidden value="${escapeHtml(JSON.stringify([...selSet]))}">
+      </div>
+    `;
+  }
+
+  function wireDropdown(ddEl){
+    const btn = ddEl.querySelector("[data-dd-btn]");
+    const panel = ddEl.querySelector("[data-dd-panel]");
+    const hidden = ddEl.querySelector("[data-dd-hidden]");
+    const label = ddEl.querySelector("[data-dd-label]");
+
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      const open = ddEl.classList.contains("open");
+      closeAllDropdowns();
+      ddEl.classList.toggle("open", !open);
+    });
+
+    panel.querySelectorAll("[data-dd-chk]").forEach(chk => {
+      chk.addEventListener("change", () => {
+        const selected = [...panel.querySelectorAll("[data-dd-chk]:checked")].map(x => x.value);
+        hidden.value = JSON.stringify(selected);
+        label.textContent = ddLabelFromSelected(selected);
+        CURRENT_DIRTY = true;
+      });
+    });
+  }
+
+  function getDropdownSelected(ddEl){
+    try{
+      const hidden = ddEl.querySelector("[data-dd-hidden]")?.value || "[]";
+      const arr = JSON.parse(hidden);
+      return Array.isArray(arr) ? arr : [];
+    }catch{
+      return [];
+    }
   }
 
   function makeActRow(data, focusResp){
     const tr = document.createElement("tr");
     tr.className = "act-row";
     tr.dataset.id = data.id || createId();
-
-    const selResps = (Array.isArray(data.responsaveis) && data.responsaveis.length > 0)
-      ? data.responsaveis
-      : (focusResp ? [focusResp] : []);
 
     tr.innerHTML = `
       <td>
@@ -525,11 +642,8 @@
           value="${escapeHtml(data.atividade || "")}">
       </td>
 
-      <td>
-        <select data-resps class="multi-select" multiple>
-          ${multiSelectOptions(selResps)}
-        </select>
-        <div class="hint" style="margin-top:6px;">No iPhone: toque/segure para selecionar mais de um.</div>
+      <td data-dd-cell>
+        ${renderRespDropdown(Array.isArray(data.responsaveis) ? data.responsaveis : [], focusResp)}
       </td>
 
       <td>
@@ -545,117 +659,205 @@
       </td>
     `;
 
+    // wire dropdown
+    const dd = tr.querySelector("[data-dd]");
+    if(dd) wireDropdown(dd);
+
+    tr.querySelector("[data-atividade]").addEventListener("input", () => CURRENT_DIRTY = true);
+    tr.querySelector("[data-status]").addEventListener("change", () => CURRENT_DIRTY = true);
+
     tr.querySelector("[data-del]").addEventListener("click", () => {
       tr.remove();
-      if(mTbodyActs.querySelectorAll("tr.act-row").length === 0){
-        mTbodyActs.innerHTML = `<tr><td colspan="4" style="opacity:.8;">Sem atividades. Clique em “+ Adicionar”.</td></tr>`;
-      }
+      CURRENT_DIRTY = true;
+      renderModalTable(); // re-render contador/empty
     });
 
     return tr;
   }
 
-  let CURRENT_WEEKKEY = null;
-  let CURRENT_FOCUS_RESP = "";
+  /* ===== Modal filter (3 opções) ===== */
+  function matchesModalFilter(status, filterKey){
+    const st = String(status||"").toLowerCase();
+    if(filterKey === "pendentes") return st !== "realizado";
+    if(filterKey === "concluidas") return st === "realizado";
+    return true; // todas
+  }
+
+  function renderModalTable(){
+    const filterKey = mFilterStatus.value || "pendentes";
+
+    // filtra (somente docs do analista clicado) + filtro status
+    const filtered = (CURRENT_WEEK_DOCS_FOR_RESP || []).filter(d => matchesModalFilter(d.status, filterKey));
+
+    mTbodyActs.innerHTML = "";
+
+    const totalAll = (CURRENT_WEEK_DOCS_FOR_RESP || []).length;
+    const totalShown = filtered.length;
+
+    mCountHint.textContent = `Atividades do ${CURRENT_FOCUS_RESP}: ${totalShown} exibidas (de ${totalAll}). Filtro: ${filterKey === "pendentes" ? "Pendentes" : (filterKey === "concluidas" ? "Concluídas" : "Todas")}`;
+
+    if(filtered.length === 0){
+      mTbodyActs.innerHTML = `
+        <tr>
+          <td colspan="4" style="opacity:.85;">
+            Nenhuma atividade para este filtro.
+            ${filterKey === "pendentes" ? " (Se quiser, mude para “Todas”.)" : ""}
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    // cria linhas editáveis
+    for(const d of filtered){
+      mTbodyActs.appendChild(makeActRow(d, CURRENT_FOCUS_RESP));
+    }
+  }
 
   function openModal(weekKey, focusResp){
     CURRENT_WEEKKEY = weekKey;
     CURRENT_FOCUS_RESP = focusResp || "";
+    CURRENT_DIRTY = false;
 
-    mSub.textContent = "Lance/edite atividades (multi-responsável).";
-    mRespFocus.textContent = focusResp || "-";
+    mSub.textContent = "Abre filtrando somente as atividades do analista clicado.";
+    mRespFocus.textContent = CURRENT_FOCUS_RESP || "-";
+
+    // Sempre abre em "Pendentes"
+    mFilterStatus.value = "pendentes";
+
+    // Carrega docs da semana (mas modal vai trabalhar só com os do analista clicado)
+    const docsSemana = (RPS_CACHE || []).filter(d => d.weekKey === weekKey);
+
+    // ✅ AQUI É O FILTRO PRINCIPAL QUE VOCÊ PEDIU:
+    // Só pega docs onde responsaveis contém o analista clicado
+    CURRENT_WEEK_DOCS_FOR_RESP = docsSemana.filter(d =>
+      Array.isArray(d.responsaveis) && d.responsaveis.includes(CURRENT_FOCUS_RESP)
+    );
+
+    // ids que podem ser removidos por esse modal (somente os que eram do analista)
+    CURRENT_REMOVABLE_IDS = new Set(CURRENT_WEEK_DOCS_FOR_RESP.map(d => d.id).filter(Boolean));
 
     modalBackdrop.style.display = "flex";
-    loadWeekActivitiesToModal(weekKey, focusResp);
+    renderModalTable();
   }
 
   function closeModal(){
     modalBackdrop.style.display = "none";
     CURRENT_WEEKKEY = null;
     CURRENT_FOCUS_RESP = "";
+    CURRENT_WEEK_DOCS_FOR_RESP = [];
+    CURRENT_REMOVABLE_IDS = new Set();
+    CURRENT_DIRTY = false;
     mTbodyActs.innerHTML = `<tr><td colspan="4" style="opacity:.8;">Carregando…</td></tr>`;
   }
 
   mClose.addEventListener("click", closeModal);
   modalBackdrop.addEventListener("click", (e) => { if(e.target === modalBackdrop) closeModal(); });
 
+  mFilterStatus.addEventListener("change", () => {
+    // Re-render só visual; dados ficam no CURRENT_WEEK_DOCS_FOR_RESP
+    renderModalTable();
+  });
+
   btnAddRow.addEventListener("click", () => {
-    if(mTbodyActs.querySelector("td[colspan]")) mTbodyActs.innerHTML = "";
-    mTbodyActs.appendChild(makeActRow({
+    // Ao adicionar, sempre nasce com o analista clicado como responsável
+    const newRow = {
       id: createId(),
+      weekKey: CURRENT_WEEKKEY,
       atividade: "",
       responsaveis: CURRENT_FOCUS_RESP ? [CURRENT_FOCUS_RESP] : [],
       status: "Planejado"
-    }, CURRENT_FOCUS_RESP));
+    };
+    CURRENT_WEEK_DOCS_FOR_RESP.push(newRow);
+    CURRENT_DIRTY = true;
+    // Força ir para "Pendentes" para continuar o padrão
+    mFilterStatus.value = "pendentes";
+    renderModalTable();
+    // foco no último input
+    const last = mTbodyActs.querySelector("tr.act-row:last-child [data-atividade]");
+    if(last) last.focus();
   });
 
-  function loadWeekActivitiesToModal(weekKey, focusResp){
-    const docs = (RPS_CACHE || []).filter(d => d.weekKey === weekKey);
-    docs.sort((a,b) => String(a.atividade||"").localeCompare(String(b.atividade||""), "pt-BR"));
-
-    mTbodyActs.innerHTML = "";
-    if(docs.length === 0){
-      mTbodyActs.innerHTML = `<tr><td colspan="4" style="opacity:.8;">Sem atividades. Clique em “+ Adicionar”.</td></tr>`;
-      return;
-    }
-
-    for(const d of docs){
-      mTbodyActs.appendChild(makeActRow({
-        id: d.id,
-        atividade: d.atividade || "",
-        responsaveis: Array.isArray(d.responsaveis) ? d.responsaveis : [],
-        status: d.status || "Planejado"
-      }, focusResp));
-    }
-  }
-
-  async function saveCurrentWeek(){
-    if(!CURRENT_WEEKKEY) return;
+  /* ===== Save: só mexe nos docs do analista clicado ===== */
+  async function saveCurrentModal(){
+    if(!CURRENT_WEEKKEY || !CURRENT_FOCUS_RESP) return;
 
     const w = WEEKS.find(x => x.weekKey === CURRENT_WEEKKEY);
     const weekStartISO = w?.startISO || null;
     const weekEndISO = w?.endISO || null;
     const year = Number(String(CURRENT_WEEKKEY).slice(0,4)) || new Date().getFullYear();
 
-    const existing = (RPS_CACHE || []).filter(d => d.weekKey === CURRENT_WEEKKEY);
-    const existingIds = new Set(existing.map(d => d.id));
-    const keepIds = new Set();
+    // pega TODAS as linhas que existem na tabela (não só as exibidas)
+    // para isso, a fonte real é CURRENT_WEEK_DOCS_FOR_RESP, mas precisamos
+    // atualizar com o que o usuário editou nas linhas atualmente renderizadas.
+    const renderedRows = [...mTbodyActs.querySelectorAll("tr.act-row")];
 
-    const trs = [...mTbodyActs.querySelectorAll("tr.act-row")];
-
-    for(const tr of trs){
-      const id = tr.dataset.id || createId();
+    // Atualiza o CURRENT_WEEK_DOCS_FOR_RESP com os dados do DOM das linhas renderizadas
+    for(const tr of renderedRows){
+      const id = tr.dataset.id;
       const atividade = (tr.querySelector("[data-atividade]")?.value || "").trim();
       const status = (tr.querySelector("[data-status]")?.value || "Planejado").trim();
-      const sel = tr.querySelector("[data-resps]");
-      const responsaveis = sel ? getMultiSelected(sel) : [];
 
-      if(!atividade) continue;
-      if(!responsaveis || responsaveis.length === 0){
-        throw new Error("Existe atividade sem responsável selecionado. Selecione 1 ou mais na lista.");
+      const dd = tr.querySelector("[data-dd]");
+      const responsaveis = dd ? getDropdownSelected(dd) : [];
+
+      const idx = CURRENT_WEEK_DOCS_FOR_RESP.findIndex(x => x.id === id);
+      if(idx >= 0){
+        CURRENT_WEEK_DOCS_FOR_RESP[idx] = {
+          ...CURRENT_WEEK_DOCS_FOR_RESP[idx],
+          atividade,
+          status,
+          responsaveis
+        };
+      }
+    }
+
+    // Validação e lista final a salvar (somente do analista)
+    const toSave = [];
+    for(const d of CURRENT_WEEK_DOCS_FOR_RESP){
+      const atividade = (d.atividade || "").trim();
+      const status = (d.status || "Planejado").trim();
+      const responsaveis = Array.isArray(d.responsaveis) ? d.responsaveis : [];
+
+      if(!atividade) continue; // ignora vazias
+      if(responsaveis.length === 0){
+        throw new Error("Existe atividade sem responsável selecionado. Marque 1 ou mais responsáveis.");
+      }
+      // garantia: como este modal é do analista clicado, ele TEM que estar em responsaveis
+      if(!responsaveis.includes(CURRENT_FOCUS_RESP)){
+        throw new Error(`Nesta janela, toda atividade precisa ter o responsável ${CURRENT_FOCUS_RESP} marcado.`);
       }
 
-      keepIds.add(id);
+      toSave.push({ ...d, atividade, status, responsaveis });
+    }
 
+    // ids que ficaram depois (as vazias somem)
+    const keepIds = new Set(toSave.map(x => x.id));
+
+    // 1) salva/atualiza
+    for(const item of toSave){
+      const id = item.id || createId();
       await setDoc(doc(db, RPS_COLLECTION, id), {
         weekKey: CURRENT_WEEKKEY,
         weekStartISO,
         weekEndISO,
         weekYear: year,
-        atividade,
-        status,
-        responsaveis,
+        atividade: item.atividade,
+        status: item.status,
+        responsaveis: item.responsaveis,
         updatedAt: serverTimestamp(),
         updatedBy: usuario
       }, { merge:true });
     }
 
-    for(const oldId of existingIds){
+    // 2) remove SOMENTE os ids que eram do analista e foram excluídos/viraram vazios
+    for(const oldId of CURRENT_REMOVABLE_IDS){
       if(!keepIds.has(oldId)){
         await deleteDoc(doc(db, RPS_COLLECTION, oldId));
       }
     }
 
+    // Recarrega cache anual e re-render
     await loadRpsByYear(year);
     renderMainTable();
   }
@@ -663,7 +865,7 @@
   btnSalvarModal.addEventListener("click", async () => {
     try{
       setMsg("Salvando RPS…");
-      await saveCurrentWeek();
+      await saveCurrentModal();
       setMsg("Salvo ✅", "success");
       closeModal();
     }catch(e){
@@ -672,6 +874,7 @@
     }
   });
 
+  /* ===== INIT ===== */
   function initYearPicker(){
     const nowY = new Date().getFullYear();
     const years = [nowY-1, nowY, nowY+1];
