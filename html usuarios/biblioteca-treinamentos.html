@@ -3,320 +3,157 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Cadastro de Treinamentos</title>
+  <title>Biblioteca de Treinamentos</title>
   <link rel="stylesheet" href="../css/styles.css" />
 </head>
 
 <body class="bg">
-
-<header class="topbar">
-  <div>
-    <h2>Cadastro de Treinamentos</h2>
-    <div id="userInfo" class="hint" style="color:#d1d5db;margin-top:4px;"></div>
-  </div>
-
-  <div class="top-actions">
-    <button id="btnMenu" class="btn-secondary" type="button">Voltar ao Menu</button>
-    <button id="btnLogout" class="btn-secondary" type="button">Sair</button>
-  </div>
-</header>
-
-<main class="card wide">
-
-  <section class="row-between">
+  <header class="topbar">
     <div>
-      <h3 id="formTitle">Novo Treinamento</h3>
-      <p class="hint">Cadastre o nome e os links relacionados. (Salva no Firebase / Firestore)</p>
-    </div>
-  </section>
-
-  <hr class="sep" />
-
-  <section class="form-grid">
-
-    <div>
-      <label>Nome do treinamento</label>
-      <input id="nomeTreino" type="text" maxlength="100" placeholder="Ex: Coaching no PDV" />
+      <h2>Biblioteca de Treinamentos</h2>
+      <div id="userInfo" class="hint" style="color:#d1d5db;margin-top:4px;"></div>
     </div>
 
-    <div>
-      <label>Link do Treinamento</label>
-      <input id="linkTreino" type="url" placeholder="https://..." />
+    <div class="top-actions">
+      <button id="btnMenu" class="btn-secondary" type="button">Voltar ao Menu</button>
+      <button id="btnLogout" class="btn-secondary" type="button">Sair</button>
     </div>
+  </header>
 
-    <div>
-      <label>Link do Forms</label>
-      <input id="linkForms" type="url" placeholder="https://forms.gle/..." />
+  <main class="card wide">
+    <section class="row-between" style="align-items:flex-end;">
+      <div>
+        <h3>Treinamentos cadastrados (Global)</h3>
+        <p class="hint">Aqui aparece a lista única salva no Firestore.</p>
+      </div>
+
+      <div style="min-width:280px;">
+        <label for="busca">Buscar</label>
+        <input id="busca" type="text" placeholder="Nome do treinamento..." />
+      </div>
+    </section>
+
+    <p id="msg" class="msg"></p>
+
+    <div class="table-wrap" style="margin-top:12px;">
+      <table class="table table-sticky">
+        <thead>
+          <tr>
+            <th style="width:70px;">#</th>
+            <th>Nome</th>
+            <th style="width:160px;">Treinamento</th>
+            <th style="width:140px;">Forms</th>
+            <th style="width:160px;">Cadastrado por</th>
+          </tr>
+        </thead>
+        <tbody id="tbody">
+          <tr><td colspan="5" style="opacity:.8;">Carregando…</td></tr>
+        </tbody>
+      </table>
     </div>
+  </main>
 
-    <div class="page-actions" style="grid-column:1/-1; justify-content:flex-end; gap:10px;">
-      <button id="btnCancelar" class="btn-secondary" type="button" style="display:none;">Cancelar</button>
-      <button id="btnSalvar" type="button">Adicionar</button>
-    </div>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import {
+      getFirestore,
+      collection,
+      getDocs
+    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-  </section>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
+      authDomain: "jornada-portal.firebaseapp.com",
+      projectId: "jornada-portal",
+      storageBucket: "jornada-portal.firebasestorage.app",
+      messagingSenderId: "669362296644",
+      appId: "1:669362296644:web:f590d9834a8e4e60012911"
+    };
 
-  <p id="msg" class="msg"></p>
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-  <hr class="sep" />
+    const COL = "biblioteca_treinamentos";
 
-  <section class="row-between">
-    <div>
-      <h3>Treinamentos Cadastrados (Global)</h3>
-      <p class="hint">Lista única (todos veem a mesma biblioteca).</p>
-    </div>
+    const PATH_INDEX = "../index.html";
+    const PATH_MENU  = "../html menus/menu.html"; // menu do usuário normal (ajuste se precisar)
 
-    <div>
-      <label>Buscar</label>
-      <input id="busca" type="text" placeholder="Digite para filtrar..." />
-    </div>
-  </section>
-
-  <div class="table-wrap" style="margin-top:12px;">
-    <table class="table table-sticky">
-      <thead>
-        <tr>
-          <th style="width:70px;">#</th>
-          <th>Nome</th>
-          <th style="width:140px;">Treinamento</th>
-          <th style="width:120px;">Forms</th>
-          <th style="width:220px;">Ações</th>
-        </tr>
-      </thead>
-      <tbody id="tbody"></tbody>
-    </table>
-  </div>
-
-</main>
-
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-  import {
-    getFirestore,
-    collection,
-    getDocs,
-    doc,
-    setDoc,
-    deleteDoc,
-    serverTimestamp
-  } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
-
-  /* =========================
-     FIREBASE CONFIG (SEU)
-  ========================= */
-  const firebaseConfig = {
-    apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
-    authDomain: "jornada-portal.firebaseapp.com",
-    projectId: "jornada-portal",
-    storageBucket: "jornada-portal.firebasestorage.app",
-    messagingSenderId: "669362296644",
-    appId: "1:669362296644:web:f590d9834a8e4e60012911"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-
-  /* =========================
-     COLEÇÃO GLOBAL DA BIBLIOTECA
-  ========================= */
-  const COL = "biblioteca_treinamentos";
-
-  /* =========================
-     PATHS (AJUSTE SEU PROJETO)
-  ========================= */
-  const PATH_INDEX = "../index.html";
-  const PATH_MENU  = "../html adm/menuadm.html"; // <- menu do ADM
-
-  /* =========================
-     SESSÃO
-  ========================= */
-  function safeParse(raw){ try { return JSON.parse(raw); } catch { return null; } }
-  function getCurrentUserName(){
-    const raw = localStorage.getItem("user_session");
-    if(raw){
-      const s = safeParse(raw);
-      if(s?.nome) return String(s.nome).trim();
+    function safeParse(raw){ try { return JSON.parse(raw); } catch { return null; } }
+    function getCurrentUserName(){
+      const raw = localStorage.getItem("user_session");
+      if(raw){
+        const s = safeParse(raw);
+        if(s?.nome) return String(s.nome).trim();
+      }
+      return (localStorage.getItem("usuarioLogado") || "").trim();
     }
-    return (localStorage.getItem("usuarioLogado") || "").trim();
-  }
-  const usuario = getCurrentUserName();
-  if (!usuario) window.location.href = PATH_INDEX;
+    const usuario = getCurrentUserName();
+    if (!usuario) window.location.href = PATH_INDEX;
 
-  document.getElementById("userInfo").textContent = `Usuário: ${usuario}`;
-  document.getElementById("btnMenu").onclick = () => window.location.href = PATH_MENU;
-  document.getElementById("btnLogout").onclick = () => {
-    localStorage.removeItem("user_session");
-    localStorage.removeItem("usuarioLogado");
-    window.location.href = PATH_INDEX;
-  };
+    document.getElementById("userInfo").textContent = `Usuário: ${usuario}`;
+    document.getElementById("btnMenu").onclick = () => window.location.href = PATH_MENU;
+    document.getElementById("btnLogout").onclick = () => {
+      localStorage.removeItem("user_session");
+      localStorage.removeItem("usuarioLogado");
+      window.location.href = PATH_INDEX;
+    };
 
-  /* =========================
-     UI
-  ========================= */
-  const formTitle = document.getElementById("formTitle");
-  const nomeInput = document.getElementById("nomeTreino");
-  const linkTreinoInput = document.getElementById("linkTreino");
-  const linkFormsInput = document.getElementById("linkForms");
-  const btnSalvar = document.getElementById("btnSalvar");
-  const btnCancelar = document.getElementById("btnCancelar");
-  const tbody = document.getElementById("tbody");
-  const busca = document.getElementById("busca");
-  const msg = document.getElementById("msg");
+    const tbody = document.getElementById("tbody");
+    const busca = document.getElementById("busca");
+    const msg = document.getElementById("msg");
 
-  let editId = null;
-  let CACHE = [];
-
-  function setMsg(text, type="info"){
-    msg.textContent = text || "";
-    msg.style.color = type === "success" ? "#22c55e" : (type === "error" ? "#ef4444" : "#d1d5db");
-  }
-  function normalize(s){ return (s || "").replace(/\s+/g, " ").trim(); }
-  function makeId(){
-    if (globalThis.crypto?.randomUUID) return crypto.randomUUID();
-    return `${Date.now()}_${Math.random().toString(16).slice(2)}`;
-  }
-
-  function resetForm(){
-    editId = null;
-    formTitle.textContent = "Novo Treinamento";
-    btnSalvar.textContent = "Adicionar";
-    btnCancelar.style.display = "none";
-    nomeInput.value = "";
-    linkTreinoInput.value = "";
-    linkFormsInput.value = "";
-    nomeInput.focus();
-  }
-
-  async function loadAll(){
-    const snap = await getDocs(collection(db, COL));
-    const arr = [];
-    snap.forEach(d => arr.push({ id: d.id, ...d.data() }));
-    arr.sort((a,b)=> String(a.nome||"").localeCompare(String(b.nome||""), "pt-BR"));
-    CACHE = arr;
-    return arr;
-  }
-
-  function render(){
-    const q = (busca.value || "").toLowerCase();
-    const data = (CACHE || []).slice();
-    const filtered = q ? data.filter(x => String(x.nome||"").toLowerCase().includes(q)) : data;
-
-    tbody.innerHTML = "";
-    if (filtered.length === 0){
-      tbody.innerHTML = `<tr><td colspan="5" style="opacity:.8;">Nenhum treinamento cadastrado.</td></tr>`;
-      return;
+    function setMsg(text, type="info"){
+      msg.textContent = text || "";
+      msg.style.color = type === "success" ? "#22c55e" : (type === "error" ? "#ef4444" : "#d1d5db");
     }
 
-    filtered.forEach((t, i) => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${i+1}</td>
-        <td>${t.nome || "-"}</td>
-        <td>${t.linkTreino ? `<a href="${t.linkTreino}" target="_blank" rel="noopener">Abrir</a>` : "-"}</td>
-        <td>${t.linkForms ? `<a href="${t.linkForms}" target="_blank" rel="noopener">Abrir</a>` : "-"}</td>
-        <td style="display:flex; gap:8px; flex-wrap:wrap;">
-          <button class="btn-secondary" type="button" data-edit="${t.id}">Editar</button>
-          <button class="btn-secondary" type="button" data-del="${t.id}"
-            style="border-color: rgba(255,59,59,.25);">Excluir</button>
-        </td>
-      `;
-      tbody.appendChild(tr);
-    });
+    let CACHE = [];
 
-    tbody.querySelectorAll("[data-edit]").forEach(btn => {
-      btn.onclick = () => startEdit(btn.getAttribute("data-edit"));
-    });
-    tbody.querySelectorAll("[data-del]").forEach(btn => {
-      btn.onclick = () => removeItem(btn.getAttribute("data-del"));
-    });
-  }
+    async function loadAll(){
+      const snap = await getDocs(collection(db, COL));
+      const arr = [];
+      snap.forEach(d => arr.push({ id: d.id, ...d.data() }));
+      arr.sort((a,b)=> String(a.nome||"").localeCompare(String(b.nome||""),"pt-BR"));
+      CACHE = arr;
+      return arr;
+    }
 
-  function startEdit(id){
-    const item = (CACHE || []).find(x => x.id === id);
-    if (!item) return;
+    function render(){
+      const q = (busca.value || "").toLowerCase();
+      const data = (CACHE || []);
+      const filtered = q ? data.filter(x => String(x.nome||"").toLowerCase().includes(q)) : data;
 
-    editId = id;
-    formTitle.textContent = "Editar Treinamento";
-    btnSalvar.textContent = "Salvar edição";
-    btnCancelar.style.display = "inline-flex";
+      tbody.innerHTML = "";
+      if (filtered.length === 0){
+        tbody.innerHTML = `<tr><td colspan="5" style="opacity:.8;">Nenhum treinamento encontrado.</td></tr>`;
+        return;
+      }
 
-    nomeInput.value = item.nome || "";
-    linkTreinoInput.value = item.linkTreino || "";
-    linkFormsInput.value = item.linkForms || "";
-    setMsg("Editando: ajuste os campos e clique em “Salvar edição”.", "info");
-    nomeInput.focus();
-  }
+      filtered.forEach((t, i) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${i+1}</td>
+          <td>${t.nome || "-"}</td>
+          <td>${t.linkTreino ? `<a href="${t.linkTreino}" target="_blank" rel="noopener">Abrir</a>` : "-"}</td>
+          <td>${t.linkForms ? `<a href="${t.linkForms}" target="_blank" rel="noopener">Abrir</a>` : "-"}</td>
+          <td style="opacity:.9;">${t.createdBy || "-"}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
 
-  async function removeItem(id){
-    if (!id) return;
+    setMsg("Carregando…");
     try{
-      setMsg("Removendo…");
-      await deleteDoc(doc(db, COL, id));
-      CACHE = CACHE.filter(x => x.id !== id);
-      render();
-      if (editId === id) resetForm();
-      setMsg("Removido ✅", "success");
-    }catch(e){
-      console.error(e);
-      setMsg("Erro ao remover no Firebase (Rules?).", "error");
-    }
-  }
-
-  btnSalvar.onclick = async () => {
-    setMsg("");
-
-    const nome = normalize(nomeInput.value);
-    const linkTreino = normalize(linkTreinoInput.value);
-    const linkForms = normalize(linkFormsInput.value);
-
-    if (!nome){
-      setMsg("Digite o nome do treinamento.", "error");
-      return;
-    }
-
-    const duplicated = (CACHE || []).some(x =>
-      String(x.nome||"").toLowerCase() === nome.toLowerCase() && x.id !== editId
-    );
-    if (duplicated){
-      setMsg("Já existe um treinamento com esse nome.", "error");
-      return;
-    }
-
-    try{
-      setMsg("Salvando…");
-
-      const id = editId || makeId();
-      await setDoc(doc(db, COL, id), {
-        nome,
-        linkTreino: linkTreino || null,
-        linkForms: linkForms || null,
-        updatedAt: serverTimestamp(),
-        createdBy: editId ? (CACHE.find(x=>x.id===id)?.createdBy || usuario) : usuario,
-        createdAt: editId ? (CACHE.find(x=>x.id===id)?.createdAt || serverTimestamp()) : serverTimestamp()
-      }, { merge: true });
-
-      setMsg(editId ? "Edição salva ✅" : "Treinamento adicionado ✅", "success");
-      resetForm();
-
       await loadAll();
+      setMsg("");
       render();
-
     }catch(e){
       console.error(e);
-      setMsg("Erro ao salvar no Firebase (Rules?).", "error");
+      setMsg("Erro ao carregar do Firebase. Verifique Rules/Conexão.", "error");
+      tbody.innerHTML = `<tr><td colspan="5" style="opacity:.8;">Falha ao carregar.</td></tr>`;
     }
-  };
 
-  btnCancelar.onclick = () => { resetForm(); setMsg(""); };
-  busca.addEventListener("input", render);
-
-  // init
-  resetForm();
-  setMsg("Carregando…");
-  await loadAll();
-  setMsg("");
-  render();
-</script>
-
+    busca.addEventListener("input", render);
+  </script>
 </body>
 </html>
