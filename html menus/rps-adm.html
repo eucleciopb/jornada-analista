@@ -1,0 +1,754 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>RPS | Admin</title>
+  <link rel="stylesheet" href="../css/styles.css" />
+
+  <style>
+    :root{
+      --bg:#0b0f14;
+      --card:rgba(255,255,255,.06);
+      --border:rgba(255,255,255,.10);
+      --text:#e5e7eb;
+      --muted:#9ca3af;
+      --danger:#ef4444;
+      --ok:#22c55e;
+      --warn:#facc15;
+    }
+
+    .table-wrap{ overflow:auto; border:1px solid var(--border); border-radius:16px; }
+    table{ width:100%; border-collapse:collapse; min-width: 900px; background:rgba(255,255,255,.03); }
+    thead th{
+      position:sticky; top:0;
+      background:rgba(0,0,0,.35); backdrop-filter: blur(8px);
+      text-align:left; font-size:12px; color:var(--muted);
+      padding:12px; border-bottom:1px solid var(--border);
+      white-space:nowrap;
+    }
+    tbody td{ padding:12px; border-bottom:1px solid rgba(255,255,255,.06); vertical-align:middle; }
+    tbody tr:hover{ background:rgba(255,255,255,.04); cursor:pointer; }
+
+    .pill{
+      display:inline-flex; align-items:center;
+      padding:6px 10px; border-radius:999px;
+      border:1px solid var(--border);
+      font-size:12px; font-weight:900;
+      white-space:nowrap;
+    }
+    .pill.ok{ color:var(--ok); border-color:rgba(34,197,94,.35); background:rgba(34,197,94,.10); }
+    .pill.bad{ color:var(--danger); border-color:rgba(239,68,68,.35); background:rgba(239,68,68,.10); }
+    .pill.warn{ color:var(--warn); border-color:rgba(250,204,21,.35); background:rgba(250,204,21,.10); }
+
+    .filters{
+      display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end;
+    }
+    .field{
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid var(--border);
+      background:rgba(255,255,255,.04);
+      color:var(--text);
+      outline:none;
+      width:100%;
+    }
+    .field:focus{ border-color:rgba(255,59,59,.55); box-shadow:0 0 0 4px rgba(217,27,46,.18); }
+
+    .checks{
+      display:flex; flex-wrap:wrap; gap:10px;
+      padding:10px; border:1px solid rgba(255,255,255,.10);
+      border-radius:14px; background:rgba(255,255,255,.03);
+    }
+    .checks label{
+      display:flex; align-items:center; gap:8px;
+      font-size:13px; font-weight:800;
+      color:rgba(255,255,255,.92);
+      cursor:pointer;
+      margin:0;
+      white-space:nowrap;
+    }
+    .checks input{ width:18px; height:18px; }
+
+    /* ===== Modal ===== */
+    .modal-backdrop{
+      position:fixed; inset:0;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding: 18px;
+      background: rgba(0,0,0,.60);
+      z-index: 9999;
+    }
+    .modal{
+      width: min(1100px, 100%);
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(17,24,39,.96);
+      box-shadow: 0 24px 60px rgba(0,0,0,.55);
+      overflow:hidden;
+    }
+    .modal-header{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap: 12px;
+      padding: 16px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+    .modal-header h3{ margin:0; font-size: 16px; }
+    .modal-header .sub{ margin-top:6px; font-size: 12px; opacity:.85; line-height: 1.35; }
+    .modal-close{
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.04);
+      color: rgba(255,255,255,.9);
+      border-radius: 12px;
+      padding: 10px 12px;
+      cursor:pointer;
+      font-weight: 900;
+    }
+    .modal-body{ padding: 14px 16px 16px 16px; }
+    .modal-actions{
+      display:flex; gap: 10px; justify-content:flex-end;
+      padding: 12px 16px 16px 16px;
+      border-top: 1px solid rgba(255,255,255,.08);
+      flex-wrap: wrap;
+    }
+
+    .box{
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+      border-radius: 16px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+    .box label{ display:block; font-size:12px; opacity:.75; margin-bottom:6px; }
+
+    .grid2{ display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media(max-width: 900px){ .grid2{ grid-template-columns: 1fr; } table{ min-width: 820px; } }
+
+    /* Lista de atividades no modal */
+    .act-table-wrap{ overflow:auto; border:1px solid rgba(255,255,255,.10); border-radius:16px; }
+    .act-table{ width:100%; border-collapse:collapse; min-width: 1050px; }
+    .act-table th, .act-table td{ padding:12px; border-bottom:1px solid rgba(255,255,255,.06); vertical-align:middle; }
+    .act-table th{
+      font-size:12px; color:rgba(255,255,255,.70);
+      text-transform:uppercase; letter-spacing:.06em;
+      background:rgba(0,0,0,.25); position:sticky; top:0;
+      white-space:nowrap;
+    }
+    .act-row input, .act-row select{
+      width:100%;
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.04);
+      color:rgba(255,255,255,.95);
+      outline:none;
+    }
+    .act-row input:focus, .act-row select:focus{
+      border-color: rgba(255,59,59,.55);
+      box-shadow: 0 0 0 4px rgba(217,27,46,.18);
+    }
+
+    /* Multi select bonitinho */
+    .multi-select{
+      height: 46px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.04);
+      color: rgba(255,255,255,.95);
+      padding: 8px 10px;
+      outline:none;
+    }
+    .multi-select:focus{
+      border-color: rgba(255,59,59,.55);
+      box-shadow: 0 0 0 4px rgba(217,27,46,.18);
+    }
+    .multi-select option{ background:#111827; color:#fff; }
+
+    .btn-mini{
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.04);
+      color:rgba(255,255,255,.95);
+      font-weight:900;
+      cursor:pointer;
+      white-space:nowrap;
+    }
+    .btn-mini.primary{ border-color:transparent; background: rgba(217,27,46,.95); }
+    .btn-mini:hover{ filter:brightness(1.08); }
+
+    .mini-actions{ display:flex; gap:8px; flex-wrap:wrap; }
+    .btn-danger{ border-color:rgba(239,68,68,.35) !important; }
+  </style>
+</head>
+
+<body class="bg">
+
+<header class="topbar">
+  <div>
+    <h2>RPS — Admin</h2>
+    <div id="userInfo" class="hint" style="color:#d1d5db;margin-top:4px;"></div>
+  </div>
+
+  <div class="top-actions">
+    <button id="btnMenu" class="btn-secondary" type="button">Voltar ao Menu</button>
+    <button id="btnLogout" class="btn-secondary" type="button">Sair</button>
+  </div>
+</header>
+
+<main class="card wide">
+  <section class="row-between" style="align-items:flex-end;">
+    <div>
+      <h3>Resumo por responsável</h3>
+      <p class="hint">Clique na linha do responsável para lançar/editar atividades (multi-responsável).</p>
+    </div>
+
+    <div class="filters">
+      <div style="min-width:180px;">
+        <label for="yearPicker">Ano</label>
+        <select id="yearPicker" class="field"></select>
+      </div>
+
+      <div style="min-width:260px;">
+        <label for="searchBox">Buscar</label>
+        <input id="searchBox" class="field" type="text" placeholder="Responsável..." />
+      </div>
+
+      <div style="min-width:320px;">
+        <label>Mostrar responsáveis</label>
+        <div id="filterResponsaveis" class="checks"></div>
+        <div class="hint">Se nada marcado, mostra todos.</div>
+      </div>
+    </div>
+  </section>
+
+  <p id="msg" class="msg"></p>
+  <hr class="sep" />
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:210px;">Responsável</th>
+          <th style="width:160px;">Total mapeadas</th>
+          <th style="width:160px;">Concluídas</th>
+          <th style="width:180px;">Não realizadas</th>
+          <th style="width:170px;">Status</th>
+        </tr>
+      </thead>
+      <tbody id="tbodyRows">
+        <tr><td colspan="5" style="opacity:.8;">Carregando…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+
+<!-- ===== MODAL ===== -->
+<div id="modalBackdrop" class="modal-backdrop" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <h3 id="mTitle">RPS — Lançamentos</h3>
+        <div class="sub" id="mSub"></div>
+      </div>
+      <button class="modal-close" id="mClose" type="button">Fechar</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="grid2">
+        <div class="box">
+          <label>Responsável selecionado</label>
+          <div id="mRespFocus" style="font-weight:900;">-</div>
+          <div class="hint" style="opacity:.9;">A semana é interna (não aparece aqui), mas salva organizado no Firebase.</div>
+        </div>
+
+        <div class="box">
+          <label>Adicionar nova atividade</label>
+          <button id="btnAddRow" class="btn-mini primary" type="button">+ Adicionar</button>
+          <div class="hint">Na atividade você marca <b>1 ou mais responsáveis</b> pela lista.</div>
+        </div>
+      </div>
+
+      <div class="box">
+        <label>Atividades</label>
+        <div class="act-table-wrap">
+          <table class="act-table">
+            <thead>
+              <tr>
+                <th style="width:360px;">Atividade</th>
+                <th style="width:420px;">Responsáveis (lista)</th>
+                <th style="width:220px;">Status</th>
+                <th style="width:140px;">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="mTbodyActs">
+              <tr><td colspan="4" style="opacity:.8;">Carregando…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="hint" style="opacity:.9;">
+        Multi-responsável: se marcar Bruna e Elaine na mesma atividade, ela conta nas duas.
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button id="btnSalvarModal" class="btn-mini primary" type="button">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+  import {
+    getFirestore,
+    collection,
+    getDocs,
+    doc,
+    setDoc,
+    deleteDoc,
+    serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
+    authDomain: "jornada-portal.firebaseapp.com",
+    projectId: "jornada-portal",
+    storageBucket: "jornada-portal.firebasestorage.app",
+    messagingSenderId: "669362296644",
+    appId: "1:669362296644:web:f590d9834a8e4e60012911"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  const RPS_COLLECTION = "rps_atividades";
+
+  const PATH_INDEX = "../index.html";
+  const PATH_MENUADM = "menuadm.html";
+
+  const ANALISTAS = ["Bruna","Elaine","Euclecio","Pedro"];
+
+  function safeParse(raw){ try { return JSON.parse(raw); } catch { return null; } }
+  function getCurrentUserName(){
+    const raw = localStorage.getItem("user_session");
+    if(raw){
+      const s = safeParse(raw);
+      if(s?.nome) return String(s.nome).trim();
+    }
+    return (localStorage.getItem("usuarioLogado") || "").trim();
+  }
+
+  const usuario = getCurrentUserName();
+  if (!usuario) window.location.href = PATH_INDEX;
+
+  document.getElementById("userInfo").textContent = `Admin: ${usuario}`;
+  document.getElementById("btnMenu").onclick = () => window.location.href = PATH_MENUADM;
+  document.getElementById("btnLogout").onclick = () => {
+    localStorage.removeItem("user_session");
+    localStorage.removeItem("usuarioLogado");
+    localStorage.removeItem("usuarioKey");
+    window.location.href = PATH_INDEX;
+  };
+
+  const yearPicker = document.getElementById("yearPicker");
+  const searchBox = document.getElementById("searchBox");
+  const filterResponsaveis = document.getElementById("filterResponsaveis");
+  const tbodyRows = document.getElementById("tbodyRows");
+  const msg = document.getElementById("msg");
+
+  const modalBackdrop = document.getElementById("modalBackdrop");
+  const mClose = document.getElementById("mClose");
+  const mSub = document.getElementById("mSub");
+  const mRespFocus = document.getElementById("mRespFocus");
+  const btnAddRow = document.getElementById("btnAddRow");
+  const btnSalvarModal = document.getElementById("btnSalvarModal");
+  const mTbodyActs = document.getElementById("mTbodyActs");
+
+  function setMsg(text, type="info"){
+    msg.textContent = text || "";
+    msg.style.color = type === "success" ? "#22c55e" : (type === "error" ? "#ef4444" : "#d1d5db");
+  }
+
+  function pad2(n){ return String(n).padStart(2,"0"); }
+
+  function startOfWeekMonday(date){
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = (day === 0 ? -6 : 1 - day);
+    d.setDate(d.getDate() + diff);
+    d.setHours(0,0,0,0);
+    return d;
+  }
+  function addDays(date, n){
+    const d = new Date(date);
+    d.setDate(d.getDate() + n);
+    return d;
+  }
+  function isoDate(d){ return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`; }
+  function monthNamePt(m0){
+    return ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"][m0];
+  }
+
+  function buildWeeksOfYear(year){
+    const weeks = [];
+    let cursor = startOfWeekMonday(new Date(year,0,1));
+    if(cursor.getFullYear() < year) cursor = addDays(cursor, 7);
+
+    const perMonthCount = Array(12).fill(0);
+    let idx = 1;
+
+    while(true){
+      const start = new Date(cursor);
+      const end = addDays(start, 6);
+      if(start.getFullYear() > year) break;
+
+      const m0 = start.getMonth();
+      perMonthCount[m0] += 1;
+
+      const weekKey = `${year}-W${pad2(idx)}`;
+      const label = `${perMonthCount[m0]}ª semana ${monthNamePt(m0)}/${year}`;
+
+      weeks.push({
+        weekKey,
+        label,
+        startISO: isoDate(start),
+        endISO: isoDate(end),
+        orderIndex: idx
+      });
+
+      idx += 1;
+      cursor = addDays(cursor, 7);
+      if(idx > 60) break;
+    }
+    return weeks;
+  }
+
+  function renderResponsaveisFilter(){
+    filterResponsaveis.innerHTML = ANALISTAS.map(nome => `
+      <label><input type="checkbox" value="${nome}"> ${nome}</label>
+    `).join("");
+
+    [...filterResponsaveis.querySelectorAll("input[type='checkbox']")].forEach(c => {
+      c.addEventListener("change", renderMainTable);
+    });
+  }
+  function getSelectedResponsaveis(){
+    const checks = [...filterResponsaveis.querySelectorAll("input[type='checkbox']")];
+    return checks.filter(c => c.checked).map(c => c.value);
+  }
+
+  let WEEKS = [];
+  let RPS_CACHE = [];
+
+  async function loadRpsByYear(year){
+    const snap = await getDocs(collection(db, RPS_COLLECTION));
+    const arr = [];
+    snap.forEach(d => arr.push({ id: d.id, ...d.data() }));
+    RPS_CACHE = arr.filter(x => String(x.weekKey || "").startsWith(`${year}-W`));
+    return RPS_CACHE;
+  }
+
+  function isNaoRealizado(status){
+    const s = String(status||"").toLowerCase();
+    return s === "não realizado" || s === "nao realizado";
+  }
+  function isRealizado(status){
+    return String(status||"").toLowerCase() === "realizado";
+  }
+
+  function computeCountsForResp(responsavel){
+    let total=0, concl=0, nao=0;
+    for(const w of WEEKS){
+      const docs = (RPS_CACHE || [])
+        .filter(d => d.weekKey === w.weekKey)
+        .filter(d => Array.isArray(d.responsaveis) && d.responsaveis.includes(responsavel));
+
+      total += docs.length;
+      concl += docs.filter(d => isRealizado(d.status)).length;
+      nao += docs.filter(d => isNaoRealizado(d.status)).length;
+    }
+
+    let st = { cls:"warn", label:"Pendente" };
+    if(total === 0) st = { cls:"warn", label:"Sem lançamentos" };
+    else if(nao > 0) st = { cls:"bad", label:"Atenção" };
+    else if(concl === total) st = { cls:"ok", label:"Tudo realizado" };
+    else st = { cls:"warn", label:"Em andamento" };
+
+    return { total, concl, nao, st };
+  }
+
+  function getCurrentWeekKey(year){
+    const now = new Date();
+    const base = (now.getFullYear() === year) ? now : new Date(year,0,1);
+    const monday = startOfWeekMonday(base);
+    const mondayISO = isoDate(monday);
+    const found = WEEKS.find(w => w.startISO === mondayISO);
+    return found?.weekKey || (WEEKS[0]?.weekKey || `${year}-W01`);
+  }
+
+  function renderMainTable(){
+    const q = (searchBox.value || "").toLowerCase().trim();
+    const selected = getSelectedResponsaveis();
+    const responsaveis = (selected.length > 0) ? selected : ANALISTAS;
+
+    const rows = responsaveis
+      .filter(r => !q || r.toLowerCase().includes(q))
+      .map(r => ({ r, ...computeCountsForResp(r) }));
+
+    tbodyRows.innerHTML = "";
+    if(rows.length === 0){
+      tbodyRows.innerHTML = `<tr><td colspan="5" style="opacity:.8;">Sem linhas para exibir.</td></tr>`;
+      return;
+    }
+
+    const order = new Map(ANALISTAS.map((n,i)=>[n,i]));
+    rows.sort((a,b) => (order.get(a.r) ?? 99) - (order.get(b.r) ?? 99));
+
+    for(const s of rows){
+      const tr = document.createElement("tr");
+      tr.dataset.resp = s.r;
+
+      tr.innerHTML = `
+        <td><b>${s.r}</b></td>
+        <td style="text-align:center;"><b>${s.total}</b></td>
+        <td style="text-align:center;"><b>${s.concl}</b></td>
+        <td style="text-align:center;"><b>${s.nao}</b></td>
+        <td><span class="pill ${s.st.cls}">${s.st.label}</span></td>
+      `;
+
+      tr.addEventListener("click", () => {
+        const weekKey = getCurrentWeekKey(Number(yearPicker.value));
+        openModal(weekKey, s.r);
+      });
+
+      tbodyRows.appendChild(tr);
+    }
+  }
+
+  searchBox.addEventListener("input", renderMainTable);
+
+  const STATUS_LIST = ["Planejado","Em andamento","Realizado","Não realizado"];
+
+  function createId(){
+    if(globalThis.crypto?.randomUUID) return crypto.randomUUID();
+    return `${Date.now()}_${Math.random().toString(16).slice(2)}`;
+  }
+  function escapeHtml(s){
+    return String(s || "")
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#39;");
+  }
+  function statusOptions(selected){
+    return STATUS_LIST.map(s => `<option value="${s}" ${s===selected?"selected":""}>${s}</option>`).join("");
+  }
+
+  function multiSelectOptions(selected = []){
+    return ANALISTAS.map(n => {
+      const sel = selected.includes(n) ? "selected" : "";
+      return `<option value="${n}" ${sel}>${n}</option>`;
+    }).join("");
+  }
+
+  function getMultiSelected(selectEl){
+    return [...selectEl.options].filter(o => o.selected).map(o => o.value);
+  }
+
+  function makeActRow(data, focusResp){
+    const tr = document.createElement("tr");
+    tr.className = "act-row";
+    tr.dataset.id = data.id || createId();
+
+    // default: se vier vazio e existe foco, já marca o foco
+    const selResps = (Array.isArray(data.responsaveis) && data.responsaveis.length > 0)
+      ? data.responsaveis
+      : (focusResp ? [focusResp] : []);
+
+    tr.innerHTML = `
+      <td>
+        <input data-atividade type="text" maxlength="120"
+          placeholder="Ex: Mapear atividades da semana / follow-up / painel..."
+          value="${escapeHtml(data.atividade || "")}">
+      </td>
+
+      <td>
+        <select data-resps class="multi-select" multiple>
+          ${multiSelectOptions(selResps)}
+        </select>
+        <div class="hint" style="margin-top:6px;">Dica: no iPhone segure e selecione mais de um.</div>
+      </td>
+
+      <td>
+        <select data-status>
+          ${statusOptions(data.status || "Planejado")}
+        </select>
+      </td>
+
+      <td>
+        <div class="mini-actions">
+          <button class="btn-mini btn-danger" type="button" data-del>Excluir</button>
+        </div>
+      </td>
+    `;
+
+    tr.querySelector("[data-del]").addEventListener("click", () => {
+      tr.remove();
+      if(mTbodyActs.querySelectorAll("tr.act-row").length === 0){
+        mTbodyActs.innerHTML = `<tr><td colspan="4" style="opacity:.8;">Sem atividades. Clique em “+ Adicionar”.</td></tr>`;
+      }
+    });
+
+    return tr;
+  }
+
+  let CURRENT_WEEKKEY = null;
+  let CURRENT_FOCUS_RESP = "";
+
+  function openModal(weekKey, focusResp){
+    CURRENT_WEEKKEY = weekKey;
+    CURRENT_FOCUS_RESP = focusResp || "";
+
+    mSub.textContent = "Lance/edite atividades (multi-responsável).";
+    mRespFocus.textContent = focusResp || "-";
+
+    modalBackdrop.style.display = "flex";
+    loadWeekActivitiesToModal(weekKey, focusResp);
+  }
+
+  function closeModal(){
+    modalBackdrop.style.display = "none";
+    CURRENT_WEEKKEY = null;
+    CURRENT_FOCUS_RESP = "";
+    mTbodyActs.innerHTML = `<tr><td colspan="4" style="opacity:.8;">Carregando…</td></tr>`;
+  }
+
+  mClose.addEventListener("click", closeModal);
+  modalBackdrop.addEventListener("click", (e) => { if(e.target === modalBackdrop) closeModal(); });
+
+  function loadWeekActivitiesToModal(weekKey, focusResp){
+    const docs = (RPS_CACHE || []).filter(d => d.weekKey === weekKey);
+    docs.sort((a,b) => String(a.atividade||"").localeCompare(String(b.atividade||""), "pt-BR"));
+
+    mTbodyActs.innerHTML = "";
+    if(docs.length === 0){
+      mTbodyActs.innerHTML = `<tr><td colspan="4" style="opacity:.8;">Sem atividades. Clique em “+ Adicionar”.</td></tr>`;
+      return;
+    }
+
+    for(const d of docs){
+      mTbodyActs.appendChild(makeActRow({
+        id: d.id,
+        atividade: d.atividade || "",
+        responsaveis: Array.isArray(d.responsaveis) ? d.responsaveis : [],
+        status: d.status || "Planejado"
+      }, focusResp));
+    }
+  }
+
+  btnAddRow.addEventListener("click", () => {
+    if(mTbodyActs.querySelector("td[colspan]")) mTbodyActs.innerHTML = "";
+    mTbodyActs.appendChild(makeActRow({
+      id: createId(),
+      atividade: "",
+      responsaveis: CURRENT_FOCUS_RESP ? [CURRENT_FOCUS_RESP] : [],
+      status: "Planejado"
+    }, CURRENT_FOCUS_RESP));
+  });
+
+  async function saveCurrentWeek(){
+    if(!CURRENT_WEEKKEY) return;
+
+    const w = WEEKS.find(x => x.weekKey === CURRENT_WEEKKEY);
+    const weekStartISO = w?.startISO || null;
+    const weekEndISO = w?.endISO || null;
+    const year = Number(String(CURRENT_WEEKKEY).slice(0,4)) || new Date().getFullYear();
+
+    const existing = (RPS_CACHE || []).filter(d => d.weekKey === CURRENT_WEEKKEY);
+    const existingIds = new Set(existing.map(d => d.id));
+    const keepIds = new Set();
+
+    const trs = [...mTbodyActs.querySelectorAll("tr.act-row")];
+
+    for(const tr of trs){
+      const id = tr.dataset.id || createId();
+      const atividade = (tr.querySelector("[data-atividade]")?.value || "").trim();
+      const status = (tr.querySelector("[data-status]")?.value || "Planejado").trim();
+      const sel = tr.querySelector("[data-resps]");
+      const responsaveis = sel ? getMultiSelected(sel) : [];
+
+      if(!atividade) continue;
+      if(!responsaveis || responsaveis.length === 0){
+        throw new Error("Existe atividade sem responsável selecionado. Selecione 1 ou mais na lista.");
+      }
+
+      keepIds.add(id);
+
+      await setDoc(doc(db, RPS_COLLECTION, id), {
+        weekKey: CURRENT_WEEKKEY,
+        weekStartISO,
+        weekEndISO,
+        weekYear: year,
+        atividade,
+        status,
+        responsaveis,
+        updatedAt: serverTimestamp(),
+        updatedBy: usuario
+      }, { merge:true });
+    }
+
+    for(const oldId of existingIds){
+      if(!keepIds.has(oldId)){
+        await deleteDoc(doc(db, RPS_COLLECTION, oldId));
+      }
+    }
+
+    await loadRpsByYear(year);
+    renderMainTable();
+  }
+
+  btnSalvarModal.addEventListener("click", async () => {
+    try{
+      setMsg("Salvando RPS…");
+      await saveCurrentWeek();
+      setMsg("Salvo ✅", "success");
+      closeModal(); // ✅ salva e fecha
+    }catch(e){
+      console.error(e);
+      setMsg(e?.message || "Erro ao salvar no Firebase. Verifique RULES.", "error");
+    }
+  });
+
+  function initYearPicker(){
+    const nowY = new Date().getFullYear();
+    const years = [nowY-1, nowY, nowY+1];
+    yearPicker.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join("");
+    yearPicker.value = String(nowY);
+
+    yearPicker.addEventListener("change", async () => {
+      await reloadYear();
+    });
+  }
+
+  async function reloadYear(){
+    const year = Number(yearPicker.value);
+    setMsg("Carregando…");
+    WEEKS = buildWeeksOfYear(year);
+    await loadRpsByYear(year);
+    setMsg("");
+    renderMainTable();
+  }
+
+  initYearPicker();
+  renderResponsaveisFilter();
+  await reloadYear();
+</script>
+
+</body>
+</html>
