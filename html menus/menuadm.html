@@ -15,7 +15,7 @@
     html,body{ height:100% }
     body{
       margin:0; background:var(--bg); color:var(--txt);
-      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+      font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
       display:grid; place-items:center; padding:16px;
     }
     .card{
@@ -34,7 +34,6 @@
 
     nav[aria-label]{ display:grid; gap:12px }
 
-    /* Link estilizado como botão */
     .btn{
       appearance:none; width:100%;
       display:inline-flex; align-items:center; justify-content:center;
@@ -78,12 +77,13 @@
 
     <!-- Menu principal (ADM) -->
     <nav aria-label="Menu administrativo">
-      <a class="btn" data-link="apuracao.html">Apuração</a>
-      <a class="btn" data-link="agenda-dia-adm.html">Agenda do Dia</a>
-      <a class="btn" data-link="agenda-mensal-adm.html">Agenda Mensal</a>
-      <a class="btn" data-link="treinos-resumo-adm.html">Resumo de Treinamentos</a>
-      <a class="btn" data-link="rps-adm.html">RPS</a>
-      <a class="btn" data-link="cadastro-treinamentos.html">Cadastro de Treinamentos</a>
+      <!-- IMPORTANTE: como este arquivo está em /html menus/menu.html, usamos caminhos relativos ../html%20adm/... -->
+      <a class="btn" href="../html%20adm/apuracao.html">Apuração</a>
+      <a class="btn" href="../html%20adm/agenda-dia-adm.html">Agenda do Dia</a>
+      <a class="btn" href="../html%20adm/agenda-mensal-adm.html">Agenda Mensal</a>
+      <a class="btn" href="../html%20adm/treinos-resumo-adm.html">Resumo de Treinamentos</a>
+      <a class="btn" href="../html%20adm/rps-adm.html">RPS</a>
+      <a class="btn" href="../html%20adm/cadastro-treinamento.html">Cadastro de Treinamentos</a>
     </nav>
 
     <hr>
@@ -92,13 +92,16 @@
   </main>
 
   <script>
-    // Se as páginas ADM estiverem em uma subpasta (ex.: "adm/"), altere aqui:
-    const basePathAdm = ""; // "" = raiz | "adm/" = subpasta
+    // Se você RENOMEAR a pasta para "html-adm", troque abaixo para: const basePathAdm = "../html-adm/";
+    // Mantive somente para o fluxo de logout e fallback de login.
+    const basePathAdm = "../html%20adm/";
 
     // Proteção de sessão
     const usuario = localStorage.getItem("usuarioLogado") || "";
     if (!usuario) {
-      window.location.replace(basePathAdm + "index.html");
+      // OBS: index.html provavelmente está na raiz (ex.: /jornada-analista/index.html).
+      // Se o seu index.html estiver em outro lugar, ajuste o caminho relativo aqui.
+      window.location.replace("../index.html");
     }
 
     // Saudação
@@ -108,12 +111,6 @@
       userInfoEl.title = `Usuário logado: ${usuario}`;
     }
 
-    // Aplica basePathAdm em todos os links do menu
-    document.querySelectorAll('nav a[data-link]').forEach(a => {
-      const rel = a.getAttribute('data-link');
-      a.setAttribute('href', basePathAdm + rel);
-    });
-
     // Logout
     document.getElementById("btnSair").addEventListener("click", () => {
       try{
@@ -122,7 +119,8 @@
       }catch(e){
         console.warn("Não foi possível limpar o armazenamento:", e);
       }finally{
-        window.location.href = basePathAdm + "index.html";
+        // Redireciona para a home de login (um nível acima de /html menus/)
+        window.location.href = "../index.html";
       }
     });
   </script>
