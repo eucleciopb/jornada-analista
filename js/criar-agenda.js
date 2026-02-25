@@ -413,4 +413,36 @@ if (monthPicker) {
     showErr(err?.message || String(err));
     setStatus("erro Firebase");
   }
+  const obsModal = document.getElementById("obsModal");
+const obsTextarea = document.getElementById("obsTextarea");
+const obsDate = document.getElementById("obsDate");
+
+let currentObsInput = null;
+
+document.addEventListener("click", function(e){
+  if(e.target.matches("textarea[data-field='obs']")){
+    currentObsInput = e.target;
+
+    obsTextarea.value = currentObsInput.value;
+    obsDate.textContent = "Data: " + currentObsInput.closest("tr").dataset.date;
+
+    obsModal.classList.add("active");
+    obsTextarea.focus();
+  }
+});
+
+document.getElementById("obsClose").onclick = closeModal;
+document.getElementById("obsCancel").onclick = closeModal;
+
+document.getElementById("obsSave").onclick = function(){
+  if(currentObsInput){
+    currentObsInput.value = obsTextarea.value;
+  }
+  closeModal();
+};
+
+function closeModal(){
+  obsModal.classList.remove("active");
+  currentObsInput = null;
+}
 })();
