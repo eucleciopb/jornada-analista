@@ -32,7 +32,7 @@
     .btn-primary:hover{filter:brightness(1.06)}
     .msg{margin:10px 0 0;font-size:13px;font-weight:800}
     .table-wrap{overflow:auto;margin-top:14px;border-radius:14px;border:1px solid var(--border)}
-    table{width:100%;border-collapse:collapse;min-width:980px;background:rgba(255,255,255,.03)}
+    table{width:100%;border-collapse:collapse;min-width:920px;background:rgba(255,255,255,.03)}
     thead th{position:sticky;top:0;background:rgba(0,0,0,.35);backdrop-filter:blur(8px);text-align:left;font-size:12px;color:var(--muted);padding:12px;border-bottom:1px solid var(--border)}
     tbody td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.06);vertical-align:middle}
     tbody tr:hover{background:rgba(255,255,255,.04)}
@@ -49,10 +49,11 @@
     }
     select.field{cursor:pointer}
 
-    /* 🔥 AQUI ESTÁ O ÚNICO AJUSTE: campo Observações maior */
+    /* Observações mais confortável */
     textarea.field {
-      min-height: 70px;
+      min-height: 90px;
       resize: vertical;
+      line-height: 1.45;
     }
 
     @media (max-width:720px){
@@ -66,7 +67,8 @@
   <header class="topbar">
     <div>
       <h2>Criar Agenda</h2>
-      <div class="hint" id="userInfo"></div>
+      <!-- ✅ Aqui mostra o analista logado -->
+      <div class="hint" id="userInfo">Usuário: —</div>
       <div class="err" id="errBox"></div>
     </div>
     <div style="display:flex;gap:10px;flex-wrap:wrap">
@@ -106,7 +108,7 @@
             <tr>
               <th style="width:140px;">Data</th>
               <th style="width:110px;">Dia</th>
-              <th style="width:220px;">Analista</th>
+              <!-- ✅ Coluna Analista removida -->
               <th style="width:280px;">CD</th>
               <th style="width:260px;">Atividade</th>
               <th>Observações</th>
@@ -117,6 +119,23 @@
       </div>
     </main>
   </div>
+
+  <!-- ✅ Fallback leve: mostra usuário logado mesmo se o JS não setar -->
+  <script>
+    (function(){
+      const el = document.getElementById("userInfo");
+      const raw =
+        localStorage.getItem("usuarioLogado") ||
+        localStorage.getItem("user") ||
+        localStorage.getItem("session");
+
+      let s = {};
+      try { if (raw) s = JSON.parse(raw); } catch(e) {}
+
+      const nome = s.nome || s.name || localStorage.getItem("nome") || "—";
+      el.textContent = `Usuário: ${nome}`;
+    })();
+  </script>
 
   <script type="module" src="../js/criar-agenda.js"></script>
 </body>
