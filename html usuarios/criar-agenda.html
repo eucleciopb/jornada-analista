@@ -5,104 +5,119 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Criar Agenda</title>
 
-  <!-- CSS padrão do projeto -->
-  <link rel="stylesheet" href="../css/styles.css" />
+  <style>
+    :root{
+      --bg:#0b0f14;
+      --card:rgba(255,255,255,.06);
+      --border:rgba(255,255,255,.10);
+      --text:#e5e7eb;
+      --muted:#9ca3af;
+      --danger:#ef4444;
+      --ok:#22c55e;
+      --field:rgba(0,0,0,.30);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto;background:var(--bg);color:var(--text)}
+    .topbar{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:18px 22px}
+    .topbar h2{margin:0;font-size:18px}
+    .hint{color:var(--muted);font-size:12px;margin-top:4px}
+    .err{color:var(--danger);font-weight:800;font-size:12px;margin-top:6px;display:none}
+    .wrap{max-width:1200px;margin:0 auto;padding:0 18px 30px}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:18px}
+    .row{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;justify-content:space-between}
+    label{font-size:12px;color:var(--muted);display:block;margin-bottom:6px}
+    input[type="month"]{padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--field);color:var(--text)}
+    .btn{border:1px solid var(--border);border-radius:12px;padding:10px 14px;font-weight:900;cursor:pointer;background:transparent;color:var(--text)}
+    .btn-primary{background:var(--danger);border-color:transparent}
+    .btn-primary:hover{filter:brightness(1.06)}
+    .msg{margin:10px 0 0;font-size:13px;font-weight:800}
+    .table-wrap{overflow:auto;margin-top:14px;border-radius:14px;border:1px solid var(--border)}
+    table{width:100%;border-collapse:collapse;min-width:980px;background:rgba(255,255,255,.03)}
+    thead th{position:sticky;top:0;background:rgba(0,0,0,.35);backdrop-filter:blur(8px);text-align:left;font-size:12px;color:var(--muted);padding:12px;border-bottom:1px solid var(--border)}
+    tbody td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.06);vertical-align:middle}
+    tbody tr:hover{background:rgba(255,255,255,.04)}
+    .pill{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;border:1px solid var(--border);font-size:12px;color:var(--muted)}
+    .blocked{opacity:.6}
+    .field{
+      width:100%;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid var(--border);
+      background:var(--field);
+      color:var(--text);
+      outline:none;
+    }
+    select.field{cursor:pointer}
+
+    /* 🔥 AQUI ESTÁ O ÚNICO AJUSTE: campo Observações maior */
+    textarea.field {
+      min-height: 70px;
+      resize: vertical;
+    }
+
+    @media (max-width:720px){
+      .topbar{flex-direction:column;align-items:flex-start}
+      table{min-width:860px}
+    }
+  </style>
 </head>
 
-<body class="bg" id="pageCriarAgenda">
-
-  <!-- TOPBAR -->
+<body>
   <header class="topbar">
     <div>
       <h2>Criar Agenda</h2>
-      <div class="hint" id="userInfo">Usuário:</div>
-      <div class="err" id="errBox" style="display:none;color:#ff3b3b;font-weight:800;font-size:12px;margin-top:6px"></div>
+      <div class="hint" id="userInfo"></div>
+      <div class="err" id="errBox"></div>
     </div>
-
-    <div class="top-actions" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-      <button class="btn-secondary" id="btnMenu" type="button">Voltar ao Menu</button>
-      <button class="btn-secondary" id="btnLogout" type="button">Sair</button>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn" id="btnMenu" type="button">Voltar ao Menu</button>
+      <button class="btn" id="btnLogout" type="button">Sair</button>
     </div>
   </header>
 
-  <!-- CONTEÚDO -->
-  <main class="card wide">
-    <div class="row-between">
-      <div>
-        <h3 style="margin:0 0 6px">Agenda do Mês</h3>
-        <div class="hint">Cada dia aparece em uma linha. Domingos ficam bloqueados.</div>
-        <div class="hint">Tudo que você preencher será salvo no Firestore.</div>
-      </div>
-
-      <div class="page-actions">
-        <button id="btnSalvar" type="button">Salvar alterações</button>
-      </div>
-    </div>
-
-    <hr class="sep">
-
-    <div class="row-between" style="align-items:flex-end">
-      <div>
-        <label for="monthPicker">Mês</label>
-        <input id="monthPicker" type="month" />
-      </div>
-
-      <div class="pill" id="statusPill" style="display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.10);font-size:12px;color:rgba(229,231,235,.70)">
-        Status: aguardando
-      </div>
-    </div>
-
-    <div class="msg" id="msg"></div>
-
-    <!-- datalist CD (JS pode popular) -->
-    <datalist id="cdList"></datalist>
-
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th style="width:140px;">Data</th>
-            <th style="width:110px;">Dia</th>
-            <th style="width:220px;">Analista</th>
-            <th style="width:280px;">CD</th>
-            <th style="width:260px;">Atividade</th>
-            <th>Observações</th>
-          </tr>
-        </thead>
-
-        <tbody id="tbodyAgenda"></tbody>
-      </table>
-    </div>
-  </main>
-
-  <!-- =========================
-       MODAL OBSERVAÇÕES (JANELA GRANDE)
-  ========================== -->
-  <div class="modal" id="obsModal" aria-hidden="true">
-    <div class="modal-backdrop" data-close="1"></div>
-
-    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="obsTitle">
-      <div class="modal-head">
+  <div class="wrap">
+    <main class="card">
+      <div class="row">
         <div>
-          <h3 id="obsTitle">Observações</h3>
-          <div class="modal-sub" id="obsSub">Edite com calma e salve.</div>
+          <h3 style="margin:0 0 6px">Agenda do Mês</h3>
+          <div class="hint">Cada dia aparece em uma linha. Domingos ficam bloqueados.</div>
+          <div class="hint">Tudo que você preencher será salvo no Firestore.</div>
         </div>
-        <button class="icon-btn" id="obsClose" type="button" title="Fechar">✕</button>
+        <button class="btn btn-primary" id="btnSalvar" type="button">Salvar alterações</button>
       </div>
 
-      <div class="modal-body">
-        <label class="modal-label" for="obsBig">Texto</label>
-        <textarea id="obsBig" class="modal-textarea" placeholder="Digite as observações aqui..."></textarea>
+      <hr style="border:none;height:1px;background:rgba(255,255,255,.10);margin:16px 0">
+
+      <div class="row">
+        <div>
+          <label for="monthPicker">Mês</label>
+          <input id="monthPicker" type="month" />
+        </div>
+        <div class="pill" id="statusPill">Status: aguardando</div>
       </div>
 
-      <div class="modal-foot">
-        <button class="btn-ghost" id="obsCancel" type="button">Cancelar</button>
-        <button class="btn-primary" id="obsSave" type="button">Salvar</button>
+      <div class="msg" id="msg"></div>
+
+      <datalist id="cdList"></datalist>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:140px;">Data</th>
+              <th style="width:110px;">Dia</th>
+              <th style="width:220px;">Analista</th>
+              <th style="width:280px;">CD</th>
+              <th style="width:260px;">Atividade</th>
+              <th>Observações</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyAgenda"></tbody>
+        </table>
       </div>
-    </div>
+    </main>
   </div>
 
-  <!-- JS da tela -->
   <script type="module" src="../js/criar-agenda.js"></script>
 </body>
 </html>
