@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>RPS | Admin</title>
+  <title>RPS | Admin (por Responsável)</title>
   <link rel="stylesheet" href="../css/styles.css" />
 
   <style>
@@ -16,248 +16,298 @@
       --danger:#ef4444;
       --ok:#22c55e;
       --warn:#facc15;
+      --field:rgba(0,0,0,.30);
+      --accent:#d91b2e;
     }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto}
 
-    .table-wrap{ overflow:auto; border:1px solid var(--border); border-radius:16px; }
-    table{ width:100%; border-collapse:collapse; min-width: 860px; background:rgba(255,255,255,.03); }
-    thead th{
-      position:sticky; top:0;
-      background:rgba(0,0,0,.35); backdrop-filter: blur(8px);
-      text-align:left; font-size:12px; color:var(--muted);
-      padding:12px; border-bottom:1px solid var(--border);
-      white-space:nowrap;
+    .topbar{
+      position:sticky; top:0; z-index:999;
+      backdrop-filter: blur(10px);
+      background: rgba(11,15,20,.82);
+      border-bottom:1px solid rgba(255,255,255,.08);
+      padding:14px 0;
     }
-    tbody td{ padding:12px; border-bottom:1px solid rgba(255,255,255,.06); vertical-align:middle; }
-    tbody tr:hover{ background:rgba(255,255,255,.04); cursor:pointer; }
+    .topbar-inner{
+      max-width:1200px;margin:0 auto;padding:0 18px;
+      display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;
+    }
+    .topbar h2{margin:0;font-size:18px}
+    .hint{color:var(--muted);font-size:12px;margin-top:4px}
 
-    .pill{
-      display:inline-flex; align-items:center;
-      padding:6px 10px; border-radius:999px;
+    .btn{
       border:1px solid var(--border);
-      font-size:12px; font-weight:900;
-      white-space:nowrap;
+      border-radius:12px;
+      padding:10px 14px;
+      font-weight:900;
+      cursor:pointer;
+      background:transparent;
+      color:var(--text);
     }
-    .pill.ok{ color:var(--ok); border-color:rgba(34,197,94,.35); background:rgba(34,197,94,.10); }
-    .pill.bad{ color:var(--danger); border-color:rgba(239,68,68,.35); background:rgba(239,68,68,.10); }
-    .pill.warn{ color:var(--warn); border-color:rgba(250,204,21,.35); background:rgba(250,204,21,.10); }
+    .btn:hover{filter:brightness(1.06)}
+    .btn-primary{
+      background: var(--accent);
+      border-color: transparent;
+    }
+    .btn-primary:hover{filter:brightness(1.08)}
+    .btn-ghost{
+      background: rgba(255,255,255,.04);
+    }
 
-    .filters{
-      display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end;
+    main{max-width:1200px;margin:0 auto;padding:18px}
+    .card{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:18px;
+      padding:16px;
     }
+
+    .row-between{
+      display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;
+    }
+
+    label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
     .field{
+      width:100%;
       padding:10px 12px;
-      border-radius:14px;
+      border-radius:12px;
       border:1px solid var(--border);
-      background:rgba(255,255,255,.04);
+      background:var(--field);
       color:var(--text);
       outline:none;
-      width:100%;
     }
-    .field:focus{ border-color:rgba(255,59,59,.55); box-shadow:0 0 0 4px rgba(217,27,46,.18); }
+    .field:focus{
+      border-color: rgba(255,59,59,.55);
+      box-shadow: 0 0 0 4px rgba(217,27,46,.18);
+    }
+
+    .filters{
+      display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;
+      margin-top:14px;
+    }
+    .filters > div{min-width:220px;flex:1}
+
+    .kpis{
+      display:flex;gap:12px;flex-wrap:wrap;margin-top:14px;
+    }
+    .kpi{
+      flex:1;min-width:220px;
+      background: rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:16px;
+      padding:12px 14px;
+    }
+    .kpi .k-label{font-size:12px;color:var(--muted)}
+    .kpi .k-val{margin-top:6px;font-size:18px;font-weight:900}
+
+    .table-wrap{
+      overflow:auto;margin-top:14px;border-radius:14px;border:1px solid var(--border);
+    }
+    table{
+      width:100%;
+      border-collapse:collapse;
+      min-width:980px;
+      background: rgba(255,255,255,.02);
+    }
+    thead th{
+      position:sticky;top:0;
+      background: rgba(0,0,0,.35);
+      backdrop-filter: blur(8px);
+      text-align:left;
+      font-size:12px;
+      color:var(--muted);
+      padding:12px;
+      border-bottom:1px solid var(--border);
+      white-space:nowrap;
+    }
+    tbody td{
+      padding:12px;
+      border-bottom:1px solid rgba(255,255,255,.06);
+      vertical-align:middle;
+    }
+    tbody tr:hover{background:rgba(255,255,255,.04)}
+    tbody tr{cursor:pointer}
+
+    .pill{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:6px 10px;border-radius:999px;
+      border:1px solid var(--border);
+      font-size:12px;font-weight:900;white-space:nowrap;
+      background: rgba(255,255,255,.03);
+      color: var(--text);
+    }
+    .pill-ok{border-color: rgba(34,197,94,.35); background: rgba(34,197,94,.12); color: var(--ok);}
+    .pill-warn{border-color: rgba(250,204,21,.35); background: rgba(250,204,21,.12); color: var(--warn);}
+
+    .msg{margin-top:10px;font-size:13px;font-weight:900;color:#d1d5db}
 
     /* ===== Modal ===== */
     .modal-backdrop{
-      position:fixed; inset:0;
-      display:none;
-      align-items:center;
-      justify-content:center;
-      padding: 18px;
-      background: rgba(0,0,0,.60);
-      z-index: 9999;
+      position:fixed;inset:0;z-index:9999;
+      display:none;align-items:center;justify-content:center;
+      padding:18px;background:rgba(0,0,0,.60);
     }
     .modal{
-      width: min(1150px, 100%);
-      border-radius: 18px;
-      border: 1px solid rgba(255,255,255,.12);
+      width:min(1020px,100%);
+      border-radius:18px;
+      border:1px solid rgba(255,255,255,.12);
       background: rgba(17,24,39,.96);
       box-shadow: 0 24px 60px rgba(0,0,0,.55);
       overflow:hidden;
     }
     .modal-header{
-      display:flex;
-      align-items:flex-start;
-      justify-content:space-between;
-      gap: 12px;
-      padding: 16px;
-      border-bottom: 1px solid rgba(255,255,255,.08);
+      display:flex;justify-content:space-between;align-items:flex-start;gap:12px;
+      padding:16px;border-bottom:1px solid rgba(255,255,255,.08);
     }
-    .modal-header h3{ margin:0; font-size: 16px; }
-    .modal-header .sub{ margin-top:6px; font-size: 12px; opacity:.85; line-height: 1.35; }
+    .modal-header h3{margin:0;font-size:16px}
+    .modal-header .sub{margin-top:6px;font-size:12px;opacity:.85;line-height:1.35}
     .modal-close{
-      border: 1px solid rgba(255,255,255,.14);
+      border:1px solid rgba(255,255,255,.14);
       background: rgba(255,255,255,.04);
       color: rgba(255,255,255,.9);
-      border-radius: 12px;
-      padding: 10px 12px;
-      cursor:pointer;
-      font-weight: 900;
-    }
-    .modal-body{ padding: 14px 16px 16px 16px; }
-    .modal-actions{
-      display:flex; gap: 10px; justify-content:flex-end;
-      padding: 12px 16px 16px 16px;
-      border-top: 1px solid rgba(255,255,255,.08);
-      flex-wrap: wrap;
+      border-radius:12px;padding:10px 12px;cursor:pointer;font-weight:900;
     }
 
-    .box{
-      border: 1px solid rgba(255,255,255,.10);
-      background: rgba(255,255,255,.03);
-      border-radius: 16px;
-      padding: 12px;
-      margin-bottom: 12px;
+    .modal-body{padding:14px 16px 10px 16px}
+    .modal-tools{
+      display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;
+      margin-bottom:12px;
     }
-    .box label{ display:block; font-size:12px; opacity:.75; margin-bottom:6px; }
+    .modal-tools > div{min-width:220px;flex:1}
+    .mini-hint{font-size:12px;color:var(--muted);margin-top:6px}
 
-    .grid2{ display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    @media(max-width: 900px){ .grid2{ grid-template-columns: 1fr; } table{ min-width: 780px; } }
-
-    /* Lista de atividades no modal */
-    .act-table-wrap{ overflow:auto; border:1px solid rgba(255,255,255,.10); border-radius:16px; }
-    .act-table{ width:100%; border-collapse:collapse; min-width: 1050px; }
-    .act-table th, .act-table td{ padding:12px; border-bottom:1px solid rgba(255,255,255,.06); vertical-align:middle; }
-    .act-table th{
-      font-size:12px; color:rgba(255,255,255,.70);
-      text-transform:uppercase; letter-spacing:.06em;
-      background:rgba(0,0,0,.25); position:sticky; top:0;
-      white-space:nowrap;
+    .act-table-wrap{
+      overflow:auto;border-radius:14px;border:1px solid rgba(255,255,255,.10);
     }
-    .act-row input, .act-row select{
+    .act-table{min-width:1040px}
+    .act-table th,.act-table td{padding:10px;border-bottom:1px solid rgba(255,255,255,.06)}
+    .act-table thead th{background:rgba(0,0,0,.30);color:var(--muted);font-size:12px}
+
+    .act-field{
       width:100%;
       padding:10px 12px;
       border-radius:14px;
       border:1px solid rgba(255,255,255,.10);
-      background:rgba(255,255,255,.04);
-      color:rgba(255,255,255,.95);
+      background: rgba(255,255,255,.04);
+      color: rgba(255,255,255,.95);
       outline:none;
     }
-    .act-row input:focus, .act-row select:focus{
+    .act-field:focus{
       border-color: rgba(255,59,59,.55);
       box-shadow: 0 0 0 4px rgba(217,27,46,.18);
     }
 
-    .btn-mini{
-      padding:10px 12px;
-      border-radius:14px;
-      border:1px solid rgba(255,255,255,.12);
-      background:rgba(255,255,255,.04);
-      color:rgba(255,255,255,.95);
-      font-weight:900;
-      cursor:pointer;
-      white-space:nowrap;
+    select[multiple].act-field{
+      min-height: 46px;
+      padding-top: 8px;
+      padding-bottom: 8px;
     }
-    .btn-mini.primary{ border-color:transparent; background: rgba(217,27,46,.95); }
-    .btn-mini:hover{ filter:brightness(1.08); }
-    .mini-actions{ display:flex; gap:8px; flex-wrap:wrap; }
-    .btn-danger{ border-color:rgba(239,68,68,.35) !important; }
 
-    /* ===== Dropdown multi-checklist (modo suspenso) ===== */
-    .dd{
-      position:relative;
-      width:100%;
-    }
-    .dd-btn{
-      width:100%;
-      text-align:left;
-      padding:10px 12px;
-      border-radius:14px;
+    .btn-mini{
+      padding:10px 12px;border-radius:14px;
       border:1px solid rgba(255,255,255,.10);
-      background:rgba(255,255,255,.04);
-      color:rgba(255,255,255,.95);
-      font-weight:900;
-      cursor:pointer;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
+      background: rgba(255,255,255,.04);
+      color: rgba(255,255,255,.95);
+      font-weight:900;cursor:pointer;white-space:nowrap;
     }
-    .dd-btn span{ font-weight:900; }
-    .dd-panel{
-      position:absolute;
-      left:0; right:0;
-      top: calc(100% + 8px);
-      border-radius:14px;
-      border:1px solid rgba(255,255,255,.12);
-      background: rgba(17,24,39,.98);
-      box-shadow: 0 18px 40px rgba(0,0,0,.45);
-      padding:10px;
-      z-index: 10;
-      display:none;
-      max-height: 220px;
-      overflow:auto;
+    .btn-mini.danger{
+      border-color: rgba(239,68,68,.35);
+      background: rgba(239,68,68,.12);
+      color: #fecaca;
     }
-    .dd.open .dd-panel{ display:block; }
-    .dd-item{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      padding:10px;
-      border-radius:12px;
-      cursor:pointer;
-      border:1px solid transparent;
+    .modal-actions{
+      display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;
+      padding:12px 16px 16px 16px;border-top:1px solid rgba(255,255,255,.08);
     }
-    .dd-item:hover{ background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.08); }
-    .dd-item input{ width:18px; height:18px; }
-    .dd-hint{ margin-top:6px; font-size:12px; opacity:.75; }
   </style>
 </head>
 
-<body class="bg">
+<body>
 
 <header class="topbar">
-  <div>
-    <h2>RPS — Admin</h2>
-    <div id="userInfo" class="hint" style="color:#d1d5db;margin-top:4px;"></div>
-  </div>
-
-  <div class="top-actions">
-    <button id="btnMenu" class="btn-secondary" type="button">Voltar ao Menu</button>
-    <button id="btnLogout" class="btn-secondary" type="button">Sair</button>
+  <div class="topbar-inner">
+    <div>
+      <h2>RPS — Admin (por Responsável)</h2>
+      <div id="userInfo" class="hint"></div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-ghost" id="btnMenu" type="button">Voltar ao Menu</button>
+      <button class="btn btn-ghost" id="btnLogout" type="button">Sair</button>
+    </div>
   </div>
 </header>
 
-<main class="card wide">
-  <section class="row-between" style="align-items:flex-end;">
-    <div>
-      <h3>Resumo por responsável</h3>
-      <p class="hint">Clique no responsável para lançar/editar atividades (multi-responsável).</p>
+<main>
+  <section class="card">
+    <div class="row-between">
+      <div>
+        <h3 style="margin:0 0 6px">Visão por Responsável</h3>
+        <div class="hint">Selecione o ano e a semana. As linhas são os responsáveis. Clique no responsável para lançar/editar atividades.</div>
+      </div>
+      <button class="btn btn-primary" id="btnReload" type="button">Atualizar</button>
     </div>
 
     <div class="filters">
-      <div style="min-width:180px;">
+      <div>
         <label for="yearPicker">Ano</label>
         <select id="yearPicker" class="field"></select>
       </div>
 
-      <div style="min-width:260px;">
-        <label for="searchBox">Buscar</label>
-        <input id="searchBox" class="field" type="text" placeholder="Responsável..." />
+      <div>
+        <label for="weekPicker">Semana</label>
+        <select id="weekPicker" class="field"></select>
+      </div>
+
+      <div>
+        <label for="searchBox">Buscar responsável</label>
+        <input id="searchBox" class="field" type="text" placeholder="Bruna, Elaine..." />
       </div>
     </div>
+
+    <div class="kpis">
+      <div class="kpi">
+        <div class="k-label">Mapeadas (semana selecionada)</div>
+        <div class="k-val" id="kpiTotal">0</div>
+      </div>
+      <div class="kpi">
+        <div class="k-label">Concluídas (Realizado)</div>
+        <div class="k-val" id="kpiDone">0</div>
+      </div>
+      <div class="kpi">
+        <div class="k-label">Pendentes</div>
+        <div class="k-val" id="kpiPending">0</div>
+      </div>
+      <div class="kpi">
+        <div class="k-label">Não realizadas</div>
+        <div class="k-val" id="kpiNotDone">0</div>
+      </div>
+    </div>
+
+    <div class="msg" id="msg"></div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:260px;">Responsável</th>
+            <th style="width:170px; text-align:center;">Mapeadas</th>
+            <th style="width:170px; text-align:center;">Concluídas</th>
+            <th style="width:170px; text-align:center;">Pendentes</th>
+            <th style="width:180px; text-align:center;">Não realizadas</th>
+            <th style="width:160px;">Status</th>
+          </tr>
+        </thead>
+        <tbody id="tbodyUsers">
+          <tr><td colspan="6" style="opacity:.8;">Carregando…</td></tr>
+        </tbody>
+      </table>
+    </div>
+
   </section>
-
-  <p id="msg" class="msg"></p>
-  <hr class="sep" />
-
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th style="width:220px;">Responsável</th>
-          <th style="width:160px;">Mapeadas</th>
-          <th style="width:160px;">Concluídas</th>
-          <th style="width:160px;">Pendentes</th>
-          <th style="width:170px;">Status</th>
-        </tr>
-      </thead>
-      <tbody id="tbodyRows">
-        <tr><td colspan="5" style="opacity:.8;">Carregando…</td></tr>
-      </tbody>
-    </table>
-  </div>
 </main>
 
-<!-- ===== MODAL ===== -->
+<!-- ===== MODAL / LANÇAMENTOS ===== -->
 <div id="modalBackdrop" class="modal-backdrop" role="dialog" aria-modal="true">
   <div class="modal">
     <div class="modal-header">
@@ -269,57 +319,52 @@
     </div>
 
     <div class="modal-body">
-      <div class="grid2">
-        <div class="box">
-          <label>Analista (linha clicada)</label>
-          <div id="mRespFocus" style="font-weight:900;">-</div>
-          <div class="hint" style="opacity:.9;">Aqui aparece <b>somente</b> as atividades desse analista (mesmo se forem multi-responsável).</div>
+      <div class="modal-tools">
+        <div>
+          <label for="mStatusFilter">Filtro de Status</label>
+          <select id="mStatusFilter" class="field">
+            <option value="pendentes" selected>Pendentes (padrão)</option>
+            <option value="todos">Todos</option>
+            <option value="realizado">Realizado</option>
+            <option value="nao_realizado">Não realizado</option>
+            <option value="planejado">Planejado</option>
+            <option value="em_andamento">Em andamento</option>
+            <option value="realizando">Realizando</option>
+          </select>
+          <div class="mini-hint">A janela sempre abre filtrada em <b>Pendentes</b>.</div>
         </div>
 
-        <div class="box">
-          <label>Filtro do modal</label>
-          <select id="mFilterStatus" class="field">
-            <option value="pendentes">Pendentes</option>
-            <option value="concluidas">Concluídas</option>
-            <option value="todas">Todas</option>
-          </select>
-          <div class="hint" style="opacity:.9;">Sempre abre em <b>Pendentes</b>.</div>
+        <div>
+          <label>&nbsp;</label>
+          <button id="btnAddRow" class="btn btn-primary" type="button" style="width:100%">+ Nova atividade</button>
         </div>
       </div>
 
-      <div class="box">
-        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between;">
-          <div>
-            <label style="margin:0;">Atividades</label>
-            <div class="hint" id="mCountHint" style="opacity:.9; margin-top:6px;">—</div>
-          </div>
-          <button id="btnAddRow" class="btn-mini primary" type="button">+ Adicionar</button>
-        </div>
+      <div class="act-table-wrap">
+        <table class="act-table" style="width:100%;border-collapse:collapse;">
+          <thead>
+            <tr>
+              <th style="width:420px;">Atividade</th>
+              <th style="width:320px;">Responsáveis (pode marcar +1)</th>
+              <th style="width:220px;">Status</th>
+              <th style="width:120px;">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyActs">
+            <tr><td colspan="4" style="opacity:.8;">Carregando…</td></tr>
+          </tbody>
+        </table>
+      </div>
 
-        <div class="act-table-wrap" style="margin-top:12px;">
-          <table class="act-table">
-            <thead>
-              <tr>
-                <th style="width:360px;">Atividade</th>
-                <th style="width:420px;">Responsáveis</th>
-                <th style="width:220px;">Status</th>
-                <th style="width:140px;">Ações</th>
-              </tr>
-            </thead>
-            <tbody id="mTbodyActs">
-              <tr><td colspan="4" style="opacity:.8;">Carregando…</td></tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="dd-hint" style="opacity:.9; margin-top:10px;">
-          Dica: no “Responsáveis” você marca mais de um e salva. Vai contar pros dois.
-        </div>
+      <div class="mini-hint" style="margin-top:10px;">
+        • Para excluir: clique em Excluir (vai marcar) e depois clique em Salvar.<br/>
+        • Linhas vazias são ignoradas.
       </div>
     </div>
 
     <div class="modal-actions">
-      <button id="btnSalvarModal" class="btn-mini primary" type="button">Salvar</button>
+      <button class="btn-mini" id="btnCancelModal" type="button">Cancelar</button>
+      <button class="btn-mini" id="btnSaveModal" type="button" style="background:rgba(217,27,46,.95);border-color:transparent;">Salvar</button>
     </div>
   </div>
 </div>
@@ -330,12 +375,16 @@
     getFirestore,
     collection,
     getDocs,
+    query,
+    where,
     doc,
-    setDoc,
-    deleteDoc,
+    writeBatch,
     serverTimestamp
   } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
+  /* =========================
+     FIREBASE CONFIG
+  ========================= */
   const firebaseConfig = {
     apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
     authDomain: "jornada-portal.firebaseapp.com",
@@ -348,13 +397,15 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  const RPS_COLLECTION = "rps_atividades";
-
-  const PATH_INDEX = "../index.html";
+  /* =========================
+     PATHS (arquivo em /html adm/)
+  ========================= */
+  const PATH_INDEX  = "../index.html";
   const PATH_MENUADM = "menuadm.html";
 
-  const ANALISTAS = ["Bruna","Elaine","Euclecio","Pedro"];
-
+  /* =========================
+     SESSÃO
+  ========================= */
   function safeParse(raw){ try { return JSON.parse(raw); } catch { return null; } }
   function getCurrentUserName(){
     const raw = localStorage.getItem("user_session");
@@ -365,10 +416,10 @@
     return (localStorage.getItem("usuarioLogado") || "").trim();
   }
 
-  const usuario = getCurrentUserName();
-  if (!usuario) window.location.href = PATH_INDEX;
+  const admin = getCurrentUserName();
+  if(!admin) window.location.href = PATH_INDEX;
+  document.getElementById("userInfo").textContent = `Admin: ${admin}`;
 
-  document.getElementById("userInfo").textContent = `Admin: ${usuario}`;
   document.getElementById("btnMenu").onclick = () => window.location.href = PATH_MENUADM;
   document.getElementById("btnLogout").onclick = () => {
     localStorage.removeItem("user_session");
@@ -377,526 +428,530 @@
     window.location.href = PATH_INDEX;
   };
 
-  const yearPicker = document.getElementById("yearPicker");
-  const searchBox = document.getElementById("searchBox");
-  const tbodyRows = document.getElementById("tbodyRows");
-  const msg = document.getElementById("msg");
+  /* =========================
+     COLEÇÃO
+  ========================= */
+  const RPS_COLLECTION = "rps_atividades";
 
+  /* =========================
+     RESPONSÁVEIS
+  ========================= */
+  const USERS = [
+    "Bruna","Elaine","Euclecio","Pedro",
+    "Emerson","Joice","Michel","Muller","Ricardo","Robert","Rodrigo","Rosilene","Tenório"
+  ].sort((a,b)=>a.localeCompare(b,"pt-BR"));
+
+  /* =========================
+     STATUS
+  ========================= */
+  const STATUS_OPTS = [
+    { key:"planejado",     label:"Planejado" },
+    { key:"em_andamento",  label:"Em andamento" },
+    { key:"realizando",    label:"Realizando" },
+    { key:"realizado",     label:"Realizado" },
+    { key:"nao_realizado", label:"Não realizado" }
+  ];
+
+  const PENDING_SET = new Set(["planejado","em_andamento","realizando"]);
+
+  /* =========================
+     UI
+  ========================= */
+  const yearPicker = document.getElementById("yearPicker");
+  const weekPicker = document.getElementById("weekPicker");
+  const searchBox = document.getElementById("searchBox");
+  const btnReload = document.getElementById("btnReload");
+  const msg = document.getElementById("msg");
+  const tbodyUsers = document.getElementById("tbodyUsers");
+
+  const kpiTotal = document.getElementById("kpiTotal");
+  const kpiDone = document.getElementById("kpiDone");
+  const kpiNotDone = document.getElementById("kpiNotDone");
+  const kpiPending = document.getElementById("kpiPending");
+
+  // Modal
   const modalBackdrop = document.getElementById("modalBackdrop");
   const mClose = document.getElementById("mClose");
+  const mTitle = document.getElementById("mTitle");
   const mSub = document.getElementById("mSub");
-  const mRespFocus = document.getElementById("mRespFocus");
+  const mStatusFilter = document.getElementById("mStatusFilter");
   const btnAddRow = document.getElementById("btnAddRow");
-  const btnSalvarModal = document.getElementById("btnSalvarModal");
-  const mTbodyActs = document.getElementById("mTbodyActs");
-  const mFilterStatus = document.getElementById("mFilterStatus");
-  const mCountHint = document.getElementById("mCountHint");
+  const tbodyActs = document.getElementById("tbodyActs");
+  const btnCancelModal = document.getElementById("btnCancelModal");
+  const btnSaveModal = document.getElementById("btnSaveModal");
 
   function setMsg(text, type="info"){
     msg.textContent = text || "";
     msg.style.color = type === "success" ? "#22c55e" : (type === "error" ? "#ef4444" : "#d1d5db");
   }
 
+  /* =========================
+     HELPERS
+  ========================= */
   function pad2(n){ return String(n).padStart(2,"0"); }
-
-  function startOfWeekMonday(date){
-    const d = new Date(date);
-    const day = d.getDay();
-    const diff = (day === 0 ? -6 : 1 - day);
-    d.setDate(d.getDate() + diff);
-    d.setHours(0,0,0,0);
-    return d;
-  }
-  function addDays(date, n){
-    const d = new Date(date);
-    d.setDate(d.getDate() + n);
-    return d;
-  }
-  function isoDate(d){ return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`; }
-  function monthNamePt(m0){
-    return ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"][m0];
-  }
-
-  function buildWeeksOfYear(year){
-    const weeks = [];
-    let cursor = startOfWeekMonday(new Date(year,0,1));
-    if(cursor.getFullYear() < year) cursor = addDays(cursor, 7);
-
-    const perMonthCount = Array(12).fill(0);
-    let idx = 1;
-
-    while(true){
-      const start = new Date(cursor);
-      const end = addDays(start, 6);
-      if(start.getFullYear() > year) break;
-
-      const m0 = start.getMonth();
-      perMonthCount[m0] += 1;
-
-      const weekKey = `${year}-W${pad2(idx)}`;
-      const label = `${perMonthCount[m0]}ª semana ${monthNamePt(m0)}/${year}`;
-
-      weeks.push({
-        weekKey,
-        label,
-        startISO: isoDate(start),
-        endISO: isoDate(end),
-        orderIndex: idx
-      });
-
-      idx += 1;
-      cursor = addDays(cursor, 7);
-      if(idx > 60) break;
-    }
-    return weeks;
-  }
-
-  let WEEKS = [];
-  let RPS_CACHE = [];
-
-  async function loadRpsByYear(year){
-    const snap = await getDocs(collection(db, RPS_COLLECTION));
-    const arr = [];
-    snap.forEach(d => arr.push({ id: d.id, ...d.data() }));
-    RPS_CACHE = arr.filter(x => String(x.weekKey || "").startsWith(`${year}-W`));
-    return RPS_CACHE;
-  }
-
-  function isRealizado(status){
-    return String(status||"").toLowerCase() === "realizado";
-  }
-
-  function computeCountsForResp(responsavel){
-    const docs = (RPS_CACHE || []).filter(d => Array.isArray(d.responsaveis) && d.responsaveis.includes(responsavel));
-
-    const total = docs.length;
-    const concl = docs.filter(d => isRealizado(d.status)).length;
-    const pend = Math.max(0, total - concl);
-
-    let st = { cls:"warn", label:"Pendente" };
-    if(total === 0) st = { cls:"warn", label:"Sem lançamentos" };
-    else if(concl === total) st = { cls:"ok", label:"Tudo realizado" };
-    else st = { cls:"warn", label:"Em andamento" };
-
-    return { total, concl, pend, st };
-  }
-
-  function getCurrentWeekKey(year){
-    const now = new Date();
-    const base = (now.getFullYear() === year) ? now : new Date(year,0,1);
-    const monday = startOfWeekMonday(base);
-    const mondayISO = isoDate(monday);
-    const found = WEEKS.find(w => w.startISO === mondayISO);
-    return found?.weekKey || (WEEKS[0]?.weekKey || `${year}-W01`);
-  }
-
-  function renderMainTable(){
-    const q = (searchBox.value || "").toLowerCase().trim();
-
-    const rows = ANALISTAS
-      .filter(r => !q || r.toLowerCase().includes(q))
-      .map(r => ({ r, ...computeCountsForResp(r) }));
-
-    tbodyRows.innerHTML = "";
-    if(rows.length === 0){
-      tbodyRows.innerHTML = `<tr><td colspan="5" style="opacity:.8;">Sem linhas para exibir.</td></tr>`;
-      return;
-    }
-
-    for(const s of rows){
-      const tr = document.createElement("tr");
-      tr.dataset.resp = s.r;
-
-      tr.innerHTML = `
-        <td><b>${s.r}</b></td>
-        <td style="text-align:center;"><b>${s.total}</b></td>
-        <td style="text-align:center;"><b>${s.concl}</b></td>
-        <td style="text-align:center;"><b>${s.pend}</b></td>
-        <td><span class="pill ${s.st.cls}">${s.st.label}</span></td>
-      `;
-
-      tr.addEventListener("click", () => {
-        const weekKey = getCurrentWeekKey(Number(yearPicker.value));
-        openModal(weekKey, s.r);
-      });
-
-      tbodyRows.appendChild(tr);
-    }
-  }
-
-  searchBox.addEventListener("input", renderMainTable);
-
-  const STATUS_LIST = ["Planejado","Em andamento","Realizado","Não realizado"];
-
-  function createId(){
-    if(globalThis.crypto?.randomUUID) return crypto.randomUUID();
-    return `${Date.now()}_${Math.random().toString(16).slice(2)}`;
+  function iso(y,m,d){ return `${y}-${pad2(m)}-${pad2(d)}`; }
+  function toBR(isoDate){
+    if(!isoDate) return "-";
+    const [y,m,d] = String(isoDate).split("-");
+    return `${d}/${m}/${y}`;
   }
   function escapeHtml(s){
-    return String(s || "")
+    return (s || "")
       .replaceAll("&","&amp;")
       .replaceAll("<","&lt;")
       .replaceAll(">","&gt;")
       .replaceAll('"',"&quot;")
-      .replaceAll("'","&#39;");
+      .replaceAll("'","&#039;");
   }
-  function statusOptions(selected){
-    return STATUS_LIST.map(s => `<option value="${s}" ${s===selected?"selected":""}>${s}</option>`).join("");
-  }
-
-  /* ===== Modal state ===== */
-  let CURRENT_WEEKKEY = null;
-  let CURRENT_FOCUS_RESP = "";
-  let CURRENT_WEEK_DOCS_FOR_RESP = []; // docs dessa semana que contém o analista
-  let CURRENT_REMOVABLE_IDS = new Set(); // ids que pertencem ao analista e podem ser deletados se remover da lista
-  let CURRENT_DIRTY = false;
-
-  function closeAllDropdowns(){
-    document.querySelectorAll(".dd.open").forEach(el => el.classList.remove("open"));
-  }
-  document.addEventListener("click", (e) => {
-    const isInside = e.target.closest(".dd");
-    if(!isInside) closeAllDropdowns();
-  });
-
-  function ddLabelFromSelected(arr){
-    const sel = (arr || []).filter(Boolean);
-    if(sel.length === 0) return "Selecione...";
-    if(sel.length === 1) return sel[0];
-    return `${sel.length} responsáveis`;
+  function makeId(){
+    if (globalThis.crypto?.randomUUID) return crypto.randomUUID();
+    return `${Date.now()}_${Math.random().toString(16).slice(2)}`;
   }
 
-  function renderRespDropdown(selected = [], focusResp = ""){
-    const selSet = new Set((selected || []).filter(Boolean));
+  const MONTHS = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 
-    // garante o foco marcado se estiver vazio
-    if(selSet.size === 0 && focusResp) selSet.add(focusResp);
+  // Semana por mês: 1..7, 8..14, 15..21, 22..28, 29..fim
+  function weeksOfYear(year){
+    const weeks = [];
+    for(let m=1;m<=12;m++){
+      const lastDay = new Date(year, m, 0).getDate();
+      const ranges = [
+        { w:1, start:1, end:Math.min(7,lastDay) },
+        { w:2, start:8, end:Math.min(14,lastDay) },
+        { w:3, start:15, end:Math.min(21,lastDay) },
+        { w:4, start:22, end:Math.min(28,lastDay) },
+        { w:5, start:29, end:lastDay }
+      ];
+      for(const r of ranges){
+        if(r.start > lastDay) continue;
+        const inicio = iso(year,m,r.start);
+        const fim = iso(year,m,r.end);
+        const weekKey = `${year}-${pad2(m)}-W${r.w}`;
+        weeks.push({
+          weekKey,
+          ano: year,
+          mes: m,
+          semanaMes: r.w,
+          inicio,
+          fim,
+          label: `${r.w}ª semana de ${MONTHS[m-1]} (${toBR(inicio)}–${toBR(fim)})`
+        });
+      }
+    }
+    return weeks;
+  }
 
-    const id = `dd_${createId().replaceAll("-","")}`;
+  function getCurrentWeekKey(year){
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = now.getMonth() + 1;
+    const d = now.getDate();
+    const weekInMonth = d <= 7 ? 1 : d <= 14 ? 2 : d <= 21 ? 3 : d <= 28 ? 4 : 5;
+    // se ano selecionado for diferente do ano atual, cai na 1ª semana de janeiro
+    if(year !== y) return `${year}-01-W1`;
+    return `${y}-${pad2(m)}-W${weekInMonth}`;
+  }
+
+  /* =========================
+     ESTADO
+  ========================= */
+  let WEEKS = [];
+  let ALL_ACTS_YEAR = [];   // carregado do firebase por ano
+  let WEEK_ACTS = [];       // filtrado pela semana selecionada (weekKey)
+  let CURRENT_WEEK = null;
+
+  // Modal state
+  let CURRENT_USER = null;
+
+  /* =========================
+     FIRESTORE LOAD (SEM ÍNDICE COMPOSTO)
+     - carrega por ANO e filtra weekKey no client
+  ========================= */
+  async function loadYearFromFirestore(year){
+    setMsg("Carregando do Firebase…");
+    const snap = await getDocs(query(collection(db, RPS_COLLECTION), where("ano","==",year)));
+    const arr = [];
+    snap.forEach(d => arr.push({ id:d.id, ...d.data() }));
+    ALL_ACTS_YEAR = arr;
+    setMsg("");
+  }
+
+  function applyWeekFilter(){
+    const weekKey = weekPicker.value;
+    CURRENT_WEEK = WEEKS.find(w => w.weekKey === weekKey) || null;
+    WEEK_ACTS = (ALL_ACTS_YEAR || []).filter(a => String(a.weekKey||"") === String(weekKey));
+  }
+
+  /* =========================
+     AGGREGATION
+  ========================= */
+  function getAggForList(list){
+    const total = list.length;
+    const done = list.filter(x => x.status === "realizado").length;
+    const notDone = list.filter(x => x.status === "nao_realizado").length;
+    const pending = list.filter(x => PENDING_SET.has(x.status)).length;
+    return { total, done, notDone, pending };
+  }
+
+  function renderKPIs(){
+    const agg = getAggForList(WEEK_ACTS);
+    kpiTotal.textContent = String(agg.total);
+    kpiDone.textContent = String(agg.done);
+    kpiPending.textContent = String(agg.pending);
+    kpiNotDone.textContent = String(agg.notDone);
+  }
+
+  function userHasAct(act, user){
+    const arr = Array.isArray(act.responsaveis) ? act.responsaveis : (act.responsavel ? [act.responsavel] : []);
+    return arr.includes(user);
+  }
+
+  function renderUsersTable(){
+    const q = (searchBox.value || "").toLowerCase().trim();
+
+    const rows = USERS
+      .filter(u => !q || u.toLowerCase().includes(q))
+      .map(user => {
+        const list = WEEK_ACTS.filter(a => userHasAct(a, user));
+        const agg = getAggForList(list);
+
+        // status por responsável:
+        // - se tem pendentes => Pendente
+        // - se tem itens e não tem pendentes => Fechado
+        // - se não tem itens => Sem itens
+        let pill = `<span class="pill">Sem itens</span>`;
+        if(agg.total > 0 && agg.pending > 0) pill = `<span class="pill pill-warn">Pendente</span>`;
+        if(agg.total > 0 && agg.pending === 0) pill = `<span class="pill pill-ok">Fechado</span>`;
+
+        return { user, agg, pill };
+      });
+
+    tbodyUsers.innerHTML = "";
+
+    if(rows.length === 0){
+      tbodyUsers.innerHTML = `<tr><td colspan="6" style="opacity:.8;">Nenhum responsável.</td></tr>`;
+      return;
+    }
+
+    for(const r of rows){
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td style="font-weight:900;">${r.user}</td>
+        <td style="text-align:center;font-weight:900;">${r.agg.total}</td>
+        <td style="text-align:center;font-weight:900;color:#22c55e;">${r.agg.done}</td>
+        <td style="text-align:center;font-weight:900;color:#facc15;">${r.agg.pending}</td>
+        <td style="text-align:center;font-weight:900;color:#ef4444;">${r.agg.notDone}</td>
+        <td>${r.pill}</td>
+      `;
+      tr.addEventListener("click", () => openUserModal(r.user));
+      tbodyUsers.appendChild(tr);
+    }
+  }
+
+  /* =========================
+     MODAL
+  ========================= */
+  function openModal(){
+    modalBackdrop.style.display = "flex";
+  }
+  function closeModal(){
+    modalBackdrop.style.display = "none";
+    CURRENT_USER = null;
+    tbodyActs.innerHTML = "";
+    mStatusFilter.value = "pendentes";
+  }
+
+  mClose.addEventListener("click", closeModal);
+  btnCancelModal.addEventListener("click", closeModal);
+  modalBackdrop.addEventListener("click", (e) => { if(e.target === modalBackdrop) closeModal(); });
+
+  function getUserActs(){
+    // sempre pega só do usuário clicado
+    const base = WEEK_ACTS.filter(a => userHasAct(a, CURRENT_USER));
+
+    // filtro de status no modal
+    const f = mStatusFilter.value;
+    if(f === "todos") return base;
+
+    if(f === "pendentes") return base.filter(a => PENDING_SET.has(a.status));
+
+    return base.filter(a => a.status === f);
+  }
+
+  function buildResponsaveisSelect(selectedArr){
+    const sel = new Set(selectedArr || []);
+    const opts = USERS.map(u => `<option value="${escapeHtml(u)}" ${sel.has(u) ? "selected" : ""}>${escapeHtml(u)}</option>`).join("");
+    return `<select class="act-field" data-field="responsaveis" multiple title="Segure Ctrl (PC) ou Command (Mac) para selecionar mais de um">
+      ${opts}
+    </select>`;
+  }
+
+  function buildStatusSelect(selected){
+    const s = selected || "planejado";
+    const opts = STATUS_OPTS.map(x => `<option value="${x.key}" ${x.key===s ? "selected" : ""}>${x.label}</option>`).join("");
+    return `<select class="act-field" data-field="status">${opts}</select>`;
+  }
+
+  function actRowTemplate(item){
+    const id = (item?.id ?? "").toString();
+    const atividade = (item?.atividade ?? "").toString();
+    const status = (item?.status ?? "planejado").toString();
+    const respArr = Array.isArray(item?.responsaveis)
+      ? item.responsaveis
+      : (item?.responsavel ? [item.responsavel] : [CURRENT_USER]); // fallback
 
     return `
-      <div class="dd" data-dd>
-        <button class="dd-btn" type="button" data-dd-btn>
-          <span data-dd-label>${escapeHtml(ddLabelFromSelected([...selSet]))}</span>
-          <span style="opacity:.75;">▾</span>
-        </button>
-        <div class="dd-panel" data-dd-panel>
-          ${ANALISTAS.map(n => {
-            const checked = selSet.has(n) ? "checked" : "";
-            return `
-              <label class="dd-item">
-                <input type="checkbox" value="${escapeHtml(n)}" ${checked} data-dd-chk />
-                <span>${escapeHtml(n)}</span>
-              </label>
-            `;
-          }).join("")}
-          <div class="dd-hint">Marque 1 ou mais responsáveis.</div>
-        </div>
-        <input type="hidden" data-dd-hidden value="${escapeHtml(JSON.stringify([...selSet]))}">
-      </div>
+      <tr data-id="${escapeHtml(id)}">
+        <td>
+          <input class="act-field" data-field="atividade" maxlength="180"
+            placeholder="Descreva a atividade..."
+            value="${escapeHtml(atividade)}">
+        </td>
+        <td>
+          ${buildResponsaveisSelect(respArr)}
+          <div class="mini-hint">Dica: já deixei o responsável clicado selecionado.</div>
+        </td>
+        <td>${buildStatusSelect(status)}</td>
+        <td>
+          <button class="btn-mini danger" type="button" data-del>Excluir</button>
+        </td>
+      </tr>
     `;
   }
 
-  function wireDropdown(ddEl){
-    const btn = ddEl.querySelector("[data-dd-btn]");
-    const panel = ddEl.querySelector("[data-dd-panel]");
-    const hidden = ddEl.querySelector("[data-dd-hidden]");
-    const label = ddEl.querySelector("[data-dd-label]");
+  function openUserModal(user){
+    CURRENT_USER = user;
 
-    btn.addEventListener("click", (e) => {
-      e.preventDefault();
-      const open = ddEl.classList.contains("open");
-      closeAllDropdowns();
-      ddEl.classList.toggle("open", !open);
+    // NÃO mostrar semana no modal (pedido)
+    mTitle.textContent = "RPS — Lançamentos";
+    mSub.textContent = `Responsável: ${user}`;
+
+    // padrão pendentes
+    mStatusFilter.value = "pendentes";
+
+    renderModalActivities();
+    openModal();
+  }
+
+  function renderModalActivities(){
+    const list = getUserActs();
+
+    tbodyActs.innerHTML = "";
+    if(list.length === 0){
+      tbodyActs.innerHTML = `<tr><td colspan="4" style="opacity:.8;">Sem atividades para este responsável (no filtro atual). Clique em “+ Nova atividade”.</td></tr>`;
+      return;
+    }
+
+    // ordena pendentes primeiro
+    const order = { planejado:1, em_andamento:2, realizando:3, realizado:4, nao_realizado:5 };
+    list.sort((a,b)=>{
+      const oa = order[a.status] || 99;
+      const ob = order[b.status] || 99;
+      if(oa !== ob) return oa - ob;
+      return String(a.atividade||"").localeCompare(String(b.atividade||""),"pt-BR");
     });
 
-    panel.querySelectorAll("[data-dd-chk]").forEach(chk => {
-      chk.addEventListener("change", () => {
-        const selected = [...panel.querySelectorAll("[data-dd-chk]:checked")].map(x => x.value);
-        hidden.value = JSON.stringify(selected);
-        label.textContent = ddLabelFromSelected(selected);
-        CURRENT_DIRTY = true;
+    tbodyActs.innerHTML = list.map(actRowTemplate).join("");
+
+    // excluir (marca delete)
+    tbodyActs.querySelectorAll("[data-del]").forEach(btn=>{
+      btn.addEventListener("click", (e)=>{
+        e.stopPropagation();
+        const tr = btn.closest("tr");
+        if(!tr) return;
+        tr.dataset.delete = "1";
+        tr.style.opacity = ".55";
+        tr.querySelectorAll("input,select").forEach(el => el.disabled = true);
       });
     });
   }
 
-  function getDropdownSelected(ddEl){
-    try{
-      const hidden = ddEl.querySelector("[data-dd-hidden]")?.value || "[]";
-      const arr = JSON.parse(hidden);
-      return Array.isArray(arr) ? arr : [];
-    }catch{
-      return [];
-    }
-  }
+  mStatusFilter.addEventListener("change", renderModalActivities);
 
-  function makeActRow(data, focusResp){
-    const tr = document.createElement("tr");
-    tr.className = "act-row";
-    tr.dataset.id = data.id || createId();
+  btnAddRow.addEventListener("click", ()=>{
+    if(!CURRENT_USER) return;
 
-    tr.innerHTML = `
-      <td>
-        <input data-atividade type="text" maxlength="120"
-          placeholder="Ex: Mapear atividades da semana / follow-up / painel..."
-          value="${escapeHtml(data.atividade || "")}">
-      </td>
-
-      <td data-dd-cell>
-        ${renderRespDropdown(Array.isArray(data.responsaveis) ? data.responsaveis : [], focusResp)}
-      </td>
-
-      <td>
-        <select data-status>
-          ${statusOptions(data.status || "Planejado")}
-        </select>
-      </td>
-
-      <td>
-        <div class="mini-actions">
-          <button class="btn-mini btn-danger" type="button" data-del>Excluir</button>
-        </div>
-      </td>
-    `;
-
-    // wire dropdown
-    const dd = tr.querySelector("[data-dd]");
-    if(dd) wireDropdown(dd);
-
-    tr.querySelector("[data-atividade]").addEventListener("input", () => CURRENT_DIRTY = true);
-    tr.querySelector("[data-status]").addEventListener("change", () => CURRENT_DIRTY = true);
-
-    tr.querySelector("[data-del]").addEventListener("click", () => {
-      tr.remove();
-      CURRENT_DIRTY = true;
-      renderModalTable(); // re-render contador/empty
-    });
-
-    return tr;
-  }
-
-  /* ===== Modal filter (3 opções) ===== */
-  function matchesModalFilter(status, filterKey){
-    const st = String(status||"").toLowerCase();
-    if(filterKey === "pendentes") return st !== "realizado";
-    if(filterKey === "concluidas") return st === "realizado";
-    return true; // todas
-  }
-
-  function renderModalTable(){
-    const filterKey = mFilterStatus.value || "pendentes";
-
-    // filtra (somente docs do analista clicado) + filtro status
-    const filtered = (CURRENT_WEEK_DOCS_FOR_RESP || []).filter(d => matchesModalFilter(d.status, filterKey));
-
-    mTbodyActs.innerHTML = "";
-
-    const totalAll = (CURRENT_WEEK_DOCS_FOR_RESP || []).length;
-    const totalShown = filtered.length;
-
-    mCountHint.textContent = `Atividades do ${CURRENT_FOCUS_RESP}: ${totalShown} exibidas (de ${totalAll}). Filtro: ${filterKey === "pendentes" ? "Pendentes" : (filterKey === "concluidas" ? "Concluídas" : "Todas")}`;
-
-    if(filtered.length === 0){
-      mTbodyActs.innerHTML = `
-        <tr>
-          <td colspan="4" style="opacity:.85;">
-            Nenhuma atividade para este filtro.
-            ${filterKey === "pendentes" ? " (Se quiser, mude para “Todas”.)" : ""}
-          </td>
-        </tr>
-      `;
-      return;
+    // se tiver linha "Sem atividades...", limpa
+    if(tbodyActs.querySelector("tr td")?.textContent?.includes("Sem atividades")){
+      tbodyActs.innerHTML = "";
     }
 
-    // cria linhas editáveis
-    for(const d of filtered){
-      mTbodyActs.appendChild(makeActRow(d, CURRENT_FOCUS_RESP));
-    }
-  }
-
-  function openModal(weekKey, focusResp){
-    CURRENT_WEEKKEY = weekKey;
-    CURRENT_FOCUS_RESP = focusResp || "";
-    CURRENT_DIRTY = false;
-
-    mSub.textContent = "Abre filtrando somente as atividades do analista clicado.";
-    mRespFocus.textContent = CURRENT_FOCUS_RESP || "-";
-
-    // Sempre abre em "Pendentes"
-    mFilterStatus.value = "pendentes";
-
-    // Carrega docs da semana (mas modal vai trabalhar só com os do analista clicado)
-    const docsSemana = (RPS_CACHE || []).filter(d => d.weekKey === weekKey);
-
-    // ✅ AQUI É O FILTRO PRINCIPAL QUE VOCÊ PEDIU:
-    // Só pega docs onde responsaveis contém o analista clicado
-    CURRENT_WEEK_DOCS_FOR_RESP = docsSemana.filter(d =>
-      Array.isArray(d.responsaveis) && d.responsaveis.includes(CURRENT_FOCUS_RESP)
-    );
-
-    // ids que podem ser removidos por esse modal (somente os que eram do analista)
-    CURRENT_REMOVABLE_IDS = new Set(CURRENT_WEEK_DOCS_FOR_RESP.map(d => d.id).filter(Boolean));
-
-    modalBackdrop.style.display = "flex";
-    renderModalTable();
-  }
-
-  function closeModal(){
-    modalBackdrop.style.display = "none";
-    CURRENT_WEEKKEY = null;
-    CURRENT_FOCUS_RESP = "";
-    CURRENT_WEEK_DOCS_FOR_RESP = [];
-    CURRENT_REMOVABLE_IDS = new Set();
-    CURRENT_DIRTY = false;
-    mTbodyActs.innerHTML = `<tr><td colspan="4" style="opacity:.8;">Carregando…</td></tr>`;
-  }
-
-  mClose.addEventListener("click", closeModal);
-  modalBackdrop.addEventListener("click", (e) => { if(e.target === modalBackdrop) closeModal(); });
-
-  mFilterStatus.addEventListener("change", () => {
-    // Re-render só visual; dados ficam no CURRENT_WEEK_DOCS_FOR_RESP
-    renderModalTable();
-  });
-
-  btnAddRow.addEventListener("click", () => {
-    // Ao adicionar, sempre nasce com o analista clicado como responsável
-    const newRow = {
-      id: createId(),
-      weekKey: CURRENT_WEEKKEY,
+    const tmp = document.createElement("tbody");
+    tmp.innerHTML = actRowTemplate({
+      id: "",
       atividade: "",
-      responsaveis: CURRENT_FOCUS_RESP ? [CURRENT_FOCUS_RESP] : [],
-      status: "Planejado"
-    };
-    CURRENT_WEEK_DOCS_FOR_RESP.push(newRow);
-    CURRENT_DIRTY = true;
-    // Força ir para "Pendentes" para continuar o padrão
-    mFilterStatus.value = "pendentes";
-    renderModalTable();
-    // foco no último input
-    const last = mTbodyActs.querySelector("tr.act-row:last-child [data-atividade]");
-    if(last) last.focus();
+      responsaveis: [CURRENT_USER],
+      status: "planejado"
+    });
+    const tr = tmp.firstElementChild;
+    tbodyActs.appendChild(tr);
+
+    // excluir linha nova: remove na hora
+    tr.querySelector("[data-del]")?.addEventListener("click", (e)=>{
+      e.stopPropagation();
+      tr.remove();
+      if(tbodyActs.children.length === 0){
+        tbodyActs.innerHTML = `<tr><td colspan="4" style="opacity:.8;">Sem atividades para este responsável (no filtro atual). Clique em “+ Nova atividade”.</td></tr>`;
+      }
+    });
   });
 
-  /* ===== Save: só mexe nos docs do analista clicado ===== */
-  async function saveCurrentModal(){
-    if(!CURRENT_WEEKKEY || !CURRENT_FOCUS_RESP) return;
-
-    const w = WEEKS.find(x => x.weekKey === CURRENT_WEEKKEY);
-    const weekStartISO = w?.startISO || null;
-    const weekEndISO = w?.endISO || null;
-    const year = Number(String(CURRENT_WEEKKEY).slice(0,4)) || new Date().getFullYear();
-
-    // pega TODAS as linhas que existem na tabela (não só as exibidas)
-    // para isso, a fonte real é CURRENT_WEEK_DOCS_FOR_RESP, mas precisamos
-    // atualizar com o que o usuário editou nas linhas atualmente renderizadas.
-    const renderedRows = [...mTbodyActs.querySelectorAll("tr.act-row")];
-
-    // Atualiza o CURRENT_WEEK_DOCS_FOR_RESP com os dados do DOM das linhas renderizadas
-    for(const tr of renderedRows){
-      const id = tr.dataset.id;
-      const atividade = (tr.querySelector("[data-atividade]")?.value || "").trim();
-      const status = (tr.querySelector("[data-status]")?.value || "Planejado").trim();
-
-      const dd = tr.querySelector("[data-dd]");
-      const responsaveis = dd ? getDropdownSelected(dd) : [];
-
-      const idx = CURRENT_WEEK_DOCS_FOR_RESP.findIndex(x => x.id === id);
-      if(idx >= 0){
-        CURRENT_WEEK_DOCS_FOR_RESP[idx] = {
-          ...CURRENT_WEEK_DOCS_FOR_RESP[idx],
-          atividade,
-          status,
-          responsaveis
-        };
-      }
-    }
-
-    // Validação e lista final a salvar (somente do analista)
-    const toSave = [];
-    for(const d of CURRENT_WEEK_DOCS_FOR_RESP){
-      const atividade = (d.atividade || "").trim();
-      const status = (d.status || "Planejado").trim();
-      const responsaveis = Array.isArray(d.responsaveis) ? d.responsaveis : [];
-
-      if(!atividade) continue; // ignora vazias
-      if(responsaveis.length === 0){
-        throw new Error("Existe atividade sem responsável selecionado. Marque 1 ou mais responsáveis.");
-      }
-      // garantia: como este modal é do analista clicado, ele TEM que estar em responsaveis
-      if(!responsaveis.includes(CURRENT_FOCUS_RESP)){
-        throw new Error(`Nesta janela, toda atividade precisa ter o responsável ${CURRENT_FOCUS_RESP} marcado.`);
-      }
-
-      toSave.push({ ...d, atividade, status, responsaveis });
-    }
-
-    // ids que ficaram depois (as vazias somem)
-    const keepIds = new Set(toSave.map(x => x.id));
-
-    // 1) salva/atualiza
-    for(const item of toSave){
-      const id = item.id || createId();
-      await setDoc(doc(db, RPS_COLLECTION, id), {
-        weekKey: CURRENT_WEEKKEY,
-        weekStartISO,
-        weekEndISO,
-        weekYear: year,
-        atividade: item.atividade,
-        status: item.status,
-        responsaveis: item.responsaveis,
-        updatedAt: serverTimestamp(),
-        updatedBy: usuario
-      }, { merge:true });
-    }
-
-    // 2) remove SOMENTE os ids que eram do analista e foram excluídos/viraram vazios
-    for(const oldId of CURRENT_REMOVABLE_IDS){
-      if(!keepIds.has(oldId)){
-        await deleteDoc(doc(db, RPS_COLLECTION, oldId));
-      }
-    }
-
-    // Recarrega cache anual e re-render
-    await loadRpsByYear(year);
-    renderMainTable();
+  /* =========================
+     SALVAR/EXCLUIR (FIREBASE)
+  ========================= */
+  function getSelectedMultiple(selectEl){
+    return [...selectEl.options].filter(o => o.selected).map(o => o.value);
   }
 
-  btnSalvarModal.addEventListener("click", async () => {
+  async function saveModalToFirestore(){
+    if(!CURRENT_WEEK) throw new Error("Semana não selecionada.");
+    if(!CURRENT_USER) throw new Error("Responsável não selecionado.");
+
+    const weekKey = CURRENT_WEEK.weekKey;
+    const rows = [...tbodyActs.querySelectorAll("tr[data-id]")];
+
+    const batch = writeBatch(db);
+
+    for(const tr of rows){
+      const markedDelete = tr.dataset.delete === "1";
+
+      const idExisting = (tr.dataset.id || "").trim();
+      const atividade = (tr.querySelector("[data-field='atividade']")?.value || "").trim();
+      const status = (tr.querySelector("[data-field='status']")?.value || "planejado").trim();
+
+      const selEl = tr.querySelector("[data-field='responsaveis']");
+      const responsaveis = selEl ? getSelectedMultiple(selEl) : [CURRENT_USER];
+
+      // delete
+      if(markedDelete){
+        if(idExisting){
+          batch.delete(doc(db, RPS_COLLECTION, idExisting));
+        }
+        continue;
+      }
+
+      // linha vazia
+      if(!atividade && responsaveis.length === 0){
+        if(idExisting){
+          batch.delete(doc(db, RPS_COLLECTION, idExisting));
+        }
+        continue;
+      }
+
+      // se não selecionou ninguém, força o CURRENT_USER
+      const finalResponsaveis = responsaveis.length ? responsaveis : [CURRENT_USER];
+
+      const id = idExisting || `${weekKey}_${makeId()}`;
+      const ref = doc(db, RPS_COLLECTION, id);
+
+      const payload = {
+        weekKey,
+        ano: CURRENT_WEEK.ano,
+        mes: CURRENT_WEEK.mes,
+        semanaMes: CURRENT_WEEK.semanaMes,
+        inicio: CURRENT_WEEK.inicio,
+        fim: CURRENT_WEEK.fim,
+
+        atividade,
+        responsaveis: finalResponsaveis,
+        status: status || "planejado",
+
+        updatedAt: serverTimestamp(),
+        updatedBy: admin
+      };
+
+      if(!idExisting){
+        payload.createdAt = serverTimestamp();
+        payload.createdBy = admin;
+      }
+
+      batch.set(ref, payload, { merge:true });
+    }
+
+    await batch.commit();
+
+    // recarrega ano e reaplica filtros (garante consistência)
+    await loadYearFromFirestore(CURRENT_WEEK.ano);
+    applyWeekFilter();
+    renderKPIs();
+    renderUsersTable();
+  }
+
+  btnSaveModal.addEventListener("click", async ()=>{
     try{
-      setMsg("Salvando RPS…");
-      await saveCurrentModal();
+      setMsg("Salvando no Firebase…");
+      await saveModalToFirestore();
       setMsg("Salvo ✅", "success");
-      closeModal();
+      closeModal(); // ✅ fecha a janela ao salvar (pedido)
+    }catch(e){
+      console.error("ERRO FIREBASE:", e);
+      const err = e?.code || e?.message || "Erro desconhecido";
+      setMsg("Erro ao salvar/excluir: " + err, "error");
+    }
+  });
+
+  /* =========================
+     INIT
+  ========================= */
+  function initYears(){
+    const now = new Date();
+    const y = now.getFullYear();
+    const years = [y-1, y, y+1];
+    yearPicker.innerHTML = years.map(v => `<option value="${v}">${v}</option>`).join("");
+    yearPicker.value = String(y);
+  }
+
+  function initWeeksForYear(year){
+    WEEKS = weeksOfYear(year);
+    weekPicker.innerHTML = WEEKS.map(w => `<option value="${w.weekKey}">${w.label}</option>`).join("");
+
+    const wk = getCurrentWeekKey(year);
+    // se não existir (ex: ano diferente), cai no primeiro
+    weekPicker.value = WEEKS.some(w => w.weekKey === wk) ? wk : (WEEKS[0]?.weekKey || "");
+  }
+
+  async function boot(){
+    initYears();
+    const selectedYear = Number(yearPicker.value);
+
+    initWeeksForYear(selectedYear);
+    await loadYearFromFirestore(selectedYear);
+
+    applyWeekFilter();
+    renderKPIs();
+    renderUsersTable();
+  }
+
+  yearPicker.addEventListener("change", async ()=>{
+    try{
+      const selectedYear = Number(yearPicker.value);
+      initWeeksForYear(selectedYear);
+      await loadYearFromFirestore(selectedYear);
+      applyWeekFilter();
+      renderKPIs();
+      renderUsersTable();
     }catch(e){
       console.error(e);
-      setMsg(e?.message || "Erro ao salvar no Firebase. Verifique RULES.", "error");
+      setMsg("Erro ao carregar o ano no Firebase.", "error");
     }
   });
 
-  /* ===== INIT ===== */
-  function initYearPicker(){
-    const nowY = new Date().getFullYear();
-    const years = [nowY-1, nowY, nowY+1];
-    yearPicker.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join("");
-    yearPicker.value = String(nowY);
+  weekPicker.addEventListener("change", ()=>{
+    applyWeekFilter();
+    renderKPIs();
+    renderUsersTable();
+  });
 
-    yearPicker.addEventListener("change", async () => {
-      await reloadYear();
-    });
+  searchBox.addEventListener("input", renderUsersTable);
+  btnReload.addEventListener("click", boot);
+
+  // start
+  try{
+    await boot();
+  }catch(e){
+    console.error(e);
+    setMsg("Falha ao iniciar. Verifique Rules/Conexão.", "error");
   }
-
-  async function reloadYear(){
-    const year = Number(yearPicker.value);
-    setMsg("Carregando…");
-    WEEKS = buildWeeksOfYear(year);
-    await loadRpsByYear(year);
-    setMsg("");
-    renderMainTable();
-  }
-
-  initYearPicker();
-  await reloadYear();
 </script>
 
 </body>
