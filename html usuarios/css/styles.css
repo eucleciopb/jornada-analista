@@ -1,17 +1,10 @@
-/* =========================
-   BASE (GLOBAL)
-========================= */
 :root{
   --bg-dark:#0f1012;
-  --card-dark:#17191d;
-  --border:rgba(255,255,255,.08);
+  --border:rgba(255,255,255,.10);
   --text:#f3f4f6;
   --text-muted:#9ca3af;
   --red-primary:#d91b2e;
   --red-light:#ff3b3b;
-  --gray-soft:#2b2f36;
-
-  /* compat com seus outros trechos */
   --field: rgba(255,255,255,.04);
 }
 
@@ -28,128 +21,20 @@ body{
   min-height:100vh;
 }
 
-/* util */
-.hint{ color:var(--text-muted); font-size:12px; line-height:1.35; }
-.msg{ margin:10px 0 0; min-height:18px; font-size:12px; color:var(--text-muted); }
-
-/* =========================
-   LOGIN / PÁGINAS CENTRADAS
-   (use no body: class="page-center")
-========================= */
-.page-center{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
-
-/* container/card padrão */
-.container{ width:100%; max-width:450px; padding:20px; }
-
-.card{
-  background: rgba(23,25,29,.85);
-  border:1px solid var(--border);
-  border-radius:22px;
-  padding:28px;
-  backdrop-filter: blur(12px);
-  box-shadow:0 25px 50px rgba(0,0,0,.4);
-}
-
-.header{ display:flex; align-items:center; gap:15px; }
-.logo{
-  width:58px;height:58px;border-radius:18px;
-  display:flex;align-items:center;justify-content:center;
-  font-weight:900;font-size:18px;
-  background: linear-gradient(135deg,var(--red-primary),var(--red-light));
-  box-shadow:0 12px 25px rgba(217,27,46,.3);
-}
-.header h1{ margin:0; font-size:20px; }
-.header p{ margin:4px 0 0; font-size:13px; color:var(--text-muted); }
-.divider{ height:1px; background:var(--border); margin:22px 0; }
-
-.label{ font-size:13px; color:var(--text-muted); margin-bottom:8px; display:block; }
-
-.select-wrapper{
-  background: rgba(255,255,255,.04);
-  border:1px solid var(--border);
-  border-radius:16px;
-  padding:6px 10px;
-  margin-bottom:18px;
-}
-select{
-  width:100%;
-  background:transparent;
-  border:none;
-  outline:none;
-  color:var(--text);
-  font-size:15px;
-  padding:12px 4px;
-  appearance:none;
-  cursor:pointer;
-}
-select option{ background:#1f2227; }
-
-.btn-primary{
-  width:100%;
-  padding:14px;
-  border-radius:16px;
-  border:none;
-  background: linear-gradient(135deg,var(--red-primary),var(--red-light));
-  color:#fff;
-  font-weight:700;
-  font-size:15px;
-  cursor:pointer;
-  transition: transform .12s ease, box-shadow .2s ease;
-}
-.btn-primary:hover{ transform: translateY(-2px); box-shadow:0 12px 25px rgba(217,27,46,.35); }
-.btn-primary:disabled{ opacity:.5; cursor:not-allowed; box-shadow:none; }
-
-.message{ margin-top:10px; font-size:12px; color:var(--text-muted); min-height:18px; }
-
-/* menu */
-.menu-buttons{ display:grid; gap:14px; }
-.menu-btn{
-  padding:16px;
-  border-radius:18px;
-  border:1px solid rgba(255,255,255,.08);
-  background: rgba(255,255,255,.04);
-  color:var(--text);
-  font-weight:600;
-  font-size:15px;
-  cursor:pointer;
-  transition: transform .12s ease, background .2s ease, box-shadow .2s ease;
-}
-.menu-btn:hover{
-  transform: translateY(-3px);
-  background: linear-gradient(135deg,var(--red-primary),var(--red-light));
-  box-shadow:0 14px 30px rgba(217,27,46,.35);
-}
-.btn-logout{
-  width:100%;
-  padding:12px;
-  border-radius:14px;
-  background: var(--gray-soft);
-  border:1px solid rgba(255,255,255,.12);
-  color:var(--text);
-  font-weight:600;
-  cursor:pointer;
-  transition: background .2s ease;
-}
-.btn-logout:hover{ background:#3a3f47; }
-
-/* =========================
-   CRIAR AGENDA (PÁGINA LARGA)
-========================= */
 .bg{
   background:
     radial-gradient(900px 420px at 20% 10%, rgba(217,27,46,.25), transparent 60%),
     radial-gradient(900px 420px at 80% 0%, rgba(255,59,59,.15), transparent 60%),
     radial-gradient(900px 420px at 50% 100%, rgba(255,255,255,.06), transparent 60%),
     var(--bg-dark);
-  color:var(--text);
-  min-height:100vh;
 }
 
-/* topbar agenda */
+/* util */
+.hint{ color:var(--text-muted); font-size:12px; line-height:1.35; }
+.msg{ margin:10px 0 0; min-height:18px; font-size:12px; color:var(--text-muted); }
+.err{ color:#ff3b3b; font-weight:800; font-size:12px; margin-top:6px; display:none; }
+
+/* topbar */
 .topbar{
   max-width:1180px;
   margin:18px auto 0;
@@ -165,6 +50,22 @@ select option{ background:#1f2227; }
   box-shadow:0 20px 45px rgba(0,0,0,.35);
 }
 .topbar h2{ margin:0; font-size:18px; letter-spacing:.2px; }
+
+.btn-secondary{
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.05);
+  color: var(--text);
+  font-weight: 650;
+  cursor: pointer;
+  transition: transform .12s ease, background .2s ease, box-shadow .2s ease;
+}
+.btn-secondary:hover{
+  transform: translateY(-1px);
+  background: rgba(255,255,255,.08);
+  box-shadow: 0 10px 22px rgba(0,0,0,.25);
+}
 
 #btnSalvar{
   padding:12px 14px;
@@ -191,7 +92,18 @@ label{ display:block; font-size:12px; color:var(--text-muted); margin-bottom:6px
 }
 #monthPicker:focus{ border-color: rgba(255,59,59,.45); }
 
-/* card wide na agenda */
+.pill{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:8px 12px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.10);
+  font-size:12px;
+  color:rgba(229,231,235,.70);
+}
+
+/* card wide */
 .card.wide{
   max-width:1180px;
   margin:14px auto 28px;
@@ -202,7 +114,16 @@ label{ display:block; font-size:12px; color:var(--text-muted); margin-bottom:6px
   box-shadow:0 24px 55px rgba(0,0,0,.42);
 }
 
-/* tabela agenda (sem depender de class .table) */
+.row-between{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  flex-wrap: wrap;
+}
+.sep{ border:0; height:1px; background: rgba(255,255,255,.08); margin:14px 0; }
+
+/* tabela */
 .table-wrap{
   margin-top:14px;
   border:1px solid rgba(255,255,255,.10);
@@ -213,7 +134,7 @@ label{ display:block; font-size:12px; color:var(--text-muted); margin-bottom:6px
 .table-wrap table{
   width:100%;
   border-collapse:collapse;
-  min-width:980px;
+  min-width:900px;
 }
 .table-wrap thead th{
   text-align:left;
@@ -236,7 +157,6 @@ label{ display:block; font-size:12px; color:var(--text-muted); margin-bottom:6px
 }
 .table-wrap tbody tr:hover{ background: rgba(255,255,255,.03); }
 
-/* inputs/select/textarea dentro da tabela */
 .table-wrap input,
 .table-wrap select,
 .table-wrap textarea{
@@ -256,65 +176,22 @@ label{ display:block; font-size:12px; color:var(--text-muted); margin-bottom:6px
 }
 .table-wrap select{ cursor:pointer; }
 
-/* ===== Observações GRANDE (o que você quer) ===== */
-#tbodyAgenda td:last-child{ vertical-align: top; }
-#tbodyAgenda td:last-child textarea{
-  min-height: 160px !important;
-  height: 160px !important;
-  line-height: 1.5 !important;
-  resize: vertical;
-  overflow:auto;
-}
+tr.blocked{ opacity:.55; background: rgba(255,255,255,.02); }
 
-/* mobile */
-@media (max-width: 900px){
-  .topbar, .card.wide{ margin-left:12px; margin-right:12px; }
-  .table-wrap table{ min-width:900px; }
+/* ===== CAMINHO A: preview pequeno no grid ===== */
+#tbodyAgenda td:last-child textarea{
+  min-height: 52px !important;
+  height: 52px !important;
+  resize: none !important;
+  overflow: hidden;
+  cursor: pointer;
+  opacity: .92;
 }
-@media (max-width: 720px){
-  #tbodyAgenda td:last-child textarea{
-    min-height: 200px !important;
-    height: 200px !important;
-    font-size: 15px !important;
-  }
-}
+#tbodyAgenda td:last-child{ vertical-align: top; }
 
 /* =========================
-   TREINAMENTOS (mantém só o essencial)
+   MODAL OBSERVAÇÕES
 ========================= */
-.form-grid{
-  display:grid;
-  gap:14px;
-  grid-template-columns: 1fr 1fr;
-  padding:14px;
-  border-radius:18px;
-  border:1px solid rgba(255,255,255,.08);
-  background: rgba(255,255,255,.03);
-}
-@media (max-width: 900px){
-  .form-grid{ grid-template-columns:1fr; }
-}
-.form-grid input,
-.form-grid select{
-  width:100%;
-  padding:12px 12px;
-  border-radius:16px;
-  border:1px solid rgba(255,255,255,.10);
-  background: rgba(255,255,255,.04);
-  color: rgba(255,255,255,.95);
-  outline:none;
-}
-.form-grid input:focus,
-.form-grid select:focus{
-  border-color: rgba(255,59,59,.55);
-  box-shadow: 0 0 0 4px rgba(217,27,46,.18);
-}
-.form-grid label{
-  font-size:12px;
-  color: rgba(209,213,219,.85);
-  margin-bottom:6px;
-}
-/* ===== Modal Observações (janela grande) ===== */
 .modal{ position:fixed; inset:0; display:none; z-index:9999; }
 .modal.is-open{ display:block; }
 
@@ -380,7 +257,6 @@ label{ display:block; font-size:12px; color:var(--text-muted); margin-bottom:6px
   padding: 14px 18px;
   border-top: 1px solid rgba(255,255,255,.08);
 }
-
 .btn-ghost{
   padding: 11px 14px;
   border-radius: 14px;
@@ -391,15 +267,61 @@ label{ display:block; font-size:12px; color:var(--text-muted); margin-bottom:6px
 }
 .btn-ghost:hover{ background: rgba(255,255,255,.10); }
 
-/* Preview pequeno na tabela (opcional, mas recomendado) */
-#tbodyAgenda td:last-child textarea{
-  min-height: 44px !important;
-  height: 44px !important;
-  resize: none !important;
-  overflow: hidden;
-  cursor: pointer;
-  opacity: .92;
+/* mobile */
+@media (max-width: 900px){
+  .topbar, .card.wide{ margin-left:12px; margin-right:12px; }
+  .table-wrap table{ min-width:900px; }
 }
-#tbodyAgenda td:last-child textarea:focus{
-  outline: none;
+/* Esconde a coluna 3 (Analista) só visualmente */
+.table-wrap table thead th:nth-child(3),
+.table-wrap table tbody td:nth-child(3){
+  display:none;
+}
+/* Observações como preview na tabela */
+.table-wrap textarea[data-field="obs"]{
+  min-height: 52px;
+  height: 52px;
+  resize: none;
+  overflow: hidden;
+  cursor: text;
+  line-height: 1.35;
+}
+
+/* Ao focar, vira uma janela grande (modal CSS) */
+.table-wrap textarea[data-field="obs"]:focus{
+  position: fixed;
+  top: 8vh;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(900px, calc(100% - 28px));
+  height: 70vh;
+  z-index: 9999;
+
+  resize: vertical;
+  overflow: auto;
+
+  padding: 16px 16px;
+  border-radius: 18px;
+
+  background: rgba(23,25,29,.96);
+  border: 1px solid rgba(255,255,255,.16);
+
+  /* “Backdrop” escuro (efeito janela) */
+  box-shadow: 0 0 0 9999px rgba(0,0,0,.62);
+}
+.table-wrap textarea[data-field="obs"]:focus{
+  position: fixed;
+  top: 8vh;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(900px, calc(100% - 28px));
+  height: 70vh;
+  z-index: 9999;
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(23,25,29,.96);
+  border: 1px solid rgba(255,255,255,.16);
+  box-shadow: 0 0 0 9999px rgba(0,0,0,.62);
+  overflow: auto;
+  resize: vertical;
 }

@@ -170,6 +170,8 @@ function normalizeCDList(arr) {
 
 /* =========================
    1) SEMPRE RENDERIZA O MÊS
+   ✅ AJUSTE: removeu coluna Analista
+   ✅ AJUSTE: Observações agora é TEXTAREA
 ========================= */
 function renderMonthSkeleton(yyyyMM) {
   if (!tbody) return;
@@ -202,17 +204,15 @@ function renderMonthSkeleton(yyyyMM) {
       tr.innerHTML = `
         <td>${br}</td>
         <td>${dia}</td>
-        <td>${usuarioNome}</td>
         <td colspan="3">Domingo bloqueado</td>
       `;
     } else {
       tr.innerHTML = `
         <td>${br}</td>
         <td>${dia}</td>
-        <td>${usuarioNome}</td>
         <td><input class="field" data-field="cd" list="cdList" placeholder="Pesquisar CD..." value=""></td>
         <td><select class="field" data-field="atividade">${atividadeOptions("")}</select></td>
-        <td><input class="field" data-field="obs" placeholder="Observações..." value=""></td>
+        <td><textarea class="field" data-field="obs" placeholder="Observações..."></textarea></td>
       `;
     }
 
