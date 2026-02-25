@@ -150,7 +150,7 @@
       padding:18px;background:rgba(0,0,0,.60);
     }
     .modal{
-      width:min(1020px,100%);
+      width:min(1100px,100%);
       border-radius:18px;
       border:1px solid rgba(255,255,255,.12);
       background: rgba(17,24,39,.96);
@@ -178,32 +178,72 @@
     .modal-tools > div{min-width:220px;flex:1}
     .mini-hint{font-size:12px;color:var(--muted);margin-top:6px}
 
-    .act-table-wrap{
+    /* Tabela editável (cara de grid) */
+    .grid-wrap{
       overflow:auto;border-radius:14px;border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.02);
     }
-    .act-table{min-width:1040px}
-    .act-table th,.act-table td{padding:10px;border-bottom:1px solid rgba(255,255,255,.06)}
-    .act-table thead th{background:rgba(0,0,0,.30);color:var(--muted);font-size:12px}
-    .act-field{
+    .grid{
       width:100%;
-      padding:10px 12px;
-      border-radius:14px;
+      border-collapse:collapse;
+      min-width:1100px;
+    }
+    .grid thead th{
+      background: rgba(0,0,0,.35);
+      color: var(--muted);
+      font-size:12px;
+      border-bottom:1px solid rgba(255,255,255,.10);
+      padding:10px;
+      position:sticky; top:0;
+      z-index:2;
+    }
+    .grid tbody td{
+      padding:8px 10px;
+      border-bottom:1px solid rgba(255,255,255,.06);
+      vertical-align:top;
+    }
+    .grid tbody tr:hover{background:rgba(255,255,255,.03)}
+    .cell{
+      width:100%;
+      border-radius:12px;
       border:1px solid rgba(255,255,255,.10);
       background: rgba(255,255,255,.04);
       color: rgba(255,255,255,.95);
       outline:none;
+      padding:10px 10px;
     }
-    .act-field:focus{
+    .cell:focus{
       border-color: rgba(255,59,59,.55);
       box-shadow: 0 0 0 4px rgba(217,27,46,.18);
     }
-
-    /* Multi select simples */
-    .multi{
+    .cell.multi{
       height:44px;
     }
-    .multi option{
-      padding:6px;
+    .cell.small{
+      padding:8px 10px;
+    }
+
+    .row-late{
+      outline: 2px solid rgba(239,68,68,.25);
+      background: rgba(239,68,68,.07);
+    }
+    .late-badge{
+      display:inline-flex;align-items:center;gap:6px;
+      font-size:11px;font-weight:900;
+      padding:6px 10px;border-radius:999px;
+      border:1px solid rgba(239,68,68,.35);
+      background: rgba(239,68,68,.12);
+      color: #fecaca;
+      white-space:nowrap;
+    }
+    .ok-badge{
+      display:inline-flex;align-items:center;gap:6px;
+      font-size:11px;font-weight:900;
+      padding:6px 10px;border-radius:999px;
+      border:1px solid rgba(34,197,94,.35);
+      background: rgba(34,197,94,.12);
+      color: #bbf7d0;
+      white-space:nowrap;
     }
 
     .btn-mini{
@@ -218,6 +258,7 @@
       background: rgba(239,68,68,.12);
       color: #fecaca;
     }
+
     .modal-actions{
       display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;
       padding:12px 16px 16px 16px;border-top:1px solid rgba(255,255,255,.08);
@@ -271,7 +312,6 @@
       </div>
     </div>
 
-    <!-- ✅ Semanas (Opcional) agora é filtro flegado -->
     <div class="weeks-box">
       <div class="weeks-head" style="align-items:flex-end;">
         <div>
@@ -362,24 +402,26 @@
         </div>
       </div>
 
-      <div class="act-table-wrap">
-        <table class="act-table" style="width:100%;border-collapse:collapse;">
+      <div class="grid-wrap">
+        <table class="grid">
           <thead>
             <tr>
               <th style="width:420px;">Atividade</th>
+              <th style="width:230px;">Prazo</th>
               <th style="width:280px;">Responsáveis (pode +1)</th>
               <th style="width:220px;">Status</th>
+              <th style="width:160px;">Situação</th>
               <th style="width:140px;">Ações</th>
             </tr>
           </thead>
           <tbody id="tbodyActs">
-            <tr><td colspan="4" style="opacity:.8;">Carregando…</td></tr>
+            <tr><td colspan="6" style="opacity:.8;padding:12px;">Carregando…</td></tr>
           </tbody>
         </table>
       </div>
 
       <div class="mini-hint" style="margin-top:10px;">
-        Regras: linhas vazias são ignoradas. “Excluir” marca para remover do Firebase. Salvar fecha a janela.
+        Regra do prazo: se passar do prazo e não estiver “Realizado”, vira automaticamente “Pendente (Fora do prazo)”.
       </div>
     </div>
 
@@ -403,9 +445,6 @@
     serverTimestamp
   } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-  /* =========================
-     FIREBASE CONFIG (SEU)
-  ========================= */
   const firebaseConfig = {
     apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
     authDomain: "jornada-portal.firebaseapp.com",
@@ -418,15 +457,9 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  /* =========================
-     PATHS
-  ========================= */
   const PATH_INDEX  = "../index.html";
   const PATH_MENUADM = "menuadm.html";
 
-  /* =========================
-     SESSÃO
-  ========================= */
   function safeParse(raw){ try { return JSON.parse(raw); } catch { return null; } }
   function getCurrentUserName(){
     const raw = localStorage.getItem("user_session");
@@ -449,19 +482,9 @@
     window.location.href = PATH_INDEX;
   };
 
-  /* =========================
-     COLEÇÃO
-  ========================= */
   const RPS_COLLECTION = "rps_atividades";
-
-  /* =========================
-     RESPONSÁVEIS (SÓ ADM)
-  ========================= */
   const ADM_USERS = ["Bruna","Elaine","Euclecio","Pedro"];
 
-  /* =========================
-     STATUS
-  ========================= */
   const STATUS_OPTS = [
     { key:"planejado",     label:"Planejado" },
     { key:"em_andamento",  label:"Em andamento" },
@@ -470,9 +493,6 @@
     { key:"nao_realizado", label:"Não realizado" }
   ];
 
-  /* =========================
-     UI
-  ========================= */
   const yearPicker = document.getElementById("yearPicker");
   const searchBox = document.getElementById("searchBox");
   const weekFilter = document.getElementById("weekFilter");
@@ -485,7 +505,6 @@
   const kpiPending = document.getElementById("kpiPending");
   const kpiLate = document.getElementById("kpiLate");
 
-  // Modal
   const modalBackdrop = document.getElementById("modalBackdrop");
   const mClose = document.getElementById("mClose");
   const mTitle = document.getElementById("mTitle");
@@ -501,9 +520,6 @@
     msg.style.color = type === "success" ? "#22c55e" : (type === "error" ? "#ef4444" : "#d1d5db");
   }
 
-  /* =========================
-     DATA / SEMANAS
-  ========================= */
   function pad2(n){ return String(n).padStart(2,"0"); }
   function iso(y,m,d){ return `${y}-${pad2(m)}-${pad2(d)}`; }
   function toBR(isoDate){
@@ -518,7 +534,6 @@
 
   const MONTHS = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 
-  // Semana 1=1..7, 2=8..14, 3=15..21, 4=22..28, 5=29..fim
   function weeksOfYear(year){
     const weeks = [];
     for(let m=1;m<=12;m++){
@@ -549,18 +564,10 @@
     return weeks;
   }
 
-  /* =========================
-     CACHE
-  ========================= */
   let WEEKS = [];
-  let ALL_ACTS = []; // tudo do ano
-
-  // Estado do modal
+  let ALL_ACTS = [];
   let CURRENT_RESP = null;
 
-  /* =========================
-     HELPERS
-  ========================= */
   function escapeHtml(s){
     return (s || "")
       .replaceAll("&","&amp;")
@@ -571,9 +578,12 @@
   }
 
   function normalizeAct(a){
-    // compat: se veio "responsavel" (string), converte em array
     const arr = Array.isArray(a.responsaveis) ? a.responsaveis : (a.responsavel ? [a.responsavel] : []);
-    return { ...a, responsaveis: arr.filter(Boolean) };
+    return {
+      ...a,
+      responsaveis: arr.filter(Boolean),
+      prazo: (a.prazo || "").toString().slice(0,10) // ISO yyyy-mm-dd
+    };
   }
 
   function getSelectedWeekKeys(){
@@ -587,15 +597,23 @@
   }
 
   function isLate(act){
-    // fora do prazo: pendente e semana já passou (fim < hoje)
+    // fora do prazo: pendente e (prazo < hoje)
     if(!isPendingStatus(act.status)) return false;
-    const fim = String(act.fim || "");
-    if(!fim) return false;
-    return todayISO() > fim;
+    const p = String(act.prazo || "");
+    if(!p) return false;
+    return todayISO() > p;
+  }
+
+  function effectiveStatus(act){
+    // “automaticamente se não fizer ficar pendente”
+    // aqui é: se atrasou e não está realizado -> consideramos pendente/atrasado na UI e nas contagens
+    if(isLate(act)) return "late";
+    if(act.status === "realizado") return "done";
+    if(act.status === "nao_realizado") return "notdone";
+    return "pending";
   }
 
   function computeAggByResp(resp, acts){
-    // Conta atividades que incluem o resp dentro de responsaveis[]
     const mine = acts.filter(a => (a.responsaveis || []).includes(resp));
     const total = mine.length;
     const done = mine.filter(x => x.status === "realizado").length;
@@ -623,6 +641,7 @@
         const blob = [
           (a.atividade||""),
           (a.status||""),
+          (a.prazo||""),
           (a.responsaveis||[]).join(" "),
           (a.weekKey||"")
         ].join(" ").toLowerCase();
@@ -633,37 +652,23 @@
     return base;
   }
 
-  /* =========================
-     FIRESTORE LOAD
-  ========================= */
   async function loadYearData(year){
     setMsg("Carregando RPS do Firebase…");
-
     const snap = await getDocs(query(collection(db, RPS_COLLECTION), where("ano","==",year)));
-
     const arr = [];
     snap.forEach(d => arr.push({ id:d.id, ...d.data() }));
     ALL_ACTS = arr.map(normalizeAct);
-
     setMsg("");
   }
 
-  /* =========================
-     SEMANAS FILTER (FLEGADO)
-  ========================= */
   function buildWeekFilter(){
     weekFilter.innerHTML =
       `<option value="ALL" selected>Todas as semanas</option>` +
       WEEKS.map(w => `<option value="${w.weekKey}">${w.label} (${toBR(w.inicio)}–${toBR(w.fim)})</option>`).join("");
   }
 
-  weekFilter.addEventListener("change", ()=>{
-    renderMain();
-  });
+  weekFilter.addEventListener("change", ()=> renderMain());
 
-  /* =========================
-     KPI
-  ========================= */
   function renderKPIs(){
     const acts = filteredActsByUI();
 
@@ -678,20 +683,12 @@
     kpiLate.textContent = String(late);
   }
 
-  /* =========================
-     RENDER MAIN (LINHAS POR ADM)
-  ========================= */
   function renderMain(){
     const acts = filteredActsByUI();
-
     tbodyMain.innerHTML = "";
 
-    const rows = ADM_USERS.map(resp => {
-      const agg = computeAggByResp(resp, acts);
-      return { resp, agg };
-    });
+    const rows = ADM_USERS.map(resp => ({ resp, agg: computeAggByResp(resp, acts) }));
 
-    // Se buscar por nome, filtra o responsável também
     const q = (searchBox.value || "").toLowerCase().trim();
     const finalRows = q
       ? rows.filter(r => r.resp.toLowerCase().includes(q) || r.agg.total > 0)
@@ -723,9 +720,6 @@
     renderKPIs();
   }
 
-  /* =========================
-     MODAL
-  ========================= */
   function openModal(){
     modalBackdrop.style.display = "flex";
   }
@@ -741,15 +735,20 @@
   modalBackdrop.addEventListener("click", (e) => { if(e.target === modalBackdrop) closeModal(); });
 
   function statusOptionsHtml(current){
-    return STATUS_OPTS.map(s => {
-      const sel = s.key === current ? "selected" : "";
-      return `<option value="${s.key}" ${sel}>${s.label}</option>`;
-    }).join("");
+    return STATUS_OPTS.map(s => `<option value="${s.key}" ${s.key===current?"selected":""}>${s.label}</option>`).join("");
   }
 
   function responsaveisOptionsHtml(selectedArr){
-    const selSet = new Set(selectedArr || []);
-    return ADM_USERS.map(u => `<option value="${u}" ${selSet.has(u) ? "selected" : ""}>${u}</option>`).join("");
+    const sel = new Set(selectedArr || []);
+    return ADM_USERS.map(u => `<option value="${u}" ${sel.has(u)?"selected":""}>${u}</option>`).join("");
+  }
+
+  function situationBadge(act){
+    const eff = effectiveStatus(act);
+    if(eff === "late") return `<span class="late-badge">⏰ Fora do prazo</span>`;
+    if(eff === "done") return `<span class="ok-badge">✅ Concluído</span>`;
+    if(eff === "notdone") return `<span class="late-badge" style="border-color:rgba(250,204,21,.35);background:rgba(250,204,21,.12);color:#fde68a;">⚠️ Não realizado</span>`;
+    return `<span class="pill pill-warn">Pendente</span>`;
   }
 
   function actRowTemplate(item){
@@ -757,25 +756,33 @@
     const weekKey = item?.weekKey || "";
     const atividade = (item?.atividade || "").toString();
     const status = (item?.status || "planejado").toString();
+    const prazo = (item?.prazo || "").toString().slice(0,10);
     const respArr = Array.isArray(item?.responsaveis) ? item.responsaveis : (item?.responsavel ? [item.responsavel] : []);
 
+    const lateClass = isLate({ ...item, prazo }) ? "row-late" : "";
+
     return `
-      <tr data-id="${escapeHtml(id)}" data-weekkey="${escapeHtml(weekKey)}">
+      <tr class="${lateClass}" data-id="${escapeHtml(id)}" data-weekkey="${escapeHtml(weekKey)}">
         <td>
-          <input class="act-field" data-field="atividade" maxlength="160"
-                 placeholder="Descreva a atividade..."
-                 value="${escapeHtml(atividade)}">
+          <input class="cell" data-field="atividade" maxlength="160" placeholder="Descreva a atividade..." value="${escapeHtml(atividade)}">
         </td>
         <td>
-          <select class="act-field multi" multiple data-field="responsaveis" title="Segure Ctrl (Windows) ou Command (Mac) para selecionar mais de um">
+          <input class="cell small" data-field="prazo" type="date" value="${escapeHtml(prazo)}">
+          <div class="mini-hint">Se passar, vira pendente.</div>
+        </td>
+        <td>
+          <select class="cell multi" multiple data-field="responsaveis" title="Ctrl (Windows) / Command (Mac) para multi">
             ${responsaveisOptionsHtml(respArr)}
           </select>
-          <div class="mini-hint" style="margin-top:6px;">Dica: Ctrl/Command para marcar mais de um.</div>
+          <div class="mini-hint">Ctrl/Command para marcar +1</div>
         </td>
         <td>
-          <select class="act-field" data-field="status">
+          <select class="cell" data-field="status">
             ${statusOptionsHtml(status)}
           </select>
+        </td>
+        <td style="white-space:nowrap;">
+          ${situationBadge({ ...item, prazo })}
         </td>
         <td>
           <button class="btn-mini danger" type="button" data-del>Excluir</button>
@@ -796,16 +803,15 @@
       .filter(a => selectedWeeks.has(String(a.weekKey || "").trim()))
       .filter(a => (a.responsaveis || []).includes(CURRENT_RESP));
 
-    // filtro status modal (padrão pendentes)
     const sf = (mStatusFilter.value || "pendentes").trim();
 
     if(sf === "pendentes"){
-      base = base.filter(a => isPendingStatus(a.status));
+      base = base.filter(a => isPendingStatus(a.status)); // inclui atrasadas
     } else if(sf !== "todos"){
       base = base.filter(a => a.status === sf);
     }
 
-    // ordena: mais pendente primeiro, depois atraso, depois texto
+    // Ordena: atrasadas primeiro, depois pendentes, depois texto
     const order = { planejado:1, em_andamento:2, realizando:3, realizado:4, nao_realizado:5 };
     base.sort((a,b)=>{
       const la = isLate(a) ? 0 : 1;
@@ -825,37 +831,39 @@
   function openModalForResp(resp){
     CURRENT_RESP = resp;
 
-    const wk = weekFilter.value === "ALL" ? "Todas as semanas" : (getWeekMeta(weekFilter.value)?.label || weekFilter.value);
+    const wk = weekFilter.value === "ALL"
+      ? "Todas as semanas"
+      : (getWeekMeta(weekFilter.value)?.label || weekFilter.value);
+
     mTitle.textContent = `RPS — Lançamentos`;
     mSub.textContent = `Responsável: ${resp} • Semana: ${wk}`;
 
-    mStatusFilter.value = "pendentes"; // ✅ abre já filtrado pendentes
+    mStatusFilter.value = "pendentes";
     renderModalActivities();
     openModal();
   }
 
   function renderModalActivities(){
     const list = actsForCurrentResp();
-
     tbodyActs.innerHTML = "";
 
     if(list.length === 0){
-      tbodyActs.innerHTML = `<tr><td colspan="4" style="opacity:.8;">Sem atividades para este filtro. Clique em “+ Nova atividade”.</td></tr>`;
+      tbodyActs.innerHTML = `<tr><td colspan="6" style="opacity:.8;padding:12px;">Sem atividades para este filtro. Clique em “+ Nova atividade”.</td></tr>`;
       return;
     }
 
     tbodyActs.innerHTML = list.map(actRowTemplate).join("");
 
-    // excluir linha (marca para delete)
     tbodyActs.querySelectorAll("[data-del]").forEach(btn=>{
       btn.addEventListener("click", (e)=>{
         e.stopPropagation();
         const tr = btn.closest("tr");
         if(!tr) return;
-
         tr.dataset.delete = "1";
         tr.style.opacity = ".55";
-        tr.querySelectorAll("input,select").forEach(el => el.disabled = true);
+        tr.querySelectorAll("input,select,button").forEach(el => {
+          if(el !== btn) el.disabled = true;
+        });
       });
     });
   }
@@ -865,63 +873,57 @@
   btnAddRow.addEventListener("click", ()=>{
     if(!CURRENT_RESP) return;
 
-    // precisa de 1 weekKey para salvar: se ALL, salva na semana atual do ano (semana do mês atual)
-    // mas como seu modelo é por "semanas do mês", vamos usar a SEMANA SELECIONADA se não for ALL.
-    const selected = getSelectedWeekKeys();
-    let wk = selected[0];
-    if(weekFilter.value === "ALL"){
-      // se ALL, usa a semana do "hoje" (aproximação: acha a weekKey que contém hoje dentro do mesmo mês)
+    // Define a semana para salvar: se ALL, usa semana do dia atual
+    let wk = (weekFilter.value || "ALL").trim();
+    if(wk === "ALL"){
       const t = todayISO();
       const candidate = WEEKS.find(w => w.inicio <= t && w.fim >= t);
-      wk = candidate ? candidate.weekKey : WEEKS[0]?.weekKey;
+      wk = candidate ? candidate.weekKey : (WEEKS[0]?.weekKey || "");
     }
     const meta = getWeekMeta(wk);
     if(!meta){
-      setMsg("Não consegui definir a semana para salvar. Selecione uma semana no filtro.", "error");
+      setMsg("Não consegui definir a semana. Selecione uma semana no filtro.", "error");
       return;
     }
 
-    // se tiver placeholder “sem atividades…”, limpa
-    if(tbodyActs.querySelector("tr td")?.textContent?.includes("Sem atividades")){
+    if(tbodyActs.querySelector("td")?.textContent?.includes("Sem atividades")){
       tbodyActs.innerHTML = "";
     }
 
     const tmp = document.createElement("tbody");
     tmp.innerHTML = actRowTemplate({
-      id: "",
+      id:"",
       weekKey: meta.weekKey,
       ano: meta.ano,
       mes: meta.mes,
       semanaMes: meta.semanaMes,
       inicio: meta.inicio,
       fim: meta.fim,
-      atividade: "",
-      responsaveis: [CURRENT_RESP],
-      status: "planejado"
+      atividade:"",
+      prazo: meta.fim,              // ✅ prazo automático default = fim da semana
+      responsaveis:[CURRENT_RESP],
+      status:"planejado"
     });
 
     const tr = tmp.firstElementChild;
     tbodyActs.appendChild(tr);
 
-    // excluir linha nova remove
-    tr.querySelector("[data-del]")?.addEventListener("click", (e)=>{
+    tr.querySelector("[data-del]")?.addEventListener("click",(e)=>{
       e.stopPropagation();
       tr.remove();
       if(tbodyActs.children.length === 0){
-        tbodyActs.innerHTML = `<tr><td colspan="4" style="opacity:.8;">Sem atividades para este filtro. Clique em “+ Nova atividade”.</td></tr>`;
+        tbodyActs.innerHTML = `<tr><td colspan="6" style="opacity:.8;padding:12px;">Sem atividades para este filtro. Clique em “+ Nova atividade”.</td></tr>`;
       }
     });
   });
 
-  /* =========================
-     SAVE / DELETE (FIRESTORE)
-  ========================= */
   function makeId(){
-    if (globalThis.crypto?.randomUUID) return crypto.randomUUID();
+    if(globalThis.crypto?.randomUUID) return crypto.randomUUID();
     return `${Date.now()}_${Math.random().toString(16).slice(2)}`;
   }
 
   function getMultiSelected(selectEl){
+    if(!selectEl) return [];
     return [...selectEl.options].filter(o => o.selected).map(o => o.value).filter(Boolean);
   }
 
@@ -931,60 +933,47 @@
     const rows = [...tbodyActs.querySelectorAll("tr[data-id]")];
     const batch = writeBatch(db);
 
-    // Vamos reconstruir o cache do ano depois do commit, recarregando do Firebase (mais seguro)
     for(const tr of rows){
       const markedDelete = tr.dataset.delete === "1";
       const idExisting = (tr.dataset.id || "").trim();
       const weekKey = (tr.dataset.weekkey || "").trim();
 
       if(markedDelete){
-        if(idExisting){
-          batch.delete(doc(db, RPS_COLLECTION, idExisting));
-        }
+        if(idExisting) batch.delete(doc(db, RPS_COLLECTION, idExisting));
         continue;
       }
 
       const atividade = (tr.querySelector("[data-field='atividade']")?.value || "").trim();
       const status = (tr.querySelector("[data-field='status']")?.value || "planejado").trim();
+      const prazo = (tr.querySelector("[data-field='prazo']")?.value || "").trim(); // ✅ novo
       const respSel = getMultiSelected(tr.querySelector("[data-field='responsaveis']"));
 
-      // linha vazia ignora / ou remove se já existia
       if(!atividade && respSel.length === 0){
-        if(idExisting){
-          batch.delete(doc(db, RPS_COLLECTION, idExisting));
-        }
+        if(idExisting) batch.delete(doc(db, RPS_COLLECTION, idExisting));
         continue;
       }
 
-      // precisa de weekMeta
       const meta = getWeekMeta(weekKey);
       if(!meta){
-        // se não veio weekKey por algum motivo, usa filtro atual se for semana única
-        const wk = getSelectedWeekKeys()[0];
-        const meta2 = getWeekMeta(wk);
-        if(!meta2){
-          throw new Error("SEM_WEEK_META");
-        }
-        // atualiza meta e segue
-        tr.dataset.weekkey = meta2.weekKey;
+        throw new Error("SEM_WEEK_META");
       }
 
-      const wkFinal = (tr.dataset.weekkey || weekKey).trim();
-      const metaFinal = getWeekMeta(wkFinal);
-
-      const id = idExisting || `${wkFinal}_${makeId()}`;
+      const id = idExisting || `${weekKey}_${makeId()}`;
       const ref = doc(db, RPS_COLLECTION, id);
 
+      // ✅ regra automática: se passou do prazo e não realizado, mantém como pendente (não força mudar status)
+      // a “pendência por atraso” é tratada na UI/contagem via isLate().
       const payload = {
-        weekKey: wkFinal,
-        ano: metaFinal.ano,
-        mes: metaFinal.mes,
-        semanaMes: metaFinal.semanaMes,
-        inicio: metaFinal.inicio,
-        fim: metaFinal.fim,
+        weekKey,
+        ano: meta.ano,
+        mes: meta.mes,
+        semanaMes: meta.semanaMes,
+        inicio: meta.inicio,
+        fim: meta.fim,
 
         atividade,
-        responsaveis: respSel.length ? respSel : [CURRENT_RESP], // fallback
+        prazo: prazo || meta.fim, // default
+        responsaveis: respSel.length ? respSel : [CURRENT_RESP],
         status: status || "planejado",
 
         updatedAt: serverTimestamp(),
@@ -1001,7 +990,6 @@
 
     await batch.commit();
 
-    // Recarrega ano inteiro (garante refletir deletes)
     const selectedYear = Number(yearPicker.value);
     await loadYearData(selectedYear);
 
@@ -1020,9 +1008,6 @@
     }
   });
 
-  /* =========================
-     INIT
-  ========================= */
   function initYears(){
     const now = new Date();
     const y = now.getFullYear();
@@ -1033,11 +1018,9 @@
 
   async function boot(){
     initYears();
-
     const selectedYear = Number(yearPicker.value);
     WEEKS = weeksOfYear(selectedYear);
     buildWeekFilter();
-
     await loadYearData(selectedYear);
     renderMain();
   }
@@ -1047,7 +1030,7 @@
       const selectedYear = Number(yearPicker.value);
       WEEKS = weeksOfYear(selectedYear);
       buildWeekFilter();
-      await loadYearData(selectedYear);  // ✅ aqui estava o bug
+      await loadYearData(selectedYear);
       renderMain();
     }catch(e){
       console.error(e);
@@ -1058,7 +1041,6 @@
   searchBox.addEventListener("input", renderMain);
   btnReload.addEventListener("click", boot);
 
-  // start
   try{
     await boot();
   }catch(e){
