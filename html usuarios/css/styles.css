@@ -1,225 +1,194 @@
 /* =========================
-   AGENDA (LARGO) + OBSERVAÇÕES "JANELA"
+   CRIAR AGENDA - TECH CLEAN (override)
+   cole no FINAL do styles.css
 ========================= */
+
 :root{
-  --bg-dark:#0f1012;
-  --border:rgba(255,255,255,.10);
-  --text:#f3f4f6;
-  --text-muted:#9ca3af;
-  --red-primary:#d91b2e;
-  --red-light:#ff3b3b;
-  --field: rgba(255,255,255,.04);
+  --bg0:#070A0F;
+  --bg1:#0B0F14;
+  --glass:rgba(255,255,255,.06);
+  --glass2:rgba(255,255,255,.08);
+  --line:rgba(255,255,255,.10);
+  --line2:rgba(255,255,255,.14);
+  --text:#EDEFF3;
+  --muted:rgba(237,239,243,.65);
+  --accent:#ff3b3b;
+  --accent2:#d91b2e;
+  --ok:#22c55e;
 }
 
-*{ box-sizing:border-box; }
-
-body{
-  margin:0;
-  font-family:"Segoe UI",system-ui,-apple-system,sans-serif;
+/* fundo tech, mais profundo e clean */
+body.bg{
   background:
-    radial-gradient(800px 400px at 20% 10%, rgba(217,27,46,.25), transparent 60%),
-    radial-gradient(800px 400px at 80% 0%, rgba(255,59,59,.15), transparent 60%),
-    var(--bg-dark);
-  color:var(--text);
-  min-height:100vh;
-}
-
-.bg{
-  background:
-    radial-gradient(900px 420px at 20% 10%, rgba(217,27,46,.25), transparent 60%),
-    radial-gradient(900px 420px at 80% 0%, rgba(255,59,59,.15), transparent 60%),
-    radial-gradient(900px 420px at 50% 100%, rgba(255,255,255,.06), transparent 60%),
-    var(--bg-dark);
-}
-
-/* util */
-.hint{ color:var(--text-muted); font-size:12px; line-height:1.35; }
-.msg{ margin:10px 0 0; min-height:18px; font-size:12px; color:var(--text-muted); }
-.err{ color:#ff3b3b; font-weight:800; font-size:12px; margin-top:6px; display:none; }
-
-/* topbar */
-.topbar{
-  max-width:1180px;
-  margin:18px auto 0;
-  padding:14px 16px;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:12px;
-  border:1px solid rgba(255,255,255,.10);
-  border-radius:20px;
-  background: rgba(23,25,29,.78);
-  backdrop-filter: blur(12px);
-  box-shadow:0 20px 45px rgba(0,0,0,.35);
-}
-.topbar h2{ margin:0; font-size:18px; letter-spacing:.2px; }
-
-.btn-secondary{
-  padding: 10px 12px;
-  border-radius: 14px;
-  border: 1px solid rgba(255,255,255,.12);
-  background: rgba(255,255,255,.05);
+    radial-gradient(700px 380px at 15% 12%, rgba(255,59,59,.14), transparent 62%),
+    radial-gradient(680px 360px at 85% 10%, rgba(217,27,46,.12), transparent 62%),
+    radial-gradient(900px 500px at 50% 100%, rgba(255,255,255,.05), transparent 60%),
+    linear-gradient(180deg, var(--bg0), var(--bg1));
   color: var(--text);
-  font-weight: 650;
-  cursor: pointer;
-  transition: transform .12s ease, background .2s ease, box-shadow .2s ease;
+}
+
+/* topbar glass */
+.topbar{
+  border:1px solid var(--line);
+  background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.04));
+  box-shadow: 0 18px 42px rgba(0,0,0,.45);
+  border-radius: 22px;
+}
+.topbar h2{ font-size: 18px; letter-spacing:.3px; }
+.hint{ color: var(--muted); }
+
+/* card glass */
+.card.wide{
+  border:1px solid var(--line);
+  background:
+    radial-gradient(900px 420px at 15% 0%, rgba(255,59,59,.10), transparent 60%),
+    linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.04));
+  box-shadow: 0 28px 70px rgba(0,0,0,.55);
+  border-radius: 24px;
+}
+
+/* divider */
+.sep{ background: rgba(255,255,255,.09); }
+
+/* botões */
+.btn-secondary{
+  border:1px solid var(--line);
+  background: rgba(255,255,255,.05);
+  border-radius: 16px;
+  font-weight: 750;
 }
 .btn-secondary:hover{
-  transform: translateY(-1px);
   background: rgba(255,255,255,.08);
-  box-shadow: 0 10px 22px rgba(0,0,0,.25);
+  box-shadow: 0 12px 26px rgba(0,0,0,.35);
 }
 
 #btnSalvar{
-  padding:12px 14px;
-  border-radius:16px;
-  border:1px solid rgba(217,27,46,.45);
-  background: linear-gradient(135deg,var(--red-primary),var(--red-light));
-  color:#fff;
-  font-weight:800;
-  cursor:pointer;
-  transition: transform .12s ease, box-shadow .2s ease;
+  border:1px solid rgba(255,59,59,.35);
+  background: linear-gradient(135deg, var(--accent2), var(--accent));
+  border-radius: 16px;
+  letter-spacing: .2px;
+  box-shadow: 0 18px 40px rgba(255,59,59,.18);
 }
-#btnSalvar:hover{ transform: translateY(-1px); box-shadow:0 14px 30px rgba(217,27,46,.35); }
-#btnSalvar:disabled{ opacity:.55; cursor:not-allowed; }
+#btnSalvar:hover{
+  box-shadow: 0 24px 60px rgba(255,59,59,.22);
+}
 
-label{ display:block; font-size:12px; color:var(--text-muted); margin-bottom:6px; }
-
+/* month input */
 #monthPicker{
-  background: rgba(255,255,255,.04);
-  border:1px solid rgba(255,255,255,.10);
-  color:var(--text);
-  padding:10px 12px;
-  border-radius:14px;
-  outline:none;
+  border:1px solid var(--line);
+  background: rgba(255,255,255,.05);
+  border-radius: 16px;
 }
-#monthPicker:focus{ border-color: rgba(255,59,59,.45); }
+#monthPicker:focus{
+  border-color: rgba(255,59,59,.55);
+  box-shadow: 0 0 0 4px rgba(255,59,59,.16);
+}
 
+/* pill */
 .pill{
-  display:inline-flex;
-  align-items:center;
-  gap:8px;
-  padding:8px 12px;
-  border-radius:999px;
-  border:1px solid rgba(255,255,255,.10);
-  font-size:12px;
-  color:rgba(229,231,235,.70);
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,.04);
+  color: rgba(237,239,243,.72);
+  border-radius: 999px;
 }
-
-/* card wide */
-.card.wide{
-  max-width:1180px;
-  margin:14px auto 28px;
-  border-radius:22px;
-  padding:18px;
-  background: rgba(23,25,29,.78);
-  border:1px solid rgba(255,255,255,.10);
-  box-shadow:0 24px 55px rgba(0,0,0,.42);
-}
-
-.row-between{
-  display:flex;
-  align-items:flex-start;
-  justify-content:space-between;
-  gap:12px;
-  flex-wrap: wrap;
-}
-.sep{ border:0; height:1px; background: rgba(255,255,255,.08); margin:14px 0; }
 
 /* tabela */
 .table-wrap{
-  margin-top:14px;
-  border:1px solid rgba(255,255,255,.10);
-  border-radius:18px;
-  overflow:hidden;
+  border:1px solid var(--line);
+  border-radius: 20px;
+  overflow: hidden;
   background: rgba(255,255,255,.03);
 }
-.table-wrap table{
-  width:100%;
-  border-collapse:collapse;
-  min-width:900px;
-}
-.table-wrap thead th{
-  text-align:left;
-  font-size:12px;
-  color:rgba(255,255,255,.85);
-  font-weight:800;
-  padding:12px 12px;
-  border-bottom:1px solid rgba(255,255,255,.10);
-  background: rgba(17,19,23,.92);
-  position: sticky;
-  top:0;
-  z-index:2;
-}
-.table-wrap tbody td{
-  padding:10px 12px;
-  border-bottom:1px solid rgba(255,255,255,.06);
-  vertical-align:top;
-  color:rgba(255,255,255,.92);
-  font-size:13px;
-}
-.table-wrap tbody tr:hover{ background: rgba(255,255,255,.03); }
 
+/* header sticky mais clean */
+.table-wrap thead th{
+  background: linear-gradient(180deg, rgba(10,12,18,.92), rgba(10,12,18,.78));
+  color: rgba(237,239,243,.78);
+  font-weight: 850;
+  border-bottom: 1px solid rgba(255,255,255,.10);
+}
+
+/* linhas */
+.table-wrap tbody td{
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+.table-wrap tbody tr:hover{
+  background: rgba(255,255,255,.04);
+}
+
+/* inputs */
 .table-wrap input,
 .table-wrap select,
 .table-wrap textarea{
-  width:100%;
-  padding:10px 10px;
-  border-radius:14px;
-  border:1px solid rgba(255,255,255,.10);
-  background: rgba(255,255,255,.04);
-  color:var(--text);
-  outline:none;
+  border:1px solid rgba(255,255,255,.12);
+  background: rgba(0,0,0,.22);
+  border-radius: 16px;
+  color: var(--text);
+  transition: border-color .15s ease, box-shadow .15s ease, transform .08s ease;
 }
 .table-wrap input:focus,
 .table-wrap select:focus,
 .table-wrap textarea:focus{
   border-color: rgba(255,59,59,.55);
-  box-shadow: 0 0 0 4px rgba(217,27,46,.18);
+  box-shadow: 0 0 0 4px rgba(255,59,59,.16);
 }
-.table-wrap select{ cursor:pointer; }
 
-tr.blocked{ opacity:.55; background: rgba(255,255,255,.02); }
+/* domingo */
+tr.blocked{
+  opacity: .55;
+  background: rgba(255,255,255,.02);
+}
 
 /* =========================
-   OBSERVAÇÕES (CAMINHO A)
+   OBSERVAÇÕES - TECH "EDITOR"
    - preview pequeno
-   - ao focar vira "janela" grande (modal CSS)
+   - ao focar vira janela grande com backdrop
 ========================= */
 textarea[data-field="obs"]{
-  min-height: 52px;
-  height: 52px;
+  min-height: 54px;
+  height: 54px;
   resize: none;
   overflow: hidden;
   cursor: text;
   line-height: 1.35;
 }
 
-/* janela grande */
+/* janela grande (efeito editor) */
 textarea[data-field="obs"]:focus{
   position: fixed;
-  top: 8vh;
+  top: 7vh;
   left: 50%;
   transform: translateX(-50%);
-  width: min(900px, calc(100% - 28px));
-  height: 70vh;
+  width: min(980px, calc(100% - 28px));
+  height: 74vh;
   z-index: 9999;
 
-  padding: 16px;
-  border-radius: 18px;
+  padding: 18px;
+  border-radius: 22px;
 
-  background: rgba(23,25,29,.96);
+  background:
+    radial-gradient(900px 420px at 15% 0%, rgba(255,59,59,.12), transparent 60%),
+    linear-gradient(180deg, rgba(255,255,255,.07), rgba(0,0,0,.30));
   border: 1px solid rgba(255,255,255,.16);
 
-  box-shadow: 0 0 0 9999px rgba(0,0,0,.62);
+  box-shadow:
+    0 40px 90px rgba(0,0,0,.70),
+    0 0 0 9999px rgba(0,0,0,.62);
+
   overflow: auto;
   resize: vertical;
 
-  line-height: 1.55;
+  line-height: 1.65;
   font-size: 14px;
 }
 
-/* mobile */
+/* dica: placeholder mais sutil */
+.table-wrap textarea::placeholder,
+.table-wrap input::placeholder{
+  color: rgba(237,239,243,.45);
+}
+
+/* responsivo */
 @media (max-width: 900px){
   .topbar, .card.wide{ margin-left:12px; margin-right:12px; }
   .table-wrap table{ min-width:900px; }
