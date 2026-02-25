@@ -70,12 +70,42 @@
     .btn-mini:hover{ filter: brightness(1.08); }
     .hint-inline{ margin-top:6px; opacity:.85; font-size: 12px; }
 
-    /* Ações (Editar/Excluir) */
+    /* Ações sticky (primeira coluna) */
+    th.actions-col, td.actions-col{
+      position: sticky;
+      left: 0;
+      z-index: 3;
+      background: rgba(11,15,20,.96);
+      border-right: 1px solid rgba(255,255,255,.08);
+    }
+    thead th.actions-col{ z-index: 4; }
+
     .actions-inline{
       display:flex;
       gap:8px;
-      justify-content:flex-start;
       flex-wrap:wrap;
+    }
+    .btn-act{
+      padding:8px 10px;
+      border-radius:10px;
+      border:1px solid rgba(255,255,255,.15);
+      background:rgba(255,255,255,.06);
+      color:#e5e7eb;
+      font-weight:900;
+      cursor:pointer;
+    }
+    .btn-act:hover{ filter: brightness(1.08); }
+    .btn-act.danger{
+      border-color: rgba(255,59,59,.35);
+      color:#ff8a8a;
+    }
+
+    /* Badge edição */
+    #editBadge{
+      display:none;
+      margin-top:6px;
+      color:#facc15;
+      font-weight:900;
     }
   </style>
 </head>
@@ -85,6 +115,7 @@
     <div>
       <h2>Treinamentos Realizados</h2>
       <div id="userInfo" class="hint" style="color:#d1d5db;margin-top:4px;"></div>
+      <div id="editBadge">Modo edição ativo (1 linha / 1 CD). Atualize e salve.</div>
     </div>
 
     <div class="top-actions">
@@ -98,16 +129,9 @@
       <div>
         <h3>Registrar Treinamento</h3>
         <p class="hint">Preencha os dados do treinamento realizado. Salva no Firebase (Firestore).</p>
-        <div id="editBadge" class="hint" style="display:none;margin-top:6px;color:#facc15;font-weight:800;">
-          Modo edição ativo (1 linha / 1 CD). Atualize e salve.
-        </div>
       </div>
-
-      <!-- ✅ Botão cancelar edição (só aparece em modo edição) -->
       <div>
-        <button id="btnCancelEdit" class="btn-secondary" type="button" style="display:none;">
-          Cancelar edição
-        </button>
+        <button id="btnCancelEdit" class="btn-secondary" type="button" style="display:none;">Cancelar edição</button>
       </div>
     </section>
 
@@ -209,6 +233,7 @@
       <table class="table table-sticky">
         <thead>
           <tr>
+            <th class="actions-col actions-col-h actions-col" style="width:190px;">Ações</th>
             <th style="width:120px;">Data</th>
             <th style="width:140px;">Apuração (prazo)</th>
             <th style="width:130px;">Público</th>
@@ -219,7 +244,6 @@
             <th style="width:260px;">Desafio</th>
             <th style="width:260px;">Meta</th>
             <th>Obs</th>
-            <th style="width:190px;">Ações</th>
           </tr>
         </thead>
         <tbody id="tbodyHist"></tbody>
@@ -499,29 +523,24 @@
       return arr;
     }
 
-    // ======= MODO EDIÇÃO =======
+    /* =========================
+       Edição
+    ========================= */
     let EDITING_ID = null;
 
     function setEditingMode(isEditing){
-      EDITING_ID = isEditing ? EDITING_ID : null;
-
       editBadge.style.display = isEditing ? "block" : "none";
       btnCancelEdit.style.display = isEditing ? "inline-flex" : "none";
       btnSalvar.textContent = isEditing ? "Atualizar Registro" : "Salvar Treinamento";
 
-      // trava multi-cd em edição (porque o registro é 1 CD)
+      // trava multi-cd em edição (1 linha = 1 CD)
       cdInput.disabled = isEditing;
       btnAddCd.disabled = isEditing;
       btnClearCds.disabled = isEditing;
       chipsEl.style.opacity = isEditing ? ".65" : "1";
-
-      if (isEditing){
-        setMsg("Editando registro selecionado. Ajuste os campos e clique em Atualizar.", "info");
-      }
     }
 
     function resetFormKeepDate(){
-      // mantém dataTreino (como você já fazia)
       publico.value = "";
       treinamento.value = "";
       totalPessoas.value = "";
@@ -536,8 +555,8 @@
 
     function startEdit(item){
       if (!item?.id) return;
-
       EDITING_ID = item.id;
+
       dataTreino.value = item.data || todayISO();
       dataApuracao.value = item.dataApuracao || "";
       publico.value = item.publico || "";
@@ -548,16 +567,15 @@
       desafio.value = item.desafio || "";
       metaDesafio.value = item.meta || "";
 
-      // 1 CD por registro
-      SELECTED_CDS = [];
-      if (item.cd) SELECTED_CDS = [normalize(item.cd)];
+      SELECTED_CDS = item.cd ? [normalize(item.cd)] : [];
       renderChips();
 
       setEditingMode(true);
+      setMsg("Editando registro. Ajuste e clique em Atualizar.", "info");
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
-    btnCancelEdit.addEventListener("click", async () => {
+    btnCancelEdit.addEventListener("click", () => {
       EDITING_ID = null;
       setEditingMode(false);
       resetFormKeepDate();
@@ -582,6 +600,13 @@
       filtered.forEach(item => {
         const tr = document.createElement("tr");
         tr.innerHTML = `
+          <td class="actions-col actions-col-td actions-col actions-col" style="width:190px;">
+            <div class="actions-inline">
+              <button class="btn-act" type="button" data-edit="${item.id}">Editar</button>
+              <button class="btn-act danger" type="button" data-del="${item.id}">Excluir</button>
+            </div>
+          </td>
+
           <td>${toBR(item.data)}</td>
           <td>${toBR(item.dataApuracao)}</td>
           <td>${item.publico || "-"}</td>
@@ -592,13 +617,6 @@
           <td>${item.desafio || "-"}</td>
           <td>${item.meta || "-"}</td>
           <td>${item.obs || "-"}</td>
-          <td>
-            <div class="actions-inline">
-              <button class="btn-secondary" type="button" data-edit="${item.id}">Editar</button>
-              <button class="btn-secondary" type="button" data-del="${item.id}"
-                style="border-color: rgba(255,59,59,.25);">Excluir</button>
-            </div>
-          </td>
         `;
         tbodyHist.appendChild(tr);
       });
@@ -619,7 +637,6 @@
           const id = btn.getAttribute("data-del");
           if (!id) return;
 
-          // se estiver editando esse mesmo, cancela
           if (EDITING_ID === id){
             EDITING_ID = null;
             setEditingMode(false);
@@ -678,7 +695,7 @@
         return;
       }
 
-      // ===== Atualizar (modo edição) =====
+      // ===== Atualizar =====
       if (EDITING_ID){
         if (SELECTED_CDS.length !== 1){
           setMsg("Em edição, o registro deve ter exatamente 1 CD.", "error");
@@ -686,15 +703,14 @@
         }
         const cdItem = SELECTED_CDS[0];
         if (!CDS.includes(cdItem)){
-          setMsg("CD inválido no registro. Reabra a edição e selecione pela lista.", "error");
+          setMsg("CD inválido no registro. Reabra e selecione pela lista.", "error");
           return;
         }
 
         try{
           setMsg("Atualizando no Firebase…");
 
-          const ref = doc(db, TREINOS_COLLECTION, EDITING_ID);
-          await setDoc(ref, {
+          await setDoc(doc(db, TREINOS_COLLECTION, EDITING_ID), {
             uidKey: usuarioKey,
             usuarioNome: usuario,
 
@@ -723,6 +739,7 @@
 
           await loadHistFromFirebase();
           renderHist();
+
         }catch(e){
           console.error(e);
           setMsg("Erro ao atualizar no Firebase. Normalmente é RULES (PERMISSION_DENIED).", "error");
@@ -747,9 +764,7 @@
 
         const ops = cdsValidos.map(async (cdItem) => {
           const id = makeId();
-          const ref = doc(db, TREINOS_COLLECTION, id);
-
-          return setDoc(ref, {
+          return setDoc(doc(db, TREINOS_COLLECTION, id), {
             uidKey: usuarioKey,
             usuarioNome: usuario,
 
