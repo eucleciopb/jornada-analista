@@ -1,3 +1,6 @@
+/* =========================
+   AGENDA (LARGO) + OBSERVAÇÕES "JANELA"
+========================= */
 :root{
   --bg-dark:#0f1012;
   --border:rgba(255,255,255,.10);
@@ -75,7 +78,7 @@ body{
   color:#fff;
   font-weight:800;
   cursor:pointer;
-  transition: transform .12s ease, box-shadow .2s ease, filter .2s ease;
+  transition: transform .12s ease, box-shadow .2s ease;
 }
 #btnSalvar:hover{ transform: translateY(-1px); box-shadow:0 14px 30px rgba(217,27,46,.35); }
 #btnSalvar:disabled{ opacity:.55; cursor:not-allowed; }
@@ -178,107 +181,12 @@ label{ display:block; font-size:12px; color:var(--text-muted); margin-bottom:6px
 
 tr.blocked{ opacity:.55; background: rgba(255,255,255,.02); }
 
-/* ===== CAMINHO A: preview pequeno no grid ===== */
-#tbodyAgenda td:last-child textarea{
-  min-height: 52px !important;
-  height: 52px !important;
-  resize: none !important;
-  overflow: hidden;
-  cursor: pointer;
-  opacity: .92;
-}
-#tbodyAgenda td:last-child{ vertical-align: top; }
-
 /* =========================
-   MODAL OBSERVAÇÕES
+   OBSERVAÇÕES (CAMINHO A)
+   - preview pequeno
+   - ao focar vira "janela" grande (modal CSS)
 ========================= */
-.modal{ position:fixed; inset:0; display:none; z-index:9999; }
-.modal.is-open{ display:block; }
-
-.modal-backdrop{
-  position:absolute; inset:0;
-  background: rgba(0,0,0,.55);
-  backdrop-filter: blur(6px);
-}
-
-.modal-card{
-  position:relative;
-  width:min(860px, calc(100% - 28px));
-  margin: 6vh auto;
-  background: rgba(23,25,29,.92);
-  border: 1px solid rgba(255,255,255,.12);
-  border-radius: 22px;
-  box-shadow: 0 30px 70px rgba(0,0,0,.55);
-  overflow:hidden;
-}
-
-.modal-head{
-  display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
-  padding: 16px 18px;
-  border-bottom: 1px solid rgba(255,255,255,.08);
-}
-.modal-head h3{ margin:0; font-size:16px; letter-spacing:.2px; }
-.modal-sub{ margin-top:6px; font-size:12px; color: rgba(229,231,235,.65); }
-
-.icon-btn{
-  border:1px solid rgba(255,255,255,.14);
-  background: rgba(255,255,255,.06);
-  color:#fff;
-  border-radius: 12px;
-  width:40px; height:40px;
-  cursor:pointer;
-}
-.icon-btn:hover{ background: rgba(255,255,255,.10); }
-
-.modal-body{ padding: 16px 18px; }
-.modal-label{ display:block; font-size:12px; color: rgba(229,231,235,.75); margin-bottom:8px; }
-
-.modal-textarea{
-  width:100%;
-  min-height: 44vh;
-  max-height: 62vh;
-  resize: vertical;
-  padding: 14px 14px;
-  border-radius: 16px;
-  border: 1px solid rgba(255,255,255,.14);
-  background: rgba(255,255,255,.05);
-  color: rgba(255,255,255,.95);
-  outline:none;
-  line-height:1.55;
-  font-size: 14px;
-}
-.modal-textarea:focus{
-  border-color: rgba(255,59,59,.55);
-  box-shadow: 0 0 0 4px rgba(217,27,46,.18);
-}
-
-.modal-foot{
-  display:flex; justify-content:flex-end; gap:10px;
-  padding: 14px 18px;
-  border-top: 1px solid rgba(255,255,255,.08);
-}
-.btn-ghost{
-  padding: 11px 14px;
-  border-radius: 14px;
-  border: 1px solid rgba(255,255,255,.14);
-  background: rgba(255,255,255,.06);
-  color:#fff;
-  cursor:pointer;
-}
-.btn-ghost:hover{ background: rgba(255,255,255,.10); }
-
-/* mobile */
-@media (max-width: 900px){
-  .topbar, .card.wide{ margin-left:12px; margin-right:12px; }
-  .table-wrap table{ min-width:900px; }
-}
-/* Esconde a coluna 3 (Analista) só visualmente */
-.table-wrap table thead th:nth-child(3),
-.table-wrap table tbody td:nth-child(3){
-  display:none;
-}
-/* Observações como preview na tabela */
-.table-wrap textarea[data-field="obs"]{
+textarea[data-field="obs"]{
   min-height: 52px;
   height: 52px;
   resize: none;
@@ -287,8 +195,8 @@ tr.blocked{ opacity:.55; background: rgba(255,255,255,.02); }
   line-height: 1.35;
 }
 
-/* Ao focar, vira uma janela grande (modal CSS) */
-.table-wrap textarea[data-field="obs"]:focus{
+/* janela grande */
+textarea[data-field="obs"]:focus{
   position: fixed;
   top: 8vh;
   left: 50%;
@@ -297,31 +205,22 @@ tr.blocked{ opacity:.55; background: rgba(255,255,255,.02); }
   height: 70vh;
   z-index: 9999;
 
-  resize: vertical;
-  overflow: auto;
-
-  padding: 16px 16px;
-  border-radius: 18px;
-
-  background: rgba(23,25,29,.96);
-  border: 1px solid rgba(255,255,255,.16);
-
-  /* “Backdrop” escuro (efeito janela) */
-  box-shadow: 0 0 0 9999px rgba(0,0,0,.62);
-}
-.table-wrap textarea[data-field="obs"]:focus{
-  position: fixed;
-  top: 8vh;
-  left: 50%;
-  transform: translateX(-50%);
-  width: min(900px, calc(100% - 28px));
-  height: 70vh;
-  z-index: 9999;
   padding: 16px;
   border-radius: 18px;
+
   background: rgba(23,25,29,.96);
   border: 1px solid rgba(255,255,255,.16);
+
   box-shadow: 0 0 0 9999px rgba(0,0,0,.62);
   overflow: auto;
   resize: vertical;
+
+  line-height: 1.55;
+  font-size: 14px;
+}
+
+/* mobile */
+@media (max-width: 900px){
+  .topbar, .card.wide{ margin-left:12px; margin-right:12px; }
+  .table-wrap table{ min-width:900px; }
 }
