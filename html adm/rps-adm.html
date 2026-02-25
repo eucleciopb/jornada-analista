@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>RPS | Admin (por Responsável)</title>
+  <title>RPS | Admin (Semanal)</title>
   <link rel="stylesheet" href="../css/styles.css" />
 
   <style>
@@ -138,6 +138,7 @@
       color: var(--text);
     }
     .pill-ok{border-color: rgba(34,197,94,.35); background: rgba(34,197,94,.12); color: var(--ok);}
+    .pill-bad{border-color: rgba(239,68,68,.35); background: rgba(239,68,68,.12); color: var(--danger);}
     .pill-warn{border-color: rgba(250,204,21,.35); background: rgba(250,204,21,.12); color: var(--warn);}
 
     .msg{margin-top:10px;font-size:13px;font-weight:900;color:#d1d5db}
@@ -183,7 +184,6 @@
     .act-table{min-width:1040px}
     .act-table th,.act-table td{padding:10px;border-bottom:1px solid rgba(255,255,255,.06)}
     .act-table thead th{background:rgba(0,0,0,.30);color:var(--muted);font-size:12px}
-
     .act-field{
       width:100%;
       padding:10px 12px;
@@ -198,10 +198,12 @@
       box-shadow: 0 0 0 4px rgba(217,27,46,.18);
     }
 
-    select[multiple].act-field{
-      min-height: 46px;
-      padding-top: 8px;
-      padding-bottom: 8px;
+    /* Multi select simples */
+    .multi{
+      height:44px;
+    }
+    .multi option{
+      padding:6px;
     }
 
     .btn-mini{
@@ -220,6 +222,15 @@
       display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;
       padding:12px 16px 16px 16px;border-top:1px solid rgba(255,255,255,.08);
     }
+
+    .weeks-box{
+      margin-top:14px;
+      background: rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:16px;
+      padding:12px 14px;
+    }
+    .weeks-head{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
   </style>
 </head>
 
@@ -242,8 +253,8 @@
   <section class="card">
     <div class="row-between">
       <div>
-        <h3 style="margin:0 0 6px">Visão por Responsável</h3>
-        <div class="hint">Selecione o ano e a semana. As linhas são os responsáveis. Clique no responsável para lançar/editar atividades.</div>
+        <h3 style="margin:0 0 6px">Visão Semanal (ADM)</h3>
+        <div class="hint">Linhas por responsável (Bruna, Elaine, Euclecio, Pedro). Clique para abrir e lançar/editar atividades.</div>
       </div>
       <button class="btn btn-primary" id="btnReload" type="button">Atualizar</button>
     </div>
@@ -255,23 +266,34 @@
       </div>
 
       <div>
-        <label for="weekPicker">Semana</label>
-        <select id="weekPicker" class="field"></select>
+        <label for="searchBox">Buscar</label>
+        <input id="searchBox" class="field" type="text" placeholder="Responsável, atividade..." />
       </div>
+    </div>
 
-      <div>
-        <label for="searchBox">Buscar responsável</label>
-        <input id="searchBox" class="field" type="text" placeholder="Bruna, Elaine..." />
+    <!-- ✅ Semanas (Opcional) agora é filtro flegado -->
+    <div class="weeks-box">
+      <div class="weeks-head" style="align-items:flex-end;">
+        <div>
+          <div style="font-weight:900;">Semanas (Opcional)</div>
+          <div class="hint">Por padrão vem “Todas”. Se quiser, selecione uma semana.</div>
+        </div>
+        <div style="min-width:340px;flex:1;max-width:520px;">
+          <label for="weekFilter">Semana</label>
+          <select id="weekFilter" class="field">
+            <option value="ALL" selected>Todas as semanas</option>
+          </select>
+        </div>
       </div>
     </div>
 
     <div class="kpis">
       <div class="kpi">
-        <div class="k-label">Mapeadas (semana selecionada)</div>
+        <div class="k-label">Mapeadas (filtro atual)</div>
         <div class="k-val" id="kpiTotal">0</div>
       </div>
       <div class="kpi">
-        <div class="k-label">Concluídas (Realizado)</div>
+        <div class="k-label">Concluídas</div>
         <div class="k-val" id="kpiDone">0</div>
       </div>
       <div class="kpi">
@@ -279,8 +301,8 @@
         <div class="k-val" id="kpiPending">0</div>
       </div>
       <div class="kpi">
-        <div class="k-label">Não realizadas</div>
-        <div class="k-val" id="kpiNotDone">0</div>
+        <div class="k-label">Fora do prazo</div>
+        <div class="k-val" id="kpiLate">0</div>
       </div>
     </div>
 
@@ -291,14 +313,14 @@
         <thead>
           <tr>
             <th style="width:260px;">Responsável</th>
-            <th style="width:170px; text-align:center;">Mapeadas</th>
-            <th style="width:170px; text-align:center;">Concluídas</th>
-            <th style="width:170px; text-align:center;">Pendentes</th>
-            <th style="width:180px; text-align:center;">Não realizadas</th>
-            <th style="width:160px;">Status</th>
+            <th style="width:160px; text-align:center;">Mapeadas</th>
+            <th style="width:160px; text-align:center;">Concluídas</th>
+            <th style="width:160px; text-align:center;">Pendentes</th>
+            <th style="width:180px; text-align:center;">Fora do prazo</th>
+            <th style="width:180px;">Status</th>
           </tr>
         </thead>
-        <tbody id="tbodyUsers">
+        <tbody id="tbodyMain">
           <tr><td colspan="6" style="opacity:.8;">Carregando…</td></tr>
         </tbody>
       </table>
@@ -321,7 +343,7 @@
     <div class="modal-body">
       <div class="modal-tools">
         <div>
-          <label for="mStatusFilter">Filtro de Status</label>
+          <label for="mStatusFilter">Filtrar por Status</label>
           <select id="mStatusFilter" class="field">
             <option value="pendentes" selected>Pendentes (padrão)</option>
             <option value="todos">Todos</option>
@@ -331,7 +353,7 @@
             <option value="em_andamento">Em andamento</option>
             <option value="realizando">Realizando</option>
           </select>
-          <div class="mini-hint">A janela sempre abre filtrada em <b>Pendentes</b>.</div>
+          <div class="mini-hint">A janela sempre abre filtrando pendentes.</div>
         </div>
 
         <div>
@@ -345,9 +367,9 @@
           <thead>
             <tr>
               <th style="width:420px;">Atividade</th>
-              <th style="width:320px;">Responsáveis (pode marcar +1)</th>
+              <th style="width:280px;">Responsáveis (pode +1)</th>
               <th style="width:220px;">Status</th>
-              <th style="width:120px;">Ações</th>
+              <th style="width:140px;">Ações</th>
             </tr>
           </thead>
           <tbody id="tbodyActs">
@@ -357,8 +379,7 @@
       </div>
 
       <div class="mini-hint" style="margin-top:10px;">
-        • Para excluir: clique em Excluir (vai marcar) e depois clique em Salvar.<br/>
-        • Linhas vazias são ignoradas.
+        Regras: linhas vazias são ignoradas. “Excluir” marca para remover do Firebase. Salvar fecha a janela.
       </div>
     </div>
 
@@ -383,7 +404,7 @@
   } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
   /* =========================
-     FIREBASE CONFIG
+     FIREBASE CONFIG (SEU)
   ========================= */
   const firebaseConfig = {
     apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
@@ -398,7 +419,7 @@
   const db = getFirestore(app);
 
   /* =========================
-     PATHS (arquivo em /html adm/)
+     PATHS
   ========================= */
   const PATH_INDEX  = "../index.html";
   const PATH_MENUADM = "menuadm.html";
@@ -434,12 +455,9 @@
   const RPS_COLLECTION = "rps_atividades";
 
   /* =========================
-     RESPONSÁVEIS
+     RESPONSÁVEIS (SÓ ADM)
   ========================= */
-  const USERS = [
-    "Bruna","Elaine","Euclecio","Pedro",
-    "Emerson","Joice","Michel","Muller","Ricardo","Robert","Rodrigo","Rosilene","Tenório"
-  ].sort((a,b)=>a.localeCompare(b,"pt-BR"));
+  const ADM_USERS = ["Bruna","Elaine","Euclecio","Pedro"];
 
   /* =========================
      STATUS
@@ -452,22 +470,20 @@
     { key:"nao_realizado", label:"Não realizado" }
   ];
 
-  const PENDING_SET = new Set(["planejado","em_andamento","realizando"]);
-
   /* =========================
      UI
   ========================= */
   const yearPicker = document.getElementById("yearPicker");
-  const weekPicker = document.getElementById("weekPicker");
   const searchBox = document.getElementById("searchBox");
+  const weekFilter = document.getElementById("weekFilter");
   const btnReload = document.getElementById("btnReload");
   const msg = document.getElementById("msg");
-  const tbodyUsers = document.getElementById("tbodyUsers");
+  const tbodyMain = document.getElementById("tbodyMain");
 
   const kpiTotal = document.getElementById("kpiTotal");
   const kpiDone = document.getElementById("kpiDone");
-  const kpiNotDone = document.getElementById("kpiNotDone");
   const kpiPending = document.getElementById("kpiPending");
+  const kpiLate = document.getElementById("kpiLate");
 
   // Modal
   const modalBackdrop = document.getElementById("modalBackdrop");
@@ -486,7 +502,7 @@
   }
 
   /* =========================
-     HELPERS
+     DATA / SEMANAS
   ========================= */
   function pad2(n){ return String(n).padStart(2,"0"); }
   function iso(y,m,d){ return `${y}-${pad2(m)}-${pad2(d)}`; }
@@ -495,22 +511,14 @@
     const [y,m,d] = String(isoDate).split("-");
     return `${d}/${m}/${y}`;
   }
-  function escapeHtml(s){
-    return (s || "")
-      .replaceAll("&","&amp;")
-      .replaceAll("<","&lt;")
-      .replaceAll(">","&gt;")
-      .replaceAll('"',"&quot;")
-      .replaceAll("'","&#039;");
-  }
-  function makeId(){
-    if (globalThis.crypto?.randomUUID) return crypto.randomUUID();
-    return `${Date.now()}_${Math.random().toString(16).slice(2)}`;
+  function todayISO(){
+    const d = new Date();
+    return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
   }
 
   const MONTHS = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 
-  // Semana por mês: 1..7, 8..14, 15..21, 22..28, 29..fim
+  // Semana 1=1..7, 2=8..14, 3=15..21, 4=22..28, 5=29..fim
   function weeksOfYear(year){
     const weeks = [];
     for(let m=1;m<=12;m++){
@@ -534,118 +542,185 @@
           semanaMes: r.w,
           inicio,
           fim,
-          label: `${r.w}ª semana de ${MONTHS[m-1]} (${toBR(inicio)}–${toBR(fim)})`
+          label: `${r.w}ª semana de ${MONTHS[m-1]}`
         });
       }
     }
     return weeks;
   }
 
-  function getCurrentWeekKey(year){
-    const now = new Date();
-    const y = now.getFullYear();
-    const m = now.getMonth() + 1;
-    const d = now.getDate();
-    const weekInMonth = d <= 7 ? 1 : d <= 14 ? 2 : d <= 21 ? 3 : d <= 28 ? 4 : 5;
-    // se ano selecionado for diferente do ano atual, cai na 1ª semana de janeiro
-    if(year !== y) return `${year}-01-W1`;
-    return `${y}-${pad2(m)}-W${weekInMonth}`;
+  /* =========================
+     CACHE
+  ========================= */
+  let WEEKS = [];
+  let ALL_ACTS = []; // tudo do ano
+
+  // Estado do modal
+  let CURRENT_RESP = null;
+
+  /* =========================
+     HELPERS
+  ========================= */
+  function escapeHtml(s){
+    return (s || "")
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#039;");
+  }
+
+  function normalizeAct(a){
+    // compat: se veio "responsavel" (string), converte em array
+    const arr = Array.isArray(a.responsaveis) ? a.responsaveis : (a.responsavel ? [a.responsavel] : []);
+    return { ...a, responsaveis: arr.filter(Boolean) };
+  }
+
+  function getSelectedWeekKeys(){
+    const v = (weekFilter.value || "ALL").trim();
+    if(v === "ALL") return WEEKS.map(w => w.weekKey);
+    return [v];
+  }
+
+  function isPendingStatus(st){
+    return st !== "realizado" && st !== "nao_realizado";
+  }
+
+  function isLate(act){
+    // fora do prazo: pendente e semana já passou (fim < hoje)
+    if(!isPendingStatus(act.status)) return false;
+    const fim = String(act.fim || "");
+    if(!fim) return false;
+    return todayISO() > fim;
+  }
+
+  function computeAggByResp(resp, acts){
+    // Conta atividades que incluem o resp dentro de responsaveis[]
+    const mine = acts.filter(a => (a.responsaveis || []).includes(resp));
+    const total = mine.length;
+    const done = mine.filter(x => x.status === "realizado").length;
+    const pending = mine.filter(x => isPendingStatus(x.status)).length;
+    const late = mine.filter(x => isLate(x)).length;
+    return { total, done, pending, late };
+  }
+
+  function statusPill(agg){
+    if(agg.total === 0) return `<span class="pill">Sem itens</span>`;
+    if(agg.late > 0) return `<span class="pill pill-bad">Fora do prazo</span>`;
+    if(agg.pending > 0) return `<span class="pill pill-warn">Pendente</span>`;
+    return `<span class="pill pill-ok">Fechado</span>`;
+  }
+
+  function filteredActsByUI(){
+    const selected = new Set(getSelectedWeekKeys());
+    const q = (searchBox.value || "").toLowerCase().trim();
+
+    let base = (ALL_ACTS || []).map(normalizeAct)
+      .filter(a => selected.has(String(a.weekKey || "").trim()));
+
+    if(q){
+      base = base.filter(a => {
+        const blob = [
+          (a.atividade||""),
+          (a.status||""),
+          (a.responsaveis||[]).join(" "),
+          (a.weekKey||"")
+        ].join(" ").toLowerCase();
+        return blob.includes(q);
+      });
+    }
+
+    return base;
   }
 
   /* =========================
-     ESTADO
+     FIRESTORE LOAD
   ========================= */
-  let WEEKS = [];
-  let ALL_ACTS_YEAR = [];   // carregado do firebase por ano
-  let WEEK_ACTS = [];       // filtrado pela semana selecionada (weekKey)
-  let CURRENT_WEEK = null;
+  async function loadYearData(year){
+    setMsg("Carregando RPS do Firebase…");
 
-  // Modal state
-  let CURRENT_USER = null;
-
-  /* =========================
-     FIRESTORE LOAD (SEM ÍNDICE COMPOSTO)
-     - carrega por ANO e filtra weekKey no client
-  ========================= */
-  async function loadYearFromFirestore(year){
-    setMsg("Carregando do Firebase…");
     const snap = await getDocs(query(collection(db, RPS_COLLECTION), where("ano","==",year)));
+
     const arr = [];
     snap.forEach(d => arr.push({ id:d.id, ...d.data() }));
-    ALL_ACTS_YEAR = arr;
+    ALL_ACTS = arr.map(normalizeAct);
+
     setMsg("");
   }
 
-  function applyWeekFilter(){
-    const weekKey = weekPicker.value;
-    CURRENT_WEEK = WEEKS.find(w => w.weekKey === weekKey) || null;
-    WEEK_ACTS = (ALL_ACTS_YEAR || []).filter(a => String(a.weekKey||"") === String(weekKey));
+  /* =========================
+     SEMANAS FILTER (FLEGADO)
+  ========================= */
+  function buildWeekFilter(){
+    weekFilter.innerHTML =
+      `<option value="ALL" selected>Todas as semanas</option>` +
+      WEEKS.map(w => `<option value="${w.weekKey}">${w.label} (${toBR(w.inicio)}–${toBR(w.fim)})</option>`).join("");
+  }
+
+  weekFilter.addEventListener("change", ()=>{
+    renderMain();
+  });
+
+  /* =========================
+     KPI
+  ========================= */
+  function renderKPIs(){
+    const acts = filteredActsByUI();
+
+    const total = acts.length;
+    const done = acts.filter(x => x.status === "realizado").length;
+    const pending = acts.filter(x => isPendingStatus(x.status)).length;
+    const late = acts.filter(x => isLate(x)).length;
+
+    kpiTotal.textContent = String(total);
+    kpiDone.textContent = String(done);
+    kpiPending.textContent = String(pending);
+    kpiLate.textContent = String(late);
   }
 
   /* =========================
-     AGGREGATION
+     RENDER MAIN (LINHAS POR ADM)
   ========================= */
-  function getAggForList(list){
-    const total = list.length;
-    const done = list.filter(x => x.status === "realizado").length;
-    const notDone = list.filter(x => x.status === "nao_realizado").length;
-    const pending = list.filter(x => PENDING_SET.has(x.status)).length;
-    return { total, done, notDone, pending };
-  }
+  function renderMain(){
+    const acts = filteredActsByUI();
 
-  function renderKPIs(){
-    const agg = getAggForList(WEEK_ACTS);
-    kpiTotal.textContent = String(agg.total);
-    kpiDone.textContent = String(agg.done);
-    kpiPending.textContent = String(agg.pending);
-    kpiNotDone.textContent = String(agg.notDone);
-  }
+    tbodyMain.innerHTML = "";
 
-  function userHasAct(act, user){
-    const arr = Array.isArray(act.responsaveis) ? act.responsaveis : (act.responsavel ? [act.responsavel] : []);
-    return arr.includes(user);
-  }
+    const rows = ADM_USERS.map(resp => {
+      const agg = computeAggByResp(resp, acts);
+      return { resp, agg };
+    });
 
-  function renderUsersTable(){
+    // Se buscar por nome, filtra o responsável também
     const q = (searchBox.value || "").toLowerCase().trim();
+    const finalRows = q
+      ? rows.filter(r => r.resp.toLowerCase().includes(q) || r.agg.total > 0)
+      : rows;
 
-    const rows = USERS
-      .filter(u => !q || u.toLowerCase().includes(q))
-      .map(user => {
-        const list = WEEK_ACTS.filter(a => userHasAct(a, user));
-        const agg = getAggForList(list);
-
-        // status por responsável:
-        // - se tem pendentes => Pendente
-        // - se tem itens e não tem pendentes => Fechado
-        // - se não tem itens => Sem itens
-        let pill = `<span class="pill">Sem itens</span>`;
-        if(agg.total > 0 && agg.pending > 0) pill = `<span class="pill pill-warn">Pendente</span>`;
-        if(agg.total > 0 && agg.pending === 0) pill = `<span class="pill pill-ok">Fechado</span>`;
-
-        return { user, agg, pill };
-      });
-
-    tbodyUsers.innerHTML = "";
-
-    if(rows.length === 0){
-      tbodyUsers.innerHTML = `<tr><td colspan="6" style="opacity:.8;">Nenhum responsável.</td></tr>`;
+    if(finalRows.length === 0){
+      tbodyMain.innerHTML = `<tr><td colspan="6" style="opacity:.8;">Sem dados.</td></tr>`;
+      renderKPIs();
       return;
     }
 
-    for(const r of rows){
+    for(const r of finalRows){
       const tr = document.createElement("tr");
+      tr.dataset.resp = r.resp;
+
       tr.innerHTML = `
-        <td style="font-weight:900;">${r.user}</td>
+        <td style="font-weight:900;">${r.resp}</td>
         <td style="text-align:center;font-weight:900;">${r.agg.total}</td>
         <td style="text-align:center;font-weight:900;color:#22c55e;">${r.agg.done}</td>
         <td style="text-align:center;font-weight:900;color:#facc15;">${r.agg.pending}</td>
-        <td style="text-align:center;font-weight:900;color:#ef4444;">${r.agg.notDone}</td>
-        <td>${r.pill}</td>
+        <td style="text-align:center;font-weight:900;color:#ef4444;">${r.agg.late}</td>
+        <td>${statusPill(r.agg)}</td>
       `;
-      tr.addEventListener("click", () => openUserModal(r.user));
-      tbodyUsers.appendChild(tr);
+
+      tr.addEventListener("click", ()=> openModalForResp(r.resp));
+      tbodyMain.appendChild(tr);
     }
+
+    renderKPIs();
   }
 
   /* =========================
@@ -656,7 +731,7 @@
   }
   function closeModal(){
     modalBackdrop.style.display = "none";
-    CURRENT_USER = null;
+    CURRENT_RESP = null;
     tbodyActs.innerHTML = "";
     mStatusFilter.value = "pendentes";
   }
@@ -665,53 +740,43 @@
   btnCancelModal.addEventListener("click", closeModal);
   modalBackdrop.addEventListener("click", (e) => { if(e.target === modalBackdrop) closeModal(); });
 
-  function getUserActs(){
-    // sempre pega só do usuário clicado
-    const base = WEEK_ACTS.filter(a => userHasAct(a, CURRENT_USER));
-
-    // filtro de status no modal
-    const f = mStatusFilter.value;
-    if(f === "todos") return base;
-
-    if(f === "pendentes") return base.filter(a => PENDING_SET.has(a.status));
-
-    return base.filter(a => a.status === f);
+  function statusOptionsHtml(current){
+    return STATUS_OPTS.map(s => {
+      const sel = s.key === current ? "selected" : "";
+      return `<option value="${s.key}" ${sel}>${s.label}</option>`;
+    }).join("");
   }
 
-  function buildResponsaveisSelect(selectedArr){
-    const sel = new Set(selectedArr || []);
-    const opts = USERS.map(u => `<option value="${escapeHtml(u)}" ${sel.has(u) ? "selected" : ""}>${escapeHtml(u)}</option>`).join("");
-    return `<select class="act-field" data-field="responsaveis" multiple title="Segure Ctrl (PC) ou Command (Mac) para selecionar mais de um">
-      ${opts}
-    </select>`;
-  }
-
-  function buildStatusSelect(selected){
-    const s = selected || "planejado";
-    const opts = STATUS_OPTS.map(x => `<option value="${x.key}" ${x.key===s ? "selected" : ""}>${x.label}</option>`).join("");
-    return `<select class="act-field" data-field="status">${opts}</select>`;
+  function responsaveisOptionsHtml(selectedArr){
+    const selSet = new Set(selectedArr || []);
+    return ADM_USERS.map(u => `<option value="${u}" ${selSet.has(u) ? "selected" : ""}>${u}</option>`).join("");
   }
 
   function actRowTemplate(item){
-    const id = (item?.id ?? "").toString();
-    const atividade = (item?.atividade ?? "").toString();
-    const status = (item?.status ?? "planejado").toString();
-    const respArr = Array.isArray(item?.responsaveis)
-      ? item.responsaveis
-      : (item?.responsavel ? [item.responsavel] : [CURRENT_USER]); // fallback
+    const id = item?.id || "";
+    const weekKey = item?.weekKey || "";
+    const atividade = (item?.atividade || "").toString();
+    const status = (item?.status || "planejado").toString();
+    const respArr = Array.isArray(item?.responsaveis) ? item.responsaveis : (item?.responsavel ? [item.responsavel] : []);
 
     return `
-      <tr data-id="${escapeHtml(id)}">
+      <tr data-id="${escapeHtml(id)}" data-weekkey="${escapeHtml(weekKey)}">
         <td>
-          <input class="act-field" data-field="atividade" maxlength="180"
-            placeholder="Descreva a atividade..."
-            value="${escapeHtml(atividade)}">
+          <input class="act-field" data-field="atividade" maxlength="160"
+                 placeholder="Descreva a atividade..."
+                 value="${escapeHtml(atividade)}">
         </td>
         <td>
-          ${buildResponsaveisSelect(respArr)}
-          <div class="mini-hint">Dica: já deixei o responsável clicado selecionado.</div>
+          <select class="act-field multi" multiple data-field="responsaveis" title="Segure Ctrl (Windows) ou Command (Mac) para selecionar mais de um">
+            ${responsaveisOptionsHtml(respArr)}
+          </select>
+          <div class="mini-hint" style="margin-top:6px;">Dica: Ctrl/Command para marcar mais de um.</div>
         </td>
-        <td>${buildStatusSelect(status)}</td>
+        <td>
+          <select class="act-field" data-field="status">
+            ${statusOptionsHtml(status)}
+          </select>
+        </td>
         <td>
           <button class="btn-mini danger" type="button" data-del>Excluir</button>
         </td>
@@ -719,46 +784,75 @@
     `;
   }
 
-  function openUserModal(user){
-    CURRENT_USER = user;
+  function getWeekMeta(weekKey){
+    return WEEKS.find(w => w.weekKey === weekKey) || null;
+  }
 
-    // NÃO mostrar semana no modal (pedido)
-    mTitle.textContent = "RPS — Lançamentos";
-    mSub.textContent = `Responsável: ${user}`;
+  function actsForCurrentResp(){
+    if(!CURRENT_RESP) return [];
 
-    // padrão pendentes
-    mStatusFilter.value = "pendentes";
+    const selectedWeeks = new Set(getSelectedWeekKeys());
+    let base = (ALL_ACTS || []).map(normalizeAct)
+      .filter(a => selectedWeeks.has(String(a.weekKey || "").trim()))
+      .filter(a => (a.responsaveis || []).includes(CURRENT_RESP));
 
+    // filtro status modal (padrão pendentes)
+    const sf = (mStatusFilter.value || "pendentes").trim();
+
+    if(sf === "pendentes"){
+      base = base.filter(a => isPendingStatus(a.status));
+    } else if(sf !== "todos"){
+      base = base.filter(a => a.status === sf);
+    }
+
+    // ordena: mais pendente primeiro, depois atraso, depois texto
+    const order = { planejado:1, em_andamento:2, realizando:3, realizado:4, nao_realizado:5 };
+    base.sort((a,b)=>{
+      const la = isLate(a) ? 0 : 1;
+      const lb = isLate(b) ? 0 : 1;
+      if(la !== lb) return la - lb;
+
+      const oa = order[a.status] || 99;
+      const ob = order[b.status] || 99;
+      if(oa !== ob) return oa - ob;
+
+      return String(a.atividade||"").localeCompare(String(b.atividade||""),"pt-BR");
+    });
+
+    return base;
+  }
+
+  function openModalForResp(resp){
+    CURRENT_RESP = resp;
+
+    const wk = weekFilter.value === "ALL" ? "Todas as semanas" : (getWeekMeta(weekFilter.value)?.label || weekFilter.value);
+    mTitle.textContent = `RPS — Lançamentos`;
+    mSub.textContent = `Responsável: ${resp} • Semana: ${wk}`;
+
+    mStatusFilter.value = "pendentes"; // ✅ abre já filtrado pendentes
     renderModalActivities();
     openModal();
   }
 
   function renderModalActivities(){
-    const list = getUserActs();
+    const list = actsForCurrentResp();
 
     tbodyActs.innerHTML = "";
+
     if(list.length === 0){
-      tbodyActs.innerHTML = `<tr><td colspan="4" style="opacity:.8;">Sem atividades para este responsável (no filtro atual). Clique em “+ Nova atividade”.</td></tr>`;
+      tbodyActs.innerHTML = `<tr><td colspan="4" style="opacity:.8;">Sem atividades para este filtro. Clique em “+ Nova atividade”.</td></tr>`;
       return;
     }
 
-    // ordena pendentes primeiro
-    const order = { planejado:1, em_andamento:2, realizando:3, realizado:4, nao_realizado:5 };
-    list.sort((a,b)=>{
-      const oa = order[a.status] || 99;
-      const ob = order[b.status] || 99;
-      if(oa !== ob) return oa - ob;
-      return String(a.atividade||"").localeCompare(String(b.atividade||""),"pt-BR");
-    });
-
     tbodyActs.innerHTML = list.map(actRowTemplate).join("");
 
-    // excluir (marca delete)
+    // excluir linha (marca para delete)
     tbodyActs.querySelectorAll("[data-del]").forEach(btn=>{
       btn.addEventListener("click", (e)=>{
         e.stopPropagation();
         const tr = btn.closest("tr");
         if(!tr) return;
+
         tr.dataset.delete = "1";
         tr.style.opacity = ".55";
         tr.querySelectorAll("input,select").forEach(el => el.disabled = true);
@@ -769,9 +863,25 @@
   mStatusFilter.addEventListener("change", renderModalActivities);
 
   btnAddRow.addEventListener("click", ()=>{
-    if(!CURRENT_USER) return;
+    if(!CURRENT_RESP) return;
 
-    // se tiver linha "Sem atividades...", limpa
+    // precisa de 1 weekKey para salvar: se ALL, salva na semana atual do ano (semana do mês atual)
+    // mas como seu modelo é por "semanas do mês", vamos usar a SEMANA SELECIONADA se não for ALL.
+    const selected = getSelectedWeekKeys();
+    let wk = selected[0];
+    if(weekFilter.value === "ALL"){
+      // se ALL, usa a semana do "hoje" (aproximação: acha a weekKey que contém hoje dentro do mesmo mês)
+      const t = todayISO();
+      const candidate = WEEKS.find(w => w.inicio <= t && w.fim >= t);
+      wk = candidate ? candidate.weekKey : WEEKS[0]?.weekKey;
+    }
+    const meta = getWeekMeta(wk);
+    if(!meta){
+      setMsg("Não consegui definir a semana para salvar. Selecione uma semana no filtro.", "error");
+      return;
+    }
+
+    // se tiver placeholder “sem atividades…”, limpa
     if(tbodyActs.querySelector("tr td")?.textContent?.includes("Sem atividades")){
       tbodyActs.innerHTML = "";
     }
@@ -779,50 +889,54 @@
     const tmp = document.createElement("tbody");
     tmp.innerHTML = actRowTemplate({
       id: "",
+      weekKey: meta.weekKey,
+      ano: meta.ano,
+      mes: meta.mes,
+      semanaMes: meta.semanaMes,
+      inicio: meta.inicio,
+      fim: meta.fim,
       atividade: "",
-      responsaveis: [CURRENT_USER],
+      responsaveis: [CURRENT_RESP],
       status: "planejado"
     });
+
     const tr = tmp.firstElementChild;
     tbodyActs.appendChild(tr);
 
-    // excluir linha nova: remove na hora
+    // excluir linha nova remove
     tr.querySelector("[data-del]")?.addEventListener("click", (e)=>{
       e.stopPropagation();
       tr.remove();
       if(tbodyActs.children.length === 0){
-        tbodyActs.innerHTML = `<tr><td colspan="4" style="opacity:.8;">Sem atividades para este responsável (no filtro atual). Clique em “+ Nova atividade”.</td></tr>`;
+        tbodyActs.innerHTML = `<tr><td colspan="4" style="opacity:.8;">Sem atividades para este filtro. Clique em “+ Nova atividade”.</td></tr>`;
       }
     });
   });
 
   /* =========================
-     SALVAR/EXCLUIR (FIREBASE)
+     SAVE / DELETE (FIRESTORE)
   ========================= */
-  function getSelectedMultiple(selectEl){
-    return [...selectEl.options].filter(o => o.selected).map(o => o.value);
+  function makeId(){
+    if (globalThis.crypto?.randomUUID) return crypto.randomUUID();
+    return `${Date.now()}_${Math.random().toString(16).slice(2)}`;
+  }
+
+  function getMultiSelected(selectEl){
+    return [...selectEl.options].filter(o => o.selected).map(o => o.value).filter(Boolean);
   }
 
   async function saveModalToFirestore(){
-    if(!CURRENT_WEEK) throw new Error("Semana não selecionada.");
-    if(!CURRENT_USER) throw new Error("Responsável não selecionado.");
+    if(!CURRENT_RESP) return;
 
-    const weekKey = CURRENT_WEEK.weekKey;
     const rows = [...tbodyActs.querySelectorAll("tr[data-id]")];
-
     const batch = writeBatch(db);
 
+    // Vamos reconstruir o cache do ano depois do commit, recarregando do Firebase (mais seguro)
     for(const tr of rows){
       const markedDelete = tr.dataset.delete === "1";
-
       const idExisting = (tr.dataset.id || "").trim();
-      const atividade = (tr.querySelector("[data-field='atividade']")?.value || "").trim();
-      const status = (tr.querySelector("[data-field='status']")?.value || "planejado").trim();
+      const weekKey = (tr.dataset.weekkey || "").trim();
 
-      const selEl = tr.querySelector("[data-field='responsaveis']");
-      const responsaveis = selEl ? getSelectedMultiple(selEl) : [CURRENT_USER];
-
-      // delete
       if(markedDelete){
         if(idExisting){
           batch.delete(doc(db, RPS_COLLECTION, idExisting));
@@ -830,30 +944,47 @@
         continue;
       }
 
-      // linha vazia
-      if(!atividade && responsaveis.length === 0){
+      const atividade = (tr.querySelector("[data-field='atividade']")?.value || "").trim();
+      const status = (tr.querySelector("[data-field='status']")?.value || "planejado").trim();
+      const respSel = getMultiSelected(tr.querySelector("[data-field='responsaveis']"));
+
+      // linha vazia ignora / ou remove se já existia
+      if(!atividade && respSel.length === 0){
         if(idExisting){
           batch.delete(doc(db, RPS_COLLECTION, idExisting));
         }
         continue;
       }
 
-      // se não selecionou ninguém, força o CURRENT_USER
-      const finalResponsaveis = responsaveis.length ? responsaveis : [CURRENT_USER];
+      // precisa de weekMeta
+      const meta = getWeekMeta(weekKey);
+      if(!meta){
+        // se não veio weekKey por algum motivo, usa filtro atual se for semana única
+        const wk = getSelectedWeekKeys()[0];
+        const meta2 = getWeekMeta(wk);
+        if(!meta2){
+          throw new Error("SEM_WEEK_META");
+        }
+        // atualiza meta e segue
+        tr.dataset.weekkey = meta2.weekKey;
+      }
 
-      const id = idExisting || `${weekKey}_${makeId()}`;
+      const wkFinal = (tr.dataset.weekkey || weekKey).trim();
+      const metaFinal = getWeekMeta(wkFinal);
+
+      const id = idExisting || `${wkFinal}_${makeId()}`;
       const ref = doc(db, RPS_COLLECTION, id);
 
       const payload = {
-        weekKey,
-        ano: CURRENT_WEEK.ano,
-        mes: CURRENT_WEEK.mes,
-        semanaMes: CURRENT_WEEK.semanaMes,
-        inicio: CURRENT_WEEK.inicio,
-        fim: CURRENT_WEEK.fim,
+        weekKey: wkFinal,
+        ano: metaFinal.ano,
+        mes: metaFinal.mes,
+        semanaMes: metaFinal.semanaMes,
+        inicio: metaFinal.inicio,
+        fim: metaFinal.fim,
 
         atividade,
-        responsaveis: finalResponsaveis,
+        responsaveis: respSel.length ? respSel : [CURRENT_RESP], // fallback
         status: status || "planejado",
 
         updatedAt: serverTimestamp(),
@@ -870,23 +1001,22 @@
 
     await batch.commit();
 
-    // recarrega ano e reaplica filtros (garante consistência)
-    await loadYearFromFirestore(CURRENT_WEEK.ano);
-    applyWeekFilter();
-    renderKPIs();
-    renderUsersTable();
+    // Recarrega ano inteiro (garante refletir deletes)
+    const selectedYear = Number(yearPicker.value);
+    await loadYearData(selectedYear);
+
+    renderMain();
   }
 
   btnSaveModal.addEventListener("click", async ()=>{
     try{
-      setMsg("Salvando no Firebase…");
+      setMsg("Salvando…");
       await saveModalToFirestore();
       setMsg("Salvo ✅", "success");
-      closeModal(); // ✅ fecha a janela ao salvar (pedido)
+      closeModal();
     }catch(e){
-      console.error("ERRO FIREBASE:", e);
-      const err = e?.code || e?.message || "Erro desconhecido";
-      setMsg("Erro ao salvar/excluir: " + err, "error");
+      console.error(e);
+      setMsg("Erro ao salvar/excluir. Verifique Rules (rps_atividades) e conexão.", "error");
     }
   });
 
@@ -901,48 +1031,31 @@
     yearPicker.value = String(y);
   }
 
-  function initWeeksForYear(year){
-    WEEKS = weeksOfYear(year);
-    weekPicker.innerHTML = WEEKS.map(w => `<option value="${w.weekKey}">${w.label}</option>`).join("");
-
-    const wk = getCurrentWeekKey(year);
-    // se não existir (ex: ano diferente), cai no primeiro
-    weekPicker.value = WEEKS.some(w => w.weekKey === wk) ? wk : (WEEKS[0]?.weekKey || "");
-  }
-
   async function boot(){
     initYears();
+
     const selectedYear = Number(yearPicker.value);
+    WEEKS = weeksOfYear(selectedYear);
+    buildWeekFilter();
 
-    initWeeksForYear(selectedYear);
-    await loadYearFromFirestore(selectedYear);
-
-    applyWeekFilter();
-    renderKPIs();
-    renderUsersTable();
+    await loadYearData(selectedYear);
+    renderMain();
   }
 
   yearPicker.addEventListener("change", async ()=>{
     try{
       const selectedYear = Number(yearPicker.value);
-      initWeeksForYear(selectedYear);
-      await loadYearFromFirestore(selectedYear);
-      applyWeekFilter();
-      renderKPIs();
-      renderUsersTable();
+      WEEKS = weeksOfYear(selectedYear);
+      buildWeekFilter();
+      await loadYearData(selectedYear);  // ✅ aqui estava o bug
+      renderMain();
     }catch(e){
       console.error(e);
       setMsg("Erro ao carregar o ano no Firebase.", "error");
     }
   });
 
-  weekPicker.addEventListener("change", ()=>{
-    applyWeekFilter();
-    renderKPIs();
-    renderUsersTable();
-  });
-
-  searchBox.addEventListener("input", renderUsersTable);
+  searchBox.addEventListener("input", renderMain);
   btnReload.addEventListener("click", boot);
 
   // start
