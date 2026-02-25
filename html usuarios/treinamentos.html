@@ -69,6 +69,14 @@
     }
     .btn-mini:hover{ filter: brightness(1.08); }
     .hint-inline{ margin-top:6px; opacity:.85; font-size: 12px; }
+
+    /* Ações (Editar/Excluir) */
+    .actions-inline{
+      display:flex;
+      gap:8px;
+      justify-content:flex-start;
+      flex-wrap:wrap;
+    }
   </style>
 </head>
 
@@ -90,6 +98,16 @@
       <div>
         <h3>Registrar Treinamento</h3>
         <p class="hint">Preencha os dados do treinamento realizado. Salva no Firebase (Firestore).</p>
+        <div id="editBadge" class="hint" style="display:none;margin-top:6px;color:#facc15;font-weight:800;">
+          Modo edição ativo (1 linha / 1 CD). Atualize e salve.
+        </div>
+      </div>
+
+      <!-- ✅ Botão cancelar edição (só aparece em modo edição) -->
+      <div>
+        <button id="btnCancelEdit" class="btn-secondary" type="button" style="display:none;">
+          Cancelar edição
+        </button>
       </div>
     </section>
 
@@ -201,7 +219,7 @@
             <th style="width:260px;">Desafio</th>
             <th style="width:260px;">Meta</th>
             <th>Obs</th>
-            <th style="width:140px;">Ações</th>
+            <th style="width:190px;">Ações</th>
           </tr>
         </thead>
         <tbody id="tbodyHist"></tbody>
@@ -293,6 +311,9 @@
     const msg = document.getElementById("msg");
     const busca = document.getElementById("busca");
     const tbodyHist = document.getElementById("tbodyHist");
+
+    const btnCancelEdit = document.getElementById("btnCancelEdit");
+    const editBadge = document.getElementById("editBadge");
 
     function setMsg(text, type="info"){
       msg.textContent = text || "";
@@ -478,6 +499,71 @@
       return arr;
     }
 
+    // ======= MODO EDIÇÃO =======
+    let EDITING_ID = null;
+
+    function setEditingMode(isEditing){
+      EDITING_ID = isEditing ? EDITING_ID : null;
+
+      editBadge.style.display = isEditing ? "block" : "none";
+      btnCancelEdit.style.display = isEditing ? "inline-flex" : "none";
+      btnSalvar.textContent = isEditing ? "Atualizar Registro" : "Salvar Treinamento";
+
+      // trava multi-cd em edição (porque o registro é 1 CD)
+      cdInput.disabled = isEditing;
+      btnAddCd.disabled = isEditing;
+      btnClearCds.disabled = isEditing;
+      chipsEl.style.opacity = isEditing ? ".65" : "1";
+
+      if (isEditing){
+        setMsg("Editando registro selecionado. Ajuste os campos e clique em Atualizar.", "info");
+      }
+    }
+
+    function resetFormKeepDate(){
+      // mantém dataTreino (como você já fazia)
+      publico.value = "";
+      treinamento.value = "";
+      totalPessoas.value = "";
+      notaMedia.value = "";
+      obs.value = "";
+      desafio.value = "";
+      metaDesafio.value = "";
+      dataApuracao.value = "";
+      SELECTED_CDS = [];
+      renderChips();
+    }
+
+    function startEdit(item){
+      if (!item?.id) return;
+
+      EDITING_ID = item.id;
+      dataTreino.value = item.data || todayISO();
+      dataApuracao.value = item.dataApuracao || "";
+      publico.value = item.publico || "";
+      treinamento.value = item.treinamento || "";
+      totalPessoas.value = item.totalPessoas ?? "";
+      notaMedia.value = item.notaMedia ?? "";
+      obs.value = item.obs || "";
+      desafio.value = item.desafio || "";
+      metaDesafio.value = item.meta || "";
+
+      // 1 CD por registro
+      SELECTED_CDS = [];
+      if (item.cd) SELECTED_CDS = [normalize(item.cd)];
+      renderChips();
+
+      setEditingMode(true);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    btnCancelEdit.addEventListener("click", async () => {
+      EDITING_ID = null;
+      setEditingMode(false);
+      resetFormKeepDate();
+      setMsg("Edição cancelada.", "info");
+    });
+
     function renderHist(){
       const q = (busca.value || "").toLowerCase();
       const data = (HIST_CACHE || []).slice();
@@ -507,17 +593,38 @@
           <td>${item.meta || "-"}</td>
           <td>${item.obs || "-"}</td>
           <td>
-            <button class="btn-secondary" type="button" data-del="${item.id}"
-              style="border-color: rgba(255,59,59,.25);">Excluir</button>
+            <div class="actions-inline">
+              <button class="btn-secondary" type="button" data-edit="${item.id}">Editar</button>
+              <button class="btn-secondary" type="button" data-del="${item.id}"
+                style="border-color: rgba(255,59,59,.25);">Excluir</button>
+            </div>
           </td>
         `;
         tbodyHist.appendChild(tr);
       });
 
+      // Editar
+      tbodyHist.querySelectorAll("[data-edit]").forEach(btn => {
+        btn.onclick = () => {
+          const id = btn.getAttribute("data-edit");
+          const item = (HIST_CACHE || []).find(x => x.id === id);
+          if (!item) return;
+          startEdit(item);
+        };
+      });
+
+      // Excluir
       tbodyHist.querySelectorAll("[data-del]").forEach(btn => {
         btn.onclick = async () => {
           const id = btn.getAttribute("data-del");
           if (!id) return;
+
+          // se estiver editando esse mesmo, cancela
+          if (EDITING_ID === id){
+            EDITING_ID = null;
+            setEditingMode(false);
+            resetFormKeepDate();
+          }
 
           try{
             setMsg("Excluindo…");
@@ -534,7 +641,7 @@
     }
 
     /* =========================
-       Salvar (1 por CD)
+       Salvar / Atualizar
     ========================= */
     btnSalvar.onclick = async () => {
       setMsg("");
@@ -570,12 +677,65 @@
         setMsg("Nota média deve estar entre 0 e 10.", "error");
         return;
       }
+
+      // ===== Atualizar (modo edição) =====
+      if (EDITING_ID){
+        if (SELECTED_CDS.length !== 1){
+          setMsg("Em edição, o registro deve ter exatamente 1 CD.", "error");
+          return;
+        }
+        const cdItem = SELECTED_CDS[0];
+        if (!CDS.includes(cdItem)){
+          setMsg("CD inválido no registro. Reabra a edição e selecione pela lista.", "error");
+          return;
+        }
+
+        try{
+          setMsg("Atualizando no Firebase…");
+
+          const ref = doc(db, TREINOS_COLLECTION, EDITING_ID);
+          await setDoc(ref, {
+            uidKey: usuarioKey,
+            usuarioNome: usuario,
+
+            data: base.data,
+            dataApuracao: base.dataApuracao,
+
+            publico: base.publico,
+            treinamento: base.treinamento,
+            cd: cdItem,
+
+            totalPessoas: base.totalPessoas,
+            notaMedia: base.notaMedia,
+
+            obs: base.obs || null,
+            desafio: base.desafio,
+            meta: base.meta,
+
+            atualizadoEm: serverTimestamp()
+          }, { merge: true });
+
+          setMsg("Registro atualizado ✅", "success");
+
+          EDITING_ID = null;
+          setEditingMode(false);
+          resetFormKeepDate();
+
+          await loadHistFromFirebase();
+          renderHist();
+        }catch(e){
+          console.error(e);
+          setMsg("Erro ao atualizar no Firebase. Normalmente é RULES (PERMISSION_DENIED).", "error");
+        }
+        return;
+      }
+
+      // ===== Salvar (1 por CD) =====
       if (SELECTED_CDS.length === 0){
         setMsg("Adicione pelo menos 1 CD (Adicionar CD).", "error");
         return;
       }
 
-      // segurança extra
       const cdsValidos = SELECTED_CDS.filter(x => CDS.includes(x));
       if (cdsValidos.length !== SELECTED_CDS.length){
         setMsg("Existe CD inválido na lista. Remova e adicione novamente pela lista.", "error");
@@ -593,7 +753,7 @@
             uidKey: usuarioKey,
             usuarioNome: usuario,
 
-            id, // opcional (mas ajuda debug)
+            id,
             data: base.data,
             dataApuracao: base.dataApuracao,
 
@@ -617,17 +777,7 @@
 
         setMsg(`Treinamento registrado ✅ (${cdsValidos.length} CD(s) lançado(s))`, "success");
 
-        // limpa form (mantém datas? -> mantém dataTreino, mas limpa o resto)
-        publico.value = "";
-        treinamento.value = "";
-        totalPessoas.value = "";
-        notaMedia.value = "";
-        obs.value = "";
-        desafio.value = "";
-        metaDesafio.value = "";
-        dataApuracao.value = "";
-        SELECTED_CDS = [];
-        renderChips();
+        resetFormKeepDate();
 
         await loadHistFromFirebase();
         renderHist();
