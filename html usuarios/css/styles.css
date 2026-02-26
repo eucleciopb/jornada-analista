@@ -1,6 +1,8 @@
+```css
 /* =========================
    CRIAR AGENDA — CSS TECH CLEAN (somente esta tela)
    Use no HTML: <body class="bg page-agenda">
+   ✅ Atualizado: Observações abre MODAL (popup) com OK/Cancelar
 ========================= */
 
 .page-agenda{
@@ -50,6 +52,7 @@ body.page-agenda.bg::before{
 
 *{ box-sizing:border-box; }
 
+/* container */
 .wrap{
   max-width:1200px;
   margin:0 auto;
@@ -57,6 +60,7 @@ body.page-agenda.bg::before{
   position:relative;
 }
 
+/* textos */
 .hint{ color:var(--mut); font-size:12px; line-height:1.35; }
 .err{ color:var(--danger); font-weight:800; font-size:12px; margin-top:6px; display:none; }
 .msg{ margin:10px 0 0; min-height:18px; font-size:12px; color:var(--mut); font-weight:700; }
@@ -66,7 +70,10 @@ body.page-agenda.bg::before{
   max-width:1180px;
   margin:18px auto 0;
   padding:14px 16px;
-  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
   border-radius:22px;
   border:1px solid var(--line);
   background:linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,.05));
@@ -78,6 +85,11 @@ body.page-agenda.bg::before{
   margin:0;
   font-size:18px;
   letter-spacing:.3px;
+}
+.page-agenda .top-actions{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
 }
 
 /* card principal */
@@ -105,37 +117,11 @@ body.page-agenda.bg::before{
   font-size:16px;
   letter-spacing:.2px;
 }
-
 .page-agenda .sep{
   border:none;
   height:1px;
   background:rgba(255,255,255,.10);
   margin:16px 0;
-}
-
-/* botões */
-.page-agenda .btn{
-  border:1px solid var(--line);
-  border-radius:16px;
-  padding:10px 14px;
-  font-weight:900;
-  cursor:pointer;
-  background:rgba(255,255,255,.06);
-  color:var(--txt);
-  transition: transform .12s ease, background .2s ease, box-shadow .2s ease;
-}
-.page-agenda .btn:hover{
-  transform: translateY(-1px);
-  background: rgba(255,255,255,.10);
-  box-shadow: 0 14px 34px rgba(0,0,0,.40);
-}
-.page-agenda .btn-primary{
-  border:1px solid rgba(255,59,59,.35);
-  background: linear-gradient(135deg, var(--accent2), var(--accent));
-  box-shadow: 0 18px 46px rgba(255,59,59,.18);
-}
-.page-agenda .btn-primary:hover{
-  box-shadow: 0 24px 70px rgba(255,59,59,.22);
 }
 
 /* mês */
@@ -172,6 +158,31 @@ body.page-agenda.bg::before{
   user-select:none;
 }
 
+/* botões */
+.page-agenda .btn{
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:10px 14px;
+  font-weight:900;
+  cursor:pointer;
+  background:rgba(255,255,255,.06);
+  color:var(--txt);
+  transition: transform .12s ease, background .2s ease, box-shadow .2s ease;
+}
+.page-agenda .btn:hover{
+  transform: translateY(-1px);
+  background: rgba(255,255,255,.10);
+  box-shadow: 0 14px 34px rgba(0,0,0,.40);
+}
+.page-agenda .btn-primary{
+  border:1px solid rgba(255,59,59,.35);
+  background: linear-gradient(135deg, var(--accent2), var(--accent));
+  box-shadow: 0 18px 46px rgba(255,59,59,.18);
+}
+.page-agenda .btn-primary:hover{
+  box-shadow: 0 24px 70px rgba(255,59,59,.22);
+}
+
 /* tabela */
 .page-agenda .table-wrap{
   overflow:auto;
@@ -206,7 +217,6 @@ body.page-agenda.bg::before{
   color:rgba(238,241,246,.92);
 }
 .page-agenda tbody tr:hover{ background:rgba(255,255,255,.04); }
-
 .page-agenda tr.blocked{
   opacity:.60;
   background:rgba(255,255,255,.02);
@@ -230,45 +240,131 @@ body.page-agenda.bg::before{
 }
 .page-agenda select.field{ cursor:pointer; }
 
-/* Observações: preview + editor gigante ao focar */
+/* Observações: preview pequeno (modal abre no clique/foco) */
 .page-agenda textarea.field[data-field="obs"]{
   min-height:54px;
   height:54px;
   resize:none;
   overflow:hidden;
   line-height:1.35;
+  cursor:pointer;
 }
 
-.page-agenda textarea.field[data-field="obs"]:focus{
+/* =========================
+   MODAL OBSERVAÇÕES (popup de verdade)
+========================= */
+.page-agenda .obs-modal{
   position: fixed;
-  top: 7vh;
+  inset: 0;
+  z-index: 9999;
+  display: none;
+}
+.page-agenda .obs-modal.is-open{
+  display: block;
+}
+
+.page-agenda .obs-modal__backdrop{
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,.70);
+  backdrop-filter: blur(6px);
+}
+
+.page-agenda .obs-modal__panel{
+  position: absolute;
   left: 50%;
+  top: 8vh;
   transform: translateX(-50%);
   width: min(980px, calc(100% - 28px));
-  height: 74vh;
-  z-index: 9999;
+  height: 78vh;
 
-  padding: 18px;
-  border-radius: 22px;
+  border-radius: 24px;
+  border: 1px solid rgba(255,255,255,.14);
 
   background:
     radial-gradient(900px 440px at 10% 0%, rgba(255,59,59,.12), transparent 60%),
-    linear-gradient(180deg, rgba(255,255,255,.07), rgba(0,0,0,.30));
-  border: 1px solid rgba(255,255,255,.16);
+    linear-gradient(180deg, rgba(255,255,255,.07), rgba(0,0,0,.40));
 
-  box-shadow:
-    0 40px 90px rgba(0,0,0,.70),
-    0 0 0 9999px rgba(0,0,0,.62);
+  box-shadow: 0 40px 110px rgba(0,0,0,.75);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
 
-  overflow: auto;
-  resize: vertical;
+.page-agenda .obs-modal__header{
+  padding: 14px 16px;
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap: 12px;
+  border-bottom: 1px solid rgba(255,255,255,.10);
+}
 
+.page-agenda .obs-modal__kicker{
+  font-size: 12px;
+  color: rgba(238,241,246,.60);
+  font-weight: 800;
+  letter-spacing: .2px;
+}
+
+.page-agenda .obs-modal__title{
+  margin: 2px 0 0;
+  font-size: 16px;
+  color: rgba(238,241,246,.95);
+}
+
+.page-agenda .obs-modal__x{
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.06);
+  color: rgba(238,241,246,.92);
+  border-radius: 14px;
+  padding: 8px 10px;
+  cursor: pointer;
+  font-weight: 900;
+}
+
+.page-agenda .obs-modal__textarea{
+  flex: 1;
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: rgba(238,241,246,.95);
+  padding: 16px;
+  resize: none;
   line-height: 1.65;
   font-size: 14px;
+}
+.page-agenda .obs-modal__textarea::placeholder{
+  color: rgba(238,241,246,.40);
+}
+
+.page-agenda .obs-modal__footer{
+  padding: 14px 16px;
+  display:flex;
+  justify-content:flex-end;
+  gap: 10px;
+  border-top: 1px solid rgba(255,255,255,.10);
+  background: rgba(0,0,0,.18);
+}
+
+/* trava scroll do body quando modal abre */
+body.page-agenda.modal-open{
+  overflow: hidden;
 }
 
 /* responsivo */
 @media (max-width:720px){
-  .page-agenda .topbar{ flex-direction:column; align-items:flex-start; }
-  .page-agenda table{ min-width:860px; }
+  .page-agenda .topbar{
+    flex-direction:column;
+    align-items:flex-start;
+  }
+  .page-agenda table{
+    min-width:860px;
+  }
+  .page-agenda .obs-modal__panel{
+    top: 6vh;
+    height: 82vh;
+  }
 }
+```

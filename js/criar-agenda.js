@@ -1,3 +1,4 @@
+// ../js/criar-agenda.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import {
   getFirestore, collection, getDocs, query, where,
@@ -47,8 +48,8 @@ const db = getFirestore(app);
 /* =========================
    CONFIG DO BANCO
 ========================= */
-const AGENDA_COLLECTION = "agenda_dias"; // sua rules já tem
-const CDS_COLLECTION = "cds";            // opcional (se existir)
+const AGENDA_COLLECTION = "agenda_dias";
+const CDS_COLLECTION = "cds"; // opcional
 
 /* =========================
    UI
@@ -64,9 +65,18 @@ const errBox = document.getElementById("errBox");
 const cdList = document.getElementById("cdList");
 const statusPill = document.getElementById("statusPill");
 
+// Modal Observações (do HTML)
+const obsModal = document.getElementById("obsModal");
+const obsModalText = document.getElementById("obsModalText");
+const obsOk = document.getElementById("obsOk");
+const obsCancel = document.getElementById("obsCancel");
+const obsClose = document.getElementById("obsClose");
+const obsTitle = document.getElementById("obsTitle");
+
+let obsTargetTextarea = null;
+
 /* =========================
    PATHS (PADRÃO DO SEU PROJETO)
-   - esta tela está em: /html usuarios/...
 ========================= */
 const PATH_INDEX = "../index.html";
 const PATH_MENU  = "../html menus/menu.html";
@@ -88,28 +98,20 @@ function slug(s) {
 
 /* =========================
    LOGIN (PADRÃO NOVO + LEGADO)
-   - novo: user_session (JSON)
-   - legado: usuarioLogado (string)
 ========================= */
 function getCurrentUserName(){
-  // 1) padrão novo
   const rawSession = localStorage.getItem("user_session");
   if (rawSession) {
     const s = safeParse(rawSession);
     if (s?.nome) return String(s.nome).trim();
   }
-
-  // 2) legado
   return (localStorage.getItem("usuarioLogado") || "").trim();
 }
 
 const usuarioNome = getCurrentUserName();
 if (!usuarioNome) window.location.href = PATH_INDEX;
 
-// ✅ CORREÇÃO PRINCIPAL: usuarioKey SEMPRE do usuário atual
-// (não reutiliza usuarioKey antigo do localStorage — isso misturava os usuários)
 const usuarioKey = slug(usuarioNome);
-
 if (userInfo) userInfo.textContent = `Usuário: ${usuarioNome}`;
 
 /* =========================
@@ -169,9 +171,86 @@ function normalizeCDList(arr) {
 }
 
 /* =========================
+   MODAL OBSERVAÇÕES
+   - abre ao clicar no textarea pequeno
+   - OK aplica e volta para a linha
+   - Cancel/ESC/clicar fora fecha sem aplicar
+========================= */
+function openObsModal(targetTextarea){
+  obsTargetTextarea = targetTextarea;
+
+  // título mostrando data/dia (opcional, mas fica top)
+  const tr = targetTextarea.closest("tr");
+  const dataISO = tr?.dataset?.date || "";
+  const br = tr?.querySelector("td")?.textContent || "";
+  const dia = tr?.querySelectorAll("td")?.[1]?.textContent || "";
+  if (obsTitle) obsTitle.textContent = br && dia ? `Observações — ${br} (${dia})` : "Editar observações";
+
+  obsModalText.value = targetTextarea.value || "";
+
+  obsModal?.classList.add("is-open");
+  document.body.classList.add("modal-open");
+  obsModal?.setAttribute("aria-hidden", "false");
+
+  setTimeout(() => obsModalText?.focus(), 0);
+}
+
+function closeObsModal({ apply = false } = {}){
+  if (apply && obsTargetTextarea){
+    obsTargetTextarea.value = obsModalText?.value || "";
+  }
+
+  obsModal?.classList.remove("is-open");
+  document.body.classList.remove("modal-open");
+  obsModal?.setAttribute("aria-hidden", "true");
+
+  if (obsTargetTextarea) obsTargetTextarea.focus();
+  obsTargetTextarea = null;
+}
+
+function initObsModalEvents(){
+  if (!obsModal) return;
+
+  // fecha clicando no backdrop (o div com data-close="1")
+  obsModal.addEventListener("click", (e) => {
+    const el = e.target;
+    if (el?.dataset?.close === "1") closeObsModal({ apply: false });
+  });
+
+  obsOk?.addEventListener("click", () => closeObsModal({ apply: true }));
+  obsCancel?.addEventListener("click", () => closeObsModal({ apply: false }));
+  obsClose?.addEventListener("click", () => closeObsModal({ apply: false }));
+
+  // ESC fecha
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && obsModal.classList.contains("is-open")) {
+      closeObsModal({ apply: false });
+    }
+  });
+
+  // Delegação: clique/foco no textarea da tabela abre modal
+  if (tbody){
+    tbody.addEventListener("click", (e) => {
+      const t = e.target;
+      if (t && t.matches("textarea.field[data-field='obs']")) {
+        e.preventDefault();
+        openObsModal(t);
+      }
+    });
+
+    tbody.addEventListener("focusin", (e) => {
+      const t = e.target;
+      if (t && t.matches("textarea.field[data-field='obs']")) {
+        e.preventDefault();
+        openObsModal(t);
+      }
+    });
+  }
+}
+
+/* =========================
    1) SEMPRE RENDERIZA O MÊS
-   ✅ AJUSTE: removeu coluna Analista
-   ✅ AJUSTE: Observações agora é TEXTAREA
+   ✅ Observações fica pequena (modal cuida da edição)
 ========================= */
 function renderMonthSkeleton(yyyyMM) {
   if (!tbody) return;
@@ -181,10 +260,13 @@ function renderMonthSkeleton(yyyyMM) {
   setMsg("");
   setStatus("carregado (tabela)");
 
-  const [yStr, mStr] = yyyyMM.split("-");
+  const [yStr, mStr] = (yyyyMM || "").split("-");
   const y = Number(yStr);
   const m1 = Number(mStr);
   const m0 = m1 - 1;
+
+  if (!y || !m1) return;
+
   const total = daysInMonth(y, m0);
 
   for (let day = 1; day <= total; day++) {
@@ -212,7 +294,7 @@ function renderMonthSkeleton(yyyyMM) {
         <td>${dia}</td>
         <td><input class="field" data-field="cd" list="cdList" placeholder="Pesquisar CD..." value=""></td>
         <td><select class="field" data-field="atividade">${atividadeOptions("")}</select></td>
-        <td><textarea class="field" data-field="obs" placeholder="Observações..."></textarea></td>
+        <td><textarea class="field" data-field="obs" placeholder="Clique para editar..."></textarea></td>
       `;
     }
 
@@ -222,8 +304,6 @@ function renderMonthSkeleton(yyyyMM) {
 
 /* =========================
    2) CDs
-   - tenta Firestore
-   - se falhar ou vazio: usa CDS_RAW (sua lista completa)
 ========================= */
 async function loadCDsToDatalist() {
   if (!cdList) return;
@@ -232,7 +312,6 @@ async function loadCDsToDatalist() {
 
   let cdsFromFirestore = [];
   try {
-    // tenta ativos
     const snap = await getDocs(query(collection(db, CDS_COLLECTION), where("ativo", "==", true)));
     snap.forEach(d => {
       const data = d.data();
@@ -240,7 +319,6 @@ async function loadCDsToDatalist() {
       if (nome) cdsFromFirestore.push(nome);
     });
 
-    // se vazio, tenta tudo
     if (cdsFromFirestore.length === 0) {
       const snapAll = await getDocs(collection(db, CDS_COLLECTION));
       snapAll.forEach(d => {
@@ -250,10 +328,9 @@ async function loadCDsToDatalist() {
       });
     }
   } catch (e) {
-    // ignora
+    // ignora e usa fallback
   }
 
-  // ✅ fallback garantido com sua lista
   const cdsFinal = normalizeCDList(
     cdsFromFirestore.length > 0 ? cdsFromFirestore : CDS_RAW
   );
@@ -316,7 +393,6 @@ async function saveMonthToFirestore(yyyyMM) {
 
     const ref = doc(db, AGENDA_COLLECTION, `${usuarioKey}_${dataISO}`);
 
-    // se tudo vazio, remove (limpa)
     if (!cd && !atividade && !obs) {
       batch.delete(ref);
       continue;
@@ -349,7 +425,6 @@ if (btnMenu) {
 
 if (btnLogout) {
   btnLogout.addEventListener("click", () => {
-    // ✅ limpa novo + legado
     localStorage.removeItem("user_session");
     localStorage.removeItem("usuarioLogado");
     window.location.href = PATH_INDEX;
@@ -394,16 +469,18 @@ if (monthPicker) {
 (async function init(){
   try {
     showErr("");
+
+    // ✅ inicia modal
+    initObsModalEvents();
+
+    // ✅ seta mês atual e renderiza
     const now = new Date();
     if (monthPicker) monthPicker.value = toMonthKey(now);
 
-    // 1) mês aparece sempre
     renderMonthSkeleton(monthPicker.value);
 
-    // 2) CDs (agora com CDS_RAW completo como fallback)
     await loadCDsToDatalist();
 
-    // 3) carregar do firebase (se falhar, não bloqueia)
     await loadMonthFromFirestore(monthPicker.value);
 
     setMsg("Pronto. Preencha e clique em Salvar alterações.", "success");
@@ -413,5 +490,4 @@ if (monthPicker) {
     showErr(err?.message || String(err));
     setStatus("erro Firebase");
   }
-  
 })();
