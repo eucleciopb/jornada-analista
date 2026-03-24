@@ -5,28 +5,9 @@ import {
   doc, writeBatch, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-/* ============================================================
-   ✅ FERIADOS 2026 automaticamente aplicados no calendário
-============================================================ */
-const FERIADOS_2026 = {
-  "2026-01-01": { cd: "FERIADO", atividade: "Feriado – Confraternização Universal" },
-  "2026-02-16": { cd: "FERIADO", atividade: "Feriado – Carnaval (Segunda)" },
-  "2026-02-17": { cd: "FERIADO", atividade: "Feriado – Carnaval (Terça)" },
-  "2026-04-03": { cd: "FERIADO", atividade: "Feriado – Sexta‑Feira Santa" },
-  "2026-04-21": { cd: "FERIADO", atividade: "Feriado – Tiradentes" },
-  "2026-05-01": { cd: "FERIADO", atividade: "Feriado – Dia do Trabalho" },
-  "2026-06-04": { cd: "FERIADO", atividade: "Feriado – Corpus Christi" },
-  "2026-09-07": { cd: "FERIADO", atividade: "Feriado – Independência do Brasil" },
-  "2026-10-12": { cd: "FERIADO", atividade: "Feriado – Nossa Sra. Aparecida" },
-  "2026-11-02": { cd: "FERIADO", atividade: "Feriado – Finados" },
-  "2026-11-15": { cd: "FERIADO", atividade: "Feriado – Proclamação da República" },
-  "2026-11-20": { cd: "FERIADO", atividade: "Feriado – Dia da Consciência Negra" },
-  "2026-12-25": { cd: "FERIADO", atividade: "Feriado – Natal" }
-};
-
-/* ============================================================
-   CDs fallback
-============================================================ */
+/* =========================
+   CDs (lista completa) - FALLBACK GARANTIDO
+========================= */
 const CDS_RAW = [
   "CD - Alagoinhas","CD - Andradina","CD - Angra dos Reis","CD - Aparecida de Goiânia","CD - Araçatuba","CD - Arapiraca","CD - Araraquara",
   "CD - Balsas","CD - Barbalha","CD - Barra do Garca","CD - Barreiras","CD - Barretos","CD - Barueri","CD - Bauru","CD - Belém","CD - Boituva",
@@ -48,9 +29,9 @@ const CDS_RAW = [
   "CD - Vila Guilherme","CD - Vitória da Conquista","CD - Volta Redonda","Home Office","Férias","Corporativo"
 ];
 
-/* ============================================================
-   FIREBASE CONFIG
-============================================================ */
+/* =========================
+   FIREBASE CONFIG (SEU)
+========================= */
 const firebaseConfig = {
   apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
   authDomain: "jornada-portal.firebaseapp.com",
@@ -63,54 +44,78 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-/* ============================================================
-   CONFIG
-============================================================ */
+/* =========================
+   CONFIG DO BANCO
+========================= */
 const AGENDA_COLLECTION = "agenda_dias";
 const CDS_COLLECTION = "cds";
 
+/* =========================
+   UI
+========================= */
 const tbody = document.getElementById("tbodyAgenda");
 const monthPicker = document.getElementById("monthPicker");
 const btnSalvar = document.getElementById("btnSalvar");
 const btnMenu = document.getElementById("btnMenu");
 const btnLogout = document.getElementById("btnLogout");
 const msg = document.getElementById("msg");
+const userInfo = document.getElementById("userInfo");
 const errBox = document.getElementById("errBox");
 const cdList = document.getElementById("cdList");
-const userInfo = document.getElementById("userInfo");
 const statusPill = document.getElementById("statusPill");
 
-/* ============================================================
-   Helpers
-============================================================ */
-function safeParse(raw){ try { return JSON.parse(raw); } catch { return null; } }
-function slug(s){ return (s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,""); }
-function showErr(t){ if(errBox){errBox.style.display=t?"block":"none"; errBox.textContent=t;} }
-function setMsg(t, type="info"){ if(!msg)return; msg.textContent=t||""; msg.style.color = type==="success"?"#22c55e":type==="error"?"#ef4444":"#e5e7eb"; }
-function setStatus(t){ if(statusPill) statusPill.textContent=`Status: ${t}`; }
+// Modal Observações
+const obsModal = document.getElementById("obsModal");
+const obsModalText = document.getElementById("obsModalText");
+const obsOk = document.getElementById("obsOk");
+const obsCancel = document.getElementById("obsCancel");
+const obsClose = document.getElementById("obsClose");
+const obsTitle = document.getElementById("obsTitle");
 
-function pad2(n){ return String(n).padStart(2,"0"); }
-function isoDate(y, m1, d){ return `${y}-${pad2(m1)}-${pad2(d)}`; }
-function brDate(y, m1, d){ return `${pad2(d)}/${pad2(m1)}/${y}`; }
-function weekdayPt(d){ return ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"][d.getDay()]; }
-function daysInMonth(y,m0){ return new Date(y,m0+1,0).getDate(); }
+let obsTargetTextarea = null;
 
-/* ============================================================
+/* =========================
+   PATHS
+========================= */
+const PATH_INDEX = "../index.html";
+const PATH_MENU  = "../html menus/menu.html";
+
+/* =========================
+   HELPERS
+========================= */
+function safeParse(raw){
+  try { return JSON.parse(raw); } catch { return null; }
+}
+
+function slug(s) {
+  return (s || "")
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
+/* =========================
    LOGIN
-============================================================ */
+========================= */
 function getCurrentUserName(){
-  const s = safeParse(localStorage.getItem("user_session"));
-  if(s?.nome) return s.nome;
-  return (localStorage.getItem("usuarioLogado")||"").trim();
+  const rawSession = localStorage.getItem("user_session");
+  if (rawSession) {
+    const s = safeParse(rawSession);
+    if (s?.nome) return String(s.nome).trim();
+  }
+  return (localStorage.getItem("usuarioLogado") || "").trim();
 }
 
 const usuarioNome = getCurrentUserName();
-if(!usuarioNome) window.location.href="../index.html";
-const usuarioKey = slug(usuarioNome);
+if (!usuarioNome) window.location.href = PATH_INDEX;
 
-/* ============================================================
+const usuarioKey = slug(usuarioNome);
+if (userInfo) userInfo.textContent = `Usuário: ${usuarioNome}`;
+
+/* =========================
    ATIVIDADES
-============================================================ */
+========================= */
 const ATIVIDADES = [
   "Analise Interna",
   "Deslocamento",
@@ -118,39 +123,193 @@ const ATIVIDADES = [
   "Rota",
   "Plano de Ação com os Gestores",
   "Reunião GRC ou Diretor",
-  "Alinhamento com outras áreas"
+  "Alinhamento com outras áreas",
+  "Feriado / Ponto Facultativo"
 ];
 
-function atividadeOptions(sel=""){
-  return [
-    `<option value="">-- selecione --</option>`,
-    ...ATIVIDADES.map(a=>`<option value="${a}" ${a===sel?"selected":""}>${a}</option>`)
-  ].join("");
+/* =========================
+   FERIADOS 2026
+   - pré-preenche, mas deixa editar
+========================= */
+const FERIADOS_2026 = {
+  "2026-01-01": { nome: "Confraternização Universal", tipo: "Feriado Nacional" },
+  "2026-02-16": { nome: "Carnaval", tipo: "Ponto Facultativo" },
+  "2026-02-17": { nome: "Carnaval", tipo: "Ponto Facultativo" },
+  "2026-04-03": { nome: "Sexta-Feira Santa (Paixão de Cristo)", tipo: "Feriado Nacional" },
+  "2026-04-21": { nome: "Tiradentes", tipo: "Feriado Nacional" },
+  "2026-05-01": { nome: "Dia do Trabalho", tipo: "Feriado Nacional" },
+  "2026-06-04": { nome: "Corpus Christi", tipo: "Ponto Facultativo" },
+  "2026-09-07": { nome: "Independência do Brasil", tipo: "Feriado Nacional" },
+  "2026-10-12": { nome: "Nossa Senhora Aparecida", tipo: "Feriado Nacional" },
+  "2026-11-02": { nome: "Finados", tipo: "Feriado Nacional" },
+  "2026-11-15": { nome: "Proclamação da República", tipo: "Feriado Nacional" },
+  "2026-11-20": { nome: "Dia da Consciência Negra", tipo: "Feriado Nacional" },
+  "2026-12-25": { nome: "Natal", tipo: "Feriado Nacional" }
+};
+
+function getFeriadoInfo(dateISO){
+  return FERIADOS_2026[dateISO] || null;
 }
 
-/* ============================================================
-   ✅ RENDERIZAÇÃO DO MÊS (AQUI APLICAMOS FERIADOS)
-============================================================ */
-function renderMonthSkeleton(yyyyMM){
-  if(!tbody) return;
-  tbody.innerHTML="";
+function buildFeriadoObs(dateISO){
+  const f = getFeriadoInfo(dateISO);
+  if (!f) return "";
+  return `${f.nome} - ${f.tipo}`;
+}
 
-  const [yStr, mStr] = yyyyMM.split("-");
-  const y = Number(yStr), m1 = Number(mStr), m0 = m1-1;
-  const total = daysInMonth(y,m0);
+/* =========================
+   HELPERS UI
+========================= */
+function showErr(text) {
+  if (!errBox) return;
+  errBox.style.display = text ? "block" : "none";
+  errBox.textContent = text || "";
+}
 
-  for(let d=1; d<=total; d++){
-    const dateISO = isoDate(y,m1,d);
-    const br = brDate(y,m1,d);
-    const dt = new Date(y,m0,d);
+function setMsg(text, type = "info") {
+  if (!msg) return;
+  msg.textContent = text || "";
+  msg.style.color =
+    type === "success" ? "#22c55e" :
+    type === "error" ? "#ef4444" :
+    "#e5e7eb";
+}
+
+function setStatus(text) {
+  if (!statusPill) return;
+  statusPill.textContent = `Status: ${text}`;
+}
+
+function pad2(n) { return String(n).padStart(2, "0"); }
+function toMonthKey(d) { return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}`; }
+function daysInMonth(y, m0) { return new Date(y, m0 + 1, 0).getDate(); }
+function weekdayPt(d) { return ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"][d.getDay()]; }
+function isoDate(y, m1, d) { return `${y}-${pad2(m1)}-${pad2(d)}`; }
+function brDate(y, m1, d) { return `${pad2(d)}/${pad2(m1)}/${y}`; }
+
+function atividadeOptions(selected = "") {
+  const opts = [`<option value="">-- selecione --</option>`];
+  for (const a of ATIVIDADES) {
+    opts.push(`<option value="${a}" ${a === selected ? "selected" : ""}>${a}</option>`);
+  }
+  return opts.join("");
+}
+
+function normalizeCDList(arr) {
+  return [...new Set((arr || []).map(s => (s || "").trim()).filter(Boolean))]
+    .sort((a,b) => a.localeCompare(b, "pt-BR"));
+}
+
+/* =========================
+   MODAL OBSERVAÇÕES
+========================= */
+function openObsModal(targetTextarea){
+  obsTargetTextarea = targetTextarea;
+
+  const tr = targetTextarea.closest("tr");
+  const br = tr?.querySelector("td")?.textContent || "";
+  const dia = tr?.querySelectorAll("td")?.[1]?.textContent || "";
+
+  if (obsTitle) {
+    obsTitle.textContent = br && dia ? `Observações — ${br} (${dia})` : "Editar observações";
+  }
+
+  obsModalText.value = targetTextarea.value || "";
+
+  obsModal?.classList.add("is-open");
+  document.body.classList.add("modal-open");
+  obsModal?.setAttribute("aria-hidden", "false");
+
+  setTimeout(() => obsModalText?.focus(), 0);
+}
+
+function closeObsModal({ apply = false } = {}){
+  if (apply && obsTargetTextarea){
+    obsTargetTextarea.value = obsModalText?.value || "";
+  }
+
+  obsModal?.classList.remove("is-open");
+  document.body.classList.remove("modal-open");
+  obsModal?.setAttribute("aria-hidden", "true");
+
+  if (obsTargetTextarea) obsTargetTextarea.focus();
+  obsTargetTextarea = null;
+}
+
+function initObsModalEvents(){
+  if (!obsModal) return;
+
+  obsModal.addEventListener("click", (e) => {
+    const el = e.target;
+    if (el?.dataset?.close === "1") closeObsModal({ apply: false });
+  });
+
+  obsOk?.addEventListener("click", () => closeObsModal({ apply: true }));
+  obsCancel?.addEventListener("click", () => closeObsModal({ apply: false }));
+  obsClose?.addEventListener("click", () => closeObsModal({ apply: false }));
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && obsModal.classList.contains("is-open")) {
+      closeObsModal({ apply: false });
+    }
+  });
+
+  if (tbody){
+    tbody.addEventListener("click", (e) => {
+      const t = e.target;
+      if (t && t.matches("textarea.field[data-field='obs']")) {
+        e.preventDefault();
+        openObsModal(t);
+      }
+    });
+
+    tbody.addEventListener("focusin", (e) => {
+      const t = e.target;
+      if (t && t.matches("textarea.field[data-field='obs']")) {
+        e.preventDefault();
+        openObsModal(t);
+      }
+    });
+  }
+}
+
+/* =========================
+   1) RENDERIZA O MÊS
+   ✅ Feriados 2026 já vêm preenchidos
+   ✅ Continua editável
+========================= */
+function renderMonthSkeleton(yyyyMM) {
+  if (!tbody) return;
+
+  tbody.innerHTML = "";
+  showErr("");
+  setMsg("");
+  setStatus("carregado (tabela)");
+
+  const [yStr, mStr] = (yyyyMM || "").split("-");
+  const y = Number(yStr);
+  const m1 = Number(mStr);
+  const m0 = m1 - 1;
+
+  if (!y || !m1) return;
+
+  const total = daysInMonth(y, m0);
+
+  for (let day = 1; day <= total; day++) {
+    const dt = new Date(y, m0, day);
+    const sunday = dt.getDay() === 0;
+
+    const iso = isoDate(y, m1, day);
+    const br = brDate(y, m1, day);
     const dia = weekdayPt(dt);
-    const sunday = dt.getDay()===0;
+    const feriado = getFeriadoInfo(iso);
 
     const tr = document.createElement("tr");
-    tr.dataset.date = dateISO;
-    tr.dataset.sunday = sunday?"1":"0";
+    tr.dataset.date = iso;
+    tr.dataset.sunday = sunday ? "1" : "0";
+    tr.dataset.feriado = feriado ? "1" : "0";
 
-    if(sunday){
+    if (sunday) {
       tr.classList.add("blocked");
       tr.innerHTML = `
         <td>${br}</td>
@@ -158,124 +317,228 @@ function renderMonthSkeleton(yyyyMM){
         <td colspan="3">Domingo bloqueado</td>
       `;
     } else {
+      const atividadeDefault = feriado ? "Feriado / Ponto Facultativo" : "";
+      const obsDefault = feriado ? buildFeriadoObs(iso) : "";
+
+      if (feriado) {
+        tr.style.background = "rgba(250, 204, 21, 0.08)";
+      }
+
       tr.innerHTML = `
         <td>${br}</td>
         <td>${dia}</td>
-        <td><input class="field" data-field="cd" list="cdList"></td>
-        <td><select class="field" data-field="atividade">${atividadeOptions("")}</select></td>
-        <td><textarea class="field" data-field="obs" placeholder="Clique para editar..."></textarea></td>
+        <td>
+          <input
+            class="field"
+            data-field="cd"
+            list="cdList"
+            placeholder="Pesquisar CD..."
+            value=""
+          >
+        </td>
+        <td>
+          <select class="field" data-field="atividade">
+            ${atividadeOptions(atividadeDefault)}
+          </select>
+        </td>
+        <td>
+          <textarea
+            class="field"
+            data-field="obs"
+            placeholder="Clique para editar..."
+          >${obsDefault}</textarea>
+        </td>
       `;
-
-      /* ✅ SE FOR FERIADO — APLICA */
-      const feriado = FERIADOS_2026[dateISO];
-      if(feriado){
-        tr.classList.add("feriado");
-        tr.querySelector("[data-field='cd']").value = feriado.cd;
-        tr.querySelector("[data-field='atividade']").value = feriado.atividade;
-        tr.title = feriado.atividade;
-      }
     }
 
     tbody.appendChild(tr);
   }
 }
 
-/* ============================================================
-   ✅ LOAD CDs
-============================================================ */
-async function loadCDsToDatalist(){
-  let cds = [];
+/* =========================
+   2) CDs
+========================= */
+async function loadCDsToDatalist() {
+  if (!cdList) return;
+
+  setStatus("carregando CDs…");
+
+  let cdsFromFirestore = [];
   try {
-    const snap = await getDocs(query(collection(db,CDS_COLLECTION), where("ativo","==",true)));
-    snap.forEach(d=>{ if(d.data().nome) cds.push(d.data().nome); });
-  } catch {}
+    const snap = await getDocs(query(collection(db, CDS_COLLECTION), where("ativo", "==", true)));
+    snap.forEach(d => {
+      const data = d.data();
+      const nome = (data?.nome || data?.cd || "").trim();
+      if (nome) cdsFromFirestore.push(nome);
+    });
 
-  cds = cds.length ? cds : CDS_RAW;
+    if (cdsFromFirestore.length === 0) {
+      const snapAll = await getDocs(collection(db, CDS_COLLECTION));
+      snapAll.forEach(d => {
+        const data = d.data();
+        const nome = (data?.nome || data?.cd || "").trim();
+        if (nome) cdsFromFirestore.push(nome);
+      });
+    }
+  } catch (e) {
+    // fallback
+  }
 
-  cdList.innerHTML = cds.map(c=>`<option value="${c}">`).join("");
+  const cdsFinal = normalizeCDList(
+    cdsFromFirestore.length > 0 ? cdsFromFirestore : CDS_RAW
+  );
+
+  cdList.innerHTML = cdsFinal.map(cd => `<option value="${cd}"></option>`).join("");
+  setStatus(`CDs carregados: ${cdsFinal.length}`);
 }
 
-/* ============================================================
-   ✅ LOAD DO FIRESTORE
-============================================================ */
-async function loadMonthFromFirestore(yyyyMM){
+/* =========================
+   3) CARREGA FIRESTORE
+   ✅ se tiver salvo, sobrepõe o padrão do feriado
+========================= */
+async function loadMonthFromFirestore(yyyyMM) {
+  setStatus("carregando do Firebase…");
+
   const snap = await getDocs(
     query(
-      collection(db,AGENDA_COLLECTION),
-      where("uidKey","==",usuarioKey),
-      where("yyyyMM","==",yyyyMM)
+      collection(db, AGENDA_COLLECTION),
+      where("uidKey", "==", usuarioKey),
+      where("yyyyMM", "==", yyyyMM)
     )
   );
 
   const map = {};
-  snap.forEach(d=>map[d.data().data]=d.data());
-
-  [...tbody.querySelectorAll("tr[data-date]")].forEach(tr=>{
-    if(tr.dataset.sunday==="1") return;
-    const saved = map[tr.dataset.date];
-    if(saved){
-      tr.querySelector("[data-field='cd']").value = saved.cd||"";
-      tr.querySelector("[data-field='atividade']").value = saved.atividade||"";
-      tr.querySelector("[data-field='obs']").value = saved.obs||"";
-    }
+  snap.forEach(d => {
+    const a = d.data();
+    if (a?.data) map[a.data] = a;
   });
+
+  const rows = [...tbody.querySelectorAll("tr[data-date]")];
+  for (const tr of rows) {
+    if (tr.dataset.sunday === "1") continue;
+
+    const dateISO = tr.dataset.date;
+    const saved = map[dateISO];
+    if (!saved) continue;
+
+    tr.querySelector("[data-field='cd']").value = saved.cd || "";
+    tr.querySelector("[data-field='atividade']").value = saved.atividade || "";
+    tr.querySelector("[data-field='obs']").value = saved.obs || "";
+  }
+
+  setStatus("Firebase carregado");
 }
 
-/* ============================================================
-   ✅ SAVE FIRESTORE
-============================================================ */
-async function saveMonthToFirestore(yyyyMM){
+/* =========================
+   4) SALVA FIRESTORE
+========================= */
+async function saveMonthToFirestore(yyyyMM) {
+  setStatus("salvando no Firebase…");
   const batch = writeBatch(db);
 
-  [...tbody.querySelectorAll("tr[data-date]")].forEach(tr=>{
-    if(tr.dataset.sunday==="1") return;
+  const rows = [...tbody.querySelectorAll("tr[data-date]")];
+  for (const tr of rows) {
+    if (tr.dataset.sunday === "1") continue;
 
     const dataISO = tr.dataset.date;
     const cd = tr.querySelector("[data-field='cd']").value.trim();
     const atividade = tr.querySelector("[data-field='atividade']").value;
     const obs = tr.querySelector("[data-field='obs']").value.trim();
 
-    const ref = doc(db,AGENDA_COLLECTION,`${usuarioKey}_${dataISO}`);
+    const ref = doc(db, AGENDA_COLLECTION, `${usuarioKey}_${dataISO}`);
 
-    if(!cd && !atividade && !obs){
+    if (!cd && !atividade && !obs) {
       batch.delete(ref);
-    } else {
-      batch.set(ref,{
-        uidKey: usuarioKey,
-        usuarioNome,
-        data: dataISO,
-        yyyyMM,
-        cd,
-        atividade,
-        obs,
-        updatedAt: serverTimestamp()
-      },{merge:true});
+      continue;
     }
-  });
+
+    batch.set(ref, {
+      uidKey: usuarioKey,
+      usuarioNome,
+      data: dataISO,
+      yyyyMM,
+      cd,
+      atividade,
+      obs,
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+  }
 
   await batch.commit();
-  setMsg("Salvo ✅", "success");
+  setStatus("salvo");
 }
 
-/* ============================================================
-   ✅ EVENTOS
-============================================================ */
-btnSalvar?.addEventListener("click",()=>saveMonthToFirestore(monthPicker.value));
-monthPicker?.addEventListener("change", async()=>{
-  renderMonthSkeleton(monthPicker.value);
-  await loadMonthFromFirestore(monthPicker.value);
-});
+/* =========================
+   EVENTOS
+========================= */
+if (btnMenu) {
+  btnMenu.addEventListener("click", () => {
+    window.location.href = PATH_MENU;
+  });
+}
 
-/* ============================================================
-   ✅ INIT
-============================================================ */
+if (btnLogout) {
+  btnLogout.addEventListener("click", () => {
+    localStorage.removeItem("user_session");
+    localStorage.removeItem("usuarioLogado");
+    window.location.href = PATH_INDEX;
+  });
+}
+
+if (btnSalvar) {
+  btnSalvar.addEventListener("click", async () => {
+    try {
+      showErr("");
+      setMsg("Salvando…");
+      await saveMonthToFirestore(monthPicker.value);
+      setMsg("Salvo ✅ no Firebase", "success");
+    } catch (err) {
+      console.error(err);
+      setMsg("Erro ao salvar.", "error");
+      showErr(err?.message || String(err));
+      setStatus("erro");
+    }
+  });
+}
+
+if (monthPicker) {
+  monthPicker.addEventListener("change", async () => {
+    try {
+      showErr("");
+      renderMonthSkeleton(monthPicker.value);
+      await loadMonthFromFirestore(monthPicker.value);
+      setMsg("");
+    } catch (err) {
+      console.error(err);
+      setMsg("Não consegui carregar do Firebase, mas você pode preencher e tentar salvar.", "error");
+      showErr(err?.message || String(err));
+      setStatus("erro Firebase");
+    }
+  });
+}
+
+/* =========================
+   INIT
+========================= */
 (async function init(){
-  const now = new Date();
-  if(monthPicker) monthPicker.value = `${now.getFullYear()}-${pad2(now.getMonth()+1)}`;
+  try {
+    showErr("");
 
-  renderMonthSkeleton(monthPicker.value);
-  await loadCDsToDatalist();
-  await loadMonthFromFirestore(monthPicker.value);
+    initObsModalEvents();
 
-  setMsg("Pronto. Preencha e clique em Salvar ✅", "success");
+    const now = new Date();
+    if (monthPicker) monthPicker.value = toMonthKey(now);
+
+    renderMonthSkeleton(monthPicker.value);
+
+    await loadCDsToDatalist();
+    await loadMonthFromFirestore(monthPicker.value);
+
+    setMsg("Pronto. Preencha e clique em Salvar alterações.", "success");
+  } catch (err) {
+    console.error(err);
+    setMsg("Não consegui carregar do Firebase, mas o mês já está disponível para preencher.", "error");
+    showErr(err?.message || String(err));
+    setStatus("erro Firebase");
+  }
 })();
