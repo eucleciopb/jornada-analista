@@ -368,3 +368,20 @@ body.page-agenda.modal-open{
   }
 }
 ```
+input[type="month"]{
+  width: 100%;
+  padding: 16px 18px;
+  border-radius: 22px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(0,0,0,.22);
+  color: #fff;
+  font-size: 16px;
+  outline: none;
+  color-scheme: dark;
+}
+
+input[type="month"]::-webkit-calendar-picker-indicator{
+  filter: invert(1) brightness(2);
+  cursor: pointer;
+  opacity: 1;
+}
