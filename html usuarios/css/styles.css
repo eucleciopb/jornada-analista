@@ -1,7 +1,6 @@
-```css
 /* =========================
    CRIAR AGENDA — CSS TECH CLEAN (somente esta tela)
-   Use no HTML: <body class="bg page-agenda">
+   Use no HTML: &lt;body class="bg page-agenda"&gt;
    ✅ Atualizado: Observações abre MODAL (popup) com OK/Cancelar
 ========================= */
 
@@ -367,7 +366,8 @@ body.page-agenda.modal-open{
     height: 82vh;
   }
 }
-```
+
+/* ✅ SEU BLOCO DE ESTILO DO INPUT MONTH */
 input[type="month"]{
   width: 100%;
   padding: 16px 18px;
@@ -380,6 +380,7 @@ input[type="month"]{
   color-scheme: dark;
 }
 
+/* ✅ ÍCONE DO CALENDÁRIO BRANCO */
 input[type="month"]::-webkit-calendar-picker-indicator{
   filter: invert(1) brightness(2);
   cursor: pointer;
