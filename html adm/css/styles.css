@@ -877,3 +877,13 @@ label{
   font-size: 12px;
   opacity: .95;
 }
+tr.feriado {
+  background: #ffe5e5 !important;
+  border-left: 4px solid red;
+}
+
+tr.feriado input,
+tr.feriado select,
+tr.feriado textarea {
+  background: #fff0f0;
+}
