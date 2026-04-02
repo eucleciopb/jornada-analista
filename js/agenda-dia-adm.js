@@ -27,14 +27,14 @@ const db = getFirestore(app);
    - Inclui Tenório
 ========================= */
 const USERS = [
+  "Alex",
+  "Daniel",
   "Emerson",
-  "Euclecio",
+  "Felipe",
   "Joice",
+  "Maiello",
   "Michel",
   "Muller",
-  "Daniel",
-  "Alex",
-  "Ricardo",
   "Robert",
   "Rodrigo",
   "Rosilene",
