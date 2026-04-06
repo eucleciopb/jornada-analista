@@ -98,6 +98,35 @@
     }
 
     .muted{ opacity:.85; }
+
+    .top-actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .btn-primary{
+      padding:10px 14px;
+      border:none;
+      border-radius:12px;
+      background:#d91b2e;
+      color:#fff;
+      font-weight:800;
+      cursor:pointer;
+    }
+    .btn-primary:hover{
+      filter:brightness(1.08);
+    }
+
+    #monthPicker{
+      color-scheme: dark;
+      color:#fff;
+    }
+    #monthPicker::-webkit-calendar-picker-indicator{
+      filter: invert(1) brightness(2);
+      cursor:pointer;
+      opacity:1;
+    }
   </style>
 </head>
 
@@ -110,7 +139,8 @@
       <div id="userInfo" class="hint" style="color:#d1d5db;margin-top:4px;"></div>
     </div>
 
-    <div class="top-actions" style="display:flex; gap:10px; flex-wrap:wrap;">
+    <div class="top-actions">
+      <button id="btnExport" class="btn-primary" type="button">Exportar Excel</button>
       <button id="btnMenu" class="btn-secondary" type="button">Voltar ao Menu</button>
       <button id="btnLogout" class="btn-secondary" type="button">Sair</button>
     </div>
@@ -157,7 +187,7 @@
   <p id="msg" class="msg"></p>
 
   <div class="table-wrap">
-    <table class="table table-sticky">
+    <table class="table table-sticky" id="tabelaResumo">
       <thead>
         <tr>
           <th style="width:120px;">Data</th>
@@ -179,6 +209,8 @@
   </div>
 
 </main>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
@@ -213,6 +245,7 @@
      SESSÃO (padrão do seu sistema)
   ========================= */
   function safeParse(raw){ try { return JSON.parse(raw); } catch { return null; } }
+
   function getCurrentUserName(){
     const raw = localStorage.getItem("user_session");
     if(raw){
@@ -226,7 +259,11 @@
   if(!admin) window.location.href = PATH_INDEX;
 
   document.getElementById("userInfo").textContent = `Admin: ${admin}`;
-  document.getElementById("btnMenu").onclick = () => window.location.href = PATH_MENUADM;
+
+  document.getElementById("btnMenu").onclick = () => {
+    window.location.href = PATH_MENUADM;
+  };
+
   document.getElementById("btnLogout").onclick = () => {
     localStorage.removeItem("user_session");
     localStorage.removeItem("usuarioLogado");
@@ -243,6 +280,8 @@
   const busca = document.getElementById("busca");
   const tbody = document.getElementById("tbody");
   const msg = document.getElementById("msg");
+  const btnExport = document.getElementById("btnExport");
+  const tabelaResumo = document.getElementById("tabelaResumo");
 
   const kpiTreinos = document.getElementById("kpiTreinos");
   const kpiPessoas = document.getElementById("kpiPessoas");
@@ -250,18 +289,28 @@
 
   function setMsg(text, type="info"){
     msg.textContent = text || "";
-    msg.style.color = type === "success" ? "#22c55e" : (type === "error" ? "#ef4444" : "#d1d5db");
+    msg.style.color =
+      type === "success" ? "#22c55e" :
+      type === "error" ? "#ef4444" :
+      "#d1d5db";
   }
 
   function pad2(n){ return String(n).padStart(2,"0"); }
-  function toMonthKey(d){ return `${d.getFullYear()}-${pad2(d.getMonth()+1)}`; }
+
+  function toMonthKey(d){
+    return `${d.getFullYear()}-${pad2(d.getMonth()+1)}`;
+  }
+
   function toBR(iso){
     if(!iso) return "-";
     const [y,m,d] = String(iso).split("-");
     if(!y || !m || !d) return String(iso);
     return `${d}/${m}/${y}`;
   }
-  function normalize(s){ return (s || "").replace(/\s+/g," ").trim(); }
+
+  function normalize(s){
+    return (s || "").replace(/\s+/g," ").trim();
+  }
 
   /* =========================
      FIRESTORE
@@ -270,7 +319,6 @@
   let CACHE_ALL = [];
 
   async function loadAll(){
-    // Carrega uma vez e filtra no front (simples e robusto)
     const snap = await getDocs(collection(db, TREINOS_COLLECTION));
     const arr = [];
     snap.forEach(d => arr.push({ id: d.id, ...d.data() }));
@@ -280,22 +328,27 @@
   /* =========================
      USERS SELECT (por mês)
   ========================= */
-  const USERS_FALLBACK = ["Bruna","Elaine","Euclecio","Pedro","Emerson","Joice","Michel","Muller","Ricardo","Robert","Rodrigo","Rosilene","Tenório"];
+  const USERS_FALLBACK = [
+    "Bruna","Elaine","Euclecio","Pedro","Emerson","Joice",
+    "Michel","Muller","Ricardo","Robert","Rodrigo","Rosilene","Tenório"
+  ];
 
   function renderUserSelectForMonth(rowsMonth){
     const set = new Set();
 
-    // 1) usuários encontrados no mês
     for(const t of rowsMonth){
       const u = normalize(t.usuarioNome || "");
       if(u) set.add(u);
     }
-    // 2) fallback
+
     for(const u of USERS_FALLBACK) set.add(u);
 
-    const users = Array.from(set).filter(Boolean).sort((a,b)=>a.localeCompare(b,"pt-BR"));
+    const users = Array.from(set)
+      .filter(Boolean)
+      .sort((a,b)=>a.localeCompare(b,"pt-BR"));
 
     const current = fUser.value || "";
+
     fUser.innerHTML = `<option value="">Todos</option>` + users.map(u => {
       const sel = (u === current) ? "selected" : "";
       return `<option value="${u}" ${sel}>${u}</option>`;
@@ -319,7 +372,10 @@
       if(Number.isFinite(tp)) totalP += tp;
 
       const nm = Number(r.notaMedia);
-      if(Number.isFinite(nm)) { somaNota += nm; qtdNota++; }
+      if(Number.isFinite(nm)){
+        somaNota += nm;
+        qtdNota++;
+      }
     }
 
     kpiTreinos.textContent = String(totalTreinos);
@@ -328,46 +384,55 @@
   }
 
   /* =========================
-     RENDER (mais antigo → mais recente)
+     RENDER
   ========================= */
-  function render(){
+  function getFilteredRows(){
     const yyyyMM = monthPicker.value;
     const userFilter = normalize(fUser.value);
     const q = (busca.value || "").toLowerCase();
 
-    // base do mês
     let rows = (CACHE_ALL || [])
       .filter(t => String(t.data || "").slice(0,7) === yyyyMM);
 
-    // popula select por mês
     renderUserSelectForMonth(rows);
 
-    // filtro usuário
     if(userFilter){
       rows = rows.filter(t => normalize(t.usuarioNome) === userFilter);
     }
 
-    // busca
     if(q){
       rows = rows.filter(t => {
         const blob = [
-          t.usuarioNome, t.publico, t.treinamento, t.cd, t.desafio, t.meta, t.obs
+          t.usuarioNome,
+          t.publico,
+          t.treinamento,
+          t.cd,
+          t.desafio,
+          t.meta,
+          t.obs
         ].join(" ").toLowerCase();
+
         return blob.includes(q);
       });
     }
 
-    // ✅ ORDENAR MAIS ANTIGO PRIMEIRO
     rows.sort((a,b)=>{
       const da = Date.parse(String(a.data || "")) || 0;
       const db = Date.parse(String(b.data || "")) || 0;
-      if(da !== db) return da - db; // ASC
+      if(da !== db) return da - db;
       return String(a.usuarioNome || "").localeCompare(String(b.usuarioNome || ""),"pt-BR");
     });
+
+    return rows;
+  }
+
+  function render(){
+    const rows = getFilteredRows();
 
     renderKPIs(rows);
 
     tbody.innerHTML = "";
+
     if(rows.length === 0){
       tbody.innerHTML = `<tr><td colspan="10" style="opacity:.8;">Sem registros para este mês/filtros.</td></tr>`;
       return;
@@ -381,8 +446,8 @@
           <td class="muted">${t.publico || "-"}</td>
           <td>${t.treinamento || "-"}</td>
           <td>${t.cd || "-"}</td>
-          <td style="text-align:center;">${(t.totalPessoas ?? "-")}</td>
-          <td style="text-align:center;">${(t.notaMedia ?? "-")}</td>
+          <td style="text-align:center;">${t.totalPessoas ?? "-"}</td>
+          <td style="text-align:center;">${t.notaMedia ?? "-"}</td>
           <td>${t.desafio || "-"}</td>
           <td>${t.meta || "-"}</td>
           <td>${t.obs || "-"}</td>
@@ -390,6 +455,64 @@
       `;
     }
   }
+
+  /* =========================
+     EXPORTAR EXCEL
+  ========================= */
+  function exportarExcel(){
+    const rows = getFilteredRows();
+
+    if(!rows.length){
+      setMsg("Não há dados para exportar com os filtros atuais.", "error");
+      return;
+    }
+
+    const dados = rows.map(t => ({
+      "Data": toBR(t.data),
+      "Usuário": t.usuarioNome || "-",
+      "Público": t.publico || "-",
+      "Treinamento": t.treinamento || "-",
+      "CD": t.cd || "-",
+      "Pessoas": t.totalPessoas ?? "-",
+      "Nota": t.notaMedia ?? "-",
+      "Desafio": t.desafio || "-",
+      "Meta": t.meta || "-",
+      "Obs": t.obs || "-"
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(dados);
+
+    const colunas = [
+      { wch: 12 },
+      { wch: 18 },
+      { wch: 14 },
+      { wch: 35 },
+      { wch: 28 },
+      { wch: 12 },
+      { wch: 10 },
+      { wch: 40 },
+      { wch: 40 },
+      { wch: 40 }
+    ];
+    ws["!cols"] = colunas;
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Treinamentos");
+
+    const nomeMes = monthPicker.value || "sem-mes";
+    const nomeUsuario = normalize(fUser.value || "todos")
+      .toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "");
+
+    const nomeArquivo = `resumo_treinamentos_${nomeMes}_${nomeUsuario}.xlsx`;
+
+    XLSX.writeFile(wb, nomeArquivo);
+    setMsg("Excel exportado com sucesso ✅", "success");
+  }
+
+  btnExport.addEventListener("click", exportarExcel);
 
   /* =========================
      INIT
