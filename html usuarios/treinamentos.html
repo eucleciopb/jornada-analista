@@ -166,7 +166,6 @@
         <div class="hint" id="hintTreinos" style="margin-top:6px; opacity:.9;"></div>
       </div>
 
-      <!-- ✅ CD com pesquisa + multi seleção -->
       <div style="grid-column: 1 / -1;">
         <label for="cdInput">CD treinado (pode adicionar mais de um)</label>
 
@@ -178,6 +177,7 @@
           </div>
 
           <button id="btnAddCd" class="btn-mini primary" type="button">Adicionar CD</button>
+          <button id="btnSelectAllCds" class="btn-mini" type="button">Selecionar todos os CDs</button>
           <button id="btnClearCds" class="btn-mini" type="button">Limpar CDs</button>
         </div>
 
@@ -233,7 +233,7 @@
       <table class="table table-sticky">
         <thead>
           <tr>
-            <th class="actions-col actions-col-h actions-col" style="width:190px;">Ações</th>
+            <th class="actions-col" style="width:190px;">Ações</th>
             <th style="width:120px;">Data</th>
             <th style="width:140px;">Apuração (prazo)</th>
             <th style="width:130px;">Público</th>
@@ -323,6 +323,7 @@
     const cdInput = document.getElementById("cdInput");
     const cdList = document.getElementById("cdList");
     const btnAddCd = document.getElementById("btnAddCd");
+    const btnSelectAllCds = document.getElementById("btnSelectAllCds");
     const btnClearCds = document.getElementById("btnClearCds");
     const chipsEl = document.getElementById("chips");
 
@@ -359,9 +360,6 @@
       return `${Date.now()}_${Math.random().toString(16).slice(2)}`;
     }
 
-    /* =========================
-       CDs (lista completa)
-    ========================= */
     const CDS_RAW = [
       "CD - Alagoinhas","CD - Andradina","CD - Angra dos Reis","CD - Aparecida de Goiânia","CD - Araçatuba","CD - Arapiraca","CD - Araraquara",
       "CD - Balsas","CD - Barbalha","CD - Barra do Garca","CD - Barreiras","CD - Barretos","CD - Barueri","CD - Bauru","CD - Belém","CD - Boituva",
@@ -385,9 +383,6 @@
     const CDS = Array.from(new Set(CDS_RAW.map(s => normalize(s)))).filter(Boolean).sort((a,b)=>a.localeCompare(b,"pt-BR"));
     cdList.innerHTML = CDS.map(x => `<option value="${x}"></option>`).join("");
 
-    /* =========================
-       Multi-CD state
-    ========================= */
     let SELECTED_CDS = [];
 
     function renderChips(){
@@ -435,26 +430,41 @@
       setMsg("", "info");
     }
 
+    function selectAllCds(){
+      SELECTED_CDS = [...CDS];
+      renderChips();
+      setMsg(`Todos os CDs foram selecionados ✅ (${SELECTED_CDS.length})`, "success");
+    }
+
     btnAddCd.addEventListener("click", addCd);
+
+    btnSelectAllCds.addEventListener("click", () => {
+      if (EDITING_ID){
+        setMsg("Em edição, o registro aceita apenas 1 CD.", "error");
+        return;
+      }
+      selectAllCds();
+    });
+
     cdInput.addEventListener("keydown", (e) => {
       if (e.key === "Enter"){
         e.preventDefault();
         addCd();
       }
     });
+
     btnClearCds.addEventListener("click", () => {
       SELECTED_CDS = [];
       renderChips();
+      setMsg("Seleção de CDs limpa.", "info");
     });
 
-    /* =========================
-       Catálogo Treinos (robusto)
-    ========================= */
     function loadCatalogoLocal(){
       const raw = localStorage.getItem("catalogo_treinamentos");
       if (!raw) return [];
       try { const arr = JSON.parse(raw); return Array.isArray(arr) ? arr : []; } catch { return []; }
     }
+
     function pickNomeFromDoc(data){
       for (const f of CATALOGO_FIELDS){
         const v = (data?.[f] || "").toString().trim();
@@ -462,6 +472,7 @@
       }
       return "";
     }
+
     async function loadCatalogoFirestoreRobusto(){
       for (const colName of CATALOGO_COLLECTIONS){
         try{
@@ -476,6 +487,7 @@
       }
       return { source: null, data: [] };
     }
+
     async function renderTreinosSelect(){
       treinamento.innerHTML = `<option value="" disabled selected>Carregando treinamentos...</option>`;
       hintTreinos.textContent = "";
@@ -508,9 +520,6 @@
       hintTreinos.textContent = `Treinamentos: ${nomes.length} | Origem: ${origem || "-"}`;
     }
 
-    /* =========================
-       Histórico
-    ========================= */
     let HIST_CACHE = [];
 
     async function loadHistFromFirebase(){
@@ -523,9 +532,6 @@
       return arr;
     }
 
-    /* =========================
-       Edição
-    ========================= */
     let EDITING_ID = null;
 
     function setEditingMode(isEditing){
@@ -533,9 +539,9 @@
       btnCancelEdit.style.display = isEditing ? "inline-flex" : "none";
       btnSalvar.textContent = isEditing ? "Atualizar Registro" : "Salvar Treinamento";
 
-      // trava multi-cd em edição (1 linha = 1 CD)
       cdInput.disabled = isEditing;
       btnAddCd.disabled = isEditing;
+      btnSelectAllCds.disabled = isEditing;
       btnClearCds.disabled = isEditing;
       chipsEl.style.opacity = isEditing ? ".65" : "1";
     }
@@ -600,7 +606,7 @@
       filtered.forEach(item => {
         const tr = document.createElement("tr");
         tr.innerHTML = `
-          <td class="actions-col actions-col-td actions-col actions-col" style="width:190px;">
+          <td class="actions-col" style="width:190px;">
             <div class="actions-inline">
               <button class="btn-act" type="button" data-edit="${item.id}">Editar</button>
               <button class="btn-act danger" type="button" data-del="${item.id}">Excluir</button>
@@ -621,7 +627,6 @@
         tbodyHist.appendChild(tr);
       });
 
-      // Editar
       tbodyHist.querySelectorAll("[data-edit]").forEach(btn => {
         btn.onclick = () => {
           const id = btn.getAttribute("data-edit");
@@ -631,7 +636,6 @@
         };
       });
 
-      // Excluir
       tbodyHist.querySelectorAll("[data-del]").forEach(btn => {
         btn.onclick = async () => {
           const id = btn.getAttribute("data-del");
@@ -657,9 +661,6 @@
       });
     }
 
-    /* =========================
-       Salvar / Atualizar
-    ========================= */
     btnSalvar.onclick = async () => {
       setMsg("");
 
@@ -695,7 +696,6 @@
         return;
       }
 
-      // ===== Atualizar =====
       if (EDITING_ID){
         if (SELECTED_CDS.length !== 1){
           setMsg("Em edição, o registro deve ter exatamente 1 CD.", "error");
@@ -747,7 +747,6 @@
         return;
       }
 
-      // ===== Salvar (1 por CD) =====
       if (SELECTED_CDS.length === 0){
         setMsg("Adicione pelo menos 1 CD (Adicionar CD).", "error");
         return;
@@ -803,9 +802,6 @@
       }
     };
 
-    /* =========================
-       INIT
-    ========================= */
     dataTreino.value = todayISO();
     dataApuracao.value = "";
     renderChips();
