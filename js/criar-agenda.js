@@ -124,7 +124,9 @@ const ATIVIDADES = [
   "Plano de Ação com os Gestores",
   "Reunião GRC ou Diretor",
   "Alinhamento com outras áreas",
-  "Feriado / Ponto Facultativo"
+  "Feriado / Ponto Facultativo",
+  "Atestado/ASO",
+  "Banco de Horas"
 ];
 
 /* =========================
