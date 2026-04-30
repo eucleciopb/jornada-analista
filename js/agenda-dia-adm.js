@@ -38,7 +38,8 @@ const USERS = [
   "Robert",
   "Rodrigo",
   "Rosilene",
-  "Tenório"
+  "Tenório",
+  "Victor"
 ];
 
 /* =========================
