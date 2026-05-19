@@ -15,18 +15,31 @@
   padding:12px 0;
 }
 .topbar-inner{
-  display:flex; justify-content:space-between;
-  align-items:flex-start; gap:14px; flex-wrap:wrap;
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:14px;
+  flex-wrap:wrap;
 }
 .topbar h2{ margin:0; font-size:18px; }
 
+.actions{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+
 .filters{
-  display:flex; gap:12px; flex-wrap:wrap;
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
   margin-top:15px;
 }
 .filters > div{ min-width:220px; flex:1; }
+
 .field{
-  width:100%; padding:10px 12px;
+  width:100%;
+  padding:10px 12px;
   border-radius:14px;
   border:1px solid rgba(255,255,255,.12);
   background:rgba(255,255,255,.05);
@@ -74,17 +87,22 @@ tbody tr:hover{
   color:#facc15;
 }
 
-.btn-mini{
-  padding:8px 12px;
-  border-radius:12px;
+.btn-export{
+  padding:10px 14px;
+  border-radius:14px;
   border:none;
-  background:#d91b2e;
-  color:#fff;
+  background:#22c55e;
+  color:#07120b;
   font-weight:900;
   cursor:pointer;
 }
-.btn-mini:hover{ filter:brightness(1.1); }
+.btn-export:hover{ filter:brightness(1.08); }
 
+.resumo{
+  margin-top:14px;
+  color:#d1d5db;
+  font-size:13px;
+}
 </style>
 </head>
 
@@ -96,7 +114,9 @@ tbody tr:hover{
       <h2>Agenda Mensal — Admin</h2>
       <div id="userInfo" class="hint" style="margin-top:4px;"></div>
     </div>
-    <div>
+
+    <div class="actions">
+      <button id="btnExportar" class="btn-export">Exportar Excel</button>
       <button id="btnMenu" class="btn-secondary">Voltar ao Menu</button>
       <button id="btnLogout" class="btn-secondary">Sair</button>
     </div>
@@ -110,14 +130,17 @@ tbody tr:hover{
     <label>Mês</label>
     <input id="monthPicker" class="field" type="month">
   </div>
+
   <div>
     <label>Buscar</label>
     <input id="busca" class="field" type="text" placeholder="Analista ou CD">
   </div>
 </section>
 
+<div id="resumo" class="resumo"></div>
+
 <div class="table-wrap">
-<table>
+<table id="tabelaAgenda">
 <thead>
 <tr>
 <th>Data</th>
@@ -139,13 +162,22 @@ tbody tr:hover{
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getFirestore, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+import {
+  getFirestore,
+  collection,
+  getDocs,
+  query,
+  where
+} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-/* FIREBASE */
+/* FIREBASE OFICIAL DO PROJETO */
 const firebaseConfig = {
   apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
   authDomain: "jornada-portal.firebaseapp.com",
-  projectId: "jornada-portal"
+  projectId: "jornada-portal",
+  storageBucket: "jornada-portal.firebasestorage.app",
+  messagingSenderId: "669362296644",
+  appId: "1:669362296644:web:f590d9834a8e4e60012911"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -156,9 +188,13 @@ const PATH_MENUADM = "../html menus/menuadm.html";
 
 const user = localStorage.getItem("usuarioLogado");
 if(!user) window.location.href = PATH_INDEX;
+
 document.getElementById("userInfo").textContent = "Admin: " + user;
 
-document.getElementById("btnMenu").onclick = () => window.location.href = PATH_MENUADM;
+document.getElementById("btnMenu").onclick = () => {
+  window.location.href = PATH_MENUADM;
+};
+
 document.getElementById("btnLogout").onclick = () => {
   localStorage.clear();
   window.location.href = PATH_INDEX;
@@ -167,88 +203,223 @@ document.getElementById("btnLogout").onclick = () => {
 const monthPicker = document.getElementById("monthPicker");
 const busca = document.getElementById("busca");
 const tbody = document.getElementById("tbody");
+const resumo = document.getElementById("resumo");
+const btnExportar = document.getElementById("btnExportar");
 
-function pad2(n){ return String(n).padStart(2,"0"); }
-function toMonthKey(d){ return `${d.getFullYear()}-${pad2(d.getMonth()+1)}`; }
+let CACHE = [];
+let ROWS_RENDERIZADAS = [];
+
+function pad2(n){
+  return String(n).padStart(2,"0");
+}
+
+function toMonthKey(d){
+  return `${d.getFullYear()}-${pad2(d.getMonth()+1)}`;
+}
+
 function toBR(iso){
+  if(!iso) return "-";
   const [y,m,d] = iso.split("-");
   return `${d}/${m}/${y}`;
 }
+
 function diaSemana(iso){
+  if(!iso) return "-";
   const [y,m,d] = iso.split("-");
-  const dt = new Date(y, m-1, d);
+  const dt = new Date(Number(y), Number(m)-1, Number(d));
   return ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"][dt.getDay()];
 }
 
-let CACHE = [];
-
-async function load(){
-  const yyyyMM = monthPicker.value;
-  const q = query(collection(db, "agenda_dias"), where("yyyyMM","==",yyyyMM));
-  const snap = await getDocs(q);
-
-  CACHE = [];
-  snap.forEach(doc=>{
-    CACHE.push({id:doc.id, ...doc.data()});
-  });
-
-  render();
+function limparTexto(valor){
+  return String(valor ?? "")
+    .replace(/<[^>]*>/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function isFilled(x){
-  return x.cd || x.atividade || x.obs;
+  return Boolean(x.cd || x.atividade || x.obs);
 }
 
-function render(){
+async function load(){
+  const yyyyMM = monthPicker.value;
+
+  tbody.innerHTML = `<tr><td colspan="7">Carregando…</td></tr>`;
+  resumo.textContent = "";
+
+  try{
+    const q = query(
+      collection(db, "agenda_dias"),
+      where("yyyyMM","==",yyyyMM)
+    );
+
+    const snap = await getDocs(q);
+
+    CACHE = [];
+    snap.forEach(docSnap => {
+      CACHE.push({
+        id: docSnap.id,
+        ...docSnap.data()
+      });
+    });
+
+    render();
+
+  }catch(error){
+    console.error(error);
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7">
+          Erro ao carregar agenda. Verifique Rules, coleção agenda_dias ou campo yyyyMM.
+        </td>
+      </tr>
+    `;
+  }
+}
+
+function getRowsFiltradas(){
   let rows = CACHE.slice();
 
-  const txt = busca.value.toLowerCase();
+  const txt = busca.value.trim().toLowerCase();
+
   if(txt){
     rows = rows.filter(x =>
-      (x.usuarioNome || "").toLowerCase().includes(txt) ||
-      (x.cd || "").toLowerCase().includes(txt)
+      String(x.usuarioNome || "").toLowerCase().includes(txt) ||
+      String(x.cd || "").toLowerCase().includes(txt) ||
+      String(x.atividade || "").toLowerCase().includes(txt)
     );
   }
 
-  /* ✅ ORDENAR MAIS ANTIGO PRIMEIRO */
   rows.sort((a,b)=>{
-    const da = Date.parse(a.data);
-    const db = Date.parse(b.data);
-    if(da !== db) return da - db; // ASC
-    return (a.usuarioNome || "").localeCompare(b.usuarioNome || "");
+    const da = Date.parse(a.data || "");
+    const db = Date.parse(b.data || "");
+
+    if(da !== db) return da - db;
+
+    return String(a.usuarioNome || "").localeCompare(
+      String(b.usuarioNome || ""),
+      "pt-BR"
+    );
   });
+
+  return rows;
+}
+
+function render(){
+  const rows = getRowsFiltradas();
+  ROWS_RENDERIZADAS = rows;
 
   tbody.innerHTML = "";
 
-  if(rows.length===0){
+  const total = rows.length;
+  const preenchidos = rows.filter(isFilled).length;
+  const pendentes = total - preenchidos;
+
+  resumo.textContent = `Total exibido: ${total} | Preenchidos: ${preenchidos} | Não preenchidos: ${pendentes}`;
+
+  if(rows.length === 0){
     tbody.innerHTML = `<tr><td colspan="7">Sem registros</td></tr>`;
     return;
   }
 
   rows.forEach(x=>{
-    const status = isFilled(x)
+    const statusTexto = isFilled(x) ? "Preenchido" : "Não preenchido";
+
+    const statusHtml = isFilled(x)
       ? `<span class="pill ok">Preenchido</span>`
       : `<span class="pill pend">Não preenchido</span>`;
 
-    tbody.innerHTML += `
-    <tr>
+    const tr = document.createElement("tr");
+
+    tr.innerHTML = `
       <td>${toBR(x.data)}</td>
       <td>${diaSemana(x.data)}</td>
-      <td>${x.usuarioNome || "-"}</td>
-      <td>${x.cd || "-"}</td>
-      <td>${x.atividade || "-"}</td>
-      <td>${x.obs || "-"}</td>
-      <td>${status}</td>
-    </tr>`;
+      <td>${limparTexto(x.usuarioNome) || "-"}</td>
+      <td>${limparTexto(x.cd) || "-"}</td>
+      <td>${limparTexto(x.atividade) || "-"}</td>
+      <td>${limparTexto(x.obs) || "-"}</td>
+      <td data-status="${statusTexto}">${statusHtml}</td>
+    `;
+
+    tbody.appendChild(tr);
   });
 }
 
+function exportarExcel(){
+  if(!ROWS_RENDERIZADAS.length){
+    alert("Não há dados para exportar.");
+    return;
+  }
+
+  const linhas = [];
+
+  linhas.push([
+    "Data",
+    "Dia",
+    "Analista",
+    "CD",
+    "Atividade",
+    "Observações",
+    "Status"
+  ]);
+
+  ROWS_RENDERIZADAS.forEach(x=>{
+    linhas.push([
+      toBR(x.data),
+      diaSemana(x.data),
+      limparTexto(x.usuarioNome) || "-",
+      limparTexto(x.cd) || "-",
+      limparTexto(x.atividade) || "-",
+      limparTexto(x.obs) || "-",
+      isFilled(x) ? "Preenchido" : "Não preenchido"
+    ]);
+  });
+
+  const htmlTabela = `
+    <html>
+      <head>
+        <meta charset="UTF-8">
+      </head>
+      <body>
+        <table border="1">
+          ${linhas.map((linha, index) => `
+            <tr>
+              ${linha.map(coluna => index === 0
+                ? `<th>${String(coluna).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}</th>`
+                : `<td>${String(coluna).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}</td>`
+              ).join("")}
+            </tr>
+          `).join("")}
+        </table>
+      </body>
+    </html>
+  `;
+
+  const blob = new Blob([htmlTabela], {
+    type: "application/vnd.ms-excel;charset=utf-8;"
+  });
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+
+  const mes = monthPicker.value || "agenda";
+  a.href = url;
+  a.download = `agenda_mensal_${mes}.xls`;
+
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+
+  URL.revokeObjectURL(url);
+}
+
 monthPicker.value = toMonthKey(new Date());
+
 await load();
 
 monthPicker.addEventListener("change", load);
 busca.addEventListener("input", render);
-
+btnExportar.addEventListener("click", exportarExcel);
 </script>
 
 </body>
