@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Base de KPIs - CD | Ano | Mês | KPI | %</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      overflow: hidden;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header h1 {
+      font-size: 28px;
+      font-weight: 700;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+
+    .btn-primary {
+      background: #22c55e;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #16a34a;
+    }
+
+    .btn-secondary {
+      background: rgba(255,255,255,0.2);
+      color: white;
+      border: 1px solid white;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255,255,255,0.3);
+    }
+
+    .btn-danger {
+      background: #ef4444;
+      color: white;
+      padding: 6px 12px;
+      font-size: 13px;
+    }
+
+    .btn-danger:hover {
+      background: #dc2626;
+    }
+
+    .btn-warning {
+      background: #f59e0b;
+      color: white;
+      padding: 6px 12px;
+      font-size: 13px;
+    }
+
+    .btn-warning:hover {
+      background: #d97706;
+    }
+
+    .section {
+      padding: 30px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .section:last-child {
+      border-bottom: none;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #1f2937;
+      margin-bottom: 10px;
+    }
+
+    .section-desc {
+      font-size: 13px;
+      color: #6b7280;
+      margin-bottom: 20px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .form-group label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 6px;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      padding: 10px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 14px;
+      font-family: inherit;
+      transition: border-color 0.3s ease;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    .msg {
+      padding: 12px 15px;
+      border-radius: 6px;
+      margin-bottom: 15px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #d1d5db;
+      min-height: 20px;
+    }
+
+    .table-wrapper {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    th {
+      background: #f3f4f6;
+      padding: 12px 15px;
+      text-align: left;
+      font-weight: 700;
+      color: #1f2937;
+      border-bottom: 2px solid #e5e7eb;
+    }
+
+    td {
+      padding: 12px 15px;
+      border-bottom: 1px solid #e5e7eb;
+      color: #374151;
+    }
+
+    tr:hover {
+      background: #f9fafb;
+    }
+
+    .empty-message {
+      text-align: center;
+      padding: 40px;
+      color: #9ca3af;
+      font-size: 15px;
+    }
+
+    .search-box {
+      margin-bottom: 20px;
+    }
+
+    .search-box input {
+      width: 100%;
+      max-width: 300px;
+      padding: 10px 15px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    .userInfo {
+      font-size: 13px;
+      color: rgba(255,255,255,0.8);
+    }
+
+    hr {
+      border: none;
+      height: 1px;
+      background: #e5e7eb;
+      margin: 20px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div>
+        <h1>Base de KPIs</h1>
+        <p id="userInfo" class="userInfo"></p>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-secondary" id="btnMenu">Voltar ao Menu</button>
+        <button class="btn btn-secondary" id="btnLogout">Sair</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Cadastro de KPIs</div>
+      <div class="section-desc">Importar / Atualizar KPIs. Modelo esperado: CD | Ano | Mês | KPI | %. Pode colar do Excel.</div>
+
+      <div id="msg" class="msg"></div>
+
+      <button class="btn btn-primary" id="btnNovoMes">Adicionar Mês Novo</button>
+
+      <hr>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label>CD</label>
+          <input type="text" id="cd" placeholder="Ex: SP01">
+        </div>
+
+        <div class="form-group">
+          <label>Ano</label>
+          <input type="number" id="ano" placeholder="2026">
+        </div>
+
+        <div class="form-group">
+          <label>Mês</label>
+          <select id="mes">
+            <option value="">Selecione...</option>
+            <option value="1">Janeiro</option>
+            <option value="2">Fevereiro</option>
+            <option value="3">Março</option>
+            <option value="4">Abril</option>
+            <option value="5">Maio</option>
+            <option value="6">Junho</option>
+            <option value="7">Julho</option>
+            <option value="8">Agosto</option>
+            <option value="9">Setembro</option>
+            <option value="10">Outubro</option>
+            <option value="11">Novembro</option>
+            <option value="12">Dezembro</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>KPI</label>
+          <select id="kpi">
+            <option value="">Selecione...</option>
+            <option value="Cobertura">Cobertura</option>
+            <option value="Eficiência">Eficiência</option>
+            <option value="Ocorrências">Ocorrências</option>
+            <option value="Resultado">Resultado</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>%</label>
+          <input type="number" id="percentual" placeholder="0.00" step="0.01">
+        </div>
+
+        <div class="form-group" style="align-self: flex-end;">
+          <button class="btn btn-primary" id="btnSalvar">Salvar KPI</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Importação em Lote</div>
+      <div class="section-desc">Cole do Excel com cabeçalho: cd, ano, mes, kpi, percentual</div>
+
+      <div class="form-group">
+        <textarea id="importArea" placeholder="Cole aqui os dados do Excel..."></textarea>
+      </div>
+
+      <button class="btn btn-primary" id="btnImportar">Importar Base</button>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Tabela de KPIs</div>
+      <div class="section-desc">Dados salvos no Firebase.</div>
+
+      <div class="search-box">
+        <input type="text" id="busca" placeholder="Buscar por CD, Ano, Mês, KPI ou %...">
+      </div>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Ações</th>
+              <th>CD</th>
+              <th>Ano</th>
+              <th>Mês</th>
+              <th>KPI</th>
+              <th>%</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import {
+      getFirestore,
+      collection,
+      doc,
+      setDoc,
+      deleteDoc,
+      getDocs,
+      query,
+      where,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
+      authDomain: "jornada-portal.firebaseapp.com",
+      projectId: "jornada-portal",
+      storageBucket: "jornada-portal.firebasestorage.app",
+      messagingSenderId: "669362296644",
+      appId: "1:669362296644:web:f590d9834a8e4e60012911"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const COLLECTION = "apuracoes_treinamentos";
+    const TIPO = "kpis_cd_mes";
+
+    const PATH_INDEX = "../index.html";
+    const PATH_MENU = "../html menus/menu.html";
+
+    const cd = document.getElementById("cd");
+    const ano = document.getElementById("ano");
+    const mes = document.getElementById("mes");
+    const kpi = document.getElementById("kpi");
+    const percentual = document.getElementById("percentual");
+    const msg = document.getElementById("msg");
+    const tbody = document.getElementById("tbody");
+    const busca = document.getElementById("busca");
+    const importArea = document.getElementById("importArea");
+
+    const btnSalvar = document.getElementById("btnSalvar");
+    const btnImportar = document.getElementById("btnImportar");
+    const btnNovoMes = document.getElementById("btnNovoMes");
+
+    function safeParse(raw){ try { return JSON.parse(raw); } catch { return null; } }
+
+    function getCurrentUserName(){
+      const raw = localStorage.getItem("user_session");
+      if(raw){
+        const s = safeParse(raw);
+        if(s?.nome) return String(s.nome).trim();
+      }
+      return (localStorage.getItem("usuarioLogado") || "").trim();
+    }
+
+    const usuario = getCurrentUserName();
+    if(!usuario) window.location.href = PATH_INDEX;
+
+    document.getElementById("userInfo").textContent = `Usuário: ${usuario}`;
+
+    document.getElementById("btnMenu").onclick = () => window.location.href = PATH_MENU;
+
+    document.getElementById("btnLogout").onclick = () => {
+      localStorage.removeItem("user_session");
+      localStorage.removeItem("usuarioLogado");
+      window.location.href = PATH_INDEX;
+    };
+
+    let CACHE = [];
+    let EDITING_ID = null;
+
+    function setMsg(text, type="info"){
+      msg.textContent = text || "";
+      msg.style.color = type === "success" ? "#22c55e" : type === "error" ? "#ef4444" : "#d1d5db";
+    }
+
+    function normalize(s){
+      return String(s || "").replace(/\s+/g," ").trim();
+    }
+
+    function slug(s){
+      return normalize(s)
+        .toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+        .replace(/[^a-z0-9]+/g,"-")
+        .replace(/(^-|-$)/g,"");
+    }
+
+    function nomeMes(n){
+      const meses = ["","Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+      return meses[Number(n)] || "-";
+    }
+
+    function makeDocId(item){
+      return `kpi_${slug(item.cd)}_${item.ano}_${item.mes}_${slug(item.kpi)}`;
+    }
+
+    function limparForm(){
+      cd.value = "";
+      ano.value = "2026";
+      mes.value = "";
+      kpi.value = "";
+      percentual.value = "";
+      EDITING_ID = null;
+      btnSalvar.textContent = "Salvar KPI";
+    }
+
+    function validarBase(base){
+      if(!base.cd) return "Preencha o CD.";
+      if(!base.ano) return "Preencha o ano.";
+      if(!base.mes || base.mes < 1 || base.mes > 12) return "Mês inválido.";
+      if(!base.kpi) return "Preencha o KPI.";
+      if(!Number.isFinite(base.percentual)) return "Percentual inválido.";
+      return "";
+    }
+
+    async function salvarItem(base, idManual=null){
+      const id = idManual || makeDocId(base);
+
+      await setDoc(doc(db, COLLECTION, id), {
+        tipo: TIPO,
+        id,
+        cd: base.cd,
+        ano: base.ano,
+        mes: base.mes,
+        mesNome: nomeMes(base.mes),
+        kpi: base.kpi,
+        percentual: base.percentual,
+        usuarioNome: usuario,
+        atualizadoEm: serverTimestamp()
+      }, { merge:true });
+
+      return id;
+    }
+
+    btnSalvar.onclick = async () => {
+      const base = {
+        cd: normalize(cd.value),
+        ano: Number(ano.value),
+        mes: Number(mes.value),
+        kpi: normalize(kpi.value),
+        percentual: Number(percentual.value)
+      };
+
+      const erro = validarBase(base);
+      if(erro){
+        setMsg(erro, "error");
+        return;
+      }
+
+      try{
+        setMsg("Salvando...");
+        await salvarItem(base, EDITING_ID);
+        setMsg("KPI salvo com sucesso ✅", "success");
+        limparForm();
+        await carregar();
+      }catch(e){
+        console.error(e);
+        setMsg("Erro ao salvar. Verifique Rules do Firebase.", "error");
+      }
+    };
+
+    btnNovoMes.onclick = () => {
+      limparForm();
+      ano.value = "2026";
+      setMsg("Preencha os dados do novo mês.", "info");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+
+    function parseImport(text){
+      const linhas = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+      if(linhas.length === 0) return [];
+
+      const primeira = linhas[0].toLowerCase();
+      const temCabecalho = primeira.includes("cd") && primeira.includes("ano") && primeira.includes("kpi");
+
+      const dados = temCabecalho ? linhas.slice(1) : linhas;
+
+      return dados.map(linha => {
+        const sep = linha.includes("\t") ? "\t" : linha.includes(";") ? ";" : ",";
+        const p = linha.split(sep).map(x => normalize(x.replace("%","").replace(",",".")));
+
+        return {
+          cd: p[0],
+          ano: Number(p[1]),
+          mes: Number(p[2]),
+          kpi: p[3],
+          percentual: Number(p[4])
+        };
+      });
+    }
+
+    btnImportar.onclick = async () => {
+      const itens = parseImport(importArea.value);
+      if(itens.length === 0){
+        setMsg("Cole a base para importar.", "error");
+        return;
+      }
+
+      const validos = [];
+      for(const item of itens){
+        const erro = validarBase(item);
+        if(erro){
+          setMsg(`Erro na importação: ${erro}`, "error");
+          return;
+        }
+        validos.push(item);
+      }
+
+      try{
+        setMsg("Importando base...");
+        await Promise.all(validos.map(item => salvarItem(item)));
+        setMsg(`Importação concluída ✅ (${validos.length} registros)`, "success");
+        importArea.value = "";
+        await carregar();
+      }catch(e){
+        console.error(e);
+        setMsg("Erro ao importar. Verifique Firebase Rules.", "error");
+      }
+    };
+
+    async function carregar(){
+      const q = query(collection(db, COLLECTION), where("tipo", "==", TIPO));
+      const snap = await getDocs(q);
+
+      const arr = [];
+      snap.forEach(d => arr.push({ id:d.id, ...d.data() }));
+
+      arr.sort((a,b) =>
+        String(a.cd || "").localeCompare(String(b.cd || ""), "pt-BR") ||
+        Number(a.ano || 0) - Number(b.ano || 0) ||
+        Number(a.mes || 0) - Number(b.mes || 0) ||
+        String(a.kpi || "").localeCompare(String(b.kpi || ""), "pt-BR")
+      );
+
+      CACHE = arr;
+      render();
+    }
+
+    function render(){
+      const q = normalize(busca.value).toLowerCase();
+
+      const data = q ? CACHE.filter(x =>
+        [x.cd, x.ano, x.mesNome, x.kpi, x.percentual].join(" ").toLowerCase().includes(q)
+      ) : CACHE;
+
+      tbody.innerHTML = "";
+
+      if(data.length === 0){
+        tbody.innerHTML = `<tr><td colspan="6" class="empty-message">Nenhum KPI cadastrado.</td></tr>`;
+        return;
+      }
+
+      data.forEach(item => {
+        const tr = document.createElement("tr");
+
+        tr.innerHTML = `
+          <td>
+            <button class="btn btn-warning" data-edit="${item.id}">Editar</button>
+            <button class="btn btn-danger" data-del="${item.id}">Excluir</button>
+          </td>
+          <td>${item.cd || "-"}</td>
+          <td>${item.ano || "-"}</td>
+          <td>${item.mesNome || nomeMes(item.mes)}</td>
+          <td>${item.kpi || "-"}</td>
+          <td>${item.percentual ?? "-"}%</td>
+        `;
+
+        tbody.appendChild(tr);
+      });
+
+      tbody.querySelectorAll("[data-edit]").forEach(btn => {
+        btn.onclick = () => {
+          const item = CACHE.find(x => x.id === btn.getAttribute("data-edit"));
+          if(!item) return;
+
+          EDITING_ID = item.id;
+          cd.value = item.cd || "";
+          ano.value = item.ano || "2026";
+          mes.value = item.mes || "";
+          kpi.value = item.kpi || "";
+          percentual.value = item.percentual ?? "";
+
+          btnSalvar.textContent = "Atualizar KPI";
+          setMsg("Editando KPI. Ajuste e salve.", "info");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        };
+      });
+
+      tbody.querySelectorAll("[data-del]").forEach(btn => {
+        btn.onclick = async () => {
+          const id = btn.getAttribute("data-del");
+          if(!id) return;
+
+          try{
+            setMsg("Excluindo...");
+            await deleteDoc(doc(db, COLLECTION, id));
+            setMsg("KPI excluído ✅", "success");
+            await carregar();
+          }catch(e){
+            console.error(e);
+            setMsg("Erro ao excluir.", "error");
+          }
+        };
+      });
+    }
+
+    busca.addEventListener("input", render);
+
+    ano.value = "2026";
+
+    try{
+      setMsg("Carregando KPIs...");
+      await carregar();
+      setMsg("");
+    }catch(e){
+      console.error(e);
+      setMsg("Erro ao carregar dados do Firebase.", "error");
+    }
+  </script>
+</body>
+</html>
