@@ -1,0 +1,827 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Responsáveis por CD</title>
+  <link rel="stylesheet" href="../css/styles.css" />
+
+  <style>
+    .toolbar{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:end;
+      margin-top:12px;
+    }
+
+    .toolbar > div{
+      min-width:200px;
+    }
+
+    .bulk-box{
+      margin:14px 0;
+      padding:14px;
+      border-radius:18px;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.04);
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:end;
+    }
+
+    .bulk-box > div{
+      min-width:220px;
+    }
+
+    .select-mini{
+      min-width:160px;
+      padding:8px 10px;
+      border-radius:10px;
+    }
+
+    .btn-mini{
+      padding:8px 10px;
+      border-radius:10px;
+      border:1px solid rgba(255,255,255,.15);
+      background:rgba(255,255,255,.06);
+      color:#e5e7eb;
+      font-weight:900;
+      cursor:pointer;
+    }
+
+    .btn-mini.primary{
+      background:rgba(217,27,46,.95);
+      border-color:transparent;
+      color:white;
+    }
+
+    .btn-mini:hover{
+      filter:brightness(1.08);
+    }
+
+    .pill{
+      display:inline-flex;
+      padding:6px 10px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:900;
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.12);
+    }
+
+    .pill.ok{ color:#22c55e; }
+    .pill.warn{ color:#facc15; }
+    .pill.info{ color:#93c5fd; }
+
+    th.actions-col,
+    td.actions-col{
+      position:sticky;
+      left:0;
+      z-index:3;
+      background:rgba(11,15,20,.96);
+      border-right:1px solid rgba(255,255,255,.08);
+    }
+
+    thead th.actions-col{
+      z-index:4;
+    }
+
+    .resumo-grid{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-top:10px;
+    }
+
+    .changed{
+      outline:2px solid rgba(250,204,21,.55);
+    }
+  </style>
+</head>
+
+<body class="bg">
+  <header class="topbar">
+    <div>
+      <h2>Responsáveis por CD</h2>
+      <div id="userInfo" class="hint" style="color:#d1d5db;margin-top:4px;"></div>
+    </div>
+
+    <div class="top-actions">
+      <button id="btnMenu" class="btn-secondary" type="button">Voltar ao Menu</button>
+      <button id="btnLogout" class="btn-secondary" type="button">Sair</button>
+    </div>
+  </header>
+
+  <main class="card wide">
+    <section>
+      <h3>Cadastro rápido de responsáveis</h3>
+      <p class="hint">
+        Selecione vários CDs e atribua um responsável em massa, altere direto na tabela ou importe por Excel.
+      </p>
+    </section>
+
+    <hr class="sep" />
+
+    <section class="toolbar">
+      <div>
+        <label for="filtroResponsavel">Filtrar responsável</label>
+        <select id="filtroResponsavel">
+          <option value="">Todos</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="busca">Buscar CD</label>
+        <input id="busca" type="text" placeholder="Ex: Belém, Boituva, Cuiabá..." />
+      </div>
+
+      <button id="btnSelecionarTodos" type="button">Selecionar filtrados</button>
+      <button id="btnLimparSelecao" type="button">Limpar seleção</button>
+      <button id="btnRecarregar" type="button">Recarregar</button>
+    </section>
+
+    <section class="bulk-box">
+      <div>
+        <label for="responsavelMassa">Atribuir responsável aos CDs selecionados</label>
+        <select id="responsavelMassa">
+          <option value="">Selecione...</option>
+        </select>
+      </div>
+
+      <button id="btnAplicarMassa" type="button">
+        Aplicar nos selecionados
+      </button>
+
+      <button id="btnSalvarTudo" class="btn-mini primary" type="button">
+        Salvar tudo alterado
+      </button>
+    </section>
+
+    <section class="bulk-box">
+      <div>
+        <label for="arquivoExcel">Importar Excel</label>
+        <input id="arquivoExcel" type="file" accept=".xlsx,.xls,.csv" />
+        <div class="hint" style="margin-top:6px;">
+          Colunas aceitas: <b>cd</b> e <b>analista</b> ou <b>CD</b> e <b>Responsável</b>.
+        </div>
+      </div>
+
+      <button id="btnImportarExcel" class="btn-mini primary" type="button">
+        Importar e aplicar
+      </button>
+
+      <button id="btnModelo" type="button">
+        Baixar modelo
+      </button>
+    </section>
+
+    <p id="msg" class="msg"></p>
+
+    <section style="display:flex;gap:10px;flex-wrap:wrap;margin:12px 0;">
+      <span id="totalCds" class="pill info">Total CDs: 0</span>
+      <span id="comResponsavel" class="pill ok">Com responsável: 0</span>
+      <span id="semResponsavel" class="pill warn">Sem responsável: 0</span>
+      <span id="selecionados" class="pill">Selecionados: 0</span>
+      <span id="alterados" class="pill warn">Alterados: 0</span>
+    </section>
+
+    <section>
+      <h3>Resumo por responsável</h3>
+      <div id="resumoResponsaveis" class="resumo-grid"></div>
+    </section>
+
+    <hr class="sep" />
+
+    <div class="table-wrap" style="margin-top:12px;">
+      <table class="table table-sticky">
+        <thead>
+          <tr>
+            <th class="actions-col" style="width:90px;">Selecionar</th>
+            <th style="width:300px;">CD</th>
+            <th style="width:220px;">Responsável</th>
+            <th style="width:180px;">Status</th>
+            <th>Observação</th>
+            <th style="width:120px;">Ação</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import {
+      getFirestore,
+      collection,
+      doc,
+      setDoc,
+      getDocs,
+      query,
+      where,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
+      authDomain: "jornada-portal.firebaseapp.com",
+      projectId: "jornada-portal",
+      storageBucket: "jornada-portal.firebasestorage.app",
+      messagingSenderId: "669362296644",
+      appId: "1:669362296644:web:f590d9834a8e4e60012911"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const COLLECTION = "apuracoes_treinamentos";
+    const TIPO = "responsavel_cd";
+
+    const PATH_INDEX = "../index.html";
+    const PATH_MENU = "../html menus/menuadm.html";
+
+    const RESPONSAVEIS = [
+      "Alex",
+      "Daniel",
+      "Emerson",
+      "Euclecio",
+      "Felipe",
+      "Joice",
+      "Maiello",
+      "Michel",
+      "Muller",
+      "Robert",
+      "Rodrigo",
+      "Rosilene",
+      "Tenório",
+      "Victor",
+      "Marcio",
+      "Andre"
+    ];
+
+    const CDS_BASE = [
+      "CD - Alagoinhas","CD - Andradina","CD - Angra dos Reis","CD - Aparecida de Goiânia","CD - Araçatuba","CD - Arapiraca","CD - Araraquara",
+      "CD - Balsas","CD - Barbalha","CD - Barra do Garca","CD - Barreiras","CD - Barretos","CD - Barueri","CD - Bauru","CD - Belém","CD - Boituva",
+      "CD - Bom Jesus da Lapa","CD - Brumado","CD - Cachoeiro de Itapemirim","CD - Camaçari","CD - Campina Grande","CD - Campinas","CD - Campo Grande MS",
+      "CD - Campo Grande RJ","CD - Campos dos Goytacazes","CD - Caraguatatuba","CD - Cariacica","CD - Carpina","CD - Caruaru","CD - Cascavel","CD - Catanduva",
+      "CD - Caucaia","CD - Caxias","CD - Coimbra","CD - Conde","CD - Conselheiro Lafaiete","CD - Contagem","CD - Coxim","CD - Cuiabá",
+      "CD - Divinópolis","CD - Dourados","CD - Duque de Caxias","CD - Eunápolis","CD - Eusebio","CD - Feira de Santana",
+      "CD - Fernandópolis","CD - Floriano","CD - Garanhuns","CD - Governador Valadares","CD - Guarujá",
+      "CD - Guarulhos Taboão","CD - Iguatu","CD - Imperatriz","CD - Interlagos","CD - Iporá","CD - Irece","CD - Itabaiana","CD - Itaberaba","CD - Itabuna",
+      "CD - Itapeva","CD - Itapissuma","CD - Itumbiara","CD - Jaboatão dos Guararapes","CD - Jacobina","CD - Jaguaré","CD - Jequié","CD - Juazeiro","CD - Juiz de Fora",
+      "CD - Jundiaí","CD - Londrina","CD - Macaiba","CD - Maceió","CD - Marília","CD - Mogi-Mirim","CD - Montes Claros","CD - Mossoró","CD - Muriaé",
+      "CD - Nossa Senhora do Socorro","CD - Nova Friburgo","CD - Palhoça","CD - Paranaíba","CD - Parnaiba","CD - Passos","CD - Patos",
+      "CD - Paulo Afonso","CD - Petrolina","CD - Petrópolis","CD - Picos","CD - Piracicaba","CD - Poços de Caldas","CD - Porto Velho",
+      "CD - Pouso Alegre","CD - Presidente Prudente","CD - Recife","CD - Registro","CD - Ribeirão Preto","CD - Rio Branco","CD - Rio das Ostras","CD - Rio Verde",
+      "CD - Rondonópolis","CD - Salto","CD - Salvador","CD - Salvador Leste","CD - Santa Inês","CD - Santo Antonio de Jesus","CD - São Bernardo","CD - São Cristovão",
+      "CD - São Gonçalo","CD - São João de Meriti","CD - São José do Rio Preto","CD - São José dos Campos","CD - São José dos Pinhais","CD - São Luis","CD - São Mateus",
+      "CD - São Pedro da Aldeia","CD - Sapucaia do Sul","CD - Serra Talhada","CD - Serrinha","CD - Sete Lagoas","CD - Sinop","CD - Sobral","CD - Sousa",
+      "CD - Taboão da Serra","CD - Taguatinga","CD - Taubaté","CD - Teixeira de Freitas","CD - Teresina","CD - Três Lagoas","CD - Uberaba","CD - Varginha",
+      "CD - Vila Guilherme","CD - Vitória da Conquista","CD - Volta Redonda"
+    ];
+
+    const userInfo = document.getElementById("userInfo");
+    const btnMenu = document.getElementById("btnMenu");
+    const btnLogout = document.getElementById("btnLogout");
+    const btnRecarregar = document.getElementById("btnRecarregar");
+
+    const filtroResponsavel = document.getElementById("filtroResponsavel");
+    const responsavelMassa = document.getElementById("responsavelMassa");
+    const busca = document.getElementById("busca");
+
+    const btnSelecionarTodos = document.getElementById("btnSelecionarTodos");
+    const btnLimparSelecao = document.getElementById("btnLimparSelecao");
+    const btnAplicarMassa = document.getElementById("btnAplicarMassa");
+    const btnSalvarTudo = document.getElementById("btnSalvarTudo");
+
+    const arquivoExcel = document.getElementById("arquivoExcel");
+    const btnImportarExcel = document.getElementById("btnImportarExcel");
+    const btnModelo = document.getElementById("btnModelo");
+
+    const totalCds = document.getElementById("totalCds");
+    const comResponsavel = document.getElementById("comResponsavel");
+    const semResponsavel = document.getElementById("semResponsavel");
+    const selecionados = document.getElementById("selecionados");
+    const alterados = document.getElementById("alterados");
+    const resumoResponsaveis = document.getElementById("resumoResponsaveis");
+
+    const tbody = document.getElementById("tbody");
+    const msg = document.getElementById("msg");
+
+    let CACHE = [];
+    let SELECTED = new Set();
+    let CHANGED = new Set();
+
+    function safeParse(raw){
+      try { return JSON.parse(raw); } catch { return null; }
+    }
+
+    function normalize(s){
+      return String(s || "").replace(/\s+/g," ").trim();
+    }
+
+    function normalizeKey(s){
+      return normalize(s)
+        .toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+        .replace(/[^a-z0-9]+/g,"");
+    }
+
+    function slug(s){
+      return normalize(s)
+        .toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+        .replace(/[^a-z0-9]+/g,"-")
+        .replace(/(^-|-$)/g,"");
+    }
+
+    function getCurrentUserName(){
+      const raw = localStorage.getItem("user_session");
+
+      if(raw){
+        const s = safeParse(raw);
+        if(s?.nome) return String(s.nome).trim();
+      }
+
+      return (localStorage.getItem("usuarioLogado") || "").trim();
+    }
+
+    const usuario = getCurrentUserName();
+
+    if(!usuario){
+      window.location.href = PATH_INDEX;
+    }
+
+    userInfo.textContent = `Usuário: ${usuario}`;
+
+    btnMenu.onclick = () => {
+      window.location.href = PATH_MENU;
+    };
+
+    btnLogout.onclick = () => {
+      localStorage.removeItem("user_session");
+      localStorage.removeItem("usuarioLogado");
+      window.location.href = PATH_INDEX;
+    };
+
+    function setMsg(text, type="info"){
+      msg.textContent = text || "";
+      msg.style.color =
+        type === "success" ? "#22c55e" :
+        type === "error" ? "#ef4444" :
+        "#d1d5db";
+    }
+
+    function escapeHtml(value){
+      return String(value ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    function makeId(cdNome){
+      return `responsavel_cd_${slug(cdNome)}`;
+    }
+
+    function matchResponsavel(valor){
+      const k = normalizeKey(valor);
+
+      return RESPONSAVEIS.find(r => normalizeKey(r) === k) || "";
+    }
+
+    function matchCd(valor){
+      const k = normalizeKey(valor);
+
+      return CDS_BASE.find(cd => normalizeKey(cd) === k) || "";
+    }
+
+    function buildResponsavelOptions(selected=""){
+      return `<option value="">Sem responsável</option>` +
+        RESPONSAVEIS.map(r =>
+          `<option value="${escapeHtml(r)}" ${r === selected ? "selected" : ""}>${escapeHtml(r)}</option>`
+        ).join("");
+    }
+
+    function popularSelects(){
+      const opts = `<option value="">Todos</option>` +
+        RESPONSAVEIS.map(r => `<option value="${escapeHtml(r)}">${escapeHtml(r)}</option>`).join("");
+
+      filtroResponsavel.innerHTML = opts;
+
+      responsavelMassa.innerHTML =
+        `<option value="">Selecione...</option>` +
+        RESPONSAVEIS.map(r => `<option value="${escapeHtml(r)}">${escapeHtml(r)}</option>`).join("");
+    }
+
+    async function carregar(){
+      try{
+        setMsg("Carregando responsáveis...");
+
+        const q = query(
+          collection(db, COLLECTION),
+          where("tipo", "==", TIPO)
+        );
+
+        const snap = await getDocs(q);
+
+        const mapaFirebase = new Map();
+
+        snap.forEach(d => {
+          const data = d.data();
+          if(data?.cd){
+            mapaFirebase.set(normalize(data.cd), {
+              id:d.id,
+              ...data
+            });
+          }
+        });
+
+        CACHE = CDS_BASE.map(cd => {
+          const salvo = mapaFirebase.get(cd);
+
+          return {
+            id: salvo?.id || makeId(cd),
+            cd,
+            responsavel: normalize(salvo?.responsavel || ""),
+            obs: normalize(salvo?.obs || "")
+          };
+        });
+
+        SELECTED.clear();
+        CHANGED.clear();
+
+        render();
+
+        setMsg("");
+      }catch(e){
+        console.error(e);
+        setMsg("Erro ao carregar. Verifique conexão e Rules.", "error");
+      }
+    }
+
+    function filtrar(){
+      const resp = normalize(filtroResponsavel.value);
+      const termo = normalize(busca.value).toLowerCase();
+
+      return CACHE.filter(item => {
+        if(resp && item.responsavel !== resp) return false;
+
+        if(termo){
+          const txt = [item.cd, item.responsavel, item.obs]
+            .join(" ")
+            .toLowerCase();
+
+          if(!txt.includes(termo)) return false;
+        }
+
+        return true;
+      });
+    }
+
+    function atualizarResumo(){
+      const total = CACHE.length;
+      const com = CACHE.filter(x => x.responsavel).length;
+      const sem = total - com;
+
+      totalCds.textContent = `Total CDs: ${total}`;
+      comResponsavel.textContent = `Com responsável: ${com}`;
+      semResponsavel.textContent = `Sem responsável: ${sem}`;
+      selecionados.textContent = `Selecionados: ${SELECTED.size}`;
+      alterados.textContent = `Alterados: ${CHANGED.size}`;
+
+      const contagem = new Map();
+
+      CACHE.forEach(item => {
+        const r = item.responsavel || "Sem responsável";
+        contagem.set(r, (contagem.get(r) || 0) + 1);
+      });
+
+      resumoResponsaveis.innerHTML = Array.from(contagem.entries())
+        .sort((a,b) => b[1] - a[1] || a[0].localeCompare(b[0], "pt-BR"))
+        .map(([nome, qtd]) => `<span class="pill ${nome === "Sem responsável" ? "warn" : "info"}">${escapeHtml(nome)}: ${qtd}</span>`)
+        .join("");
+    }
+
+    function render(){
+      const data = filtrar();
+
+      atualizarResumo();
+
+      tbody.innerHTML = "";
+
+      if(data.length === 0){
+        tbody.innerHTML = `<tr><td colspan="6" style="opacity:.8;">Nenhum CD encontrado.</td></tr>`;
+        return;
+      }
+
+      data.forEach(item => {
+        const tr = document.createElement("tr");
+
+        tr.innerHTML = `
+          <td class="actions-col">
+            <input type="checkbox" data-check="${item.id}" ${SELECTED.has(item.id) ? "checked" : ""} />
+          </td>
+
+          <td>
+            <strong>${escapeHtml(item.cd)}</strong>
+          </td>
+
+          <td>
+            <select class="select-mini ${CHANGED.has(item.id) ? "changed" : ""}" data-resp="${item.id}">
+              ${buildResponsavelOptions(item.responsavel)}
+            </select>
+          </td>
+
+          <td>
+            ${
+              item.responsavel
+                ? `<span class="pill ok">Com responsável</span>`
+                : `<span class="pill warn">Sem responsável</span>`
+            }
+          </td>
+
+          <td>
+            <input type="text" data-obs="${item.id}" value="${escapeHtml(item.obs)}" placeholder="Opcional" />
+          </td>
+
+          <td>
+            <button class="btn-mini primary" type="button" data-save="${item.id}">Salvar</button>
+          </td>
+        `;
+
+        tbody.appendChild(tr);
+      });
+
+      tbody.querySelectorAll("[data-check]").forEach(chk => {
+        chk.onchange = () => {
+          const id = chk.getAttribute("data-check");
+
+          if(chk.checked){
+            SELECTED.add(id);
+          }else{
+            SELECTED.delete(id);
+          }
+
+          atualizarResumo();
+        };
+      });
+
+      tbody.querySelectorAll("[data-resp]").forEach(sel => {
+        sel.onchange = () => {
+          const id = sel.getAttribute("data-resp");
+          const item = CACHE.find(x => x.id === id);
+
+          if(!item) return;
+
+          item.responsavel = sel.value;
+          CHANGED.add(id);
+
+          render();
+        };
+      });
+
+      tbody.querySelectorAll("[data-obs]").forEach(input => {
+        input.oninput = () => {
+          const id = input.getAttribute("data-obs");
+          const item = CACHE.find(x => x.id === id);
+
+          if(!item) return;
+
+          item.obs = input.value;
+          CHANGED.add(id);
+
+          atualizarResumo();
+        };
+      });
+
+      tbody.querySelectorAll("[data-save]").forEach(btn => {
+        btn.onclick = async () => {
+          const id = btn.getAttribute("data-save");
+          const item = CACHE.find(x => x.id === id);
+
+          if(!item) return;
+
+          await salvarItem(item);
+          CHANGED.delete(id);
+          render();
+        };
+      });
+    }
+
+    async function salvarItem(item){
+      if(!item.cd){
+        setMsg("CD inválido.", "error");
+        return;
+      }
+
+      try{
+        setMsg("Salvando...");
+
+        await setDoc(doc(db, COLLECTION, item.id), {
+          id:item.id,
+          tipo:TIPO,
+          cd:item.cd,
+          responsavel:item.responsavel || "",
+          obs:item.obs || null,
+          atualizadoPor:usuario,
+          atualizadoEm:serverTimestamp()
+        }, { merge:true });
+
+        setMsg(`Responsável salvo para ${item.cd} ✅`, "success");
+      }catch(e){
+        console.error(e);
+        setMsg("Erro ao salvar. Verifique Rules.", "error");
+      }
+    }
+
+    async function salvarTudoAlterado(){
+      const itens = CACHE.filter(item => CHANGED.has(item.id));
+
+      if(itens.length === 0){
+        setMsg("Nenhuma alteração para salvar.", "info");
+        return;
+      }
+
+      const confirmar = confirm(`Confirma salvar ${itens.length} alteração(ões)?`);
+
+      if(!confirmar) return;
+
+      try{
+        btnSalvarTudo.disabled = true;
+        btnSalvarTudo.textContent = "Salvando...";
+
+        await Promise.all(itens.map(item =>
+          setDoc(doc(db, COLLECTION, item.id), {
+            id:item.id,
+            tipo:TIPO,
+            cd:item.cd,
+            responsavel:item.responsavel || "",
+            obs:item.obs || null,
+            atualizadoPor:usuario,
+            atualizadoEm:serverTimestamp()
+          }, { merge:true })
+        ));
+
+        CHANGED.clear();
+        SELECTED.clear();
+
+        render();
+        setMsg(`${itens.length} alteração(ões) salva(s) ✅`, "success");
+
+      }catch(e){
+        console.error(e);
+        setMsg("Erro ao salvar alterações.", "error");
+      }finally{
+        btnSalvarTudo.disabled = false;
+        btnSalvarTudo.textContent = "Salvar tudo alterado";
+      }
+    }
+
+    function baixarModelo(){
+      const dados = [
+        { cd:"CD - Belém", analista:"Euclecio" },
+        { cd:"CD - Boituva", analista:"Alex" },
+        { cd:"CD - Cuiabá", analista:"Marcio" }
+      ];
+
+      const ws = XLSX.utils.json_to_sheet(dados);
+      const wb = XLSX.utils.book_new();
+
+      XLSX.utils.book_append_sheet(wb, ws, "responsaveis_cd");
+      XLSX.writeFile(wb, "modelo_responsaveis_cd.xlsx");
+    }
+
+    async function importarExcel(){
+      const file = arquivoExcel.files?.[0];
+
+      if(!file){
+        setMsg("Selecione um arquivo Excel primeiro.", "error");
+        return;
+      }
+
+      try{
+        setMsg("Lendo Excel...");
+
+        const buffer = await file.arrayBuffer();
+        const workbook = XLSX.read(buffer, { type:"array" });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+
+        const rows = XLSX.utils.sheet_to_json(sheet, { defval:"" });
+
+        if(!rows.length){
+          setMsg("Planilha vazia.", "error");
+          return;
+        }
+
+        let aplicados = 0;
+        let ignorados = 0;
+        const erros = [];
+
+        rows.forEach((row, idx) => {
+          const cdRaw =
+            row.cd ||
+            row.CD ||
+            row.Cd ||
+            row["cd"] ||
+            row["CD"];
+
+          const analistaRaw =
+            row.analista ||
+            row.Analista ||
+            row.responsavel ||
+            row.Responsavel ||
+            row["Responsável"] ||
+            row["responsável"];
+
+          const cdNome = matchCd(cdRaw);
+          const respNome = matchResponsavel(analistaRaw);
+
+          if(!cdNome || !respNome){
+            ignorados++;
+            erros.push(`Linha ${idx + 2}: CD ou analista inválido`);
+            return;
+          }
+
+          const item = CACHE.find(x => x.cd === cdNome);
+
+          if(!item){
+            ignorados++;
+            erros.push(`Linha ${idx + 2}: CD não encontrado na base`);
+            return;
+          }
+
+          item.responsavel = respNome;
+          CHANGED.add(item.id);
+          aplicados++;
+        });
+
+        render();
+
+        if(erros.length){
+          console.warn(erros);
+        }
+
+        setMsg(`Importação aplicada: ${aplicados} linha(s). Ignoradas: ${ignorados}. Clique em "Salvar tudo alterado".`, "success");
+
+      }catch(e){
+        console.error(e);
+        setMsg("Erro ao importar Excel. Verifique o formato da planilha.", "error");
+      }
+    }
+
+    btnSelecionarTodos.onclick = () => {
+      filtrar().forEach(item => SELECTED.add(item.id));
+      render();
+      setMsg("CDs filtrados selecionados.", "success");
+    };
+
+    btnLimparSelecao.onclick = () => {
+      SELECTED.clear();
+      render();
+      setMsg("Seleção limpa.", "info");
+    };
+
+    btnAplicarMassa.onclick = () => {
+      const resp = normalize(responsavelMassa.value);
+
+      if(!resp){
+        setMsg("Selecione um responsável para aplicar.", "error");
+        return;
+      }
+
+      if(SELECTED.size === 0){
+        setMsg("Selecione pelo menos um CD.", "error");
+        return;
+      }
+
+      CACHE.forEach(item => {
+        if(SELECTED.has(item.id)){
+          item.responsavel = resp;
+          CHANGED.add(item.id);
+        }
+      });
+
+      render();
+      setMsg(`Responsável ${resp} aplicado aos CDs selecionados. Clique em Salvar tudo alterado.`, "success");
+    };
+
+    btnSalvarTudo.onclick = salvarTudoAlterado;
+    btnImportarExcel.onclick = importarExcel;
+    btnModelo.onclick = baixarModelo;
+
+    filtroResponsavel.addEventListener("change", render);
+    busca.addEventListener("input", render);
+    btnRecarregar.addEventListener("click", carregar);
+
+    popularSelects();
+    await carregar();
+  </script>
+</body>
+</html>

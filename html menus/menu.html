@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="pt-BR">
 <head>
@@ -101,6 +100,116 @@
       font-size:12px;
       color:#666;
     }
+
+    .area-wrap{
+      display:grid;
+      gap:12px;
+      margin-bottom:16px;
+    }
+
+    .area-card{
+      border:1px solid rgba(0,0,0,.08);
+      border-radius:18px;
+      padding:14px;
+      background:#fff;
+      box-shadow:0 10px 30px rgba(0,0,0,.04);
+    }
+
+    .area-title{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      margin-bottom:10px;
+    }
+
+    .area-title h3{
+      margin:0;
+      font-size:15px;
+      color:#111;
+    }
+
+    .area-grid{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:10px;
+      margin-top:10px;
+    }
+
+    .area-kpi{
+      border:1px solid #eee;
+      border-radius:14px;
+      padding:10px;
+      background:#fafafa;
+    }
+
+    .area-kpi span{
+      display:block;
+      font-size:11px;
+      color:#666;
+      margin-bottom:4px;
+    }
+
+    .area-kpi strong{
+      font-size:18px;
+      color:#111;
+    }
+
+    .area-table-wrap{
+      overflow:auto;
+      max-height:340px;
+      margin-top:12px;
+      border:1px solid #eee;
+      border-radius:14px;
+    }
+
+    .area-table{
+      width:100%;
+      border-collapse:collapse;
+      font-size:12px;
+      min-width:720px;
+    }
+
+    .area-table th,
+    .area-table td{
+      padding:9px 10px;
+      border-bottom:1px solid #eee;
+      text-align:left;
+      white-space:nowrap;
+      color:#111;
+    }
+
+    .area-table th{
+      background:#f7f7f7;
+      font-weight:800;
+    }
+
+    .ok{
+      color:#166534;
+      font-weight:900;
+    }
+
+    .warn{
+      color:#854d0e;
+      font-weight:900;
+    }
+
+    .bad{
+      color:#991b1b;
+      font-weight:900;
+    }
+
+    @media(max-width:720px){
+      .area-grid{
+        grid-template-columns:1fr 1fr;
+      }
+    }
+
+    @media(max-width:480px){
+      .area-grid{
+        grid-template-columns:1fr;
+      }
+    }
   </style>
 </head>
 
@@ -191,6 +300,61 @@
         </div>
       </div>
 
+      <div class="area-wrap">
+        <div class="area-card">
+          <div class="area-title">
+            <h3>📍 Resumo da Minha Área</h3>
+            <span id="statusArea" class="meta-status">Carregando...</span>
+          </div>
+
+          <div class="area-grid">
+            <div class="area-kpi">
+              <span>CDs sob responsabilidade</span>
+              <strong id="areaTotalCds">0</strong>
+            </div>
+
+            <div class="area-kpi">
+              <span>CDs com meta atingida</span>
+              <strong id="areaAtingidos">0</strong>
+            </div>
+
+            <div class="area-kpi">
+              <span>Visitas que faltam</span>
+              <strong id="areaFaltam">0</strong>
+            </div>
+
+            <div class="area-kpi">
+              <span>% da área</span>
+              <strong id="areaPercentual">0%</strong>
+            </div>
+          </div>
+
+          <div class="area-table-wrap">
+            <table class="area-table">
+              <thead>
+                <tr>
+                  <th>CD</th>
+                  <th>Visitas no ano</th>
+                  <th>Meses visitados</th>
+                  <th>Total treinamentos</th>
+                  <th>Meta 2 visitas</th>
+                  <th>Faltam</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyArea">
+                <tr>
+                  <td colspan="6">Carregando...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="meta-small">
+            Regra: cada CD deve receber pelo menos 2 visitas presenciais no ano. Conta 1 visita por mês com treinamento presencial.
+          </div>
+        </div>
+      </div>
+
       <div class="divider"></div>
 
       <div class="menu-buttons">
@@ -263,6 +427,26 @@
         .replace(/(^-|-$)/g, "");
     }
 
+    function normalize(s){
+      return String(s || "").replace(/\s+/g," ").trim();
+    }
+
+    function normalizeKey(s){
+      return normalize(s)
+        .toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+        .replace(/[^a-z0-9]+/g,"");
+    }
+
+    function escapeHtml(value){
+      return String(value ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
     function getCurrentUser(){
       const rawSession = localStorage.getItem("user_session");
       if (rawSession) {
@@ -313,6 +497,22 @@
 
       return nomes[mes] || "-";
     }
+
+    const MESES_CURTOS = [
+      "",
+      "Jan",
+      "Fev",
+      "Mar",
+      "Abr",
+      "Mai",
+      "Jun",
+      "Jul",
+      "Ago",
+      "Set",
+      "Out",
+      "Nov",
+      "Dez"
+    ];
 
     function getMesAtualAnterior(){
       const hoje = new Date();
@@ -437,9 +637,176 @@
       }
     }
 
+    function getAnoMes(data){
+      if(!data) return { ano:null, mes:null };
+
+      const p = String(data).split("-");
+      if(p.length < 2) return { ano:null, mes:null };
+
+      return {
+        ano:Number(p[0]),
+        mes:Number(p[1])
+      };
+    }
+
+    function isPresencial(item){
+      return normalizeKey(item.tipoTreinamento) === "presencial";
+    }
+
+    function getCd(item){
+      return normalize(item.cd || "");
+    }
+
+    function isMeuResponsavel(responsavel){
+      const usuario = normalizeKey(user.nome);
+      const resp = normalizeKey(responsavel);
+
+      if(!usuario || !resp) return false;
+
+      return usuario.includes(resp) || resp.includes(usuario);
+    }
+
+    function pctClassArea(pct){
+      if(pct >= 100) return "ok";
+      if(pct >= 50) return "warn";
+      return "bad";
+    }
+
+    function renderAreaErro(){
+      document.getElementById("statusArea").textContent = "Erro";
+      document.getElementById("statusArea").className = "meta-status bad";
+      document.getElementById("tbodyArea").innerHTML =
+        `<tr><td colspan="6">Erro ao carregar resumo da área.</td></tr>`;
+    }
+
+    async function carregarResumoArea(){
+      try{
+        const anoAtual = new Date().getFullYear();
+
+        const qResp = query(
+          collection(db, "apuracoes_treinamentos"),
+          where("tipo", "==", "responsavel_cd")
+        );
+
+        const snapResp = await getDocs(qResp);
+
+        const meusCds = [];
+
+        snapResp.forEach(docSnap => {
+          const item = docSnap.data();
+
+          if(isMeuResponsavel(item.responsavel)){
+            const cd = normalize(item.cd);
+            if(cd) meusCds.push(cd);
+          }
+        });
+
+        const cdsUnicos = Array.from(new Set(meusCds))
+          .sort((a,b) => a.localeCompare(b,"pt-BR"));
+
+        if(cdsUnicos.length === 0){
+          document.getElementById("areaTotalCds").textContent = "0";
+          document.getElementById("areaAtingidos").textContent = "0";
+          document.getElementById("areaFaltam").textContent = "0";
+          document.getElementById("areaPercentual").textContent = "0%";
+
+          const status = document.getElementById("statusArea");
+          status.textContent = "Sem CDs";
+          status.className = "meta-status warn";
+
+          document.getElementById("tbodyArea").innerHTML =
+            `<tr><td colspan="6">Nenhum CD vinculado ao seu usuário ainda.</td></tr>`;
+
+          return;
+        }
+
+        const snapTreinos = await getDocs(collection(db, "treinamentos_realizados"));
+
+        const mapa = new Map();
+
+        cdsUnicos.forEach(cd => {
+          mapa.set(cd, {
+            cd,
+            meses:new Set(),
+            totalTreinos:0
+          });
+        });
+
+        snapTreinos.forEach(docSnap => {
+          const item = docSnap.data();
+
+          if(!isPresencial(item)) return;
+
+          const cd = getCd(item);
+          if(!mapa.has(cd)) return;
+
+          const { ano, mes } = getAnoMes(item.data);
+          if(ano !== anoAtual || !mes) return;
+
+          const ref = mapa.get(cd);
+
+          ref.meses.add(mes);
+          ref.totalTreinos++;
+        });
+
+        const linhas = Array.from(mapa.values()).map(item => {
+          const visitas = item.meses.size;
+          const faltam = Math.max(2 - visitas, 0);
+          const pct = Math.min(Math.round((visitas / 2) * 100), 100);
+
+          const mesesTexto = Array.from(item.meses)
+            .sort((a,b) => a - b)
+            .map(m => MESES_CURTOS[m] || m)
+            .join(", ") || "-";
+
+          return {
+            ...item,
+            visitas,
+            faltam,
+            pct,
+            mesesTexto
+          };
+        }).sort((a,b) =>
+          b.faltam - a.faltam ||
+          a.visitas - b.visitas ||
+          a.cd.localeCompare(b.cd,"pt-BR")
+        );
+
+        const totalCds = linhas.length;
+        const atingidos = linhas.filter(x => x.visitas >= 2).length;
+        const faltamTotal = linhas.reduce((acc,x) => acc + x.faltam, 0);
+        const percArea = totalCds ? Math.round((atingidos / totalCds) * 100) : 0;
+
+        document.getElementById("areaTotalCds").textContent = totalCds;
+        document.getElementById("areaAtingidos").textContent = atingidos;
+        document.getElementById("areaFaltam").textContent = faltamTotal;
+        document.getElementById("areaPercentual").textContent = `${percArea}%`;
+        document.getElementById("areaPercentual").className = pctClassArea(percArea);
+
+        const status = document.getElementById("statusArea");
+        status.textContent = percArea >= 100 ? "Meta Atingida" : "Em andamento";
+        status.className = `meta-status ${percArea >= 100 ? "ok" : "warn"}`;
+
+        document.getElementById("tbodyArea").innerHTML = linhas.map(item => `
+          <tr>
+            <td><strong>${escapeHtml(item.cd)}</strong></td>
+            <td class="${item.visitas >= 2 ? "ok" : item.visitas === 1 ? "warn" : "bad"}">${item.visitas}</td>
+            <td>${escapeHtml(item.mesesTexto)}</td>
+            <td>${item.totalTreinos}</td>
+            <td class="${pctClassArea(item.pct)}">${item.pct}%</td>
+            <td class="${item.faltam === 0 ? "ok" : "bad"}">${item.faltam}</td>
+          </tr>
+        `).join("");
+
+      }catch(e){
+        console.error(e);
+        renderAreaErro();
+      }
+    }
+
     carregarMetas();
+    carregarResumoArea();
   </script>
 
 </body>
 </html>
-```

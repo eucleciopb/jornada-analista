@@ -1,0 +1,683 @@
+
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Metas dos Analistas</title>
+  <link rel="stylesheet" href="../css/styles.css" />
+  <style>
+    .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin-top:12px;}
+    .toolbar>div{min-width:200px;}
+    .kpi-cards{display:grid;grid-template-columns:repeat(5,minmax(150px,1fr));gap:12px;margin:14px 0;}
+    .kpi-card{border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.04);border-radius:18px;padding:14px;}
+    .kpi-card span{display:block;opacity:.75;font-size:12px;margin-bottom:6px;}
+    .kpi-card strong{font-size:22px;}
+    .table-wrap{overflow:auto;max-height:72vh;border-radius:18px;}
+    table.big-table{border-collapse:separate;border-spacing:0;width:max-content;min-width:100%;font-size:12px;}
+    .big-table th,.big-table td{padding:9px 10px;border-bottom:1px solid rgba(255,255,255,.08);border-right:1px solid rgba(255,255,255,.06);white-space:nowrap;text-align:center;background:rgba(11,15,20,.94);}
+    .big-table thead th{position:sticky;top:0;z-index:5;background:rgba(17,24,39,.98);font-weight:900;}
+    .big-table thead tr:nth-child(2) th{top:36px;z-index:5;}
+    .sticky-col{position:sticky;left:0;z-index:6!important;text-align:left!important;min-width:220px;background:rgba(11,15,20,.98)!important;border-right:1px solid rgba(255,255,255,.16)!important;}
+    thead .sticky-col{z-index:8!important;background:rgba(17,24,39,.98)!important;}
+    .month-head{background:rgba(217,27,46,.92)!important;color:#fff;text-transform:uppercase;letter-spacing:.3px;}
+    .year-head{background:rgba(34,197,94,.18)!important;color:#bbf7d0;text-transform:uppercase;letter-spacing:.3px;}
+    .muted{opacity:.75;}
+    .ok{color:#22c55e;font-weight:900;}
+    .warn{color:#facc15;font-weight:900;}
+    .bad{color:#ef4444;font-weight:900;}
+    .info{color:#93c5fd;font-weight:900;}
+    .no-meta{color:#cbd5e1;font-weight:900;}
+    .hint-box{padding:12px 14px;border-radius:16px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.04);margin-top:12px;font-size:13px;line-height:1.45;opacity:.9;}
+    .cd-chip{display:inline-flex;padding:7px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:#e5e7eb;font-size:12px;font-weight:800;}
+    .cd-list{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;max-height:180px;overflow:auto;}
+    @media(max-width:1100px){.kpi-cards{grid-template-columns:1fr 1fr;}}
+    @media(max-width:560px){.kpi-cards{grid-template-columns:1fr;}}
+  </style>
+</head>
+<body class="bg">
+  <header class="topbar">
+    <div>
+      <h2>Metas dos Analistas</h2>
+      <div id="userInfo" class="hint" style="color:#d1d5db;margin-top:4px;"></div>
+    </div>
+    <div class="top-actions">
+      <button id="btnMenu" class="btn-secondary" type="button">Voltar ao Menu</button>
+      <button id="btnLogout" class="btn-secondary" type="button">Sair</button>
+    </div>
+  </header>
+  <main class="card wide">
+    <section>
+      <h3>Meta Mensal por Analista</h3>
+      <p class="hint">
+        Meta mensal: 3 CDs presenciais + 3 treinamentos presenciais para vendedores + 3 treinamentos presenciais para gestores.
+        CDs online aparecem apenas como informação. Alex aparece apenas como visibilidade, sem meta. Ricardo fica oculto.
+      </p>
+    </section>
+    <hr class="sep" />
+    <section class="toolbar">
+      <div>
+        <label for="anoFiltro">Ano</label>
+        <input id="anoFiltro" type="number" min="2024" max="2035" />
+      </div>
+      <div>
+        <label for="analistaFiltro">Analista</label>
+        <select id="analistaFiltro">
+          <option value="">Todos</option>
+        </select>
+      </div>
+      <div>
+        <label for="busca">Buscar</label>
+        <input id="busca" type="text" placeholder="Analista, CD..." />
+      </div>
+      <button id="btnRecarregar" type="button">Recarregar</button>
+    </section>
+    <p id="msg" class="msg"></p>
+    <section class="kpi-cards">
+      <div class="kpi-card">
+        <span>Analistas com meta</span>
+        <strong id="cardAnalistas">0</strong>
+      </div>
+      <div class="kpi-card">
+        <span>CDs presenciais/mês</span>
+        <strong id="cardCdsPres">0</strong>
+      </div>
+      <div class="kpi-card">
+        <span>Treinamentos presenciais</span>
+        <strong id="cardTreinosPres">0</strong>
+      </div>
+      <div class="kpi-card">
+        <span>CDs sem treinamento presencial</span>
+        <strong id="cardCdsSemPres">0</strong>
+      </div>
+      <div class="kpi-card">
+        <span>% Meta Ano</span>
+        <strong id="cardMetaAno">-</strong>
+      </div>
+    </section>
+    <section class="hint-box">
+      <h3 style="margin-top:0;">CDs sem treinamento presencial no ano</h3>
+      <p class="hint">
+        Lista de CDs que ainda não receberam treinamento presencial no ano/filtro selecionado.
+      </p>
+      <div id="listaCdsSemPresencial" class="cd-list"></div>
+    </section>
+    <div class="hint-box">
+      <b>Regra do %:</b> se o mês tiver 0 CDs presenciais, o % do mês fica em branco e não entra no consolidado anual.
+      O % anual é a média dos meses válidos. Alex aparece sem cálculo de meta. Ricardo não aparece na visão.
+    </div>
+    <hr class="sep" />
+    <section>
+      <h3>Tabela anual por analista</h3>
+      <p class="hint">Colunas por mês: CDs presenciais, treinamentos vendedor, treinamentos gestor, % meta e CDs online.</p>
+      <div class="table-wrap" style="margin-top:12px;">
+        <table id="tabelaMetas" class="big-table">
+          <thead id="theadMetas"></thead>
+          <tbody id="tbodyMetas"></tbody>
+        </table>
+      </div>
+    </section>
+    <hr class="sep" />
+    <section>
+      <h3>Ranking de CDs mais visitados presencialmente</h3>
+      <p class="hint">
+        Conta CD por mês. Exemplo: 4 treinamentos em janeiro no mesmo CD contam 1 visita. Se também teve em março, soma 2 visitas no ano.
+        Meta de referência: 2 visitas presenciais no ano por CD.
+      </p>
+      <div class="table-wrap" style="margin-top:12px;max-height:520px;">
+        <table class="big-table" style="width:100%;">
+          <thead>
+            <tr>
+              <th>Ranking</th>
+              <th>Analista</th>
+              <th>CD</th>
+              <th>Visitas no ano</th>
+              <th>Meta anual</th>
+              <th>% Atingimento</th>
+              <th>Meses visitados</th>
+              <th>Total treinamentos presenciais</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyRanking"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import {
+      getFirestore,
+      collection,
+      getDocs
+    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+    const firebaseConfig = {
+      apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
+      authDomain: "jornada-portal.firebaseapp.com",
+      projectId: "jornada-portal",
+      storageBucket: "jornada-portal.firebasestorage.app",
+      messagingSenderId: "669362296644",
+      appId: "1:669362296644:web:f590d9834a8e4e60012911"
+    };
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const COLLECTION = "treinamentos_realizados";
+    const PATH_INDEX = "../index.html";
+    const PATH_MENU = "../html menus/menuadm.html";
+    const ANALISTAS_OCULTOS = ["Ricardo"];
+    const ANALISTAS_SEM_META = ["Alex"];
+    const ANALISTAS_FIXOS = [
+      "Alex",
+      "Marcio",
+      "Andre"
+    ];
+    const userInfo = document.getElementById("userInfo");
+    const btnMenu = document.getElementById("btnMenu");
+    const btnLogout = document.getElementById("btnLogout");
+    const btnRecarregar = document.getElementById("btnRecarregar");
+    const anoFiltro = document.getElementById("anoFiltro");
+    const analistaFiltro = document.getElementById("analistaFiltro");
+    const busca = document.getElementById("busca");
+    const msg = document.getElementById("msg");
+    const theadMetas = document.getElementById("theadMetas");
+    const tbodyMetas = document.getElementById("tbodyMetas");
+    const tbodyRanking = document.getElementById("tbodyRanking");
+    const cardAnalistas = document.getElementById("cardAnalistas");
+    const cardCdsPres = document.getElementById("cardCdsPres");
+    const cardTreinosPres = document.getElementById("cardTreinosPres");
+    const cardCdsSemPres = document.getElementById("cardCdsSemPres");
+    const cardMetaAno = document.getElementById("cardMetaAno");
+    const listaCdsSemPresencial = document.getElementById("listaCdsSemPresencial");
+    const MESES = [
+      { n:1, nome:"Jan" },
+      { n:2, nome:"Fev" },
+      { n:3, nome:"Mar" },
+      { n:4, nome:"Abr" },
+      { n:5, nome:"Mai" },
+      { n:6, nome:"Jun" },
+      { n:7, nome:"Jul" },
+      { n:8, nome:"Ago" },
+      { n:9, nome:"Set" },
+      { n:10, nome:"Out" },
+      { n:11, nome:"Nov" },
+      { n:12, nome:"Dez" }
+    ];
+    const CDS_BASE = [
+      "CD - Alagoinhas","CD - Andradina","CD - Angra dos Reis","CD - Aparecida de Goiânia","CD - Araçatuba","CD - Arapiraca","CD - Araraquara",
+      "CD - Balsas","CD - Barbalha","CD - Barra do Garca","CD - Barreiras","CD - Barretos","CD - Barueri","CD - Bauru","CD - Belém","CD - Boituva",
+      "CD - Bom Jesus da Lapa","CD - Brumado","CD - Cachoeiro de Itapemirim","CD - Camaçari","CD - Campina Grande","CD - Campinas","CD - Campo Grande MS",
+      "CD - Campo Grande RJ","CD - Campos dos Goytacazes","CD - Caraguatatuba","CD - Cariacica","CD - Carpina","CD - Caruaru","CD - Cascavel","CD - Catanduva",
+      "CD - Caucaia","CD - Caxias","CD - Coimbra","CD - Conde","CD - Conselheiro Lafaiete","CD - Contagem","CD - Coxim","CD - Cuiabá",
+      "CD - Divinópolis","CD - Dourados","CD - Duque de Caxias","CD - Eunápolis","CD - Eusebio","CD - Feira de Santana",
+      "CD - Fernandópolis","CD - Floriano","CD - Garanhuns","CD - Governador Valadares","CD - Guarujá",
+      "CD - Guarulhos Taboão","CD - Iguatu","CD - Imperatriz","CD - Interlagos","CD - Iporá","CD - Irece","CD - Itabaiana","CD - Itaberaba","CD - Itabuna",
+      "CD - Itapeva","CD - Itapissuma","CD - Itumbiara","CD - Jaboatão dos Guararapes","CD - Jacobina","CD - Jaguaré","CD - Jequié","CD - Juazeiro","CD - Juiz de Fora",
+      "CD - Jundiaí","CD - Londrina","CD - Macaiba","CD - Maceió","CD - Marília","CD - Mogi-Mirim","CD - Montes Claros","CD - Mossoró","CD - Muriaé",
+      "CD - Nossa Senhora do Socorro","CD - Nova Friburgo","CD - Palhoça","CD - Paranaíba","CD - Parnaiba","CD - Passos","CD - Patos",
+      "CD - Paulo Afonso","CD - Petrolina","CD - Petrópolis","CD - Picos","CD - Piracicaba","CD - Poços de Caldas","CD - Porto Velho",
+      "CD - Pouso Alegre","CD - Presidente Prudente","CD - Recife","CD - Registro","CD - Ribeirão Preto","CD - Rio Branco","CD - Rio das Ostras","CD - Rio Verde",
+      "CD - Rondonópolis","CD - Salto","CD - Salvador","CD - Salvador Leste","CD - Santa Inês","CD - Santo Antonio de Jesus","CD - São Bernardo","CD - São Cristovão",
+      "CD - São Gonçalo","CD - São João de Meriti","CD - São José do Rio Preto","CD - São José dos Campos","CD - São José dos Pinhais","CD - São Luis","CD - São Mateus",
+      "CD - São Pedro da Aldeia","CD - Sapucaia do Sul","CD - Serra Talhada","CD - Serrinha","CD - Sete Lagoas","CD - Sinop","CD - Sobral","CD - Sousa",
+      "CD - Taboão da Serra","CD - Taguatinga","CD - Taubaté","CD - Teixeira de Freitas","CD - Teresina","CD - Três Lagoas","CD - Uberaba","CD - Varginha",
+      "CD - Vila Guilherme","CD - Vitória da Conquista","CD - Volta Redonda"
+    ];
+    let CACHE = [];
+    function safeParse(raw){
+      try { return JSON.parse(raw); } catch { return null; }
+    }
+    function getCurrentUserName(){
+      const raw = localStorage.getItem("user_session");
+      if(raw){
+        const s = safeParse(raw);
+        if(s?.nome) return String(s.nome).trim();
+      }
+      return (localStorage.getItem("usuarioLogado") || "").trim();
+    }
+    const usuario = getCurrentUserName();
+    if(!usuario){
+      window.location.href = PATH_INDEX;
+    }
+    userInfo.textContent = `Usuário: ${usuario}`;
+    btnMenu.onclick = () => {
+      window.location.href = PATH_MENU;
+    };
+    btnLogout.onclick = () => {
+      localStorage.removeItem("user_session");
+      localStorage.removeItem("usuarioLogado");
+      window.location.href = PATH_INDEX;
+    };
+    function setMsg(text, type="info"){
+      msg.textContent = text || "";
+      msg.style.color =
+        type === "success" ? "#22c55e" :
+        type === "error" ? "#ef4444" :
+        "#d1d5db";
+    }
+    function normalize(s){
+      return String(s || "").replace(/\s+/g," ").trim();
+    }
+    function normalizeKey(s){
+      return normalize(s)
+        .toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    }
+    function lower(s){
+      return normalize(s).toLowerCase();
+    }
+    function getAnoMes(data){
+      if(!data) return { ano:null, mes:null };
+      const p = String(data).split("-");
+      if(p.length < 2) return { ano:null, mes:null };
+      return {
+        ano: Number(p[0]),
+        mes: Number(p[1])
+      };
+    }
+    function getAnalista(item){
+      return normalize(item.usuarioNome || item.usuario || item.analista || "Sem analista");
+    }
+    function getCd(item){
+      return normalize(item.cd || "");
+    }
+    function isPresencial(item){
+      return lower(item.tipoTreinamento) === "presencial";
+    }
+    function isOnline(item){
+      return lower(item.tipoTreinamento) === "online";
+    }
+    function isVendedor(item){
+      return lower(item.publico) === "vendedor";
+    }
+    function isGestor(item){
+      return lower(item.publico) === "gestor";
+    }
+    function analistaOculto(nome){
+      const n = normalizeKey(nome);
+      return ANALISTAS_OCULTOS.some(x =>
+        n.includes(normalizeKey(x))
+      );
+    }
+    function analistaTemMeta(nome){
+      const n = normalizeKey(nome);
+      return !ANALISTAS_SEM_META.some(x =>
+        n.includes(normalizeKey(x))
+      );
+    }
+    function pctClass(pct){
+      if(pct === null || pct === undefined) return "muted";
+      if(pct >= 100) return "ok";
+      if(pct >= 80) return "warn";
+      return "bad";
+    }
+    function escapeHtml(value){
+      return String(value ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+    function calcPctMes(cdsPres, vendPres, gestPres){
+      if(cdsPres === 0){
+        return null;
+      }
+      const pCds = Math.min(cdsPres / 3, 1) * 100;
+      const pVend = Math.min(vendPres / 3, 1) * 100;
+      const pGest = Math.min(gestPres / 3, 1) * 100;
+      return Math.round((pCds + pVend + pGest) / 3);
+    }
+    function calcPctAno(mesesValidos){
+      if(!mesesValidos.length){
+        return null;
+      }
+      const soma = mesesValidos.reduce((acc, mes) => acc + mes.pct, 0);
+      return Math.round(soma / mesesValidos.length);
+    }
+    function renderPct(pct, temMeta){
+      if(!temMeta) return `<span class="no-meta">-</span>`;
+      if(pct === null || pct === undefined) return "";
+      return `${pct}%`;
+    }
+    function pctAtingimento2Visitas(visitas){
+      return Math.min(Math.round((visitas / 2) * 100), 100);
+    }
+    async function carregar(){
+      try{
+        setMsg("Carregando dados...");
+        const snap = await getDocs(collection(db, COLLECTION));
+        const arr = [];
+        snap.forEach(d => {
+          const item = {
+            id:d.id,
+            ...d.data()
+          };
+          const analista = getAnalista(item);
+          if(!analistaOculto(analista)){
+            arr.push(item);
+          }
+        });
+        CACHE = arr;
+        popularAnalistas();
+        renderTudo();
+        setMsg("");
+      }catch(e){
+        console.error(e);
+        setMsg("Erro ao carregar dados. Verifique conexão e Rules.", "error");
+      }
+    }
+    function popularAnalistas(){
+      const atual = analistaFiltro.value;
+      const nomes = new Set(CACHE.map(getAnalista).filter(Boolean));
+      ANALISTAS_FIXOS.forEach(nome => {
+        if(!analistaOculto(nome)){
+          nomes.add(nome);
+        }
+      });
+      const analistas = Array.from(nomes)
+        .sort((a,b) => a.localeCompare(b, "pt-BR"));
+      analistaFiltro.innerHTML = `<option value="">Todos</option>` +
+        analistas.map(a => `<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`).join("");
+      if(analistas.includes(atual)){
+        analistaFiltro.value = atual;
+      }
+    }
+    function registrosFiltradosAno(){
+      const ano = Number(anoFiltro.value);
+      const analista = normalize(analistaFiltro.value);
+      const termo = lower(busca.value);
+      return CACHE.filter(item => {
+        const { ano:anoItem } = getAnoMes(item.data);
+        if(anoItem !== ano) return false;
+        const a = getAnalista(item);
+        if(analista && a !== analista) return false;
+        if(termo){
+          const texto = [
+            a,
+            item.cd,
+            item.publico,
+            item.tipoTreinamento,
+            item.treinamento,
+            item.obs
+          ].join(" ").toLowerCase();
+          if(!texto.includes(termo)) return false;
+        }
+        return true;
+      });
+    }
+    function criarEstruturaAnalista(nome){
+      const obj = {
+        analista: nome,
+        temMeta: analistaTemMeta(nome),
+        meses:{},
+        ano:{
+          cdMesPres:new Set(),
+          vendPres:0,
+          gestPres:0,
+          cdsOnlineMes:new Set(),
+          treinosPres:0
+        }
+      };
+      MESES.forEach(m => {
+        obj.meses[m.n] = {
+          cdsPres:new Set(),
+          cdsOnline:new Set(),
+          vendPres:0,
+          gestPres:0,
+          treinosPres:0
+        };
+      });
+      return obj;
+    }
+    function montarResumoAnalistas(registros){
+      const mapa = new Map();
+      registros.forEach(item => {
+        const analista = getAnalista(item);
+        if(!mapa.has(analista)){
+          mapa.set(analista, criarEstruturaAnalista(analista));
+        }
+        const ref = mapa.get(analista);
+        const { mes } = getAnoMes(item.data);
+        const cd = getCd(item);
+        if(!mes || !ref.meses[mes]) return;
+        if(isPresencial(item)){
+          ref.meses[mes].treinosPres++;
+          ref.ano.treinosPres++;
+          if(cd){
+            ref.meses[mes].cdsPres.add(cd);
+            ref.ano.cdMesPres.add(`${cd}|${mes}`);
+          }
+          if(isVendedor(item)){
+            ref.meses[mes].vendPres++;
+            ref.ano.vendPres++;
+          }
+          if(isGestor(item)){
+            ref.meses[mes].gestPres++;
+            ref.ano.gestPres++;
+          }
+        }
+        if(isOnline(item) && cd){
+          ref.meses[mes].cdsOnline.add(cd);
+          ref.ano.cdsOnlineMes.add(`${cd}|${mes}`);
+        }
+      });
+      ANALISTAS_FIXOS.forEach(nome => {
+        if(!mapa.has(nome) && !analistaOculto(nome)){
+          mapa.set(nome, criarEstruturaAnalista(nome));
+        }
+      });
+      return Array.from(mapa.values()).sort((a,b) => {
+        const pctA = calcularPctAnoAnalista(a);
+        const pctB = calcularPctAnoAnalista(b);
+        const rankA = pctA === null ? -1 : pctA;
+        const rankB = pctB === null ? -1 : pctB;
+        return rankB - rankA || a.analista.localeCompare(b.analista, "pt-BR");
+      });
+    }
+    function mesesValidosAnalista(item){
+      if(!item.temMeta) return [];
+      return MESES.map(m => {
+        const mes = item.meses[m.n];
+        const pct = calcPctMes(mes.cdsPres.size, mes.vendPres, mes.gestPres);
+        return pct === null ? null : { pct };
+      }).filter(Boolean);
+    }
+    function calcularPctAnoAnalista(item){
+      if(!item.temMeta) return null;
+      return calcPctAno(mesesValidosAnalista(item));
+    }
+    function renderCabecalho(){
+      let row1 = `
+        <tr>
+          <th class="sticky-col" rowspan="2">Analista</th>
+      `;
+      MESES.forEach(m => {
+        row1 += `<th class="month-head" colspan="5">${m.nome}</th>`;
+      });
+      row1 += `<th class="year-head" colspan="5">Consolidado Ano</th></tr>`;
+      let row2 = `<tr>`;
+      MESES.forEach(() => {
+        row2 += `
+          <th>CDs Pres.</th>
+          <th>Vend.</th>
+          <th>Gest.</th>
+          <th>% Meta</th>
+          <th>CDs Online</th>
+        `;
+      });
+      row2 += `
+        <th>CD/Mês Pres.</th>
+        <th>Vend.</th>
+        <th>Gest.</th>
+        <th>CD/Mês Online</th>
+        <th>% Ano</th>
+      </tr>`;
+      theadMetas.innerHTML = row1 + row2;
+    }
+    function renderTabelaMetas(resumo){
+      renderCabecalho();
+      if(resumo.length === 0){
+        tbodyMetas.innerHTML = `<tr><td colspan="66" class="sticky-col">Nenhum dado encontrado.</td></tr>`;
+        return;
+      }
+      tbodyMetas.innerHTML = resumo.map(item => {
+        const temMeta = item.temMeta;
+        let html = `<tr><td class="sticky-col"><strong>${escapeHtml(item.analista)}</strong>${!temMeta ? " <span class='muted'>(visibilidade)</span>" : ""}</td>`;
+        MESES.forEach(m => {
+          const mes = item.meses[m.n];
+          const cdsPres = mes.cdsPres.size;
+          const vend = mes.vendPres;
+          const gest = mes.gestPres;
+          const cdsOnline = mes.cdsOnline.size;
+          const pct = temMeta ? calcPctMes(cdsPres, vend, gest) : null;
+          html += `
+            <td>${cdsPres}</td>
+            <td>${vend}</td>
+            <td>${gest}</td>
+            <td class="${!temMeta ? "no-meta" : pctClass(pct)}">${renderPct(pct, temMeta)}</td>
+            <td class="info">${cdsOnline}</td>
+          `;
+        });
+        const pctAno = calcularPctAnoAnalista(item);
+        html += `
+          <td>${item.ano.cdMesPres.size}</td>
+          <td>${item.ano.vendPres}</td>
+          <td>${item.ano.gestPres}</td>
+          <td class="info">${item.ano.cdsOnlineMes.size}</td>
+          <td class="${!temMeta ? "no-meta" : pctClass(pctAno)}">${renderPct(pctAno, temMeta)}</td>
+        `;
+        html += `</tr>`;
+        return html;
+      }).join("");
+    }
+    function montarRankingCd(registros){
+  const mapa = new Map();
+
+  CDS_BASE.forEach(cd => {
+    mapa.set(cd, {
+      analista: "-",
+      cd,
+      meses: new Set(),
+      totalTreinos: 0
+    });
+  });
+
+  registros.forEach(item => {
+    if(!isPresencial(item)) return;
+
+    const { mes } = getAnoMes(item.data);
+    if(!mes) return;
+
+    const analista = getAnalista(item);
+    const cd = getCd(item);
+
+    if(!cd) return;
+
+    if(!mapa.has(cd)){
+      mapa.set(cd, {
+        analista,
+        cd,
+        meses: new Set(),
+        totalTreinos: 0
+      });
+    }
+
+    const ref = mapa.get(cd);
+
+    ref.analista = ref.analista === "-" ? analista : ref.analista;
+    ref.meses.add(mes);
+    ref.totalTreinos++;
+  });
+
+  return Array.from(mapa.values())
+    .map(x => ({
+      ...x,
+      visitasAno: x.meses.size,
+      metaAnual: 2,
+      atingimento: pctAtingimento2Visitas(x.meses.size),
+      mesesTexto: Array.from(x.meses)
+        .sort((a,b) => a - b)
+        .map(n => MESES.find(m => m.n === n)?.nome || n)
+        .join(", ") || "-"
+    }))
+    .sort((a,b) =>
+      b.visitasAno - a.visitasAno ||
+      b.atingimento - a.atingimento ||
+      b.totalTreinos - a.totalTreinos ||
+      a.cd.localeCompare(b.cd, "pt-BR")
+    );
+}
+    function renderRanking(registros){
+      const ranking = montarRankingCd(registros);
+      if(ranking.length === 0){
+        tbodyRanking.innerHTML = `<tr><td colspan="8">Nenhum CD presencial encontrado.</td></tr>`;
+        return;
+      }
+      tbodyRanking.innerHTML = ranking.map((item, idx) => `
+        <tr>
+          <td><strong>${idx + 1}</strong></td>
+          <td>${escapeHtml(item.analista)}</td>
+          <td>${escapeHtml(item.cd)}</td>
+          <td class="ok">${item.visitasAno}</td>
+          <td>${item.metaAnual}</td>
+          <td class="${pctClass(item.atingimento)}">${item.atingimento}%</td>
+          <td>${escapeHtml(item.mesesTexto)}</td>
+          <td>${item.totalTreinos}</td>
+        </tr>
+      `).join("");
+    }
+    function contarCdsSemPresencial(registros){
+      const visitados = new Set();
+      registros.forEach(item => {
+        if(!isPresencial(item)) return;
+        const cd = getCd(item);
+        if(cd) visitados.add(cd);
+      });
+      return CDS_BASE.filter(cd => !visitados.has(cd));
+    }
+    function renderListaCdsSemPresencial(cdsSemPresencial){
+      if(cdsSemPresencial.length === 0){
+        listaCdsSemPresencial.innerHTML =
+          `<span class="ok">Todos os CDs já receberam treinamento presencial no filtro atual ✅</span>`;
+        return;
+      }
+      listaCdsSemPresencial.innerHTML = cdsSemPresencial
+        .map(cd => `<span class="cd-chip">${escapeHtml(cd)}</span>`)
+        .join("");
+    }
+    function renderCards(resumo){
+      const resumoComMeta = resumo.filter(x => x.temMeta);
+      const analistas = resumoComMeta.length;
+      const totalCdMesPres = resumo.reduce((acc, x) => acc + x.ano.cdMesPres.size, 0);
+      const totalTreinosPres = resumo.reduce((acc, x) => acc + x.ano.treinosPres, 0);
+      const percentuais = resumoComMeta
+        .map(x => calcularPctAnoAnalista(x))
+        .filter(x => x !== null);
+      const mediaAno = percentuais.length
+        ? Math.round(percentuais.reduce((acc, x) => acc + x, 0) / percentuais.length)
+        : null;
+      const registrosAno = registrosFiltradosAno();
+      const cdsSemPresencial = contarCdsSemPresencial(registrosAno);
+      cardAnalistas.textContent = analistas;
+      cardCdsPres.textContent = totalCdMesPres;
+      cardTreinosPres.textContent = totalTreinosPres;
+      cardCdsSemPres.textContent = cdsSemPresencial.length;
+      cardMetaAno.textContent = mediaAno === null ? "-" : `${mediaAno}%`;
+      cardMetaAno.className = mediaAno === null ? "" : pctClass(mediaAno);
+      renderListaCdsSemPresencial(cdsSemPresencial);
+    }
+    function renderTudo(){
+      const registros = registrosFiltradosAno();
+      const resumo = montarResumoAnalistas(registros);
+      renderTabelaMetas(resumo);
+      renderRanking(registros);
+      renderCards(resumo);
+    }
+    anoFiltro.value = new Date().getFullYear();
+    anoFiltro.addEventListener("input", renderTudo);
+    analistaFiltro.addEventListener("change", renderTudo);
+    busca.addEventListener("input", renderTudo);
+    btnRecarregar.addEventListener("click", carregar);
+    await carregar();
+  </script>
+</body>
+</html>
