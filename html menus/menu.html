@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="pt-BR">
 <head>
@@ -5,6 +6,102 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Menu | Jornada</title>
   <link rel="stylesheet" href="../css/styles.css" />
+
+  <style>
+    .meta-wrap{
+      display:grid;
+      gap:12px;
+      margin-bottom:16px;
+    }
+
+    .meta-card{
+      border:1px solid rgba(0,0,0,.08);
+      border-radius:18px;
+      padding:14px;
+      background:#fff;
+      box-shadow:0 10px 30px rgba(0,0,0,.04);
+    }
+
+    .meta-title{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      margin-bottom:10px;
+    }
+
+    .meta-title h3{
+      margin:0;
+      font-size:15px;
+      color:#111;
+    }
+
+    .meta-status{
+      font-size:12px;
+      font-weight:800;
+      padding:6px 10px;
+      border-radius:999px;
+      background:#f3f4f6;
+      color:#111;
+      white-space:nowrap;
+    }
+
+    .meta-status.ok{
+      background:#dcfce7;
+      color:#166534;
+    }
+
+    .meta-status.warn{
+      background:#fef9c3;
+      color:#854d0e;
+    }
+
+    .meta-status.bad{
+      background:#fee2e2;
+      color:#991b1b;
+    }
+
+    .meta-grid{
+      display:grid;
+      gap:8px;
+    }
+
+    .meta-row{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      font-size:13px;
+      color:#222;
+    }
+
+    .meta-row strong{
+      font-size:13px;
+      color:#000;
+    }
+
+    .meta-progress{
+      height:8px;
+      background:#f1f1f1;
+      border-radius:999px;
+      overflow:hidden;
+      margin-top:10px;
+    }
+
+    .meta-progress span{
+      display:block;
+      height:100%;
+      width:0%;
+      background:#111;
+      border-radius:999px;
+    }
+
+    .meta-small{
+      margin-top:8px;
+      font-size:12px;
+      color:#666;
+    }
+  </style>
 </head>
 
 <body>
@@ -17,6 +114,80 @@
         <div>
           <h1 id="welcomeText">Carregando...</h1>
           <p>Menu Principal</p>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="meta-wrap">
+        <div class="meta-card">
+          <div class="meta-title">
+            <h3>🎯 Meta do Mês Atual</h3>
+            <span id="statusAtual" class="meta-status">Carregando...</span>
+          </div>
+
+          <div class="meta-grid">
+            <div class="meta-row">
+              <span>CDs Presenciais</span>
+              <strong id="cdsAtual">0 / 3</strong>
+            </div>
+
+            <div class="meta-row">
+              <span>Treinamentos Vendedores</span>
+              <strong id="vendAtual">0 / 3</strong>
+            </div>
+
+            <div class="meta-row">
+              <span>Treinamentos Gestores</span>
+              <strong id="gestAtual">0 / 3</strong>
+            </div>
+
+            <div class="meta-row">
+              <span>Resultado Geral</span>
+              <strong id="percAtual">0%</strong>
+            </div>
+          </div>
+
+          <div class="meta-progress">
+            <span id="barAtual"></span>
+          </div>
+
+          <div id="periodoAtual" class="meta-small"></div>
+        </div>
+
+        <div class="meta-card">
+          <div class="meta-title">
+            <h3>📊 Meta do Mês Anterior</h3>
+            <span id="statusAnterior" class="meta-status">Carregando...</span>
+          </div>
+
+          <div class="meta-grid">
+            <div class="meta-row">
+              <span>CDs Presenciais</span>
+              <strong id="cdsAnterior">0 / 3</strong>
+            </div>
+
+            <div class="meta-row">
+              <span>Treinamentos Vendedores</span>
+              <strong id="vendAnterior">0 / 3</strong>
+            </div>
+
+            <div class="meta-row">
+              <span>Treinamentos Gestores</span>
+              <strong id="gestAnterior">0 / 3</strong>
+            </div>
+
+            <div class="meta-row">
+              <span>Resultado Geral</span>
+              <strong id="percAnterior">0%</strong>
+            </div>
+          </div>
+
+          <div class="meta-progress">
+            <span id="barAnterior"></span>
+          </div>
+
+          <div id="periodoAnterior" class="meta-small"></div>
         </div>
       </div>
 
@@ -55,12 +226,28 @@
     </section>
   </main>
 
-  <script>
-    // =========================================================
-    // ✅ CHECK DE SESSÃO (aceita padrão novo e legado)
-    // - novo: user_session (JSON)
-    // - legado: usuarioLogado (string)
-    // =========================================================
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import {
+      getFirestore,
+      collection,
+      getDocs,
+      query,
+      where
+    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
+      authDomain: "jornada-portal.firebaseapp.com",
+      projectId: "jornada-portal",
+      storageBucket: "jornada-portal.firebasestorage.app",
+      messagingSenderId: "669362296644",
+      appId: "1:669362296644:web:f590d9834a8e4e60012911"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
     const welcomeText = document.getElementById("welcomeText");
     const btnLogout = document.getElementById("btnLogout");
 
@@ -68,15 +255,21 @@
       try { return JSON.parse(raw); } catch { return null; }
     }
 
+    function slug(s) {
+      return (s || "")
+        .toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, "");
+    }
+
     function getCurrentUser(){
-      // 1) padrão novo
       const rawSession = localStorage.getItem("user_session");
       if (rawSession) {
         const s = safeParse(rawSession);
         if (s?.nome) return { nome: s.nome };
       }
 
-      // 2) legado
       const u = (localStorage.getItem("usuarioLogado") || "").trim();
       if (u) return { nome: u };
 
@@ -91,17 +284,162 @@
       welcomeText.textContent = `Olá, ${user.nome}`;
     }
 
-    function goTo(page) {
+    window.goTo = function(page) {
       window.location.href = page;
-    }
+    };
 
     btnLogout.addEventListener("click", () => {
-      // limpa tudo
       localStorage.removeItem("usuarioLogado");
       localStorage.removeItem("user_session");
       window.location.href = "../index.html";
     });
+
+    function mesNome(mes){
+      const nomes = [
+        "",
+        "Janeiro",
+        "Fevereiro",
+        "Março",
+        "Abril",
+        "Maio",
+        "Junho",
+        "Julho",
+        "Agosto",
+        "Setembro",
+        "Outubro",
+        "Novembro",
+        "Dezembro"
+      ];
+
+      return nomes[mes] || "-";
+    }
+
+    function getMesAtualAnterior(){
+      const hoje = new Date();
+
+      const atual = {
+        ano: hoje.getFullYear(),
+        mes: hoje.getMonth() + 1
+      };
+
+      const ant = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1);
+
+      const anterior = {
+        ano: ant.getFullYear(),
+        mes: ant.getMonth() + 1
+      };
+
+      return { atual, anterior };
+    }
+
+    function calculaMeta(registros, ano, mes){
+      const filtrados = registros.filter(item => {
+        if (!item.data) return false;
+
+        const [y, m] = String(item.data).split("-").map(Number);
+
+        const tipo = String(item.tipoTreinamento || "").toLowerCase();
+        const publico = String(item.publico || "").toLowerCase();
+
+        return y === ano &&
+          m === mes &&
+          tipo === "presencial" &&
+          ["gestor", "vendedor"].includes(publico);
+      });
+
+      const cdsUnicos = new Set(
+        filtrados
+          .map(x => String(x.cd || "").trim())
+          .filter(Boolean)
+      );
+
+      const qtdCds = cdsUnicos.size;
+
+      const qtdVendedor = filtrados.filter(x =>
+        String(x.publico || "").toLowerCase() === "vendedor"
+      ).length;
+
+      const qtdGestor = filtrados.filter(x =>
+        String(x.publico || "").toLowerCase() === "gestor"
+      ).length;
+
+      const percCds = Math.min(qtdCds / 3, 1) * 100;
+      const percVend = Math.min(qtdVendedor / 3, 1) * 100;
+      const percGest = Math.min(qtdGestor / 3, 1) * 100;
+
+      const resultado = Math.round((percCds + percVend + percGest) / 3);
+
+      return {
+        qtdCds,
+        qtdVendedor,
+        qtdGestor,
+        resultado
+      };
+    }
+
+    function statusClass(resultado){
+      if (resultado >= 100) return "ok";
+      if (resultado >= 80) return "warn";
+      return "bad";
+    }
+
+    function statusTexto(resultado){
+      if (resultado >= 100) return "Meta Atingida";
+      if (resultado >= 80) return "Em andamento";
+      return "Atenção";
+    }
+
+    function renderMeta(prefixo, dados, periodo){
+      document.getElementById(`cds${prefixo}`).textContent = `${dados.qtdCds} / 3`;
+      document.getElementById(`vend${prefixo}`).textContent = `${dados.qtdVendedor} / 3`;
+      document.getElementById(`gest${prefixo}`).textContent = `${dados.qtdGestor} / 3`;
+      document.getElementById(`perc${prefixo}`).textContent = `${dados.resultado}%`;
+      document.getElementById(`bar${prefixo}`).style.width = `${Math.min(dados.resultado, 100)}%`;
+
+      const status = document.getElementById(`status${prefixo}`);
+      status.textContent = statusTexto(dados.resultado);
+      status.className = `meta-status ${statusClass(dados.resultado)}`;
+
+      document.getElementById(`periodo${prefixo}`).textContent =
+        `${mesNome(periodo.mes)} / ${periodo.ano}`;
+    }
+
+    async function carregarMetas(){
+      try{
+        const usuarioKey = slug(user.nome);
+
+        const q = query(
+          collection(db, "treinamentos_realizados"),
+          where("uidKey", "==", usuarioKey)
+        );
+
+        const snap = await getDocs(q);
+
+        const registros = [];
+        snap.forEach(docSnap => registros.push({
+          id: docSnap.id,
+          ...docSnap.data()
+        }));
+
+        const { atual, anterior } = getMesAtualAnterior();
+
+        const metaAtual = calculaMeta(registros, atual.ano, atual.mes);
+        const metaAnterior = calculaMeta(registros, anterior.ano, anterior.mes);
+
+        renderMeta("Atual", metaAtual, atual);
+        renderMeta("Anterior", metaAnterior, anterior);
+
+      }catch(e){
+        console.error(e);
+
+        document.getElementById("statusAtual").textContent = "Erro";
+        document.getElementById("statusAnterior").textContent = "Erro";
+      }
+    }
+
+    carregarMetas();
   </script>
 
 </body>
 </html>
+```
