@@ -160,6 +160,15 @@
         </select>
       </div>
 
+      <div>
+        <label for="tipoTreinamento">Tipo de Treinamento</label>
+        <select id="tipoTreinamento" required>
+          <option value="" disabled selected>Selecione...</option>
+          <option value="Presencial">Presencial</option>
+          <option value="Online">Online</option>
+        </select>
+      </div>
+
       <div style="grid-column: 1 / -1;">
         <label for="treinamento">Treinamento realizado</label>
         <select id="treinamento" required>
@@ -227,7 +236,7 @@
       </div>
       <div style="min-width:260px;">
         <label for="busca">Buscar</label>
-        <input id="busca" type="text" placeholder="Treinamento, CD, desafio..." />
+        <input id="busca" type="text" placeholder="Treinamento, CD, tipo, desafio..." />
       </div>
     </section>
 
@@ -239,6 +248,7 @@
             <th style="width:120px;">Data</th>
             <th style="width:140px;">Apuração (prazo)</th>
             <th style="width:130px;">Público</th>
+            <th style="width:140px;">Tipo</th>
             <th style="width:260px;">Treinamento</th>
             <th style="width:240px;">CD</th>
             <th style="width:130px;">Pessoas</th>
@@ -319,6 +329,7 @@
     const dataTreino = document.getElementById("dataTreino");
     const dataApuracao = document.getElementById("dataApuracao");
     const publico = document.getElementById("publico");
+    const tipoTreinamento = document.getElementById("tipoTreinamento");
     const treinamento = document.getElementById("treinamento");
     const hintTreinos = document.getElementById("hintTreinos");
 
@@ -550,6 +561,7 @@
 
     function resetFormKeepDate(){
       publico.value = "";
+      tipoTreinamento.value = "";
       treinamento.value = "";
       totalPessoas.value = "";
       notaMedia.value = "";
@@ -568,6 +580,7 @@
       dataTreino.value = item.data || todayISO();
       dataApuracao.value = item.dataApuracao || "";
       publico.value = item.publico || "";
+      tipoTreinamento.value = item.tipoTreinamento || "";
       treinamento.value = item.treinamento || "";
       totalPessoas.value = item.totalPessoas ?? "";
       notaMedia.value = item.notaMedia ?? "";
@@ -595,13 +608,22 @@
       const data = (HIST_CACHE || []).slice();
 
       const filtered = q ? data.filter(x =>
-        [x.treinamento, x.cd, x.publico, x.desafio, x.meta, x.obs, x.dataApuracao].join(" ").toLowerCase().includes(q)
+        [
+          x.treinamento,
+          x.cd,
+          x.publico,
+          x.tipoTreinamento,
+          x.desafio,
+          x.meta,
+          x.obs,
+          x.dataApuracao
+        ].join(" ").toLowerCase().includes(q)
       ) : data;
 
       tbodyHist.innerHTML = "";
 
       if (filtered.length === 0){
-        tbodyHist.innerHTML = `<tr><td colspan="11" style="opacity:.8;">Nenhum registro ainda.</td></tr>`;
+        tbodyHist.innerHTML = `<tr><td colspan="12" style="opacity:.8;">Nenhum registro ainda.</td></tr>`;
         return;
       }
 
@@ -618,6 +640,7 @@
           <td>${toBR(item.data)}</td>
           <td>${toBR(item.dataApuracao)}</td>
           <td>${item.publico || "-"}</td>
+          <td>${item.tipoTreinamento || "-"}</td>
           <td>${item.treinamento || "-"}</td>
           <td>${item.cd || "-"}</td>
           <td>${item.totalPessoas ?? "-"}</td>
@@ -671,6 +694,7 @@
         dataApuracao: (dataApuracao.value || "").trim(),
 
         publico: publico.value,
+        tipoTreinamento: tipoTreinamento.value,
         treinamento: treinamento.value,
 
         totalPessoas: Number(totalPessoas.value),
@@ -681,8 +705,8 @@
         meta: normalize(metaDesafio.value)
       };
 
-      if (!base.publico || !base.treinamento || !base.desafio || !base.meta){
-        setMsg("Preencha: Público, Treinamento, Desafio e Meta.", "error");
+      if (!base.publico || !base.tipoTreinamento || !base.treinamento || !base.desafio || !base.meta){
+        setMsg("Preencha: Público, Tipo de Treinamento, Treinamento, Desafio e Meta.", "error");
         return;
       }
       if (!base.dataApuracao){
@@ -720,6 +744,7 @@
             dataApuracao: base.dataApuracao,
 
             publico: base.publico,
+            tipoTreinamento: base.tipoTreinamento,
             treinamento: base.treinamento,
             cd: cdItem,
 
@@ -774,6 +799,7 @@
             dataApuracao: base.dataApuracao,
 
             publico: base.publico,
+            tipoTreinamento: base.tipoTreinamento,
             treinamento: base.treinamento,
             cd: cdItem,
 
