@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="pt-br">
 <head>
@@ -5,7 +6,6 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Corrigir Tipo de Treinamento</title>
   <link rel="stylesheet" href="../css/styles.css" />
-
   <style>
     .toolbar{
       display:flex;
@@ -14,11 +14,9 @@
       align-items:end;
       margin-top:12px;
     }
-
     .toolbar > div{
       min-width:180px;
     }
-
     .pill{
       display:inline-flex;
       padding:6px 10px;
@@ -28,21 +26,13 @@
       background:rgba(255,255,255,.08);
       border:1px solid rgba(255,255,255,.12);
     }
-
-    .pill.warn{
-      color:#facc15;
-    }
-
-    .pill.ok{
-      color:#22c55e;
-    }
-
+    .pill.warn{ color:#facc15; }
+    .pill.ok{ color:#22c55e; }
     .select-mini{
       min-width:140px;
       padding:8px 10px;
       border-radius:10px;
     }
-
     .btn-mini{
       padding:8px 10px;
       border-radius:10px;
@@ -52,24 +42,18 @@
       font-weight:900;
       cursor:pointer;
     }
-
     .btn-mini.primary{
       background:rgba(217,27,46,.95);
       border-color:transparent;
       color:white;
     }
-
-    .btn-mini:hover{
-      filter:brightness(1.08);
-    }
-
+    .btn-mini:hover{ filter:brightness(1.08); }
     .actions-inline{
       display:flex;
       gap:8px;
       align-items:center;
       flex-wrap:wrap;
     }
-
     .bulk-box{
       margin:14px 0;
       padding:14px;
@@ -81,11 +65,9 @@
       flex-wrap:wrap;
       align-items:end;
     }
-
     .bulk-box > div{
       min-width:220px;
     }
-
     th.actions-col,
     td.actions-col{
       position:sticky;
@@ -94,26 +76,22 @@
       background:rgba(11,15,20,.96);
       border-right:1px solid rgba(255,255,255,.08);
     }
-
     thead th.actions-col{
       z-index:4;
     }
   </style>
 </head>
-
 <body class="bg">
   <header class="topbar">
     <div>
       <h2>Corrigir Tipo de Treinamento</h2>
       <div id="userInfo" class="hint" style="color:#d1d5db;margin-top:4px;"></div>
     </div>
-
     <div class="top-actions">
       <button id="btnMenu" class="btn-secondary" type="button">Voltar ao Menu</button>
       <button id="btnLogout" class="btn-secondary" type="button">Sair</button>
     </div>
   </header>
-
   <main class="card wide">
     <section>
       <h3>Força-tarefa: Online ou Presencial</h3>
@@ -122,9 +100,7 @@
         Ela altera somente o campo <b>tipoTreinamento</b>.
       </p>
     </section>
-
     <hr class="sep" />
-
     <section class="toolbar">
       <div>
         <label for="filtroTipo">Filtro</label>
@@ -135,7 +111,6 @@
           <option value="Online">Online</option>
         </select>
       </div>
-
       <div>
         <label for="filtroMes">Mês</label>
         <select id="filtroMes">
@@ -154,15 +129,16 @@
           <option value="12">Dezembro</option>
         </select>
       </div>
-
       <div>
-        <label for="busca">Buscar</label>
+        <label for="busca">Buscar 1</label>
         <input id="busca" type="text" placeholder="CD, público, treinamento..." />
       </div>
-
+      <div>
+        <label for="busca2">Buscar 2</label>
+        <input id="busca2" type="text" placeholder="Usuário, mês, gestor, vendedor..." />
+      </div>
       <button id="btnRecarregar" type="button">Recarregar</button>
     </section>
-
     <section class="bulk-box">
       <div>
         <label for="tipoMassa">Alterar todos que aparecem para</label>
@@ -172,25 +148,20 @@
           <option value="Online">Online</option>
         </select>
       </div>
-
       <button id="btnAplicarFiltro" type="button">
         Aplicar em todos os filtrados
       </button>
-
       <div class="hint">
         Atenção: aplica somente nos registros que estão aparecendo na tabela com os filtros atuais.
       </div>
     </section>
-
     <p id="msg" class="msg"></p>
-
     <section style="display:flex;gap:10px;flex-wrap:wrap;margin:12px 0;">
       <span id="totalRegistros" class="pill">Total: 0</span>
       <span id="filtradosAtual" class="pill">Filtrados: 0</span>
       <span id="semTipo" class="pill warn">Sem tipo: 0</span>
       <span id="corrigidos" class="pill ok">Com tipo: 0</span>
     </section>
-
     <div class="table-wrap" style="margin-top:12px;">
       <table class="table table-sticky">
         <thead>
@@ -207,12 +178,10 @@
             <th>Obs</th>
           </tr>
         </thead>
-
         <tbody id="tbody"></tbody>
       </table>
     </div>
   </main>
-
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
     import {
@@ -223,7 +192,6 @@
       updateDoc,
       serverTimestamp
     } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
-
     const firebaseConfig = {
       apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
       authDomain: "jornada-portal.firebaseapp.com",
@@ -232,74 +200,55 @@
       messagingSenderId: "669362296644",
       appId: "1:669362296644:web:f590d9834a8e4e60012911"
     };
-
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-
     const COLLECTION = "treinamentos_realizados";
-
     const PATH_INDEX = "../index.html";
     const PATH_MENU = "../html menus/menuadm.html";
-
     const userInfo = document.getElementById("userInfo");
     const btnMenu = document.getElementById("btnMenu");
     const btnLogout = document.getElementById("btnLogout");
     const btnRecarregar = document.getElementById("btnRecarregar");
-
     const filtroTipo = document.getElementById("filtroTipo");
     const filtroMes = document.getElementById("filtroMes");
     const busca = document.getElementById("busca");
-
+    const busca2 = document.getElementById("busca2");
     const tipoMassa = document.getElementById("tipoMassa");
     const btnAplicarFiltro = document.getElementById("btnAplicarFiltro");
-
     const msg = document.getElementById("msg");
     const tbody = document.getElementById("tbody");
-
     const totalRegistros = document.getElementById("totalRegistros");
     const filtradosAtual = document.getElementById("filtradosAtual");
     const semTipo = document.getElementById("semTipo");
     const corrigidos = document.getElementById("corrigidos");
-
     let CACHE = [];
-
     function safeParse(raw){
       try { return JSON.parse(raw); } catch { return null; }
     }
-
     function normalize(s){
       return String(s || "").replace(/\s+/g, " ").trim();
     }
-
     function getCurrentUserName(){
       const raw = localStorage.getItem("user_session");
-
       if(raw){
         const s = safeParse(raw);
         if(s?.nome) return String(s.nome).trim();
       }
-
       return (localStorage.getItem("usuarioLogado") || "").trim();
     }
-
     const usuario = getCurrentUserName();
-
     if(!usuario){
       window.location.href = PATH_INDEX;
     }
-
     userInfo.textContent = `Usuário: ${usuario}`;
-
     btnMenu.onclick = () => {
       window.location.href = PATH_MENU;
     };
-
     btnLogout.onclick = () => {
       localStorage.removeItem("user_session");
       localStorage.removeItem("usuarioLogado");
       window.location.href = PATH_INDEX;
     };
-
     function setMsg(text, type = "info"){
       msg.textContent = text || "";
       msg.style.color =
@@ -307,121 +256,98 @@
         type === "error" ? "#ef4444" :
         "#d1d5db";
     }
-
     function toBR(iso){
       if(!iso) return "-";
-
       const parts = String(iso).split("-");
       if(parts.length !== 3) return iso;
-
       const [y, m, d] = parts;
       return `${d}/${m}/${y}`;
     }
-
     function getMesFromData(iso){
       if(!iso) return "";
       const parts = String(iso).split("-");
       return Number(parts[1] || 0);
     }
-
     function tipoAtual(item){
       return normalize(item.tipoTreinamento || "");
     }
-
     async function carregar(){
       try{
         setMsg("Carregando todos os registros...");
-
         const snap = await getDocs(collection(db, COLLECTION));
-
         const arr = [];
-
         snap.forEach(d => {
           arr.push({
             id: d.id,
             ...d.data()
           });
         });
-
         arr.sort((a,b) =>
           String(b.data || "").localeCompare(String(a.data || "")) ||
           String(a.usuarioNome || "").localeCompare(String(b.usuarioNome || ""), "pt-BR") ||
           String(a.cd || "").localeCompare(String(b.cd || ""), "pt-BR")
         );
-
         CACHE = arr;
-
         atualizarResumo();
         render();
-
         setMsg("");
       }catch(e){
         console.error(e);
         setMsg("Erro ao carregar registros. Verifique conexão e Rules.", "error");
       }
     }
-
     function atualizarResumo(){
       const total = CACHE.length;
       const sem = CACHE.filter(x => !tipoAtual(x)).length;
       const com = total - sem;
-
       totalRegistros.textContent = `Total: ${total}`;
       semTipo.textContent = `Sem tipo: ${sem}`;
       corrigidos.textContent = `Com tipo: ${com}`;
     }
-
+    function textoBuscaItem(item){
+      return [
+        item.data,
+        toBR(item.data),
+        item.usuarioNome,
+        item.publico,
+        item.tipoTreinamento,
+        item.treinamento,
+        item.cd,
+        item.totalPessoas,
+        item.notaMedia,
+        item.obs,
+        item.desafio,
+        item.meta
+      ].join(" ").toLowerCase();
+    }
     function filtrar(){
       const tipoFiltro = filtroTipo.value;
       const mesFiltro = Number(filtroMes.value || 0);
-      const termo = normalize(busca.value).toLowerCase();
-
+      const termo1 = normalize(busca.value).toLowerCase();
+      const termo2 = normalize(busca2.value).toLowerCase();
       return CACHE.filter(item => {
         const tipo = tipoAtual(item);
-
         if(tipoFiltro === "semTipo" && tipo) return false;
         if(tipoFiltro === "Presencial" && tipo !== "Presencial") return false;
         if(tipoFiltro === "Online" && tipo !== "Online") return false;
-
         if(mesFiltro && getMesFromData(item.data) !== mesFiltro) return false;
-
-        if(termo){
-          const texto = [
-            item.data,
-            item.usuarioNome,
-            item.publico,
-            item.tipoTreinamento,
-            item.treinamento,
-            item.cd,
-            item.obs,
-            item.desafio,
-            item.meta
-          ].join(" ").toLowerCase();
-
-          if(!texto.includes(termo)) return false;
-        }
-
+        const texto = textoBuscaItem(item);
+        if(termo1 && !texto.includes(termo1)) return false;
+        if(termo2 && !texto.includes(termo2)) return false;
         return true;
       });
     }
-
     function render(){
       const data = filtrar();
-
       filtradosAtual.textContent = `Filtrados: ${data.length}`;
-
       tbody.innerHTML = "";
-
       if(data.length === 0){
         tbody.innerHTML = `<tr><td colspan="10" style="opacity:.8;">Nenhum registro encontrado.</td></tr>`;
         return;
       }
-
       data.forEach(item => {
         const atual = tipoAtual(item);
-
         const tr = document.createElement("tr");
-
         tr.innerHTML = `
           <td class="actions-col" style="width:260px;">
             <div class="actions-inline">
@@ -430,13 +356,11 @@
                 <option value="Presencial" ${atual === "Presencial" ? "selected" : ""}>Presencial</option>
                 <option value="Online" ${atual === "Online" ? "selected" : ""}>Online</option>
               </select>
-
               <button class="btn-mini primary" type="button" data-save="${item.id}">
                 Salvar
               </button>
             </div>
           </td>
-
           <td>${toBR(item.data)}</td>
           <td>${item.usuarioNome || "-"}</td>
           <td>${item.publico || "-"}</td>
@@ -447,41 +371,31 @@
           <td>${item.notaMedia ?? "-"}</td>
           <td>${item.obs || "-"}</td>
         `;
-
         tbody.appendChild(tr);
       });
-
       tbody.querySelectorAll("[data-save]").forEach(btn => {
         btn.onclick = async () => {
           const id = btn.getAttribute("data-save");
           const select = tbody.querySelector(`[data-select="${id}"]`);
-
           if(!id || !select) return;
-
           const novoTipo = select.value;
-
           if(!novoTipo){
             setMsg("Selecione Presencial ou Online antes de salvar.", "error");
             return;
           }
-
           try{
             btn.disabled = true;
             btn.textContent = "Salvando...";
-
             await updateDoc(doc(db, COLLECTION, id), {
               tipoTreinamento: novoTipo,
               atualizadoEm: serverTimestamp()
             });
-
             const item = CACHE.find(x => x.id === id);
             if(item){
               item.tipoTreinamento = novoTipo;
             }
-
             atualizarResumo();
             render();
-
             setMsg(`Registro atualizado como ${novoTipo} ✅`, "success");
           }catch(e){
             console.error(e);
@@ -492,33 +406,25 @@
         };
       });
     }
-
     btnAplicarFiltro.addEventListener("click", async () => {
       const novoTipo = tipoMassa.value;
-
       if(!novoTipo){
         setMsg("Selecione Presencial ou Online para aplicar em massa.", "error");
         return;
       }
-
       const data = filtrar();
-
       if(data.length === 0){
         setMsg("Nenhum registro filtrado para atualizar.", "error");
         return;
       }
-
       const confirmar = confirm(
         `Confirma alterar ${data.length} registro(s) filtrado(s) para ${novoTipo}?`
       );
-
       if(!confirmar) return;
-
       try{
         btnAplicarFiltro.disabled = true;
         btnAplicarFiltro.textContent = "Atualizando...";
         setMsg(`Atualizando ${data.length} registro(s)...`);
-
         await Promise.all(
           data.map(item =>
             updateDoc(doc(db, COLLECTION, item.id), {
@@ -527,14 +433,11 @@
             })
           )
         );
-
         data.forEach(item => {
           item.tipoTreinamento = novoTipo;
         });
-
         atualizarResumo();
         render();
-
         setMsg(`${data.length} registro(s) atualizados para ${novoTipo} ✅`, "success");
       }catch(e){
         console.error(e);
@@ -544,12 +447,11 @@
         btnAplicarFiltro.textContent = "Aplicar em todos os filtrados";
       }
     });
-
     filtroTipo.addEventListener("change", render);
     filtroMes.addEventListener("change", render);
     busca.addEventListener("input", render);
+    busca2.addEventListener("input", render);
     btnRecarregar.addEventListener("click", carregar);
-
     await carregar();
   </script>
 </body>
