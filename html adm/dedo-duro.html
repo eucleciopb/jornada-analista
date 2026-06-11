@@ -1,0 +1,367 @@
+Segue o HTML completo corrigido:
+
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Dedo Duro</title>
+  <link rel="stylesheet" href="../css/styles.css" />
+  <style>
+    .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin-top:12px;}
+    .toolbar>div{min-width:180px;}
+    .pill{display:inline-flex;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:900;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);}
+    .pill.warn{color:#facc15;}
+    .pill.ok{color:#22c55e;}
+    .pill.bad{color:#ef4444;}
+    .details{font-size:12px;line-height:1.5;white-space:normal;}
+    .btn-mini{padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:rgba(37,99,235,.95);color:white;font-weight:900;cursor:pointer;}
+    .btn-mini:hover{filter:brightness(1.08);}
+  </style>
+</head>
+<body class="bg">
+  <header class="topbar">
+    <div>
+      <h2>Dedo Duro</h2>
+      <div id="userInfo" class="hint" style="color:#d1d5db;margin-top:4px;"></div>
+    </div>
+    <div class="top-actions">
+      <button id="btnMenu" class="btn-secondary" type="button">Voltar ao Menu</button>
+      <button id="btnLogout" class="btn-secondary" type="button">Sair</button>
+    </div>
+  </header>
+  <main class="card wide">
+    <section>
+      <h3>Presenciais suspeitos em vários CDs</h3>
+      <p class="hint">
+        Mostra apenas registros marcados como <b>Presencial</b>, onde o mesmo analista lançou o mesmo treinamento para mais de um CD na mesma data.
+        O botão por linha transforma o grupo em <b>Online</b>.
+      </p>
+    </section>
+    <hr class="sep" />
+    <section class="toolbar">
+      <div>
+        <label for="filtroData">Data</label>
+        <input id="filtroData" type="date" />
+      </div>
+      <div>
+        <label for="filtroUsuario">Analista</label>
+        <input id="filtroUsuario" type="text" placeholder="Ex: Euclecio, Joice..." />
+      </div>
+      <div>
+        <label for="busca">Buscar</label>
+        <input id="busca" type="text" placeholder="CD, treinamento, público..." />
+      </div>
+      <button id="btnRecarregar" type="button">Recarregar</button>
+    </section>
+    <p id="msg" class="msg"></p>
+    <section style="display:flex;gap:10px;flex-wrap:wrap;margin:12px 0;">
+      <span id="totalRegistros" class="pill">Presenciais analisados: 0</span>
+      <span id="totalAlertas" class="pill bad">Alertas: 0</span>
+      <span id="totalAnalistas" class="pill warn">Analistas: 0</span>
+      <span id="totalCds" class="pill ok">CDs envolvidos: 0</span>
+    </section>
+    <div class="table-wrap" style="margin-top:12px;">
+      <table class="table table-sticky">
+        <thead>
+          <tr>
+            <th style="width:120px;">Data</th>
+            <th style="width:180px;">Analista</th>
+            <th style="width:260px;">Treinamento</th>
+            <th style="width:110px;">Qtd CDs</th>
+            <th style="width:120px;">Registros</th>
+            <th style="width:320px;">CDs</th>
+            <th style="width:170px;">Ação</th>
+            <th>Detalhes</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </main>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import {
+      getFirestore,
+      collection,
+      doc,
+      getDocs,
+      updateDoc,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+    const firebaseConfig = {
+      apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
+      authDomain: "jornada-portal.firebaseapp.com",
+      projectId: "jornada-portal",
+      storageBucket: "jornada-portal.firebasestorage.app",
+      messagingSenderId: "669362296644",
+      appId: "1:669362296644:web:f590d9834a8e4e60012911"
+    };
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const COLLECTION = "treinamentos_realizados";
+    const PATH_INDEX = "../index.html";
+    const PATH_MENU = "../html menus/menuadm.html";
+    const userInfo = document.getElementById("userInfo");
+    const btnMenu = document.getElementById("btnMenu");
+    const btnLogout = document.getElementById("btnLogout");
+    const btnRecarregar = document.getElementById("btnRecarregar");
+    const filtroData = document.getElementById("filtroData");
+    const filtroUsuario = document.getElementById("filtroUsuario");
+    const busca = document.getElementById("busca");
+    const msg = document.getElementById("msg");
+    const tbody = document.getElementById("tbody");
+    const totalRegistros = document.getElementById("totalRegistros");
+    const totalAlertas = document.getElementById("totalAlertas");
+    const totalAnalistas = document.getElementById("totalAnalistas");
+    const totalCds = document.getElementById("totalCds");
+    let CACHE = [];
+    let ALERTAS_CACHE = [];
+    function safeParse(raw){
+      try { return JSON.parse(raw); } catch { return null; }
+    }
+    function normalize(s){
+      return String(s || "").replace(/\s+/g, " ").trim();
+    }
+    function lower(s){
+      return normalize(s).toLowerCase();
+    }
+    function normalizeKey(s){
+      return normalize(s)
+        .toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+        .replace(/[^a-z0-9]+/g,"");
+    }
+    function getCurrentUserName(){
+      const raw = localStorage.getItem("user_session");
+      if(raw){
+        const s = safeParse(raw);
+        if(s?.nome) return String(s.nome).trim();
+      }
+      return (localStorage.getItem("usuarioLogado") || "").trim();
+    }
+    const usuario = getCurrentUserName();
+    if(!usuario){
+      window.location.href = PATH_INDEX;
+    }
+    userInfo.textContent = `Usuário: ${usuario}`;
+    btnMenu.onclick = () => {
+      window.location.href = PATH_MENU;
+    };
+    btnLogout.onclick = () => {
+      localStorage.removeItem("user_session");
+      localStorage.removeItem("usuarioLogado");
+      window.location.href = PATH_INDEX;
+    };
+    function setMsg(text, type="info"){
+      msg.textContent = text || "";
+      msg.style.color =
+        type === "success" ? "#22c55e" :
+        type === "error" ? "#ef4444" :
+        "#d1d5db";
+    }
+    function toBR(iso){
+      if(!iso) return "-";
+      const parts = String(iso).split("-");
+      if(parts.length !== 3) return iso;
+      const [y,m,d] = parts;
+      return `${d}/${m}/${y}`;
+    }
+    function escapeHtml(value){
+      return String(value ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+    function getAnalista(item){
+      return normalize(item.usuarioNome || item.usuario || item.analista || "Sem analista");
+    }
+    function getCd(item){
+      return normalize(item.cd || "");
+    }
+    function getTreinamento(item){
+      return normalize(item.treinamento || "Sem treinamento");
+    }
+    function isPresencial(item){
+      return normalizeKey(item.tipoTreinamento) === "presencial";
+    }
+    async function carregar(){
+      try{
+        setMsg("Carregando registros...");
+        const snap = await getDocs(collection(db, COLLECTION));
+        const arr = [];
+        snap.forEach(d => {
+          arr.push({
+            id:d.id,
+            ...d.data()
+          });
+        });
+        CACHE = arr;
+        render();
+        setMsg("");
+      }catch(e){
+        console.error(e);
+        setMsg("Erro ao carregar registros. Verifique conexão e Rules.", "error");
+      }
+    }
+    function registrosFiltrados(){
+      const dataFiltro = filtroData.value;
+      const usuarioFiltro = lower(filtroUsuario.value);
+      const termo = lower(busca.value);
+      return CACHE.filter(item => {
+        if(!isPresencial(item)) return false;
+        const data = normalize(item.data);
+        const analista = getAnalista(item);
+        if(dataFiltro && data !== dataFiltro) return false;
+        if(usuarioFiltro && !lower(analista).includes(usuarioFiltro)) return false;
+        if(termo){
+          const texto = [
+            item.data,
+            analista,
+            item.publico,
+            item.tipoTreinamento,
+            item.treinamento,
+            item.cd,
+            item.obs,
+            item.desafio,
+            item.meta
+          ].join(" ").toLowerCase();
+          if(!texto.includes(termo)) return false;
+        }
+        return true;
+      });
+    }
+    function montarAlertas(registros){
+      const mapa = new Map();
+      registros.forEach(item => {
+        const data = normalize(item.data);
+        const analista = getAnalista(item);
+        const treinamento = getTreinamento(item);
+        const cd = getCd(item);
+        if(!data || !analista || !cd || !treinamento) return;
+        const key = `${data}||${normalizeKey(analista)}||${normalizeKey(treinamento)}`;
+        if(!mapa.has(key)){
+          mapa.set(key, {
+            key,
+            data,
+            analista,
+            treinamento,
+            cds:new Set(),
+            registros:[]
+          });
+        }
+        const ref = mapa.get(key);
+        ref.cds.add(cd);
+        ref.registros.push(item);
+      });
+      return Array.from(mapa.values())
+        .filter(x => x.cds.size > 1)
+        .map(x => ({
+          ...x,
+          qtdCds:x.cds.size,
+          qtdRegistros:x.registros.length,
+          cdsTexto:Array.from(x.cds).sort((a,b) => a.localeCompare(b,"pt-BR")).join(", ")
+        }))
+        .sort((a,b) =>
+          String(b.data).localeCompare(String(a.data)) ||
+          b.qtdCds - a.qtdCds ||
+          a.analista.localeCompare(b.analista, "pt-BR") ||
+          a.treinamento.localeCompare(b.treinamento, "pt-BR")
+        );
+    }
+    function render(){
+      const registros = registrosFiltrados();
+      const alertas = montarAlertas(registros);
+      ALERTAS_CACHE = alertas;
+      const analistasSet = new Set(alertas.map(x => x.analista));
+      const cdsSet = new Set();
+      alertas.forEach(a => {
+        a.cds.forEach(cd => cdsSet.add(cd));
+      });
+      totalRegistros.textContent = `Presenciais analisados: ${registros.length}`;
+      totalAlertas.textContent = `Alertas: ${alertas.length}`;
+      totalAnalistas.textContent = `Analistas: ${analistasSet.size}`;
+      totalCds.textContent = `CDs envolvidos: ${cdsSet.size}`;
+      tbody.innerHTML = "";
+      if(alertas.length === 0){
+        tbody.innerHTML = `<tr><td colspan="8" style="opacity:.8;">Nenhum alerta presencial encontrado.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = alertas.map((alerta, idx) => {
+        const detalhes = alerta.registros
+          .sort((a,b) => String(a.cd || "").localeCompare(String(b.cd || ""), "pt-BR"))
+          .map(item => {
+            const publico = escapeHtml(item.publico || "-");
+            const cd = escapeHtml(item.cd || "-");
+            const obs = escapeHtml(item.obs || "-");
+            return `• <b>${cd}</b> | ${publico} | Presencial | Obs: ${obs}`;
+          })
+          .join("<br>");
+        return `
+          <tr>
+            <td>${toBR(alerta.data)}</td>
+            <td><strong>${escapeHtml(alerta.analista)}</strong></td>
+            <td>${escapeHtml(alerta.treinamento)}</td>
+            <td><span class="pill bad">${alerta.qtdCds} CDs</span></td>
+            <td>${alerta.qtdRegistros}</td>
+            <td>${escapeHtml(alerta.cdsTexto)}</td>
+            <td>
+              <button class="btn-mini" type="button" data-online="${idx}">
+                Transformar em Online
+              </button>
+            </td>
+            <td class="details">${detalhes}</td>
+          </tr>
+        `;
+      }).join("");
+      tbody.querySelectorAll("[data-online]").forEach(btn => {
+        btn.onclick = async () => {
+          const idx = Number(btn.getAttribute("data-online"));
+          const alerta = ALERTAS_CACHE[idx];
+          if(!alerta) return;
+          const confirmar = confirm(
+            `Confirma transformar em ONLINE?\n\n` +
+            `Data: ${toBR(alerta.data)}\n` +
+            `Analista: ${alerta.analista}\n` +
+            `Treinamento: ${alerta.treinamento}\n` +
+            `Registros: ${alerta.qtdRegistros}\n` +
+            `CDs: ${alerta.cdsTexto}`
+          );
+          if(!confirmar) return;
+          try{
+            btn.disabled = true;
+            btn.textContent = "Atualizando...";
+            setMsg("Transformando registros em Online...");
+            await Promise.all(
+              alerta.registros.map(item =>
+                updateDoc(doc(db, COLLECTION, item.id), {
+                  tipoTreinamento:"Online",
+                  atualizadoEm:serverTimestamp()
+                })
+              )
+            );
+            alerta.registros.forEach(item => {
+              const ref = CACHE.find(x => x.id === item.id);
+              if(ref) ref.tipoTreinamento = "Online";
+            });
+            setMsg(`Grupo transformado em Online ✅ (${alerta.qtdRegistros} registro(s))`, "success");
+            render();
+          }catch(e){
+            console.error(e);
+            setMsg("Erro ao transformar em Online. Verifique Rules.", "error");
+            btn.disabled = false;
+            btn.textContent = "Transformar em Online";
+          }
+        };
+      });
+    }
+    filtroData.addEventListener("input", render);
+    filtroUsuario.addEventListener("input", render);
+    busca.addEventListener("input", render);
+    btnRecarregar.addEventListener("click", carregar);
+    await carregar();
+  </script>
+</body>
+</html>
