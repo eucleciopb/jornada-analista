@@ -877,3 +877,68 @@ label{
   font-size: 12px;
   opacity: .95;
 }
+
+.rank-row{
+  display:grid;
+  grid-template-columns: 28px 1fr 80px;
+  gap:10px;
+  align-items:center;
+}
+
+.rank-info{
+  min-width:0;
+}
+
+.rank-name{
+  font-weight:700;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.rank-cd{
+  font-size:11px;
+  color:#777;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.rank-value{
+  min-width:80px;
+  text-align:right;
+  font-weight:900;
+  white-space:nowrap;
+}
+.rank-row{
+  display:grid;
+  grid-template-columns:28px minmax(0, 1fr) 90px;
+  gap:10px;
+  align-items:center;
+}
+
+.rank-info{
+  min-width:0;
+}
+
+.rank-name{
+  font-weight:800;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.rank-cd{
+  font-size:11px;
+  color:#64748b;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.rank-value{
+  text-align:right;
+  font-weight:900;
+  min-width:90px;
+  white-space:nowrap;
+}

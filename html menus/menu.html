@@ -7,330 +7,738 @@
   <link rel="stylesheet" href="../css/styles.css" />
 
   <style>
-    .meta-wrap{
+    :root{
+      --bg:#f6f8fb;
+      --card:#ffffff;
+      --text:#0f172a;
+      --muted:#64748b;
+      --line:#e5e7eb;
+      --blue:#1d4ed8;
+      --blue2:#eff6ff;
+      --shadow:0 16px 45px rgba(15,23,42,.08);
+      --radius:22px;
+    }
+
+    *{box-sizing:border-box;}
+
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--text);
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    }
+
+    .portal-shell{
+      min-height:100vh;
       display:grid;
+      grid-template-columns:260px 1fr;
+    }
+
+    .sidebar{
+      position:sticky;
+      top:0;
+      height:100vh;
+      background:#fff;
+      border-right:1px solid var(--line);
+      padding:22px;
+      display:flex;
+      flex-direction:column;
+      gap:18px;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      padding:8px 4px 18px;
+      border-bottom:1px solid var(--line);
+    }
+
+    .brand-logo{
+      width:46px;
+      height:46px;
+      border-radius:16px;
+      display:grid;
+      place-items:center;
+      background:#0f172a;
+      color:#fff;
+      font-weight:900;
+    }
+
+    .brand h2{
+      margin:0;
+      font-size:18px;
+      line-height:1.1;
+    }
+
+    .brand small{
+      color:var(--muted);
+      font-size:12px;
+    }
+
+    .side-nav{
+      display:grid;
+      gap:10px;
+      margin-top:4px;
+    }
+
+    .side-link{
+      text-decoration:none;
+      color:#334155;
+      background:#f8fafc;
+      border:1px solid #eef2f7;
+      padding:13px 14px;
+      border-radius:16px;
+      font-size:14px;
+      font-weight:800;
+      transition:.15s ease;
+    }
+
+    .side-link:hover{
+      background:#0f172a;
+      color:#fff;
+      transform:translateY(-1px);
+    }
+
+    .side-link.active{
+      background:var(--blue);
+      color:#fff;
+      border-color:var(--blue);
+    }
+
+    .side-footer{
+      margin-top:auto;
+      border-top:1px solid var(--line);
+      padding-top:14px;
+    }
+
+    .logout-side{
+      width:100%;
+      border:none;
+      cursor:pointer;
+      background:#fef2f2;
+      color:#b91c1c;
+      padding:13px 14px;
+      border-radius:16px;
+      font-weight:900;
+    }
+
+    .main{
+      min-width:0;
+      padding:22px;
+    }
+
+    .top-header{
+      position:sticky;
+      top:0;
+      z-index:20;
+      margin:-22px -22px 22px;
+      padding:18px 22px;
+      background:rgba(246,248,251,.88);
+      backdrop-filter:blur(14px);
+      border-bottom:1px solid rgba(226,232,240,.75);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:14px;
+    }
+
+    .hello small{
+      color:var(--muted);
+      font-weight:700;
+      display:block;
+      margin-bottom:3px;
+    }
+
+    .hello h1{
+      margin:0;
+      font-size:24px;
+      letter-spacing:-.5px;
+    }
+
+    .mobile-logo{
+      display:none;
+      width:42px;
+      height:42px;
+      border-radius:15px;
+      background:#0f172a;
+      color:#fff;
+      align-items:center;
+      justify-content:center;
+      font-weight:900;
+    }
+
+    .content{
+      max-width:1280px;
+      margin:0 auto;
+      display:grid;
+      gap:20px;
+      padding-bottom:90px;
+    }
+
+    .section-title{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-end;
+      gap:12px;
+      margin-bottom:12px;
+    }
+
+    .section-title h3{
+      margin:0;
+      font-size:18px;
+    }
+
+    .section-title p{
+      margin:4px 0 0;
+      color:var(--muted);
+      font-size:12px;
+    }
+
+    .cards-2{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:16px;
+    }
+
+    .metric-card,
+    .area-card,
+    .kpi-card{
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:18px;
+    }
+
+    .meta-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
       gap:12px;
       margin-bottom:16px;
     }
 
-    .meta-card{
-      border:1px solid rgba(0,0,0,.08);
-      border-radius:18px;
-      padding:14px;
-      background:#fff;
-      box-shadow:0 10px 30px rgba(0,0,0,.04);
-    }
-
-    .meta-title{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:10px;
-      margin-bottom:10px;
-    }
-
-    .meta-title h3{
+    .meta-head h3{
       margin:0;
-      font-size:15px;
-      color:#111;
+      font-size:18px;
     }
 
-    .meta-status{
+    .meta-period{
       font-size:12px;
+      color:var(--muted);
       font-weight:800;
-      padding:6px 10px;
+      text-transform:uppercase;
+      letter-spacing:.4px;
+    }
+
+    .status-pill{
+      font-size:12px;
+      font-weight:900;
+      padding:7px 10px;
       border-radius:999px;
-      background:#f3f4f6;
-      color:#111;
+      background:#f1f5f9;
+      color:#334155;
       white-space:nowrap;
     }
 
-    .meta-status.ok{
-      background:#dcfce7;
-      color:#166534;
+    .status-pill.ok{background:#dcfce7;color:#166534;}
+    .status-pill.warn{background:#fef9c3;color:#854d0e;}
+    .status-pill.bad{background:#fee2e2;color:#991b1b;}
+
+    .big-percent{
+      display:flex;
+      align-items:flex-end;
+      gap:14px;
+      margin-bottom:15px;
     }
 
-    .meta-status.warn{
-      background:#fef9c3;
-      color:#854d0e;
+    .big-percent strong{
+      font-size:46px;
+      line-height:1;
+      letter-spacing:-2px;
     }
 
-    .meta-status.bad{
-      background:#fee2e2;
-      color:#991b1b;
+    .progress{
+      flex:1;
+      height:10px;
+      background:#eef2f7;
+      border-radius:999px;
+      overflow:hidden;
+      margin-bottom:8px;
+    }
+
+    .progress span{
+      display:block;
+      height:100%;
+      width:0%;
+      background:var(--blue);
+      border-radius:999px;
     }
 
     .meta-grid{
       display:grid;
-      gap:8px;
-    }
-
-    .meta-row{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
+      grid-template-columns:repeat(3,1fr);
       gap:10px;
-      font-size:13px;
-      color:#222;
+      border-top:1px solid #f1f5f9;
+      padding-top:14px;
     }
 
-    .meta-row strong{
-      font-size:13px;
-      color:#000;
+    .mini-stat{
+      background:#f8fafc;
+      border:1px solid #eef2f7;
+      border-radius:16px;
+      padding:10px;
     }
 
-    .meta-progress{
-      height:8px;
-      background:#f1f1f1;
-      border-radius:999px;
-      overflow:hidden;
-      margin-top:10px;
-    }
-
-    .meta-progress span{
+    .mini-stat span{
       display:block;
-      height:100%;
-      width:0%;
-      background:#111;
-      border-radius:999px;
+      color:var(--muted);
+      font-size:10px;
+      font-weight:900;
+      text-transform:uppercase;
+      margin-bottom:4px;
     }
 
-    .meta-small{
-      margin-top:8px;
-      font-size:12px;
-      color:#666;
-    }
-
-    .area-wrap{
-      display:grid;
-      gap:12px;
-      margin-bottom:16px;
-    }
-
-    .area-card{
-      border:1px solid rgba(0,0,0,.08);
-      border-radius:18px;
-      padding:14px;
-      background:#fff;
-      box-shadow:0 10px 30px rgba(0,0,0,.04);
-    }
-
-    .area-title{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:10px;
-      margin-bottom:10px;
-    }
-
-    .area-title h3{
-      margin:0;
+    .mini-stat strong{
       font-size:15px;
-      color:#111;
     }
 
-    .area-grid{
+    .area-kpis{
       display:grid;
       grid-template-columns:repeat(4,1fr);
-      gap:10px;
-      margin-top:10px;
+      gap:12px;
     }
 
     .area-kpi{
-      border:1px solid #eee;
-      border-radius:14px;
-      padding:10px;
-      background:#fafafa;
+      border-radius:18px;
+      padding:14px;
+      background:#f8fafc;
+      border:1px solid #eef2f7;
+    }
+
+    .area-kpi.primary{
+      background:var(--blue2);
+      border-color:#bfdbfe;
     }
 
     .area-kpi span{
       display:block;
       font-size:11px;
-      color:#666;
-      margin-bottom:4px;
+      color:var(--muted);
+      font-weight:900;
+      text-transform:uppercase;
+      margin-bottom:5px;
     }
 
     .area-kpi strong{
-      font-size:18px;
-      color:#111;
+      font-size:28px;
+      letter-spacing:-1px;
     }
 
-    .area-table-wrap{
+    .table-scroll{
+      margin-top:14px;
       overflow:auto;
-      max-height:340px;
-      margin-top:12px;
-      border:1px solid #eee;
-      border-radius:14px;
+      border:1px solid var(--line);
+      border-radius:18px;
+      max-height:360px;
     }
 
-    .area-table{
+    table.portal-table{
       width:100%;
+      min-width:720px;
       border-collapse:collapse;
       font-size:12px;
-      min-width:720px;
     }
 
-    .area-table th,
-    .area-table td{
-      padding:9px 10px;
-      border-bottom:1px solid #eee;
+    .portal-table th,
+    .portal-table td{
+      padding:10px 12px;
+      border-bottom:1px solid #eef2f7;
       text-align:left;
       white-space:nowrap;
-      color:#111;
     }
 
-    .area-table th{
-      background:#f7f7f7;
+    .portal-table th{
+      background:#f8fafc;
+      color:#334155;
+      font-weight:900;
+      position:sticky;
+      top:0;
+      z-index:1;
+    }
+
+    .ok{color:#166534;font-weight:900;}
+    .warn{color:#854d0e;font-weight:900;}
+    .bad{color:#991b1b;font-weight:900;}
+
+    .kpi-toolbar{
+      display:flex;
+      justify-content:space-between;
+      align-items:end;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-bottom:14px;
+    }
+
+    .filters{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+
+    .field{
+      display:grid;
+      gap:6px;
+      min-width:190px;
+    }
+
+    .field label{
+      font-size:12px;
+      color:var(--muted);
+      font-weight:900;
+      text-transform:uppercase;
+    }
+
+    .field select{
+      width:100%;
+      padding:11px 12px;
+      border:1px solid var(--line);
+      border-radius:14px;
+      background:#fff;
+      color:#0f172a;
       font-weight:800;
+      outline:none;
     }
 
-    .ok{
-      color:#166534;
+    .kpi-grid{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:16px;
+    }
+
+    .kpi-card-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      margin-bottom:12px;
+    }
+
+    .kpi-card-head h4{
+      margin:0;
+      font-size:16px;
+    }
+
+    .kpi-count{
+      font-size:11px;
+      font-weight:900;
+      padding:6px 9px;
+      border-radius:999px;
+      background:#f1f5f9;
+      color:#475569;
+    }
+
+    .rank-cols{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+    }
+
+    .rank-title{
+      font-size:12px;
+      font-weight:900;
+      margin-bottom:8px;
+      color:#334155;
+    }
+
+    .rank-box{
+      border:1px solid #eef2f7;
+      border-radius:16px;
+      overflow:hidden;
+      background:#fff;
+    }
+
+    .rank-row{
+      display:grid;
+      grid-template-columns:28px minmax(0,1fr) 82px;
+      gap:8px;
+      align-items:center;
+      padding:9px 10px;
+      border-bottom:1px solid #f1f5f9;
+      font-size:12px;
+    }
+
+    .rank-row:last-child{border-bottom:none;}
+
+    .rank-n{
+      width:24px;
+      height:24px;
+      border-radius:999px;
+      display:grid;
+      place-items:center;
+      background:#f1f5f9;
+      font-size:11px;
       font-weight:900;
     }
 
-    .warn{
-      color:#854d0e;
+    .rank-info{
+      min-width:0;
+    }
+
+    .rank-name{
+      font-weight:900;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+
+    .rank-cd,
+    .rank-meta{
+      color:var(--muted);
+      font-size:11px;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      margin-top:2px;
+    }
+
+    .rank-meta{
+      font-weight:800;
+      color:#334155;
+    }
+
+    .rank-value{
+      text-align:right;
+      font-weight:900;
+      white-space:nowrap;
+      min-width:82px;
+    }
+
+    .empty{
+      padding:12px;
+      color:var(--muted);
+      font-size:12px;
+      border:1px dashed #cbd5e1;
+      border-radius:14px;
+      background:#f8fafc;
+    }
+
+    .quick-actions{
+      display:grid;
+      grid-template-columns:repeat(5,1fr);
+      gap:12px;
+    }
+
+    .quick-btn{
+      border:none;
+      cursor:pointer;
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:14px;
+      box-shadow:0 10px 28px rgba(15,23,42,.05);
+      font-weight:900;
+      color:#0f172a;
+      min-height:64px;
+      transition:.15s ease;
+    }
+
+    .quick-btn:hover{
+      transform:translateY(-2px);
+      border-color:#bfdbfe;
+      color:var(--blue);
+    }
+
+    .bottom-nav{
+      display:none;
+      position:fixed;
+      bottom:0;
+      left:0;
+      right:0;
+      height:72px;
+      background:#fff;
+      border-top:1px solid var(--line);
+      z-index:60;
+      padding:8px 12px;
+      justify-content:space-around;
+      box-shadow:0 -10px 30px rgba(15,23,42,.08);
+    }
+
+    .bottom-nav a,
+    .bottom-nav button{
+      border:none;
+      background:transparent;
+      text-decoration:none;
+      color:#64748b;
+      font-size:10px;
+      font-weight:900;
+      display:grid;
+      place-items:center;
+      gap:3px;
+      min-width:54px;
+      cursor:pointer;
+    }
+
+    .bottom-nav .ico{
+      width:26px;
+      height:26px;
+      border-radius:10px;
+      display:grid;
+      place-items:center;
+      background:#f1f5f9;
+      color:#334155;
+      font-size:13px;
       font-weight:900;
     }
 
-    .bad{
-      color:#991b1b;
-      font-weight:900;
+    .bottom-nav .active{
+      color:var(--blue);
     }
 
-    @media(max-width:720px){
-      .area-grid{
-        grid-template-columns:1fr 1fr;
-      }
+    .bottom-nav .active .ico{
+      background:var(--blue);
+      color:#fff;
     }
 
-    @media(max-width:480px){
-      .area-grid{
-        grid-template-columns:1fr;
-      }
+    @media(max-width:1050px){
+      .portal-shell{display:block;}
+      .sidebar{display:none;}
+      .main{padding:16px;}
+      .top-header{margin:-16px -16px 16px;padding:14px 16px;}
+      .mobile-logo{display:flex;}
+      .hello h1{font-size:20px;}
+      .bottom-nav{display:flex;}
+    }
+
+    @media(max-width:850px){
+      .cards-2{grid-template-columns:1fr;}
+      .kpi-grid{grid-template-columns:1fr;}
+      .quick-actions{grid-template-columns:repeat(2,1fr);}
+    }
+
+    @media(max-width:620px){
+      .main{padding:12px;}
+      .top-header{margin:-12px -12px 14px;padding:12px;}
+      .content{gap:16px;}
+      .metric-card,.area-card,.kpi-card{border-radius:18px;padding:14px;}
+      .big-percent strong{font-size:40px;}
+      .meta-grid{grid-template-columns:1fr;}
+      .area-kpis{grid-template-columns:repeat(2,1fr);}
+      .rank-cols{grid-template-columns:1fr;}
+      .kpi-toolbar{align-items:stretch;}
+      .field{width:100%;}
+      .filters{width:100%;}
     }
   </style>
 </head>
 
 <body>
-
-  <main class="container">
-    <section class="card">
-
-      <div class="header">
-        <div class="logo">GP</div>
+  <div class="portal-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-logo">GP</div>
         <div>
+          <h2>Jornada</h2>
+          <small>Portal do Analista</small>
+        </div>
+      </div>
+
+      <nav class="side-nav">
+        <a class="side-link active" href="#">Dashboard</a>
+        <a class="side-link" href="../html usuarios/criar-agenda.html">Criar Agenda</a>
+        <a class="side-link" href="../html usuarios/agenda.html">Agenda</a>
+        <a class="side-link" href="../html usuarios/treinamentos.html">Treinamentos</a>
+        <a class="side-link" href="../html usuarios/resultados.html">Resultados</a>
+        <a class="side-link" href="../html usuarios/biblioteca-treinamentos.html">Biblioteca</a>
+      </nav>
+
+      <div class="side-footer">
+        <button id="btnLogoutSide" class="logout-side" type="button">Sair do Sistema</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="top-header">
+        <div class="hello">
+          <small>Olá,</small>
           <h1 id="welcomeText">Carregando...</h1>
-          <p>Menu Principal</p>
         </div>
-      </div>
+        <div class="mobile-logo">GP</div>
+      </header>
 
-      <div class="divider"></div>
-
-      <div class="meta-wrap">
-        <div class="meta-card">
-          <div class="meta-title">
-            <h3>🎯 Meta do Mês Atual</h3>
-            <span id="statusAtual" class="meta-status">Carregando...</span>
-          </div>
-
-          <div class="meta-grid">
-            <div class="meta-row">
-              <span>CDs Presenciais</span>
-              <strong id="cdsAtual">0 / 3</strong>
-            </div>
-
-            <div class="meta-row">
-              <span>Treinamentos Vendedores</span>
-              <strong id="vendAtual">0 / 3</strong>
-            </div>
-
-            <div class="meta-row">
-              <span>Treinamentos Gestores</span>
-              <strong id="gestAtual">0 / 3</strong>
-            </div>
-
-            <div class="meta-row">
-              <span>Resultado Geral</span>
-              <strong id="percAtual">0%</strong>
+      <div class="content">
+        <section>
+          <div class="section-title">
+            <div>
+              <h3>Metas de Treinamento</h3>
+              <p>Presencial por mês: 3 CDs + 3 Vendedores + 3 Gestores.</p>
             </div>
           </div>
 
-          <div class="meta-progress">
-            <span id="barAtual"></span>
-          </div>
+          <div class="cards-2">
+            <div class="metric-card">
+              <div class="meta-head">
+                <div>
+                  <div id="periodoAtual" class="meta-period">-</div>
+                  <h3>Meta do Mês Atual</h3>
+                </div>
+                <span id="statusAtual" class="status-pill">Carregando...</span>
+              </div>
 
-          <div id="periodoAtual" class="meta-small"></div>
-        </div>
+              <div class="big-percent">
+                <strong id="percAtual">0%</strong>
+                <div class="progress"><span id="barAtual"></span></div>
+              </div>
 
-        <div class="meta-card">
-          <div class="meta-title">
-            <h3>📊 Meta do Mês Anterior</h3>
-            <span id="statusAnterior" class="meta-status">Carregando...</span>
-          </div>
-
-          <div class="meta-grid">
-            <div class="meta-row">
-              <span>CDs Presenciais</span>
-              <strong id="cdsAnterior">0 / 3</strong>
+              <div class="meta-grid">
+                <div class="mini-stat"><span>CDs presenciais</span><strong id="cdsAtual">0 / 3</strong></div>
+                <div class="mini-stat"><span>Vendedores</span><strong id="vendAtual">0 / 3</strong></div>
+                <div class="mini-stat"><span>Gestores</span><strong id="gestAtual">0 / 3</strong></div>
+              </div>
             </div>
 
-            <div class="meta-row">
-              <span>Treinamentos Vendedores</span>
-              <strong id="vendAnterior">0 / 3</strong>
-            </div>
+            <div class="metric-card">
+              <div class="meta-head">
+                <div>
+                  <div id="periodoAnterior" class="meta-period">-</div>
+                  <h3>Meta do Mês Anterior</h3>
+                </div>
+                <span id="statusAnterior" class="status-pill">Carregando...</span>
+              </div>
 
-            <div class="meta-row">
-              <span>Treinamentos Gestores</span>
-              <strong id="gestAnterior">0 / 3</strong>
-            </div>
+              <div class="big-percent">
+                <strong id="percAnterior">0%</strong>
+                <div class="progress"><span id="barAnterior"></span></div>
+              </div>
 
-            <div class="meta-row">
-              <span>Resultado Geral</span>
-              <strong id="percAnterior">0%</strong>
-            </div>
-          </div>
-
-          <div class="meta-progress">
-            <span id="barAnterior"></span>
-          </div>
-
-          <div id="periodoAnterior" class="meta-small"></div>
-        </div>
-      </div>
-
-      <div class="area-wrap">
-        <div class="area-card">
-          <div class="area-title">
-            <h3>📍 Resumo da Minha Área</h3>
-            <span id="statusArea" class="meta-status">Carregando...</span>
-          </div>
-
-          <div class="area-grid">
-            <div class="area-kpi">
-              <span>CDs sob responsabilidade</span>
-              <strong id="areaTotalCds">0</strong>
-            </div>
-
-            <div class="area-kpi">
-              <span>CDs com meta atingida</span>
-              <strong id="areaAtingidos">0</strong>
-            </div>
-
-            <div class="area-kpi">
-              <span>Visitas que faltam</span>
-              <strong id="areaFaltam">0</strong>
-            </div>
-
-            <div class="area-kpi">
-              <span>% da área</span>
-              <strong id="areaPercentual">0%</strong>
+              <div class="meta-grid">
+                <div class="mini-stat"><span>CDs presenciais</span><strong id="cdsAnterior">0 / 3</strong></div>
+                <div class="mini-stat"><span>Vendedores</span><strong id="vendAnterior">0 / 3</strong></div>
+                <div class="mini-stat"><span>Gestores</span><strong id="gestAnterior">0 / 3</strong></div>
+              </div>
             </div>
           </div>
+        </section>
 
-          <div class="area-table-wrap">
-            <table class="area-table">
+        <section class="area-card">
+          <div class="section-title">
+            <div>
+              <h3>Resumo da Minha Área</h3>
+              <p>CDs sob sua responsabilidade e meta anual de 2 visitas presenciais.</p>
+            </div>
+            <span id="statusArea" class="status-pill">Carregando...</span>
+          </div>
+
+          <div class="area-kpis">
+            <div class="area-kpi primary"><span>CDs responsáveis</span><strong id="areaTotalCds">0</strong></div>
+            <div class="area-kpi"><span>Meta atingida</span><strong id="areaAtingidos">0</strong></div>
+            <div class="area-kpi"><span>Faltam visitas</span><strong id="areaFaltam">0</strong></div>
+            <div class="area-kpi"><span>% da área</span><strong id="areaPercentual">0%</strong></div>
+          </div>
+
+          <div class="table-scroll">
+            <table class="portal-table">
               <thead>
                 <tr>
                   <th>CD</th>
@@ -342,53 +750,69 @@
                 </tr>
               </thead>
               <tbody id="tbodyArea">
-                <tr>
-                  <td colspan="6">Carregando...</td>
-                </tr>
+                <tr><td colspan="6">Carregando...</td></tr>
               </tbody>
             </table>
           </div>
+        </section>
 
-          <div class="meta-small">
-            Regra: cada CD deve receber pelo menos 2 visitas presenciais no ano. Conta 1 visita por mês com treinamento presencial.
+        <section>
+          <div class="kpi-toolbar">
+            <div class="section-title" style="margin-bottom:0;">
+              <div>
+                <h3>Ranking KPIs dos Supervisores</h3>
+                <p>Top 5 e Bottom 5 dos supervisores dos CDs da sua área.</p>
+              </div>
+              <span id="statusKpi" class="status-pill">Carregando...</span>
+            </div>
+
+            <div class="filters">
+              <div class="field">
+                <label for="mesKpiFiltro">Mês</label>
+                <select id="mesKpiFiltro">
+                  <option value="">Carregando...</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label for="cdKpiFiltro">CD</label>
+                <select id="cdKpiFiltro">
+                  <option value="">Todos os CDs</option>
+                </select>
+              </div>
+            </div>
           </div>
-        </div>
+
+          <div id="kpiGrid" class="kpi-grid"></div>
+        </section>
+
+        <section>
+          <div class="section-title">
+            <div>
+              <h3>Acesso Rápido</h3>
+              <p>Principais telas do portal.</p>
+            </div>
+          </div>
+
+          <div class="quick-actions">
+            <button class="quick-btn" onclick="goTo('../html usuarios/criar-agenda.html')">Criar Agenda</button>
+            <button class="quick-btn" onclick="goTo('../html usuarios/agenda.html')">Agenda</button>
+            <button class="quick-btn" onclick="goTo('../html usuarios/treinamentos.html')">Treinamentos</button>
+            <button class="quick-btn" onclick="goTo('../html usuarios/resultados.html')">Resultados</button>
+            <button class="quick-btn" onclick="goTo('../html usuarios/biblioteca-treinamentos.html')">Biblioteca</button>
+          </div>
+        </section>
       </div>
+    </main>
+  </div>
 
-      <div class="divider"></div>
-
-      <div class="menu-buttons">
-
-        <button class="menu-btn" onclick="goTo('../html usuarios/criar-agenda.html')">
-          Criar Agenda
-        </button>
-
-        <button class="menu-btn" onclick="goTo('../html usuarios/agenda.html')">
-          Agenda
-        </button>
-
-        <button class="menu-btn" onclick="goTo('../html usuarios/treinamentos.html')">
-          Treinamentos Realizados
-        </button>
-
-        <button class="menu-btn" onclick="goTo('../html usuarios/resultados.html')">
-          Resultados dos Treinamentos
-        </button>
-
-        <button class="menu-btn" onclick="goTo('../html usuarios/biblioteca-treinamentos.html')">
-          Biblioteca de Treinamentos
-        </button>
-
-      </div>
-
-      <div class="divider"></div>
-
-      <button id="btnLogout" class="btn-logout" type="button">
-        Sair
-      </button>
-
-    </section>
-  </main>
+  <nav class="bottom-nav">
+    <a class="active" href="#"><span class="ico">D</span><span>Dash</span></a>
+    <a href="../html usuarios/agenda.html"><span class="ico">A</span><span>Agenda</span></a>
+    <a href="../html usuarios/treinamentos.html"><span class="ico">T</span><span>Treinos</span></a>
+    <a href="../html usuarios/biblioteca-treinamentos.html"><span class="ico">B</span><span>Biblioteca</span></a>
+    <button id="btnLogoutMobile" type="button"><span class="ico">S</span><span>Sair</span></button>
+  </nav>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
@@ -413,13 +837,32 @@
     const db = getFirestore(app);
 
     const welcomeText = document.getElementById("welcomeText");
-    const btnLogout = document.getElementById("btnLogout");
+    const btnLogoutSide = document.getElementById("btnLogoutSide");
+    const btnLogoutMobile = document.getElementById("btnLogoutMobile");
+    const mesKpiFiltro = document.getElementById("mesKpiFiltro");
+    const cdKpiFiltro = document.getElementById("cdKpiFiltro");
+    const kpiGrid = document.getElementById("kpiGrid");
+    const statusKpi = document.getElementById("statusKpi");
+
+    let MEUS_CDS = [];
+    let KPIS_CACHE = [];
+
+    const KPI_BASE = [
+      { nome:"1000ML", aliases:["1000ml","1000"] },
+      { nome:"300ML", aliases:["300ml","300"] },
+      { nome:"600ML", aliases:["600ml","600"] },
+      { nome:"Cobertura GP", aliases:["cobertura gp","cob gp"] },
+      { nome:"Eficiência de Visitas", aliases:["eficiencia de visitas","eficiencia visitas","ef visita"] },
+      { nome:"HL Retornáveis", aliases:["hl retornaveis","hl retornável","retornaveis"] },
+      { nome:"HL Total", aliases:["hl total","hl geral"] },
+      { nome:"Ocorrências", aliases:["ocorrencias","ocorrência"] }
+    ];
 
     function safeParse(raw){
       try { return JSON.parse(raw); } catch { return null; }
     }
 
-    function slug(s) {
+    function slug(s){
       return (s || "")
         .toLowerCase()
         .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
@@ -449,70 +892,56 @@
 
     function getCurrentUser(){
       const rawSession = localStorage.getItem("user_session");
-      if (rawSession) {
+
+      if(rawSession){
         const s = safeParse(rawSession);
-        if (s?.nome) return { nome: s.nome };
+        if(s?.nome) return { nome: String(s.nome).trim() };
+        if(s?.usuario) return { nome: String(s.usuario).trim() };
+        if(s?.name) return { nome: String(s.name).trim() };
       }
 
-      const u = (localStorage.getItem("usuarioLogado") || "").trim();
-      if (u) return { nome: u };
+      const usuarioLogado = (localStorage.getItem("usuarioLogado") || "").trim();
+      if(usuarioLogado) return { nome: usuarioLogado };
+
+      const analistaLogado = (localStorage.getItem("analistaLogado") || "").trim();
+      if(analistaLogado) return { nome: analistaLogado };
+
+      const usuarioSelecionado = (localStorage.getItem("usuarioSelecionado") || "").trim();
+      if(usuarioSelecionado) return { nome: usuarioSelecionado };
 
       return null;
     }
 
     const user = getCurrentUser();
 
-    if (!user) {
+    if(!user || !user.nome){
       window.location.href = "../index.html";
-    } else {
-      welcomeText.textContent = `Olá, ${user.nome}`;
+      throw new Error("Usuário não encontrado no localStorage.");
     }
 
-    window.goTo = function(page) {
+    welcomeText.textContent = user.nome;
+
+    window.goTo = function(page){
       window.location.href = page;
     };
 
-    btnLogout.addEventListener("click", () => {
+    function logout(){
       localStorage.removeItem("usuarioLogado");
       localStorage.removeItem("user_session");
+      localStorage.removeItem("analistaLogado");
+      localStorage.removeItem("usuarioSelecionado");
       window.location.href = "../index.html";
-    });
+    }
+
+    btnLogoutSide?.addEventListener("click", logout);
+    btnLogoutMobile?.addEventListener("click", logout);
 
     function mesNome(mes){
-      const nomes = [
-        "",
-        "Janeiro",
-        "Fevereiro",
-        "Março",
-        "Abril",
-        "Maio",
-        "Junho",
-        "Julho",
-        "Agosto",
-        "Setembro",
-        "Outubro",
-        "Novembro",
-        "Dezembro"
-      ];
-
+      const nomes = ["","Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
       return nomes[mes] || "-";
     }
 
-    const MESES_CURTOS = [
-      "",
-      "Jan",
-      "Fev",
-      "Mar",
-      "Abr",
-      "Mai",
-      "Jun",
-      "Jul",
-      "Ago",
-      "Set",
-      "Out",
-      "Nov",
-      "Dez"
-    ];
+    const MESES_CURTOS = ["","Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
 
     function getMesAtualAnterior(){
       const hoje = new Date();
@@ -534,34 +963,25 @@
 
     function calculaMeta(registros, ano, mes){
       const filtrados = registros.filter(item => {
-        if (!item.data) return false;
+        if(!item.data) return false;
 
-        const [y, m] = String(item.data).split("-").map(Number);
-
-        const tipo = String(item.tipoTreinamento || "").toLowerCase();
-        const publico = String(item.publico || "").toLowerCase();
+        const [y,m] = String(item.data).split("-").map(Number);
+        const tipo = normalizeKey(item.tipoTreinamento);
+        const publico = normalizeKey(item.publico);
 
         return y === ano &&
           m === mes &&
           tipo === "presencial" &&
-          ["gestor", "vendedor"].includes(publico);
+          ["gestor","vendedor"].includes(publico);
       });
 
       const cdsUnicos = new Set(
-        filtrados
-          .map(x => String(x.cd || "").trim())
-          .filter(Boolean)
+        filtrados.map(x => normalize(x.cd)).filter(Boolean)
       );
 
       const qtdCds = cdsUnicos.size;
-
-      const qtdVendedor = filtrados.filter(x =>
-        String(x.publico || "").toLowerCase() === "vendedor"
-      ).length;
-
-      const qtdGestor = filtrados.filter(x =>
-        String(x.publico || "").toLowerCase() === "gestor"
-      ).length;
+      const qtdVendedor = filtrados.filter(x => normalizeKey(x.publico) === "vendedor").length;
+      const qtdGestor = filtrados.filter(x => normalizeKey(x.publico) === "gestor").length;
 
       const percCds = Math.min(qtdCds / 3, 1) * 100;
       const percVend = Math.min(qtdVendedor / 3, 1) * 100;
@@ -569,23 +989,18 @@
 
       const resultado = Math.round((percCds + percVend + percGest) / 3);
 
-      return {
-        qtdCds,
-        qtdVendedor,
-        qtdGestor,
-        resultado
-      };
+      return { qtdCds, qtdVendedor, qtdGestor, resultado };
     }
 
     function statusClass(resultado){
-      if (resultado >= 100) return "ok";
-      if (resultado >= 80) return "warn";
+      if(resultado >= 100) return "ok";
+      if(resultado >= 80) return "warn";
       return "bad";
     }
 
     function statusTexto(resultado){
-      if (resultado >= 100) return "Meta Atingida";
-      if (resultado >= 80) return "Em andamento";
+      if(resultado >= 100) return "Meta Atingida";
+      if(resultado >= 80) return "Em andamento";
       return "Atenção";
     }
 
@@ -594,11 +1009,11 @@
       document.getElementById(`vend${prefixo}`).textContent = `${dados.qtdVendedor} / 3`;
       document.getElementById(`gest${prefixo}`).textContent = `${dados.qtdGestor} / 3`;
       document.getElementById(`perc${prefixo}`).textContent = `${dados.resultado}%`;
-      document.getElementById(`bar${prefixo}`).style.width = `${Math.min(dados.resultado, 100)}%`;
+      document.getElementById(`bar${prefixo}`).style.width = `${Math.min(dados.resultado,100)}%`;
 
       const status = document.getElementById(`status${prefixo}`);
       status.textContent = statusTexto(dados.resultado);
-      status.className = `meta-status ${statusClass(dados.resultado)}`;
+      status.className = `status-pill ${statusClass(dados.resultado)}`;
 
       document.getElementById(`periodo${prefixo}`).textContent =
         `${mesNome(periodo.mes)} / ${periodo.ano}`;
@@ -608,30 +1023,23 @@
       try{
         const usuarioKey = slug(user.nome);
 
-        const q = query(
+        const qMeta = query(
           collection(db, "treinamentos_realizados"),
           where("uidKey", "==", usuarioKey)
         );
 
-        const snap = await getDocs(q);
+        const snap = await getDocs(qMeta);
 
         const registros = [];
-        snap.forEach(docSnap => registros.push({
-          id: docSnap.id,
-          ...docSnap.data()
-        }));
+        snap.forEach(docSnap => registros.push({ id:docSnap.id, ...docSnap.data() }));
 
         const { atual, anterior } = getMesAtualAnterior();
 
-        const metaAtual = calculaMeta(registros, atual.ano, atual.mes);
-        const metaAnterior = calculaMeta(registros, anterior.ano, anterior.mes);
-
-        renderMeta("Atual", metaAtual, atual);
-        renderMeta("Anterior", metaAnterior, anterior);
+        renderMeta("Atual", calculaMeta(registros, atual.ano, atual.mes), atual);
+        renderMeta("Anterior", calculaMeta(registros, anterior.ano, anterior.mes), anterior);
 
       }catch(e){
         console.error(e);
-
         document.getElementById("statusAtual").textContent = "Erro";
         document.getElementById("statusAnterior").textContent = "Erro";
       }
@@ -639,14 +1047,9 @@
 
     function getAnoMes(data){
       if(!data) return { ano:null, mes:null };
-
       const p = String(data).split("-");
       if(p.length < 2) return { ano:null, mes:null };
-
-      return {
-        ano:Number(p[0]),
-        mes:Number(p[1])
-      };
+      return { ano:Number(p[0]), mes:Number(p[1]) };
     }
 
     function isPresencial(item){
@@ -674,9 +1077,17 @@
 
     function renderAreaErro(){
       document.getElementById("statusArea").textContent = "Erro";
-      document.getElementById("statusArea").className = "meta-status bad";
+      document.getElementById("statusArea").className = "status-pill bad";
       document.getElementById("tbodyArea").innerHTML =
         `<tr><td colspan="6">Erro ao carregar resumo da área.</td></tr>`;
+    }
+
+    function popularFiltroCds(){
+      cdKpiFiltro.innerHTML =
+        `<option value="">Todos os CDs</option>` +
+        MEUS_CDS.map(cd =>
+          `<option value="${escapeHtml(cd)}">${escapeHtml(cd)}</option>`
+        ).join("");
     }
 
     async function carregarResumoArea(){
@@ -701,10 +1112,12 @@
           }
         });
 
-        const cdsUnicos = Array.from(new Set(meusCds))
+        MEUS_CDS = Array.from(new Set(meusCds))
           .sort((a,b) => a.localeCompare(b,"pt-BR"));
 
-        if(cdsUnicos.length === 0){
+        popularFiltroCds();
+
+        if(MEUS_CDS.length === 0){
           document.getElementById("areaTotalCds").textContent = "0";
           document.getElementById("areaAtingidos").textContent = "0";
           document.getElementById("areaFaltam").textContent = "0";
@@ -712,7 +1125,7 @@
 
           const status = document.getElementById("statusArea");
           status.textContent = "Sem CDs";
-          status.className = "meta-status warn";
+          status.className = "status-pill warn";
 
           document.getElementById("tbodyArea").innerHTML =
             `<tr><td colspan="6">Nenhum CD vinculado ao seu usuário ainda.</td></tr>`;
@@ -724,12 +1137,8 @@
 
         const mapa = new Map();
 
-        cdsUnicos.forEach(cd => {
-          mapa.set(cd, {
-            cd,
-            meses:new Set(),
-            totalTreinos:0
-          });
+        MEUS_CDS.forEach(cd => {
+          mapa.set(cd, { cd, meses:new Set(), totalTreinos:0 });
         });
 
         snapTreinos.forEach(docSnap => {
@@ -744,7 +1153,6 @@
           if(ano !== anoAtual || !mes) return;
 
           const ref = mapa.get(cd);
-
           ref.meses.add(mes);
           ref.totalTreinos++;
         });
@@ -759,13 +1167,7 @@
             .map(m => MESES_CURTOS[m] || m)
             .join(", ") || "-";
 
-          return {
-            ...item,
-            visitas,
-            faltam,
-            pct,
-            mesesTexto
-          };
+          return { ...item, visitas, faltam, pct, mesesTexto };
         }).sort((a,b) =>
           b.faltam - a.faltam ||
           a.visitas - b.visitas ||
@@ -785,7 +1187,7 @@
 
         const status = document.getElementById("statusArea");
         status.textContent = percArea >= 100 ? "Meta Atingida" : "Em andamento";
-        status.className = `meta-status ${percArea >= 100 ? "ok" : "warn"}`;
+        status.className = `status-pill ${percArea >= 100 ? "ok" : "warn"}`;
 
         document.getElementById("tbodyArea").innerHTML = linhas.map(item => `
           <tr>
@@ -804,9 +1206,166 @@
       }
     }
 
-    carregarMetas();
-    carregarResumoArea();
-  </script>
+    function kpiMatches(base, kpi){
+      const k = normalizeKey(kpi);
+      return base.aliases.some(a => k.includes(normalizeKey(a)));
+    }
 
+    function formatPct(v){
+      if(v === null || v === undefined || v === "") return "-";
+      return `${Number(v).toFixed(1).replace(".",",")}%`;
+    }
+
+    function renderKpiLine(item, idx){
+      return `
+        <div class="rank-row">
+          <div class="rank-n">${idx + 1}</div>
+
+          <div class="rank-info">
+            <div class="rank-name">${escapeHtml(item.supervisor || "-")}</div>
+            <div class="rank-cd">${escapeHtml(item.cd || "-")}</div>
+            <div class="rank-meta">
+              Meta: ${Number(item.meta || 0).toLocaleString("pt-BR")} |
+              Real: ${Number(item.real || 0).toLocaleString("pt-BR")}
+            </div>
+          </div>
+
+          <div class="rank-value">${formatPct(item.percentual)}</div>
+        </div>
+      `;
+    }
+
+    function renderKpis(){
+      const mesKey = mesKpiFiltro.value;
+
+      if(!mesKey){
+        kpiGrid.innerHTML = `<div class="empty">Nenhum mês disponível ainda.</div>`;
+        statusKpi.textContent = "Sem dados";
+        statusKpi.className = "status-pill warn";
+        return;
+      }
+
+      const meusSet = new Set(MEUS_CDS.map(normalizeKey));
+      const cdSelecionado = cdKpiFiltro.value;
+
+      const baseMes = KPIS_CACHE.filter(x =>
+        x.mesKey === mesKey &&
+        meusSet.has(normalizeKey(x.cd)) &&
+        (!cdSelecionado || normalize(x.cd) === cdSelecionado)
+      );
+
+      statusKpi.textContent = baseMes.length ? `${baseMes.length} registros` : "Sem dados";
+      statusKpi.className = `status-pill ${baseMes.length ? "ok" : "warn"}`;
+
+      kpiGrid.innerHTML = KPI_BASE.map(kpiBase => {
+        const lista = baseMes
+          .filter(x => kpiMatches(kpiBase, x.kpi))
+          .filter(x => Number.isFinite(Number(x.percentual)));
+
+        const menorMelhor = normalizeKey(kpiBase.nome).includes("ocorrencia");
+
+        const ordenadoTop = [...lista].sort((a,b) =>
+          menorMelhor
+            ? Number(a.percentual) - Number(b.percentual)
+            : Number(b.percentual) - Number(a.percentual)
+        );
+
+        const ordenadoBottom = [...lista].sort((a,b) =>
+          menorMelhor
+            ? Number(b.percentual) - Number(a.percentual)
+            : Number(a.percentual) - Number(b.percentual)
+        );
+
+        const top5 = ordenadoTop.slice(0,5);
+
+        const bottom5 = menorMelhor
+          ? ordenadoBottom.slice(0,5)
+          : ordenadoBottom
+              .filter(x => Number(x.percentual) >= 10)
+              .slice(0,5);
+
+        return `
+          <div class="kpi-card">
+            <div class="kpi-card-head">
+              <h4>${escapeHtml(kpiBase.nome)}</h4>
+              <span class="kpi-count">${lista.length} SVs</span>
+            </div>
+
+            <div class="rank-cols">
+              <div>
+                <div class="rank-title">
+                  ${menorMelhor ? "Top 5 menor resultado" : "Top 5 maior resultado"}
+                </div>
+                <div class="rank-box">
+                  ${top5.length ? top5.map(renderKpiLine).join("") : `<div class="empty">Sem dados</div>`}
+                </div>
+              </div>
+
+              <div>
+                <div class="rank-title">
+                  ${menorMelhor ? "Bottom 5 maior resultado" : "Bottom 5 menor resultado"}
+                </div>
+                <div class="rank-box">
+                  ${bottom5.length ? bottom5.map(renderKpiLine).join("") : `<div class="empty">Sem dados</div>`}
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    async function carregarKpisSupervisores(){
+      try{
+        statusKpi.textContent = "Carregando...";
+        statusKpi.className = "status-pill warn";
+
+        const qKpi = query(
+          collection(db, "apuracoes_treinamentos"),
+          where("tipo", "==", "kpi_supervisor_mes")
+        );
+
+        const snap = await getDocs(qKpi);
+
+        const arr = [];
+        snap.forEach(d => arr.push({ id:d.id, ...d.data() }));
+
+        KPIS_CACHE = arr;
+
+        const meses = Array.from(
+          new Map(
+            arr
+              .filter(x => x.mesKey && x.mesLabel)
+              .map(x => [x.mesKey, x.mesLabel])
+          ).entries()
+        ).sort((a,b) => b[0].localeCompare(a[0]));
+
+        if(meses.length === 0){
+          mesKpiFiltro.innerHTML = `<option value="">Sem meses importados</option>`;
+          renderKpis();
+          return;
+        }
+
+        mesKpiFiltro.innerHTML = meses
+          .map(([key,label]) => `<option value="${escapeHtml(key)}">${escapeHtml(label)}</option>`)
+          .join("");
+
+        renderKpis();
+
+      }catch(e){
+        console.error(e);
+        statusKpi.textContent = "Erro";
+        statusKpi.className = "status-pill bad";
+        kpiGrid.innerHTML = `<div class="empty">Erro ao carregar KPIs.</div>`;
+      }
+    }
+
+    mesKpiFiltro.addEventListener("change", renderKpis);
+    cdKpiFiltro.addEventListener("change", renderKpis);
+
+    await carregarMetas();
+    await carregarResumoArea();
+    await carregarKpisSupervisores();
+  </script>
 </body>
 </html>
