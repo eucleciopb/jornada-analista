@@ -1,0 +1,787 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Importar KPIs | Jornada</title>
+  <link rel="stylesheet" href="../css/styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <style>
+    body{
+      margin:0;
+      background:#f6f8fb;
+      color:#0f172a;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    }
+
+    .topbar{
+      background:#fff;
+      border-bottom:1px solid #e5e7eb;
+      padding:18px 22px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      position:sticky;
+      top:0;
+      z-index:10;
+    }
+
+    .topbar h2{margin:0;font-size:20px;}
+    .hint{font-size:13px;color:#64748b;margin-top:4px;}
+
+    .top-actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    button{
+      border:none;
+      border-radius:14px;
+      padding:11px 14px;
+      font-weight:900;
+      cursor:pointer;
+      background:#e2e8f0;
+      color:#0f172a;
+    }
+
+    button.primary{background:#1d4ed8;color:#fff;}
+    button.danger{background:#fee2e2;color:#991b1b;}
+    button:disabled{opacity:.55;cursor:not-allowed;}
+
+    main{
+      max-width:1280px;
+      margin:0 auto;
+      padding:22px;
+      display:grid;
+      gap:18px;
+    }
+
+    .card{
+      background:#fff;
+      border:1px solid #e5e7eb;
+      border-radius:22px;
+      box-shadow:0 16px 45px rgba(15,23,42,.08);
+      padding:18px;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:14px;
+    }
+
+    label{
+      display:block;
+      font-size:12px;
+      font-weight:900;
+      text-transform:uppercase;
+      color:#64748b;
+      margin-bottom:6px;
+    }
+
+    select,input{
+      width:100%;
+      border:1px solid #dbe1ea;
+      border-radius:14px;
+      padding:12px;
+      font-weight:800;
+      background:#fff;
+      color:#0f172a;
+    }
+
+    .summary{
+      display:grid;
+      grid-template-columns:repeat(5,1fr);
+      gap:12px;
+    }
+
+    .kpi{
+      background:#f8fafc;
+      border:1px solid #eef2f7;
+      border-radius:18px;
+      padding:14px;
+    }
+
+    .kpi span{
+      display:block;
+      font-size:11px;
+      font-weight:900;
+      color:#64748b;
+      text-transform:uppercase;
+      margin-bottom:5px;
+    }
+
+    .kpi strong{
+      font-size:26px;
+      letter-spacing:-1px;
+    }
+
+    .msg{
+      font-size:13px;
+      font-weight:800;
+      margin:0;
+      color:#334155;
+    }
+
+    .msg.ok{color:#166534;}
+    .msg.err{color:#991b1b;}
+
+    .table-wrap{
+      overflow:auto;
+      border:1px solid #e5e7eb;
+      border-radius:18px;
+      max-height:520px;
+    }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+      min-width:980px;
+      font-size:12px;
+    }
+
+    th,td{
+      padding:10px 12px;
+      border-bottom:1px solid #eef2f7;
+      text-align:left;
+      white-space:nowrap;
+    }
+
+    th{
+      background:#f8fafc;
+      font-weight:900;
+      color:#334155;
+      position:sticky;
+      top:0;
+      z-index:1;
+    }
+
+    .badge{
+      display:inline-flex;
+      padding:5px 8px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:900;
+      background:#e0f2fe;
+      color:#075985;
+    }
+
+    @media(max-width:850px){
+      main{padding:14px;}
+      .topbar{align-items:flex-start;flex-direction:column;}
+      .grid,.summary{grid-template-columns:1fr;}
+    }
+  </style>
+</head>
+
+<body>
+  <header class="topbar">
+    <div>
+      <h2>Importar KPIs</h2>
+      <div id="userInfo" class="hint">Carregando usuário...</div>
+    </div>
+
+    <div class="top-actions">
+      <button type="button" onclick="window.location.href='../html menus/menuadm.html'">Voltar ao Menu</button>
+      <button id="btnLogout" type="button" class="danger">Sair</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="card">
+      <h3 style="margin:0 0 6px;">Carga de KPIs por CD ou Supervisor</h3>
+      <p class="hint">
+        A planilha pode conter vários meses. O sistema usa <b>MesKey + CD + KPI + Tipo</b> como chave única.
+        Se já existir, atualiza. Se não existir, cria.
+      </p>
+
+      <div class="grid" style="margin-top:16px;">
+        <div>
+          <label for="tipoImportacao">Tipo de Importação</label>
+          <select id="tipoImportacao">
+            <option value="kpi_cd_mes" selected>KPIs CDs</option>
+            <option value="kpi_supervisor_mes">KPIs Supervisores</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="arquivoExcel">Arquivo Excel</label>
+          <input id="arquivoExcel" type="file" accept=".xlsx,.xls" />
+        </div>
+
+        <div>
+          <label>Ações</label>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button id="btnValidar" type="button">Validar</button>
+            <button id="btnImportar" type="button" class="primary" disabled>Importar</button>
+            <button id="btnExcluirTudo" type="button" class="danger">Excluir Tudo</button>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <label style="font-size:12px;font-weight:900;color:#64748b;margin:0;">Importados</label>
+              <strong id="contadorImportados">0</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="summary">
+      <div class="kpi"><span>Registros</span><strong id="totalRegistros">0</strong></div>
+      <div class="kpi"><span>Meses</span><strong id="totalMeses">0</strong></div>
+      <div class="kpi"><span>CDs</span><strong id="totalCds">0</strong></div>
+      <div class="kpi"><span>KPIs</span><strong id="totalKpis">0</strong></div>
+      <div class="kpi"><span>Erros</span><strong id="totalErros">0</strong></div>
+    </section>
+
+    <section class="card">
+      <p id="msg" class="msg">Selecione um arquivo Excel para começar.</p>
+    </section>
+
+    <section class="card">
+      <h3 style="margin:0 0 12px;">Preview da Importação</h3>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Status</th>
+              <th>Mês Key</th>
+              <th>Mês</th>
+              <th>CD</th>
+              <th>Supervisor</th>
+              <th>KPI</th>
+              <th>Meta</th>
+              <th>Real</th>
+              <th>%</th>
+              <th>Erro</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyPreview">
+            <tr><td colspan="10">Nenhum arquivo validado.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import {
+      getFirestore,
+      doc,
+      setDoc,
+      serverTimestamp,
+      collection,
+      query,
+      where,
+      getDocs,
+      writeBatch
+    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
+      authDomain: "jornada-portal.firebaseapp.com",
+      projectId: "jornada-portal",
+      storageBucket: "jornada-portal.firebasestorage.app",
+      messagingSenderId: "669362296644",
+      appId: "1:669362296644:web:f590d9834a8e4e60012911"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const COLLECTION = "apuracoes_treinamentos";
+
+    const tipoImportacao = document.getElementById("tipoImportacao");
+    const arquivoExcel = document.getElementById("arquivoExcel");
+    const btnValidar = document.getElementById("btnValidar");
+    const btnImportar = document.getElementById("btnImportar");
+    const btnExcluirTudo = document.getElementById("btnExcluirTudo");
+    const btnLogout = document.getElementById("btnLogout");
+    const tbodyPreview = document.getElementById("tbodyPreview");
+    const msg = document.getElementById("msg");
+    const userInfo = document.getElementById("userInfo");
+
+    const contadorImportados = document.getElementById("contadorImportados");
+
+    const totalRegistros = document.getElementById("totalRegistros");
+    const totalMeses = document.getElementById("totalMeses");
+    const totalCds = document.getElementById("totalCds");
+    const totalKpis = document.getElementById("totalKpis");
+    const totalErros = document.getElementById("totalErros");
+
+    let DADOS_VALIDOS = [];
+    let DADOS_PREVIEW = [];
+
+    const KPIS_VALIDOS = [
+      "1000ML",
+      "300ML",
+      "600ML",
+      "COBERTURA GP",
+      "EFICIENCIA DE VISITAS",
+      "HL RETORNAVEIS",
+      "HL TOTAL",
+      "OCORRENCIAS"
+    ];
+
+    function safeParse(raw){
+      try{return JSON.parse(raw);}catch{return null;}
+    }
+
+    function getUsuario(){
+      const raw = localStorage.getItem("user_session");
+      if(raw){
+        const s = safeParse(raw);
+        if(s?.nome) return String(s.nome).trim();
+      }
+
+      return (localStorage.getItem("usuarioLogado") || "Admin").trim();
+    }
+
+    const usuario = getUsuario();
+    userInfo.textContent = `Usuário: ${usuario}`;
+
+    btnLogout.addEventListener("click", () => {
+      localStorage.removeItem("usuarioLogado");
+      localStorage.removeItem("user_session");
+      window.location.href = "../index.html";
+    });
+
+    function setMsg(text, type="info"){
+      msg.textContent = text;
+      msg.className = `msg ${type}`;
+    }
+
+    function normalize(s){
+      return String(s ?? "").replace(/\s+/g," ").trim();
+    }
+
+    function normalizeKey(s){
+      return normalize(s)
+        .toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+        .replace(/[^a-z0-9]+/g,"");
+    }
+
+    function escapeHtml(value){
+      return String(value ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    function toNumber(value){
+      if(value === null || value === undefined || value === "") return null;
+
+      if(typeof value === "number") return value;
+
+      let s = String(value)
+        .replace("%","")
+        .replace(/\./g,"")
+        .replace(",",".")
+        .trim();
+
+      const n = Number(s);
+
+      return Number.isFinite(n) ? n : null;
+    }
+
+    function getField(row, names){
+      const keys = Object.keys(row);
+
+      for(const wanted of names){
+        const found = keys.find(k => normalizeKey(k) === normalizeKey(wanted));
+        if(found) return row[found];
+      }
+
+      return "";
+    }
+
+    function mesLabelFromKey(mesKey){
+      const meses = {
+        "01":"Jan",
+        "02":"Fev",
+        "03":"Mar",
+        "04":"Abr",
+        "05":"Mai",
+        "06":"Jun",
+        "07":"Jul",
+        "08":"Ago",
+        "09":"Set",
+        "10":"Out",
+        "11":"Nov",
+        "12":"Dez"
+      };
+
+      const [ano, mes] = String(mesKey || "").split("-");
+      if(!ano || !mes) return "";
+
+      return `${meses[mes] || mes}/${String(ano).slice(-2)}`;
+    }
+
+    function normalizeMesKey(value){
+      const raw = normalize(value);
+
+      if(/^\d{4}-\d{2}$/.test(raw)) return raw;
+
+      const lower = raw
+        .toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+
+      const mapa = {
+        jan:"01",
+        janeiro:"01",
+        fev:"02",
+        fevereiro:"02",
+        mar:"03",
+        marco:"03",
+        abr:"04",
+        abril:"04",
+        mai:"05",
+        maio:"05",
+        jun:"06",
+        junho:"06",
+        jul:"07",
+        julho:"07",
+        ago:"08",
+        agosto:"08",
+        set:"09",
+        setembro:"09",
+        out:"10",
+        outubro:"10",
+        nov:"11",
+        novembro:"11",
+        dez:"12",
+        dezembro:"12"
+      };
+
+      const parts = lower.split(/[\/\-\s]+/).filter(Boolean);
+
+      if(parts.length >= 2){
+        const mes = mapa[parts[0]];
+        let ano = parts[1];
+
+        if(mes){
+          if(ano.length === 2) ano = `20${ano}`;
+          if(ano.length === 4) return `${ano}-${mes}`;
+        }
+      }
+
+      return "";
+    }
+
+    function normalizeKpi(value){
+      const key = normalizeKey(value);
+
+      const mapa = {
+        "1000ml":"1000ML",
+        "1000":"1000ML",
+        "300ml":"300ML",
+        "300":"300ML",
+        "600ml":"600ML",
+        "600":"600ML",
+        "coberturagp":"Cobertura GP",
+        "cobgp":"Cobertura GP",
+        "eficienciadevisitas":"Eficiência de Visitas",
+        "eficienciavisitas":"Eficiência de Visitas",
+        "efvisita":"Eficiência de Visitas",
+        "hlretornaveis":"HL Retornáveis",
+        "hlretornavel":"HL Retornáveis",
+        "hltotal":"HL Total",
+        "hlgeral":"HL Total",
+        "ocorrencias":"Ocorrências",
+        "ocorrencia":"Ocorrências"
+      };
+
+      return mapa[key] || normalize(value);
+    }
+
+    function slugId(s){
+      return normalize(s)
+        .toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+        .replace(/[^a-z0-9]+/g,"-")
+        .replace(/(^-|-$)/g,"");
+    }
+
+    function montarDocId(item){
+      const partes = [
+        item.tipo,
+        item.mesKey,
+        item.cd,
+        item.supervisor || "geral",
+        item.kpi
+      ];
+
+      return partes.map(slugId).join("__");
+    }
+
+    function validarLinha(row, index){
+      const tipo = tipoImportacao.value;
+
+      const mesKeyRaw = getField(row, ["MesKey", "Mês Key", "Mes Key", "mesKey", "mes"]);
+      const mesLabelRaw = getField(row, ["MesLabel", "Mês", "Mes", "mesLabel"]);
+      const cdRaw = getField(row, ["CD", "cd", "Centro", "Centro Distribuição", "Centro de Distribuição"]);
+      const supervisorRaw = getField(row, ["Supervisor", "SV", "Nome SV", "Nome Supervisor"]);
+      const kpiRaw = getField(row, ["KPI", "Indicador", "Regra"]);
+      const metaRaw = getField(row, ["Meta", "META"]);
+      const realRaw = getField(row, ["Real", "REAL", "Realizado", "REALIZADO"]);
+      const percentualRaw = getField(row, ["Percentual", "%", "% Real x Meta", "Resultado", "% Resultado"]);
+
+      const mesKey = normalizeMesKey(mesKeyRaw || mesLabelRaw);
+      const mesLabel = normalize(mesLabelRaw) || mesLabelFromKey(mesKey);
+      const cd = normalize(cdRaw);
+      const supervisor = normalize(supervisorRaw);
+      const kpi = normalizeKpi(kpiRaw);
+
+      const meta = toNumber(metaRaw);
+      const real = toNumber(realRaw);
+      const percentual = toNumber(percentualRaw);
+
+      const erros = [];
+
+      if(!mesKey) erros.push("Mês inválido");
+      if(!cd) erros.push("CD vazio");
+      if(!kpi) erros.push("KPI vazio");
+
+      const kpiOk = KPIS_VALIDOS.includes(
+        normalizeKey(kpi).toUpperCase()
+          .replace("EFICIENCIADEVISITAS","EFICIENCIA DE VISITAS")
+          .replace("COBERTURAGP","COBERTURA GP")
+          .replace("HLRETORNAVEIS","HL RETORNAVEIS")
+          .replace("HLTOTAL","HL TOTAL")
+          .replace("OCORRENCIAS","OCORRENCIAS")
+      ) || KPIS_VALIDOS.map(normalizeKey).includes(normalizeKey(kpi));
+
+      if(!kpiOk) erros.push(`KPI não padronizado: ${kpi}`);
+
+      if(meta === null) erros.push("Meta inválida");
+      if(real === null) erros.push("Real inválido");
+      if(percentual === null) erros.push("% inválido");
+
+      if(tipo === "kpi_supervisor_mes" && !supervisor){
+        erros.push("Supervisor obrigatório para importação de SV");
+      }
+
+      const item = {
+        tipo,
+        mesKey,
+        mesLabel,
+        cd,
+        supervisor,
+        kpi,
+        meta,
+        real,
+        percentual,
+        linhaExcel:index + 2,
+        erro:erros.join(" | ")
+      };
+
+      return item;
+    }
+
+    function atualizarResumo(){
+      const validos = DADOS_PREVIEW.filter(x => !x.erro);
+
+      totalRegistros.textContent = DADOS_PREVIEW.length;
+      totalMeses.textContent = new Set(validos.map(x => x.mesKey)).size;
+      totalCds.textContent = new Set(validos.map(x => x.cd)).size;
+      totalKpis.textContent = new Set(validos.map(x => x.kpi)).size;
+      totalErros.textContent = DADOS_PREVIEW.filter(x => x.erro).length;
+    }
+
+    function renderPreview(){
+      if(DADOS_PREVIEW.length === 0){
+        tbodyPreview.innerHTML = `<tr><td colspan="10">Nenhum dado encontrado.</td></tr>`;
+        return;
+      }
+
+      tbodyPreview.innerHTML = DADOS_PREVIEW.slice(0,500).map(item => `
+        <tr>
+          <td>
+            <span class="badge" style="${item.erro ? "background:#fee2e2;color:#991b1b;" : ""}">
+              ${item.erro ? "Erro" : "OK"}
+            </span>
+          </td>
+          <td>${escapeHtml(item.mesKey)}</td>
+          <td>${escapeHtml(item.mesLabel)}</td>
+          <td>${escapeHtml(item.cd)}</td>
+          <td>${escapeHtml(item.supervisor || "-")}</td>
+          <td>${escapeHtml(item.kpi)}</td>
+          <td>${item.meta ?? "-"}</td>
+          <td>${item.real ?? "-"}</td>
+          <td>${item.percentual ?? "-"}</td>
+          <td>${escapeHtml(item.erro || "-")}</td>
+        </tr>
+      `).join("");
+    }
+
+    async function validarArquivo(){
+      const file = arquivoExcel.files?.[0];
+
+      if(!file){
+        setMsg("Selecione um arquivo Excel.", "err");
+        return;
+      }
+
+      setMsg("Lendo arquivo...");
+      btnImportar.disabled = true;
+
+      const buffer = await file.arrayBuffer();
+      const workbook = XLSX.read(buffer, { type:"array" });
+      const sheetName = workbook.SheetNames[0];
+      const sheet = workbook.Sheets[sheetName];
+
+      const rows = XLSX.utils.sheet_to_json(sheet, { defval:"" });
+
+      DADOS_PREVIEW = rows.map(validarLinha);
+      DADOS_VALIDOS = DADOS_PREVIEW.filter(x => !x.erro);
+
+      atualizarResumo();
+      renderPreview();
+
+      if(DADOS_VALIDOS.length === 0){
+        setMsg("Nenhum registro válido encontrado. Corrija a planilha.", "err");
+        return;
+      }
+
+      const erros = DADOS_PREVIEW.length - DADOS_VALIDOS.length;
+
+      if(erros > 0){
+        setMsg(`Arquivo validado com ${DADOS_VALIDOS.length} registros válidos e ${erros} erro(s). Corrija ou importe somente os válidos.`, "err");
+      }else{
+        setMsg(`Arquivo validado com sucesso. ${DADOS_VALIDOS.length} registros prontos para importar.`, "ok");
+      }
+
+      btnImportar.disabled = false;
+    }
+
+    async function importarDados(){
+      if(DADOS_VALIDOS.length === 0){
+        setMsg("Valide o arquivo antes de importar.", "err");
+        return;
+      }
+
+      const confirma = confirm(
+        `Confirmar importação de ${DADOS_VALIDOS.length} registro(s)?\n\n` +
+        `Se já existir o mesmo Tipo + Mês + CD + Supervisor + KPI, será atualizado.`
+      );
+
+      if(!confirma) return;
+
+      btnImportar.disabled = true;
+      btnValidar.disabled = true;
+      setMsg("Importando dados...");
+
+      try{
+        let count = 0;
+        contadorImportados.textContent = 0;
+
+        for(const item of DADOS_VALIDOS){
+          const id = montarDocId(item);
+
+          await setDoc(doc(db, COLLECTION, id), {
+            tipo:item.tipo,
+            mesKey:item.mesKey,
+            mesLabel:item.mesLabel,
+            cd:item.cd,
+            supervisor:item.tipo === "kpi_supervisor_mes" ? item.supervisor : "",
+            kpi:item.kpi,
+            meta:item.meta,
+            real:item.real,
+            percentual:item.percentual,
+            origem:"importador_kpis",
+            usuarioImportacao:usuario,
+            atualizadoEm:serverTimestamp()
+          }, { merge:true });
+
+          count++;
+          contadorImportados.textContent = count;
+
+          if(count % 50 === 0){
+            setMsg(`Importando... ${count}/${DADOS_VALIDOS.length}`);
+          }
+        }
+
+        setMsg(`Importação concluída. ${DADOS_VALIDOS.length} registros criados/atualizados.`, "ok");
+      }catch(e){
+        console.error(e);
+        setMsg("Erro ao importar. Verifique console, conexão e Rules do Firestore.", "err");
+      }finally{
+        btnImportar.disabled = false;
+        btnValidar.disabled = false;
+      }
+    }
+
+    async function excluirTudo(){
+      const tipo = tipoImportacao.value;
+
+      const confirma = confirm(`Confirma exclusão de TODOS os registros importados do tipo '${tipo}'? Esta ação é irreversível.`);
+      if(!confirma) return;
+
+      btnImportar.disabled = true;
+      btnValidar.disabled = true;
+      btnExcluirTudo.disabled = true;
+      setMsg('Excluindo documentos...');
+
+      try{
+        const q = query(collection(db, COLLECTION), where('tipo','==', tipo), where('origem','==','importador_kpis'));
+        const snap = await getDocs(q);
+
+        if(snap.empty){
+          setMsg('Nenhum documento encontrado para excluir.', 'err');
+          return;
+        }
+
+        let batch = writeBatch(db);
+        let ops = 0;
+        let deleted = 0;
+
+        for(const d of snap.docs){
+          batch.delete(d.ref);
+          ops++;
+          deleted++;
+
+          if(ops === 450){
+            await batch.commit();
+            batch = writeBatch(db);
+            ops = 0;
+            setMsg(`Excluindo... ${deleted}/${snap.size}`);
+          }
+        }
+
+        if(ops > 0) await batch.commit();
+
+        setMsg(`Exclusão concluída. ${deleted} documentos removidos.`, 'ok');
+        contadorImportados.textContent = 0;
+      }catch(e){
+        console.error(e);
+        setMsg('Erro ao excluir. Veja console.', 'err');
+      }finally{
+        btnImportar.disabled = false;
+        btnValidar.disabled = false;
+        btnExcluirTudo.disabled = false;
+        atualizarResumo();
+        renderPreview();
+      }
+    }
+
+    btnExcluirTudo.addEventListener('click', excluirTudo);
+
+    btnValidar.addEventListener("click", validarArquivo);
+    btnImportar.addEventListener("click", importarDados);
+    tipoImportacao.addEventListener("change", () => {
+      DADOS_PREVIEW = [];
+      DADOS_VALIDOS = [];
+      atualizarResumo();
+      renderPreview();
+      btnImportar.disabled = true;
+      setMsg("Tipo alterado. Valide o arquivo novamente.");
+    });
+  </script>
+</body>
+</html>

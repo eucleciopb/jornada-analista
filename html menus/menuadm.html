@@ -1,268 +1,876 @@
-<!doctype html>
-<html lang="pt-br">
+<!DOCTYPE html>
+<html lang="pt-BR">
+
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Menu Admin</title>
 
-  <style>
-    :root{
-      --bg:#ffffff;
-      --txt:#0b0b0b;
-      --muted:#666;
-      --line:#eee;
-      --btn-bg:#f9f9f9;
-      --btn-br:#e5e5e5;
-      --btn-hover:#000;
-      --btn-hover-txt:#fff;
-      --shadow:0 20px 60px rgba(0,0,0,.08);
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    *{
-      box-sizing:border-box;
-    }
+<title>Menu Administrativo | Jornada Comercial</title>
 
-    html,body{
-      height:100%;
-    }
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-    body{
-      margin:0;
-      background:var(--bg);
-      color:var(--txt);
-      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
-      display:grid;
-      place-items:center;
-      padding:16px;
-    }
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
-    .card{
-      width:100%;
-      max-width:440px;
-      background:#fff;
-      border-radius:28px;
-      padding:28px;
-      box-shadow:var(--shadow);
-    }
+<style>
 
-    header.top{
-      display:flex;
-      align-items:center;
-      gap:14px;
-    }
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:'Inter',sans-serif;
+}
 
-    .logo{
-      inline-size:60px;
-      block-size:60px;
-      background:#000;
-      color:#fff;
-      font-weight:700;
-      border-radius:18px;
-      display:grid;
-      place-items:center;
-      font-size:18px;
-      user-select:none;
-    }
+:root{
 
-    header.top h1{
-      margin:0;
-      font-size:18px;
-      color:#000;
-    }
+--primary:#2563eb;
+--primary-dark:#1d4ed8;
+--green:#16a34a;
+--orange:#f59e0b;
+--red:#dc2626;
 
-    header.top small{
-      color:var(--muted);
-      font-size:13px;
-      display:block;
-      margin-top:2px;
-    }
+--bg:#eef4fb;
 
-    hr{
-      margin:22px 0;
-      border:none;
-      height:1px;
-      background:var(--line);
-    }
+--card:#ffffff;
 
-    nav[aria-label]{
-      display:grid;
-      gap:12px;
-    }
+--border:#e2e8f0;
 
-    .btn{
-      appearance:none;
-      width:100%;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      padding:16px 18px;
-      border-radius:18px;
-      border:1px solid var(--btn-br);
-      background:var(--btn-bg);
-      font-size:15px;
-      font-weight:600;
-      color:#000;
-      text-decoration:none;
-      cursor:pointer;
-      transition:
-        transform .15s ease,
-        background .15s ease,
-        color .15s ease,
-        border-color .15s ease;
-    }
+--text:#0f172a;
 
-    .btn:hover,
-    .btn:focus-visible{
-      background:var(--btn-hover);
-      color:var(--btn-hover-txt);
-      transform:translateY(-2px);
-      outline:none;
-      border-color:#000;
-    }
+--muted:#64748b;
 
-    .btn-exit{
-      margin-top:4px;
-      background:#fff;
-      border:1px solid #ddd;
-      color:#111;
-      font-weight:600;
-    }
+--shadow:
+0 20px 60px rgba(15,23,42,.08);
 
-    .btn-exit:hover,
-    .btn-exit:focus-visible{
-      background:#000;
-      color:#fff;
-      border-color:#000;
-    }
+}
 
-    .user{
-      margin-top:8px;
-      font-size:13px;
-      color:#777;
-    }
+body{
 
-    @media (prefers-reduced-motion: reduce){
-      .btn{
-        transition:none;
-      }
+background:
 
-      .btn:hover,
-      .btn:focus-visible{
-        transform:none;
-      }
-    }
-  </style>
+radial-gradient(circle at top left,#dbeafe 0%,transparent 35%),
+
+radial-gradient(circle at bottom right,#dbeafe 0%,transparent 30%),
+
+var(--bg);
+
+padding:24px;
+
+color:var(--text);
+
+}
+
+.container{
+
+max-width:1400px;
+
+margin:auto;
+
+display:flex;
+
+flex-direction:column;
+
+gap:22px;
+
+}
+
+.header{
+
+background:rgba(255,255,255,.92);
+
+backdrop-filter:blur(18px);
+
+border-radius:28px;
+
+padding:26px;
+
+display:flex;
+
+justify-content:space-between;
+
+align-items:center;
+
+box-shadow:var(--shadow);
+
+border:1px solid rgba(255,255,255,.8);
+
+}
+
+.brand{
+
+display:flex;
+
+align-items:center;
+
+gap:18px;
+
+}
+
+.logo{
+
+width:72px;
+
+height:72px;
+
+border-radius:22px;
+
+background:linear-gradient(135deg,#2563eb,#1d4ed8);
+
+display:flex;
+
+align-items:center;
+
+justify-content:center;
+
+font-size:28px;
+
+font-weight:800;
+
+color:white;
+
+box-shadow:
+
+0 15px 35px rgba(37,99,235,.30);
+
+}
+
+.title h1{
+
+font-size:30px;
+
+font-weight:800;
+
+letter-spacing:-1px;
+
+}
+
+.title p{
+
+margin-top:5px;
+
+font-size:14px;
+
+color:var(--muted);
+
+font-weight:600;
+
+}
+
+#userInfo{
+
+margin-top:8px;
+
+font-size:14px;
+
+font-weight:700;
+
+color:#475569;
+
+}
+
+.logout{
+
+background:#fee2e2;
+
+border:none;
+
+color:#991b1b;
+
+padding:14px 22px;
+
+border-radius:15px;
+
+font-weight:800;
+
+cursor:pointer;
+
+transition:.25s;
+
+}
+
+.logout:hover{
+
+transform:translateY(-2px);
+
+background:#fecaca;
+
+}
+
+.section{
+
+background:white;
+
+border-radius:28px;
+
+padding:26px;
+
+box-shadow:var(--shadow);
+
+}
+
+.section-header{
+
+display:flex;
+
+justify-content:space-between;
+
+align-items:center;
+
+margin-bottom:22px;
+
+}
+
+.section-header h2{
+
+font-size:20px;
+
+letter-spacing:-.5px;
+
+}
+
+.section-header span{
+
+background:#dbeafe;
+
+padding:7px 14px;
+
+border-radius:999px;
+
+font-size:12px;
+
+font-weight:700;
+
+color:#1d4ed8;
+
+}
+
+.grid{
+
+display:grid;
+
+grid-template-columns:repeat(auto-fill,minmax(290px,1fr));
+
+gap:18px;
+
+}
+
+.card{
+
+display:flex;
+
+align-items:center;
+
+gap:18px;
+
+padding:18px;
+
+border-radius:22px;
+
+background:#f8fafc;
+
+border:1px solid var(--border);
+
+text-decoration:none;
+
+transition:.25s;
+
+position:relative;
+
+overflow:hidden;
+
+}
+
+.card::before{
+
+content:"";
+
+position:absolute;
+
+left:0;
+
+top:0;
+
+width:5px;
+
+height:100%;
+
+background:#2563eb;
+
+opacity:0;
+
+transition:.25s;
+
+}
+
+.card:hover{
+
+transform:translateY(-5px);
+
+box-shadow:0 20px 35px rgba(15,23,42,.10);
+
+background:white;
+
+}
+
+.card:hover::before{
+
+opacity:1;
+
+}
+
+.icon{
+
+width:56px;
+
+height:56px;
+
+border-radius:18px;
+
+display:flex;
+
+align-items:center;
+
+justify-content:center;
+
+font-size:24px;
+
+font-weight:700;
+
+color:white;
+
+flex-shrink:0;
+
+}
+
+.blue{
+
+background:linear-gradient(135deg,#3b82f6,#2563eb);
+
+}
+
+.green{
+
+background:linear-gradient(135deg,#22c55e,#16a34a);
+
+}
+
+.orange{
+
+background:linear-gradient(135deg,#f59e0b,#d97706);
+
+}
+
+.red{
+
+background:linear-gradient(135deg,#ef4444,#dc2626);
+
+}
+
+.purple{
+
+background:linear-gradient(135deg,#8b5cf6,#6d28d9);
+
+}
+
+.card h3{
+
+font-size:16px;
+
+margin-bottom:5px;
+
+color:#0f172a;
+
+}
+
+.card p{
+
+font-size:13px;
+
+line-height:1.4;
+
+color:#64748b;
+
+font-weight:500;
+
+}
+
+.footer{
+
+padding:15px;
+
+text-align:center;
+
+color:#64748b;
+
+font-size:13px;
+
+}
+
+@media(max-width:850px){
+
+.header{
+
+flex-direction:column;
+
+align-items:flex-start;
+
+gap:18px;
+
+}
+
+.logout{
+
+width:100%;
+
+}
+
+}
+
+</style>
+
 </head>
 
 <body>
 
-  <main class="card" role="main">
+<div class="container">
 
-    <header class="top">
-      <div class="logo" aria-hidden="true">GP</div>
+<div class="header">
 
-      <div>
-        <h1>Menu Administrativo</h1>
-        <small id="userInfo" class="user" aria-live="polite"></small>
-      </div>
-    </header>
+<div class="brand">
 
-    <hr>
+<div class="logo">
 
-    <nav aria-label="Menu administrativo">
+GP
 
-      <a class="btn" href="../html%20adm/apuracao.html">
-        Apuração
-      </a>
+</div>
 
-      <a class="btn" href="../html%20adm/agenda-dia-adm.html">
-        Agenda do Dia
-      </a>
+<div class="title">
 
-      <a class="btn" href="../html%20adm/agenda-mensal-adm.html">
-        Agenda Mensal
-      </a>
+<h1>Menu Administrativo</h1>
 
-      <a class="btn" href="../html%20adm/treinos-resumo-adm.html">
-        Resumo de Treinamentos
-      </a>
+<p>Jornada Comercial • Painel Administrativo</p>
 
-      <a class="btn" href="../html%20adm/rps-adm.html">
-        RPS
-      </a>
+<div id="userInfo">Carregando usuário...</div>
 
-      <a class="btn" href="../html%20adm/cadastro-treinamento.html">
-        Cadastro de Treinamentos
-      </a>
+</div>
 
-      <a class="btn" href="../html%20adm/kpis_cd_mes.html">
-        Base de KPIs CD/Mês
-      </a>
+</div>
 
-      <a class="btn" href="../html%20adm/corrigir-tipo-treinamento.html">
-        Corrigir Tipo de Treinamento
-      </a>
+<button id="btnSair" class="logout">
 
-      <a class="btn" href="../html%20adm/metas-analistas-adm.html">
-        Metas dos Analistas
-      </a>
+Sair
 
-      <a class="btn" href="../html%20adm/responsaveis-cd-adm.html">
-        Responsáveis por CD
-      </a>
-      <a class="btn" href="../html%20adm/dedo-duro.html">
-  Dedo Duro
+</button>
+
+</div>
+
+<!-- ========================= -->
+<!-- GESTÃO OPERACIONAL -->
+<!-- ========================= -->
+
+<section class="section">
+
+<div class="section-header">
+
+<h2>Gestão Operacional</h2>
+
+<span>ROTINA</span>
+
+</div>
+
+<div class="grid">
+
+<a class="card" href="../html%20adm/apuracao.html">
+
+<div class="icon blue">✓</div>
+
+<div>
+
+<h3>Apuração</h3>
+
+<p>Validação e acompanhamento das apurações.</p>
+
+</div>
+
 </a>
-<a class="btn" href="../html%20adm/kpis-supervisores-importar.html">
-  Importar KPIs Supervisores
+
+<a class="card" href="../html%20adm/agenda-dia-adm.html">
+
+<div class="icon green">📅</div>
+
+<div>
+
+<h3>Agenda do Dia</h3>
+
+<p>Agenda diária dos analistas.</p>
+
+</div>
+
 </a>
 
-    </nav>
+<a class="card" href="../html%20adm/agenda-mensal-adm.html">
 
-    <hr>
+<div class="icon orange">🗓</div>
 
-    <button class="btn btn-exit" type="button" id="btnSair">
-      Sair
-    </button>
+<div>
 
-  </main>
+<h3>Agenda Mensal</h3>
 
-  <script>
+<p>Visão consolidada do mês.</p>
 
-    const usuario =
-      localStorage.getItem("usuarioLogado") ||
-      "";
+</div>
 
-    if (!usuario) {
-      window.location.replace("../index.html");
+</a>
+
+<a class="card" href="../html%20adm/treinos-resumo-adm.html">
+
+<div class="icon purple">🎓</div>
+
+<div>
+
+<h3>Resumo de Treinamentos</h3>
+
+<p>Resumo administrativo dos treinamentos realizados.</p>
+
+</div>
+
+</a>
+
+<a class="card" href="../html%20adm/rps-adm.html">
+
+<div class="icon blue">📋</div>
+
+<div>
+
+<h3>RPS</h3>
+
+<p>Acompanhamento das RPS enviadas pelos analistas.</p>
+
+</div>
+
+</a>
+
+<a class="card" href="../html%20adm/dedo-duro.html">
+
+<div class="icon red">🚨</div>
+
+<div>
+
+<h3>Dedo Duro</h3>
+
+<p>Monitoramento e alertas operacionais.</p>
+
+</div>
+
+</a>
+
+</div>
+
+</section>
+
+<!-- ===================================== -->
+<!-- CADASTROS E BASES -->
+<!-- ===================================== -->
+
+<section class="section">
+
+<div class="section-header">
+
+<h2>Cadastros e Bases</h2>
+
+<span>CONFIGURAÇÕES</span>
+
+</div>
+
+<div class="grid">
+
+<a class="card" href="../html%20adm/cadastro-treinamento.html">
+
+<div class="icon green">📚</div>
+
+<div>
+
+<h3>Cadastro de Treinamentos</h3>
+
+<p>Cadastro e manutenção do catálogo oficial de treinamentos.</p>
+
+</div>
+
+</a>
+
+<a class="card" href="../html%20adm/metas-analistas-adm.html">
+
+<div class="icon blue">🎯</div>
+
+<div>
+
+<h3>Metas dos Analistas</h3>
+
+<p>Cadastro das metas mensais de cada analista.</p>
+
+</div>
+
+</a>
+
+<a class="card" href="../html%20adm/responsaveis-cd-adm.html">
+
+<div class="icon orange">🏢</div>
+
+<div>
+
+<h3>Responsáveis por CD</h3>
+
+<p>Relacionamento entre CDs e Analistas.</p>
+
+</div>
+
+</a>
+
+<a class="card" href="../html%20adm/cadastro_grc_por_cd.html">
+
+<div class="icon purple">👥</div>
+
+<div>
+
+<h3>Cadastro GRC por CD</h3>
+
+<p>Cadastro dos GRCs responsáveis por cada CD.</p>
+
+</div>
+
+</a>
+
+<a class="card" href="../html%20adm/importar-kpis-cd.html">
+
+<div class="icon green">⬆️</div>
+
+<div>
+
+<h3>Importar KPIs CD</h3>
+
+<p>Importação mensal dos indicadores por Centro de Distribuição.</p>
+
+</div>
+
+</a>
+
+<a class="card" href="../html%20adm/corrigir-tipo-treinamento.html">
+
+<div class="icon red">🔄</div>
+
+<div>
+
+<h3>Corrigir Tipo de Treinamento</h3>
+
+<p>Correção em massa de treinamentos presenciais e online.</p>
+
+</div>
+
+</a>
+
+</div>
+
+</section>
+
+<!-- ===================================== -->
+<!-- KPIs E IMPORTAÇÕES -->
+<!-- ===================================== -->
+
+<section class="section">
+
+<div class="section-header">
+
+<h2>KPIs e Importações</h2>
+
+<span>INDICADORES</span>
+
+</div>
+
+<div class="grid">
+
+<a class="card" href="../html%20adm/kpis_cd_mes.html">
+
+<div class="icon blue">📈</div>
+
+<div>
+
+<h3>KPIs CD / Mês</h3>
+
+<p>Importação mensal dos indicadores por CD.</p>
+
+</div>
+
+</a>
+
+<a class="card" href="../html%20adm/kpis-supervisores-importar.html">
+
+<div class="icon green">👨‍💼</div>
+
+<div>
+
+<h3>KPIs Supervisores</h3>
+
+<p>Importação dos indicadores por Supervisor.</p>
+
+</div>
+
+</a>
+
+<a class="card" href="../html%20adm/evolucao-pos-treinamento.html">
+
+<div class="icon orange">📊</div>
+
+<div>
+
+<h3>Evolução Pós-Treinamento</h3>
+
+<p>Comparativo da evolução dos indicadores após os treinamentos.</p>
+
+</div>
+
+</a>
+
+<a class="card" href="../html%20adm/Cobertura_treinamentos.html">
+
+<div class="icon purple">🌎</div>
+
+<div>
+
+<h3>Cobertura de Treinamentos</h3>
+
+<p>Acompanhamento da cobertura dos CDs treinados.</p>
+
+</div>
+
+</a>
+
+</div>
+
+</section>
+
+<!-- ===================================== -->
+<!-- EFETIVIDADE DOS TREINAMENTOS -->
+<!-- ===================================== -->
+
+<section class="section">
+
+<div class="section-header">
+
+<h2>Efetividade dos Treinamentos</h2>
+
+<span>ANÁLISE</span>
+
+</div>
+
+<div class="grid">
+
+<a class="card" href="../html%20adm/processar-correlacao-treinamentos.html">
+
+<div class="icon green">⚙️</div>
+
+<div>
+
+<h3>Processar Correlação</h3>
+
+<p>Motor que cruza treinamentos realizados com evolução dos KPIs.</p>
+
+</div>
+
+</a>
+
+<a class="card" href="../html%20adm/efetividade_treinamentos.html">
+
+<div class="icon blue">⭐</div>
+
+<div>
+
+<h3>Painel de Efetividade</h3>
+
+<p>Ranking de analistas, treinamentos, CDs e evolução dos indicadores.</p>
+
+</div>
+
+</a>
+
+</div>
+
+</section>
+
+<div class="footer">
+
+Menu Administrativo Jornada Comercial • Grupo Petrópolis
+
+</div>
+
+</div>
+
+<script>
+
+function safeParse(raw){
+    try{
+        return JSON.parse(raw);
+    }catch{
+        return null;
     }
+}
 
-    const userInfoEl =
-      document.getElementById("userInfo");
+/* ============================
+   VALIDA SESSÃO
+============================ */
 
-    if (userInfoEl) {
-      userInfoEl.textContent = `Olá, ${usuario}`;
-      userInfoEl.title = `Usuário logado: ${usuario}`;
-    }
+const session = safeParse(localStorage.getItem("user_session"));
 
-    document
-      .getElementById("btnSair")
-      .addEventListener("click", () => {
+if(
+    !session ||
+    session.perfil !== "admin" ||
+    !session.nome
+){
+    localStorage.clear();
+    window.location.replace("../index2.html");
+}
 
-        try{
-          localStorage.removeItem("usuarioLogado");
-          localStorage.removeItem("user_session");
-        }
-        catch(e){
-          console.warn(e);
-        }
-        finally{
-          window.location.href = "../index.html";
-        }
+/* ============================
+   USUÁRIOS PERMITIDOS
+============================ */
 
-      });
+const ADMINS = [
+    "Bruna",
+    "Elaine",
+    "Euclecio",
+    "Pedro"
+];
 
-  </script>
+if(!ADMINS.includes(session.nome)){
+    localStorage.clear();
+    window.location.replace("../index2.html");
+}
+
+/* ============================
+   EXIBE NOME
+============================ */
+
+const userInfo = document.getElementById("userInfo");
+
+userInfo.textContent = `Olá, ${session.nome}`;
+
+/* ============================
+   LOGOUT
+============================ */
+
+document.getElementById("btnSair").addEventListener("click",()=>{
+
+    localStorage.removeItem("usuarioLogado");
+    localStorage.removeItem("user_session");
+    localStorage.removeItem("analistaLogado");
+    localStorage.removeItem("usuarioSelecionado");
+
+    window.location.replace("../index2.html");
+
+});
+
+</script>
 
 </body>
+
 </html>

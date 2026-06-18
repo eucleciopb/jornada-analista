@@ -1,0 +1,520 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Cadastro GRC por CD</title>
+<link rel="stylesheet" href="../css/styles.css"/>
+
+<style>
+:root{--bg:#f6f8fb;--txt:#0f172a;--muted:#64748b;--line:#e5e7eb;--blue:#2563eb}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+.header{background:linear-gradient(120deg,#2563eb,#93c5fd);color:#fff;padding:22px 26px;border-bottom:8px solid #fde9a8}
+.header h1{margin:0;font-size:34px;font-weight:950;letter-spacing:-1px}
+.header p{margin:4px 0 0;font-size:14px;opacity:.95}
+main{max-width:1200px;margin:auto;padding:18px;display:grid;gap:14px}
+.card{background:#fff;border:1px solid var(--line);border-radius:20px;box-shadow:0 10px 28px #0f172a12;padding:16px}
+.actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+button,label.btn{border:0;border-radius:13px;padding:11px 14px;font-weight:900;cursor:pointer;background:#e2e8f0;color:var(--txt);font-size:13px}
+button.primary{background:var(--blue);color:#fff}
+button.ok{background:#dcfce7;color:#166534}
+button.bad{background:#fee2e2;color:#991b1b}
+label.btn{display:inline-flex}
+input[type=file]{display:none}
+input.search{width:100%;border:1px solid #dbe1ea;border-radius:13px;padding:12px;font-weight:800}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.kpi{border:1px solid var(--line);border-radius:16px;padding:14px;background:#fff}
+.kpi span{display:block;font-size:11px;font-weight:950;color:var(--muted);text-transform:uppercase}
+.kpi strong{font-size:28px;letter-spacing:-1px}
+.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:16px;max-height:560px}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:760px}
+th,td{padding:10px;border-bottom:1px solid #eef2f7;text-align:left}
+th{position:sticky;top:0;background:#f8fafc;color:#334155;font-weight:950;z-index:1}
+td input{width:100%;border:1px solid #dbe1ea;border-radius:10px;padding:9px;font-weight:800}
+.msg{font-size:13px;font-weight:850;color:#334155}
+.badge{display:inline-flex;border-radius:999px;padding:5px 8px;font-size:10px;font-weight:950;background:#dbeafe;color:#1e40af}
+@media(max-width:800px){.kpis{grid-template-columns:1fr}.header h1{font-size:26px}main{padding:12px}}
+</style>
+</head>
+
+<body>
+<header class="header">
+  <h1>Cadastro GRC por CD</h1>
+  <p>Importe Excel/CSV ou edite manualmente a relação CD × GRC.</p>
+</header>
+
+<main>
+  <section class="card">
+    <div class="actions">
+      <button onclick="window.location.href='../html%20menus/menuadm.html'">
+    ← Menu
+</button>
+      <button class="ok" id="btnAdd">+ Adicionar linha</button>
+      <label class="btn" for="fileExcel">Importar Excel/CSV</label>
+      <input id="fileExcel" type="file" accept=".xlsx,.xls,.csv"/>
+      <button class="primary" id="btnSalvar">Salvar no Firebase</button>
+      <button class="bad" id="btnLimpar">Limpar tela</button>
+    </div>
+  </section>
+
+  <section class="kpis">
+    <div class="kpi"><span>Total Linhas</span><strong id="kTotal">0</strong></div>
+    <div class="kpi"><span>CDs Únicos</span><strong id="kCds">0</strong></div>
+    <div class="kpi"><span>GRCs Únicos</span><strong id="kGrcs">0</strong></div>
+  </section>
+
+  <section class="card">
+    <input id="busca" class="search" placeholder="Pesquisar por CD ou GRC..."/>
+  </section>
+
+  <section class="card">
+    <p id="msg" class="msg">Carregando base atual...</p>
+  </section>
+
+  <section class="card">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:80px">#</th>
+            <th>CD</th>
+            <th>GRC</th>
+            <th style="width:110px">Status</th>
+            <th style="width:100px">Ação</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import {
+  getFirestore,
+  collection,
+  getDocs,
+  doc,
+  setDoc,
+  deleteDoc
+} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+const firebaseConfig={
+  apiKey:"AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
+  authDomain:"jornada-portal.firebaseapp.com",
+  projectId:"jornada-portal",
+  storageBucket:"jornada-portal.firebasestorage.app",
+  messagingSenderId:"669362296644",
+  appId:"1:669362296644:web:f590d9834a8e4e60012911"
+};
+
+const db=getFirestore(initializeApp(firebaseConfig));
+
+const COLLECTION="cadastro_grc_cd";
+
+const $=id=>document.getElementById(id);
+
+let DADOS=[];
+
+const clean=v=>String(v??"").replace(/\s+/g," ").trim();
+
+const key=v=>clean(v)
+  .toLowerCase()
+  .normalize("NFD")
+  .replace(/[\u0300-\u036f]/g,"")
+  .replace(/[^a-z0-9]+/g,"");
+
+const html=v=>String(v??"")
+  .replaceAll("&","&amp;")
+  .replaceAll("<","&lt;")
+  .replaceAll(">","&gt;")
+  .replaceAll('"',"&quot;")
+  .replaceAll("'","&#039;");
+
+const docId=cd=>`cd_${key(cd)}`;
+
+function setMsg(text,color="#334155"){
+  $("msg").textContent=text;
+  $("msg").style.color=color;
+}
+
+function addLinha(cd="",grc="",status="NOVO"){
+  DADOS.push({
+    cd:clean(cd),
+    grc:clean(grc),
+    status
+  });
+
+  render();
+}
+
+function resumo(){
+  $("kTotal").textContent=DADOS.length;
+
+  $("kCds").textContent=new Set(
+    DADOS.map(x=>key(x.cd)).filter(Boolean)
+  ).size;
+
+  $("kGrcs").textContent=new Set(
+    DADOS.map(x=>key(x.grc)).filter(Boolean)
+  ).size;
+}
+
+function filtrados(){
+  const q=key($("busca").value);
+
+  if(!q) return DADOS;
+
+  return DADOS.filter(x=>
+    key(x.cd).includes(q) ||
+    key(x.grc).includes(q)
+  );
+}
+
+function render(){
+  resumo();
+
+  const lista=filtrados();
+
+  if(!lista.length){
+    $("tbody").innerHTML=`<tr><td colspan="5">Sem dados.</td></tr>`;
+    return;
+  }
+
+  $("tbody").innerHTML=lista.map((x,idx)=>{
+    const realIndex=DADOS.indexOf(x);
+
+    return `
+      <tr>
+        <td>${idx+1}</td>
+
+        <td>
+          <input 
+            value="${html(x.cd)}" 
+            data-i="${realIndex}" 
+            data-campo="cd" 
+            placeholder="Ex: CD 3267"
+          />
+        </td>
+
+        <td>
+          <input 
+            value="${html(x.grc)}" 
+            data-i="${realIndex}" 
+            data-campo="grc" 
+            placeholder="Ex: CNS | Thiago Gerbasi"
+          />
+        </td>
+
+        <td>
+          <span class="badge">${html(x.status || "")}</span>
+        </td>
+
+        <td>
+          <button class="bad" data-del="${realIndex}">Excluir</button>
+        </td>
+      </tr>
+    `;
+  }).join("");
+
+  document.querySelectorAll("td input").forEach(inp=>{
+    inp.oninput=()=>{
+      const i=Number(inp.dataset.i);
+      const campo=inp.dataset.campo;
+
+      DADOS[i][campo]=clean(inp.value);
+
+      if(DADOS[i].status==="SALVO"){
+        DADOS[i].status="EDITADO";
+      }
+
+      resumo();
+    };
+  });
+
+  document.querySelectorAll("[data-del]").forEach(btn=>{
+    btn.onclick=async()=>{
+      const i=Number(btn.dataset.del);
+      const item=DADOS[i];
+
+      if(item.id){
+        if(!confirm(`Excluir ${item.cd} do Firebase?`)) return;
+
+        try{
+          await deleteDoc(doc(db,COLLECTION,item.id));
+          setMsg(`Registro ${item.cd} excluído.`,"#166534");
+        }catch(e){
+          console.error("ERRO AO EXCLUIR",e);
+
+          alert(
+`Erro ao excluir
+
+Código:
+${e.code}
+
+Mensagem:
+${e.message}`
+          );
+
+          setMsg(`${e.code} - ${e.message}`,"#991b1b");
+          return;
+        }
+      }
+
+      DADOS.splice(i,1);
+      render();
+    };
+  });
+}
+
+function normalizarLinha(row){
+  const obj={};
+
+  Object.keys(row || {}).forEach(k=>{
+    obj[key(k)] = row[k];
+  });
+
+  const cd=clean(
+    obj.cd ||
+    obj.codigo ||
+    obj.codigocd ||
+    obj.cddistribuicao ||
+    obj.centro
+  );
+
+  const grc=clean(
+    obj.grc ||
+    obj.regional ||
+    obj.gerente ||
+    obj.area ||
+    obj.territorio
+  );
+
+  if(!cd || !grc) return null;
+
+  return {
+    cd,
+    grc,
+    status:"IMPORTADO"
+  };
+}
+
+async function carregar(){
+  try{
+    setMsg("Carregando base atual...");
+
+    const snap=await getDocs(collection(db,COLLECTION));
+
+    DADOS=[];
+
+    snap.forEach(d=>{
+      const x=d.data();
+
+      DADOS.push({
+        id:d.id,
+        cd:clean(x.cd),
+        grc:clean(x.grc),
+        status:"SALVO"
+      });
+    });
+
+    render();
+
+    setMsg(`Base carregada: ${DADOS.length} registros.`,"#166534");
+
+  }catch(e){
+    console.error("ERRO AO CARREGAR",e);
+
+    alert(
+`Erro ao carregar
+
+Código:
+${e.code}
+
+Mensagem:
+${e.message}`
+    );
+
+    setMsg(`${e.code} - ${e.message}`,"#991b1b");
+  }
+}
+
+async function salvar(){
+
+  const validos=DADOS
+    .map(x=>({
+      cd:clean(x.cd),
+      grc:clean(x.grc)
+    }))
+    .filter(x=>x.cd && x.grc);
+
+  if(!validos.length){
+    setMsg("Nenhum registro válido para salvar.","#991b1b");
+    return;
+  }
+
+  const mapa=new Map();
+
+  validos.forEach(x=>{
+    mapa.set(key(x.cd),x);
+  });
+
+  const lista=[...mapa.values()];
+
+  if(!confirm(`Deseja salvar ${lista.length} CDs no Firebase?`)){
+    return;
+  }
+
+  try{
+    setMsg("Iniciando gravação...");
+
+    let gravados=0;
+
+    for(const item of lista){
+
+      const id=docId(item.cd);
+
+      await setDoc(
+        doc(db,COLLECTION,id),
+        {
+          cd:item.cd,
+          cdKey:key(item.cd),
+          grc:item.grc,
+          grcKey:key(item.grc),
+          atualizadoEm:new Date()
+        },
+        {merge:true}
+      );
+
+      gravados++;
+
+      if(gravados%10===0 || gravados===lista.length){
+        setMsg(`Gravando ${gravados} de ${lista.length}...`);
+      }
+    }
+
+    setMsg(`✅ ${gravados} registros gravados com sucesso.`,"#166534");
+
+    await carregar();
+
+  }catch(e){
+
+    console.error("=================================");
+    console.error("ERRO FIREBASE AO SALVAR");
+    console.error(e);
+    console.error("=================================");
+
+    let mensagem=e.message || "Erro desconhecido.";
+
+    if(e.code==="permission-denied"){
+      mensagem="Sem permissão para escrever no Firebase. Verifique as Rules da coleção cadastro_grc_cd.";
+    }
+
+    if(e.code==="unavailable"){
+      mensagem="Firebase indisponível ou conexão instável.";
+    }
+
+    if(e.code==="not-found"){
+      mensagem="Caminho ou coleção não encontrado.";
+    }
+
+    alert(
+`Erro ao salvar
+
+Código:
+${e.code || "sem código"}
+
+Mensagem:
+${mensagem}`
+    );
+
+    setMsg(`${e.code || "erro"} - ${mensagem}`,"#991b1b");
+  }
+}
+
+function importarArquivo(file){
+  const reader=new FileReader();
+
+  reader.onload=e=>{
+    try{
+      const data=new Uint8Array(e.target.result);
+      const wb=XLSX.read(data,{type:"array"});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const rows=XLSX.utils.sheet_to_json(ws,{defval:""});
+
+      const importados=rows
+        .map(normalizarLinha)
+        .filter(Boolean);
+
+      if(!importados.length){
+        setMsg("Arquivo não reconhecido. Use colunas CD e GRC.","#991b1b");
+        return;
+      }
+
+      importados.forEach(x=>{
+        const existe=DADOS.find(d=>key(d.cd)===key(x.cd));
+
+        if(existe){
+          existe.grc=x.grc;
+
+          if(existe.status==="SALVO"){
+            existe.status="EDITADO";
+          }
+        }else{
+          DADOS.push(x);
+        }
+      });
+
+      render();
+
+      setMsg(`Importação concluída: ${importados.length} linhas lidas.`,"#166534");
+
+    }catch(err){
+      console.error("ERRO IMPORTAÇÃO",err);
+
+      alert(
+`Erro ao importar arquivo
+
+Mensagem:
+${err.message}`
+      );
+
+      setMsg("Erro ao importar arquivo.","#991b1b");
+    }
+  };
+
+  reader.readAsArrayBuffer(file);
+}
+
+$("btnAdd").onclick=()=>addLinha();
+
+$("btnSalvar").onclick=salvar;
+
+$("btnLimpar").onclick=()=>{
+  if(confirm("Limpar apenas a tela? Isso não apaga o Firebase.")){
+    DADOS=[];
+    render();
+    setMsg("Tela limpa. Base do Firebase não foi apagada.");
+  }
+};
+
+$("busca").oninput=render;
+
+$("fileExcel").onchange=e=>{
+  const file=e.target.files?.[0];
+
+  if(file){
+    importarArquivo(file);
+  }
+
+  e.target.value="";
+};
+
+await carregar();
+</script>
+</body>
+</html>

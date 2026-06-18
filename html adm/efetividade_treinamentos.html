@@ -1,0 +1,669 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Efetividade dos Treinamentos | Jornada</title>
+  <link rel="stylesheet" href="../css/styles.css"/>
+
+  <style>
+    :root{--bg:#f6f8fb;--txt:#0f172a;--muted:#64748b;--line:#e5e7eb;--azul:#1d4ed8}
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+    .topbar{position:sticky;top:0;z-index:10;background:#fff;border-bottom:1px solid var(--line);padding:14px 22px;display:flex;justify-content:space-between;align-items:center;gap:12px}
+    h2,h3,p{margin:0}
+    h2{font-size:20px}
+    h3{font-size:16px;margin-bottom:10px}
+    .hint{font-size:12px;color:var(--muted);margin-top:3px}
+    .actions{display:flex;gap:8px;flex-wrap:wrap}
+    button{border:0;border-radius:12px;padding:10px 14px;font-weight:900;cursor:pointer;background:#e2e8f0;color:var(--txt)}
+    button.danger{background:#fee2e2;color:#991b1b}
+    main{max-width:1450px;margin:auto;padding:18px;display:grid;gap:14px}
+    .card{background:#fff;border:1px solid var(--line);border-radius:18px;box-shadow:0 10px 28px rgba(15,23,42,.06);padding:16px}
+    .filters,.cards{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+    .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+    .grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+    label{display:block;font-size:11px;font-weight:900;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+    select{width:100%;border:1px solid #dbe1ea;border-radius:12px;padding:11px;font-weight:800;background:#fff;color:var(--txt)}
+    .kpi{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px}
+    .kpi span{display:block;font-size:11px;font-weight:900;color:var(--muted);text-transform:uppercase}
+    .kpi strong{font-size:26px;letter-spacing:-1px}
+    .msg{font-size:13px;font-weight:800;color:#334155;line-height:1.55}
+    .table-wrap{overflow:auto;border:1px solid var(--line);border-radius:16px;max-height:460px}
+    table{width:100%;border-collapse:collapse;min-width:720px;font-size:12px}
+    table.wide{min-width:1350px}
+    th,td{padding:9px 11px;border-bottom:1px solid #eef2f7;text-align:left;white-space:nowrap}
+    th{background:#f8fafc;font-weight:900;color:#334155;position:sticky;top:0;z-index:1}
+    .badge{display:inline-flex;padding:5px 8px;border-radius:999px;font-size:10px;font-weight:900;background:#e0f2fe;color:#075985}
+    .ok{background:#dcfce7;color:#166534}
+    .warn{background:#fef9c3;color:#854d0e}
+    .bad{background:#fee2e2;color:#991b1b}
+    .blue{background:#dbeafe;color:#1e40af}
+    @media(max-width:1000px){
+      main{padding:12px}
+      .topbar{align-items:flex-start;flex-direction:column}
+      .filters,.cards,.grid-3,.grid-2{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+
+<body>
+<header class="topbar">
+  <div>
+    <h2>Painel de Efetividade dos Treinamentos</h2>
+    <div id="userInfo" class="hint">Carregando usuário...</div>
+  </div>
+
+  <div class="actions">
+    <button id="btnMenu" type="button">← Menu</button>
+    <button id="btnLogout" type="button" class="danger">Sair</button>
+  </div>
+</header>
+
+<main>
+  <section class="card">
+    <h3>Filtros</h3>
+    <div class="filters">
+      <div><label>Mês Apuração</label><select id="filtroMes"><option value="">Todos</option></select></div>
+      <div><label>Analista</label><select id="filtroAnalista"><option value="">Todos</option></select></div>
+      <div><label>CD</label><select id="filtroCd"><option value="">Todos</option></select></div>
+      <div><label>Treinamento</label><select id="filtroTreinamento"><option value="">Todos</option></select></div>
+      <div>
+        <label>Tipo</label>
+        <select id="filtroTipo">
+          <option value="">Todos</option>
+          <option value="Presencial">Presencial</option>
+          <option value="Online">Online</option>
+        </select>
+      </div>
+    </div>
+  </section>
+
+  <section class="cards">
+    <div class="kpi"><span>Treinos Avaliados</span><strong id="cardTreinos">0</strong></div>
+    <div class="kpi"><span>Analistas</span><strong id="cardAnalistas">0</strong></div>
+    <div class="kpi"><span>CDs</span><strong id="cardCds">0</strong></div>
+    <div class="kpi"><span>Efetividade Média</span><strong id="cardMedia">0%</strong></div>
+    <div class="kpi"><span>Alto Impacto</span><strong id="cardImpacto">0</strong></div>
+  </section>
+
+  <section class="cards">
+    <div class="kpi"><span>KPIs Avaliados</span><strong id="cardKpisAvaliados">0</strong></div>
+    <div class="kpi"><span>Evoluíram</span><strong id="cardEvoluiu">0</strong></div>
+    <div class="kpi"><span>Mantiveram</span><strong id="cardManteve">0</strong></div>
+    <div class="kpi"><span>Regrediram</span><strong id="cardRegrediu">0</strong></div>
+    <div class="kpi"><span>% Positivo</span><strong id="cardPositivo">0%</strong></div>
+  </section>
+
+  <section class="card">
+    <h3>Resumo Executivo</h3>
+    <p id="resumoExecutivo" class="msg">Carregando análise...</p>
+  </section>
+
+  <section class="card">
+    <p id="msg" class="msg">Carregando dados...</p>
+  </section>
+
+  <section class="grid-2">
+    <div class="card">
+      <h3>Indicadores com Maior Evolução</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>KPI</th><th>Qtd Evoluções</th><th>Média</th><th>Maior Evolução</th></tr></thead>
+          <tbody id="tbodyMaiorEvolucao"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Indicadores com Menor Evolução</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>KPI</th><th>Qtd Regressões</th><th>Média</th><th>Maior Queda</th></tr></thead>
+          <tbody id="tbodyMenorEvolucao"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h3>Melhores Correlações Treinamento × KPI</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Treinamento</th>
+            <th>KPI</th>
+            <th>Qtd Evoluções</th>
+            <th>Média Evolução</th>
+            <th>Melhor Resultado</th>
+          </tr>
+        </thead>
+        <tbody id="tbodyCorrelacoes"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="grid-3">
+    <div class="card">
+      <h3>Ranking Analistas</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Pos</th><th>Analista</th><th>Score</th></tr></thead>
+          <tbody id="tbodyAnalistas"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Ranking Treinamentos</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Pos</th><th>Treinamento</th><th>Score</th></tr></thead>
+          <tbody id="tbodyTreinamentos"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Ranking CDs</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Pos</th><th>CD</th><th>Score</th></tr></thead>
+          <tbody id="tbodyCds"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="grid-2">
+    <div class="card">
+      <h3>Top Evoluções</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Analista</th><th>CD</th><th>Treinamento</th><th>KPI</th><th>Variação</th></tr></thead>
+          <tbody id="tbodyEvolucoes"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Top Regressões</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Analista</th><th>CD</th><th>Treinamento</th><th>KPI</th><th>Variação</th></tr></thead>
+          <tbody id="tbodyRegressoes"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h3>Validação por Treinamento</h3>
+    <p class="hint" style="margin-bottom:10px">Analista, mês do treinamento, tipo e indicadores processados em colunas.</p>
+
+    <div class="table-wrap">
+      <table class="wide">
+        <thead>
+          <tr>
+            <th>Status</th>
+            <th>Analista</th>
+            <th>Mês Treino</th>
+            <th>Tipo</th>
+            <th>CD</th>
+            <th>Treinamento</th>
+            <th>1000ML</th>
+            <th>300ML</th>
+            <th>600ML</th>
+            <th>Cob. GP</th>
+            <th>Ef. Visitas</th>
+            <th>HL Ret.</th>
+            <th>HL Total</th>
+            <th>Ocorrências</th>
+            <th>Score</th>
+          </tr>
+        </thead>
+        <tbody id="tbodyValidacao"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+  import { getFirestore, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey:"AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
+    authDomain:"jornada-portal.firebaseapp.com",
+    projectId:"jornada-portal",
+    storageBucket:"jornada-portal.firebasestorage.app",
+    messagingSenderId:"669362296644",
+    appId:"1:669362296644:web:f590d9834a8e4e60012911"
+  };
+
+  const PATH_INDEX = "../index.html";
+  const PATH_MENUADM = "../html%20menus/menuadm.html";
+
+  const db = getFirestore(initializeApp(firebaseConfig));
+  const COLLECTION = "apuracoes_treinamentos";
+  const $ = id => document.getElementById(id);
+
+  const filtroMes = $("filtroMes");
+  const filtroAnalista = $("filtroAnalista");
+  const filtroCd = $("filtroCd");
+  const filtroTreinamento = $("filtroTreinamento");
+  const filtroTipo = $("filtroTipo");
+
+  const KPIS_PADRAO = ["1000ML","300ML","600ML","Cobertura GP","Eficiência de Visitas","HL Retornáveis","HL Total","Ocorrências"];
+
+  let RESUMOS = [];
+  let KPIS = [];
+
+  function safeParse(raw){try{return JSON.parse(raw)}catch{return null}}
+
+  function getUsuario(){
+    const s = safeParse(localStorage.getItem("user_session"));
+    return String(s?.nome || localStorage.getItem("usuarioLogado") || "Admin").trim();
+  }
+
+  $("userInfo").textContent = `Usuário: ${getUsuario()}`;
+
+  $("btnMenu").addEventListener("click", () => {
+    window.location.href = PATH_MENUADM;
+  });
+
+  $("btnLogout").addEventListener("click", () => {
+    localStorage.removeItem("usuarioLogado");
+    localStorage.removeItem("user_session");
+    localStorage.removeItem("usuarioKey");
+    localStorage.removeItem("analistaLogado");
+    localStorage.removeItem("usuarioSelecionado");
+    window.location.replace(PATH_INDEX);
+  });
+
+  function normalize(value){return String(value ?? "").replace(/\s+/g," ").trim()}
+
+  function normalizeKey(value){
+    return normalize(value).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"");
+  }
+
+  function escapeHtml(value){
+    return String(value ?? "")
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#039;");
+  }
+
+  function mesLabel(mesKey){
+    const meses = {"01":"Jan","02":"Fev","03":"Mar","04":"Abr","05":"Mai","06":"Jun","07":"Jul","08":"Ago","09":"Set","10":"Out","11":"Nov","12":"Dez"};
+    const [ano,mes] = String(mesKey || "").split("-");
+    return ano && mes ? `${meses[mes] || mes}/${String(ano).slice(-2)}` : (mesKey || "-");
+  }
+
+  function setMsg(text,type="info"){
+    $("msg").textContent = text;
+    $("msg").style.color = type === "ok" ? "#166534" : type === "err" ? "#991b1b" : "#334155";
+  }
+
+  function mediaScore(lista){
+    return lista.length ? Math.round(lista.reduce((acc,x) => acc + Number(x.score || 0),0) / lista.length) : 0;
+  }
+
+  function badgeClass(score){
+    return score >= 70 ? "ok" : score >= 40 ? "warn" : "bad";
+  }
+
+  function popularSelect(select,valores,labelTodos){
+    const atual = select.value;
+    select.innerHTML = `<option value="">${labelTodos}</option>` + valores.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join("");
+    if([...select.options].some(o => o.value === atual)) select.value = atual;
+  }
+
+  function preencherFiltros(){
+    const meses = [...new Set(RESUMOS.map(x => x.mesApuracao).filter(Boolean))].sort((a,b) => b.localeCompare(a));
+    const analistas = [...new Set(RESUMOS.map(x => x.analista).filter(Boolean))].sort((a,b) => a.localeCompare(b,"pt-BR"));
+    const cds = [...new Set(RESUMOS.map(x => x.cd).filter(Boolean))].sort((a,b) => a.localeCompare(b,"pt-BR"));
+    const treinamentos = [...new Set(RESUMOS.map(x => x.treinamento).filter(Boolean))].sort((a,b) => a.localeCompare(b,"pt-BR"));
+
+    filtroMes.innerHTML = `<option value="">Todos</option>` + meses.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(mesLabel(m))}</option>`).join("");
+    popularSelect(filtroAnalista,analistas,"Todos");
+    popularSelect(filtroCd,cds,"Todos");
+    popularSelect(filtroTreinamento,treinamentos,"Todos");
+  }
+
+  function passaFiltros(item){
+    if(filtroMes.value && item.mesApuracao !== filtroMes.value) return false;
+    if(filtroAnalista.value && item.analista !== filtroAnalista.value) return false;
+    if(filtroCd.value && item.cd !== filtroCd.value) return false;
+    if(filtroTreinamento.value && item.treinamento !== filtroTreinamento.value) return false;
+    if(filtroTipo.value && item.tipoTreinamento !== filtroTipo.value) return false;
+    return true;
+  }
+
+  const aplicarFiltrosResumo = () => RESUMOS.filter(passaFiltros);
+  const aplicarFiltrosKpi = () => KPIS.filter(passaFiltros);
+
+  function agruparMedia(lista,campo){
+    const mapa = new Map();
+
+    lista.forEach(item => {
+      const key = normalize(item[campo]) || "-";
+      if(!mapa.has(key)) mapa.set(key,{nome:key,totalScore:0,qtd:0});
+      const ref = mapa.get(key);
+      ref.totalScore += Number(item.score || 0);
+      ref.qtd++;
+    });
+
+    return [...mapa.values()]
+      .map(x => ({nome:x.nome,score:x.qtd ? Math.round(x.totalScore / x.qtd) : 0,qtd:x.qtd}))
+      .sort((a,b) => b.score - a.score || b.qtd - a.qtd);
+  }
+
+  function renderRanking(tbody,lista){
+    if(!lista.length){
+      tbody.innerHTML = `<tr><td colspan="3">Sem dados.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = lista.slice(0,10).map((item,idx) => `
+      <tr>
+        <td><strong>${idx + 1}º</strong></td>
+        <td>${escapeHtml(item.nome)}</td>
+        <td><span class="badge ${badgeClass(item.score)}">${item.score}%</span></td>
+      </tr>
+    `).join("");
+  }
+
+  function renderTopKpis(tbody,lista,tipo){
+    const filtrados = lista.filter(x => Number.isFinite(Number(x.variacao)));
+    const base = tipo === "evolucao"
+      ? filtrados.filter(x => x.status === "EVOLUIU").sort((a,b) => Math.abs(Number(b.variacao)) - Math.abs(Number(a.variacao)))
+      : filtrados.filter(x => x.status === "REGREDIU").sort((a,b) => Math.abs(Number(b.variacao)) - Math.abs(Number(a.variacao)));
+
+    if(!base.length){
+      tbody.innerHTML = `<tr><td colspan="5">Sem dados.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = base.slice(0,10).map(item => `
+      <tr>
+        <td>${escapeHtml(item.analista || "-")}</td>
+        <td>${escapeHtml(item.cd || "-")}</td>
+        <td>${escapeHtml(item.treinamento || "-")}</td>
+        <td>${escapeHtml(item.kpi || "-")}</td>
+        <td><span class="badge ${tipo === "evolucao" ? "ok" : "bad"}">${Number(item.variacao).toFixed(1).replace(".",",")}%</span></td>
+      </tr>
+    `).join("");
+  }
+
+  function gerarResumoCorrelacao(resumos,kpis){
+    const avaliados = kpis.filter(x => x.status !== "SEM BASE");
+    const evoluiu = avaliados.filter(x => x.status === "EVOLUIU").length;
+    const manteve = avaliados.filter(x => x.status === "MANTEVE").length;
+    const regrediu = avaliados.filter(x => x.status === "REGREDIU").length;
+
+    const pctEvolucao = avaliados.length ? Math.round((evoluiu / avaliados.length) * 100) : 0;
+    const pctPositivo = avaliados.length ? Math.round(((evoluiu + manteve) / avaliados.length) * 100) : 0;
+
+    let conclusao = "Ponto de atenção: o impacto ainda não está forte o suficiente para concluir boa efetividade.";
+    let classe = "bad";
+
+    if(pctPositivo >= 80){
+      conclusao = "Resultado positivo: os treinamentos demonstram boa correlação com evolução ou manutenção dos KPIs.";
+      classe = "ok";
+    }else if(pctPositivo >= 60){
+      conclusao = "Resultado moderado: existem sinais de impacto positivo, mas ainda há oportunidades de evolução.";
+      classe = "warn";
+    }
+
+    return {avaliados,evoluiu,manteve,regrediu,pctEvolucao,pctPositivo,conclusao,classe};
+  }
+
+  function renderResumoExecutivo(resumos,kpis){
+    const r = gerarResumoCorrelacao(resumos,kpis);
+    const melhorKpi = getIndicadoresEvolucao(kpis)[0];
+    const melhorCorrelacao = getMelhoresCorrelacoes(kpis)[0];
+
+    $("resumoExecutivo").innerHTML = `
+      <span class="badge ${r.classe}">${r.pctPositivo}% positivo</span>
+      ${r.conclusao}<br>
+      Foram avaliados <strong>${r.avaliados.length}</strong> KPIs:
+      <strong>${r.evoluiu}</strong> evoluíram,
+      <strong>${r.manteve}</strong> mantiveram e
+      <strong>${r.regrediu}</strong> regrediram.<br>
+      ${melhorKpi ? `Indicador com melhor evolução média: <strong>${escapeHtml(melhorKpi.kpi)}</strong> com <strong>${melhorKpi.media.toFixed(1).replace(".",",")}%</strong>.` : ""}
+      ${melhorCorrelacao ? ` Melhor correlação: <strong>${escapeHtml(melhorCorrelacao.treinamento)}</strong> × <strong>${escapeHtml(melhorCorrelacao.kpi)}</strong>.` : ""}
+    `;
+  }
+
+  function getIndicadoresEvolucao(kpis){
+    const mapa = new Map();
+
+    kpis.filter(x => x.status === "EVOLUIU" && Number.isFinite(Number(x.variacao))).forEach(x => {
+      const key = x.kpi || "-";
+      if(!mapa.has(key)) mapa.set(key,{kpi:key,qtd:0,soma:0,maior:Number(x.variacao)});
+      const item = mapa.get(key);
+      item.qtd++;
+      item.soma += Number(x.variacao);
+      item.maior = Math.max(item.maior,Number(x.variacao));
+    });
+
+    return [...mapa.values()]
+      .map(x => ({...x,media:x.soma/x.qtd}))
+      .sort((a,b) => b.media - a.media || b.qtd - a.qtd);
+  }
+
+  function getIndicadoresRegressao(kpis){
+    const mapa = new Map();
+
+    kpis.filter(x => x.status === "REGREDIU" && Number.isFinite(Number(x.variacao))).forEach(x => {
+      const key = x.kpi || "-";
+      if(!mapa.has(key)) mapa.set(key,{kpi:key,qtd:0,soma:0,queda:Number(x.variacao)});
+      const item = mapa.get(key);
+      item.qtd++;
+      item.soma += Number(x.variacao);
+      item.queda = Math.min(item.queda,Number(x.variacao));
+    });
+
+    return [...mapa.values()]
+      .map(x => ({...x,media:x.soma/x.qtd}))
+      .sort((a,b) => a.media - b.media || b.qtd - a.qtd);
+  }
+
+  function getMelhoresCorrelacoes(kpis){
+    const mapa = new Map();
+
+    kpis.filter(x => x.status === "EVOLUIU" && Number.isFinite(Number(x.variacao))).forEach(x => {
+      const key = `${x.treinamento || "-"}__${x.kpi || "-"}`;
+      if(!mapa.has(key)) mapa.set(key,{treinamento:x.treinamento || "-",kpi:x.kpi || "-",qtd:0,soma:0,melhor:Number(x.variacao)});
+      const item = mapa.get(key);
+      item.qtd++;
+      item.soma += Number(x.variacao);
+      item.melhor = Math.max(item.melhor,Number(x.variacao));
+    });
+
+    return [...mapa.values()]
+      .map(x => ({...x,media:x.soma/x.qtd}))
+      .sort((a,b) => b.media - a.media || b.qtd - a.qtd)
+      .slice(0,10);
+  }
+
+  function renderIndicadoresEvolucao(kpis){
+    const lista = getIndicadoresEvolucao(kpis);
+
+    $("tbodyMaiorEvolucao").innerHTML = lista.length
+      ? lista.map(x => `
+        <tr>
+          <td>${escapeHtml(x.kpi)}</td>
+          <td>${x.qtd}</td>
+          <td><span class="badge ok">${x.media.toFixed(1).replace(".",",")}%</span></td>
+          <td><span class="badge ok">${x.maior.toFixed(1).replace(".",",")}%</span></td>
+        </tr>
+      `).join("")
+      : `<tr><td colspan="4">Sem dados.</td></tr>`;
+  }
+
+  function renderIndicadoresRegressao(kpis){
+    const lista = getIndicadoresRegressao(kpis);
+
+    $("tbodyMenorEvolucao").innerHTML = lista.length
+      ? lista.map(x => `
+        <tr>
+          <td>${escapeHtml(x.kpi)}</td>
+          <td>${x.qtd}</td>
+          <td><span class="badge bad">${x.media.toFixed(1).replace(".",",")}%</span></td>
+          <td><span class="badge bad">${x.queda.toFixed(1).replace(".",",")}%</span></td>
+        </tr>
+      `).join("")
+      : `<tr><td colspan="4">Sem dados.</td></tr>`;
+  }
+
+  function renderCorrelacoes(kpis){
+    const lista = getMelhoresCorrelacoes(kpis);
+
+    $("tbodyCorrelacoes").innerHTML = lista.length
+      ? lista.map(x => `
+        <tr>
+          <td>${escapeHtml(x.treinamento)}</td>
+          <td>${escapeHtml(x.kpi)}</td>
+          <td>${x.qtd}</td>
+          <td><span class="badge ok">${x.media.toFixed(1).replace(".",",")}%</span></td>
+          <td><span class="badge ok">${x.melhor.toFixed(1).replace(".",",")}%</span></td>
+        </tr>
+      `).join("")
+      : `<tr><td colspan="5">Sem dados.</td></tr>`;
+  }
+
+  function getKpiDoResumo(resumo,kpi){
+    return KPIS.find(x =>
+      x.treinoId === resumo.treinoId &&
+      x.mesBase === resumo.mesBase &&
+      x.mesApuracao === resumo.mesApuracao &&
+      normalizeKey(x.cd) === normalizeKey(resumo.cd) &&
+      normalizeKey(x.kpi) === normalizeKey(kpi)
+    );
+  }
+
+  function renderKpiCell(item){
+    if(!item) return `<span class="badge bad">PENDENTE</span>`;
+
+    const cls = item.status === "EVOLUIU" ? "ok" : item.status === "MANTEVE" ? "warn" : item.status === "REGREDIU" ? "bad" : "blue";
+    const variacao = item.variacao === null || item.variacao === undefined ? "-" : `${Number(item.variacao).toFixed(1).replace(".",",")}%`;
+
+    return `<span class="badge ${cls}" title="Antes: ${item.antes ?? "-"} | Depois: ${item.depois ?? "-"}">${escapeHtml(item.status)} ${variacao}</span>`;
+  }
+
+  function renderValidacao(resumos){
+    const tbody = $("tbodyValidacao");
+
+    if(!resumos.length){
+      tbody.innerHTML = `<tr><td colspan="15">Sem dados.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = resumos
+      .slice()
+      .sort((a,b) =>
+        String(b.mesTreinamento || "").localeCompare(String(a.mesTreinamento || "")) ||
+        String(a.analista || "").localeCompare(String(b.analista || ""),"pt-BR")
+      )
+      .map(r => {
+        const kpis = KPIS_PADRAO.map(kpi => getKpiDoResumo(r,kpi));
+        const pendentes = kpis.filter(x => !x || x.status === "SEM BASE").length;
+        const status = pendentes === 0 ? "OK" : `${pendentes} PEND.`;
+        const cls = pendentes === 0 ? "ok" : "bad";
+
+        return `
+          <tr>
+            <td><span class="badge ${cls}">${status}</span></td>
+            <td>${escapeHtml(r.analista || "-")}</td>
+            <td>${escapeHtml(mesLabel(r.mesTreinamento || r.mesBase))}</td>
+            <td>${escapeHtml(r.tipoTreinamento || "-")}</td>
+            <td>${escapeHtml(r.cd || "-")}</td>
+            <td>${escapeHtml(r.treinamento || "-")}</td>
+            ${kpis.map(renderKpiCell).join("")}
+            <td><span class="badge ${badgeClass(Number(r.score || 0))}">${Number(r.score || 0)}%</span></td>
+          </tr>
+        `;
+      }).join("");
+  }
+
+  function renderCards(resumos,kpis){
+    const avaliados = kpis.filter(x => x.status !== "SEM BASE");
+    const evoluiu = avaliados.filter(x => x.status === "EVOLUIU").length;
+    const manteve = avaliados.filter(x => x.status === "MANTEVE").length;
+    const regrediu = avaliados.filter(x => x.status === "REGREDIU").length;
+    const positivo = avaliados.length ? Math.round(((evoluiu + manteve) / avaliados.length) * 100) : 0;
+
+    $("cardTreinos").textContent = new Set(resumos.map(x => x.treinoId || x.id)).size;
+    $("cardAnalistas").textContent = new Set(resumos.map(x => x.analista).filter(Boolean)).size;
+    $("cardCds").textContent = new Set(resumos.map(x => x.cd).filter(Boolean)).size;
+    $("cardMedia").textContent = `${mediaScore(resumos)}%`;
+    $("cardImpacto").textContent = resumos.filter(x => x.classificacao === "ALTO IMPACTO").length;
+
+    $("cardKpisAvaliados").textContent = avaliados.length;
+    $("cardEvoluiu").textContent = evoluiu;
+    $("cardManteve").textContent = manteve;
+    $("cardRegrediu").textContent = regrediu;
+    $("cardPositivo").textContent = `${positivo}%`;
+  }
+
+  function renderizarTudo(){
+    const resumos = aplicarFiltrosResumo();
+    const kpis = aplicarFiltrosKpi();
+
+    renderCards(resumos,kpis);
+    renderResumoExecutivo(resumos,kpis);
+    renderIndicadoresEvolucao(kpis);
+    renderIndicadoresRegressao(kpis);
+    renderCorrelacoes(kpis);
+
+    renderRanking($("tbodyAnalistas"),agruparMedia(resumos,"analista"));
+    renderRanking($("tbodyTreinamentos"),agruparMedia(resumos,"treinamento"));
+    renderRanking($("tbodyCds"),agruparMedia(resumos,"cd"));
+    renderTopKpis($("tbodyEvolucoes"),kpis,"evolucao");
+    renderTopKpis($("tbodyRegressoes"),kpis,"regressao");
+    renderValidacao(resumos);
+
+    const avaliados = kpis.filter(x => x.status !== "SEM BASE").length;
+    const positivos = kpis.filter(x => x.status === "EVOLUIU" || x.status === "MANTEVE").length;
+    const pct = avaliados ? Math.round((positivos / avaliados) * 100) : 0;
+
+    setMsg(`Base filtrada: ${resumos.length} resumos e ${kpis.length} KPIs. Positividade da correlação: ${pct}%.`, pct >= 60 ? "ok" : "err");
+  }
+
+  async function carregarDados(){
+    try{
+      setMsg("Carregando dados do Firebase...");
+
+      const [snapResumo,snapKpi] = await Promise.all([
+        getDocs(query(collection(db,COLLECTION),where("tipo","==","correlacao_resumo_cd"))),
+        getDocs(query(collection(db,COLLECTION),where("tipo","==","correlacao_treinamento_kpi")))
+      ]);
+
+      RESUMOS = [];
+      KPIS = [];
+
+      snapResumo.forEach(d => RESUMOS.push({id:d.id,...d.data()}));
+      snapKpi.forEach(d => KPIS.push({id:d.id,...d.data()}));
+
+      preencherFiltros();
+      renderizarTudo();
+
+    }catch(e){
+      console.error(e);
+      setMsg("Erro ao carregar dados. Verifique Rules do Firestore.", "err");
+    }
+  }
+
+  [filtroMes,filtroAnalista,filtroCd,filtroTreinamento,filtroTipo].forEach(el => {
+    el.addEventListener("change",renderizarTudo);
+  });
+
+  await carregarDados();
+</script>
+</body>
+</html>

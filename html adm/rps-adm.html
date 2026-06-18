@@ -458,8 +458,7 @@
   const db = getFirestore(app);
 
   const PATH_INDEX  = "../index.html";
-  const PATH_MENUADM = "menuadm.html";
-
+const PATH_MENUADM = "../html%20menus/menuadm.html";
   function safeParse(raw){ try { return JSON.parse(raw); } catch { return null; } }
   function getCurrentUserName(){
     const raw = localStorage.getItem("user_session");

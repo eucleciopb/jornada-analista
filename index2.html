@@ -6,106 +6,131 @@
 <title>Login Admin | Jornada</title>
 
 <style>
-  :root{
-    --bg:#0b0f14;
-    --card:rgba(255,255,255,.06);
-    --border:rgba(255,255,255,.10);
-    --text:#000000;
-    --muted:#9ca3af;
-    --danger:#ef4444;
-  }
+:root{
+  --bg:#0b0f14;
+  --card:rgba(255,255,255,.06);
+  --border:rgba(255,255,255,.10);
+  --text:#ffffff;
+  --muted:#9ca3af;
+  --danger:#ef4444;
+  --primary:#d91b2e;
+}
 
-  *{box-sizing:border-box}
+*{
+  box-sizing:border-box;
+}
 
-  body{
-    margin:0;
-    background:var(--bg);
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-    color:var(--text);
-    min-height:100vh;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    padding:20px;
-  }
+body{
+  margin:0;
+  background:var(--bg);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  color:var(--text);
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  padding:20px;
+}
 
-  .card{
-    width:min(420px, 100%);
-    background:var(--card);
-    border:1px solid var(--border);
-    border-radius:26px;
-    padding:28px;
-    box-shadow:0 25px 70px rgba(0,0,0,.45);
-  }
+.card{
+  width:min(420px,100%);
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:26px;
+  padding:28px;
+  box-shadow:0 25px 70px rgba(0,0,0,.45);
+  backdrop-filter:blur(14px);
+}
 
-  .logo{
-    width:60px;height:60px;
-    border-radius:18px;
-    background:linear-gradient(135deg,#d91b2e,#ff3b3b);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-weight:900;
-    color:#fff;
-    margin-bottom:18px;
-    font-size:18px;
-  }
+.logo{
+  width:60px;
+  height:60px;
+  border-radius:18px;
+  background:linear-gradient(135deg,#d91b2e,#ff3b3b);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:900;
+  color:#fff;
+  margin-bottom:18px;
+  font-size:18px;
+}
 
-  h2{
-    margin:0 0 6px 0;
-    font-size:18px;
-  }
+h2{
+  margin:0 0 6px;
+}
 
-  small{
-    color:var(--muted);
-    font-weight:700;
-  }
+small{
+  color:var(--muted);
+  font-weight:700;
+}
 
-  hr{
-    margin:20px 0;
-    border:none;
-    height:1px;
-    background:var(--border);
-  }
+hr{
+  margin:22px 0;
+  border:none;
+  height:1px;
+  background:var(--border);
+}
 
-  select{
-    width:100%;
-    padding:14px;
-    border-radius:16px;
-    border:1px solid var(--border);
-    background:rgba(255,255,255,.04);
-    color:var(--text);
-    font-weight:900;
-    font-size:14px;
-    outline:none;
-  }
+label{
+  display:block;
+  margin-bottom:6px;
+  margin-top:14px;
+  font-size:12px;
+  font-weight:800;
+  color:var(--muted);
+}
 
-  button{
-    margin-top:14px;
-    width:100%;
-    padding:14px;
-    border-radius:16px;
-    border:none;
-    background:#d91b2e;
-    color:#fff;
-    font-weight:900;
-    font-size:14px;
-    cursor:pointer;
-    transition:.15s;
-  }
+select,
+input{
+  width:100%;
+  padding:14px;
+  border-radius:16px;
+  border:1px solid var(--border);
+  background:rgba(255,255,255,.05);
+  color:#fff;
+  font-size:14px;
+  font-weight:700;
+  outline:none;
+}
 
-  button:hover{
-    filter:brightness(1.08);
-  }
+select option{
+  color:#000;
+}
 
-  .error{
-    margin-top:12px;
-    font-size:13px;
-    font-weight:900;
-    color:var(--danger);
-    display:none;
-  }
+button{
+  margin-top:22px;
+  width:100%;
+  padding:15px;
+  border:none;
+  border-radius:16px;
+  background:var(--primary);
+  color:#fff;
+  font-size:15px;
+  font-weight:900;
+  cursor:pointer;
+  transition:.2s;
+}
 
+button:hover{
+  filter:brightness(1.08);
+}
+
+.error{
+  margin-top:14px;
+  display:none;
+  color:var(--danger);
+  font-size:13px;
+  font-weight:800;
+  text-align:center;
+}
+
+.info{
+  margin-top:18px;
+  text-align:center;
+  font-size:12px;
+  color:#94a3b8;
+}
 </style>
 </head>
 
@@ -116,13 +141,11 @@
   <div class="logo">GP</div>
 
   <h2>Login Administrativo</h2>
-  <small>Acesso restrito ao time Admin</small>
+  <small>Acesso restrito ao time administrativo</small>
 
   <hr>
 
-  <label style="font-size:12px;font-weight:800;color:var(--muted);">
-    Selecione seu nome
-  </label>
+  <label>Usuário</label>
 
   <select id="usuarioSelect">
     <option value="">Selecione...</option>
@@ -132,35 +155,101 @@
     <option value="Pedro">Pedro</option>
   </select>
 
+  <label>Senha</label>
+
+  <input
+    type="password"
+    id="senha"
+    placeholder="Digite a senha"
+  >
+
   <button id="btnEntrar">Entrar</button>
 
-  <div class="error" id="errorMsg">
-    Usuário não autorizado.
+  <div class="error" id="errorMsg"></div>
+
+  <div class="info">
+    Grupo Petrópolis • Jornada Comercial
   </div>
 
 </div>
 
 <script>
-  const btn = document.getElementById("btnEntrar");
-  const select = document.getElementById("usuarioSelect");
-  const errorMsg = document.getElementById("errorMsg");
+const btn = document.getElementById("btnEntrar");
+const select = document.getElementById("usuarioSelect");
+const senha = document.getElementById("senha");
+const errorMsg = document.getElementById("errorMsg");
 
-  const ADM_USERS = ["Bruna","Elaine","Euclecio","Pedro"];
+/*
+-----------------------------------
+SENHAS POR USUÁRIO
+Altere aqui quando quiser
+-----------------------------------
+*/
 
-  btn.onclick = () => {
-    const usuario = select.value.trim();
+const USUARIOS = {
+  Bruna: "B7N4GP26",
+  Elaine: "E9L2JP26",
+  Euclecio: "U6C8AD26",
+  Pedro: "P3D5GP26"
+};
 
-    if(!ADM_USERS.includes(usuario)){
-      errorMsg.style.display = "block";
-      return;
-    }
+/*
+-----------------------------------
+LOGIN
+-----------------------------------
+*/
 
-    // salva sessão
-    localStorage.setItem("usuarioLogado", usuario);
+btn.addEventListener("click", login);
 
-    // redireciona para menu admin
-    window.location.href = "html menus/menuadm.html";
+senha.addEventListener("keydown", function(e){
+  if(e.key === "Enter"){
+    login();
+  }
+});
+
+select.addEventListener("change", function(){
+  senha.value = "";
+  errorMsg.style.display = "none";
+});
+
+function login(){
+  const usuario = select.value.trim();
+  const senhaDigitada = senha.value.trim();
+
+  errorMsg.style.display = "none";
+
+  if(!usuario){
+    errorMsg.textContent = "Selecione um usuário.";
+    errorMsg.style.display = "block";
+    return;
+  }
+
+  if(!USUARIOS[usuario]){
+    errorMsg.textContent = "Usuário não autorizado.";
+    errorMsg.style.display = "block";
+    return;
+  }
+
+  if(USUARIOS[usuario] !== senhaDigitada){
+    errorMsg.textContent = "Senha incorreta.";
+    errorMsg.style.display = "block";
+    senha.focus();
+    senha.select();
+    return;
+  }
+
+  const session = {
+    nome: usuario,
+    usuario: usuario,
+    perfil: "admin",
+    login: new Date().toISOString()
   };
+
+  localStorage.setItem("usuarioLogado", usuario);
+  localStorage.setItem("user_session", JSON.stringify(session));
+
+  window.location.href = "html menus/menuadm.html";
+}
 </script>
 
 </body>

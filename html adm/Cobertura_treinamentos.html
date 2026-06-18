@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Cobertura e Força dos Treinamentos</title>
+
+<style>
+:root{--blue:#2563eb;--cyan:#22d3ee;--dark:#0f172a;--muted:#64748b;--line:#e5e7eb;--bg:#f6f8fb;--card:#fff;--ok:#16a34a;--warn:#ca8a04;--bad:#dc2626}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);font-family:Inter,Segoe UI,Arial,sans-serif;color:var(--dark)}
+.header{background:linear-gradient(120deg,#2563eb,#93c5fd);color:#fff;padding:26px 30px 22px;border-bottom:10px solid #fde9a8}
+.header h1{margin:0;font-size:42px;letter-spacing:-1.5px;font-weight:950}
+.header p{margin:6px 0 0;font-size:15px;opacity:.95}
+main{max-width:1500px;margin:auto;padding:18px;display:grid;gap:16px}
+.tabs{display:flex;gap:10px;background:#fff;border:1px solid var(--line);border-radius:18px;padding:8px;box-shadow:0 8px 25px #0f172a12}
+.tab{flex:1;border:0;border-radius:14px;padding:13px;font-weight:950;cursor:pointer;background:#f1f5f9;color:#334155;font-size:14px}
+.tab.active{background:var(--blue);color:#fff}
+.card{background:var(--card);border:1px solid var(--line);border-radius:22px;box-shadow:0 10px 30px #0f172a12;padding:18px}
+.filters{display:grid;grid-template-columns:repeat(8,1fr);gap:12px}
+label{font-size:11px;font-weight:950;color:var(--muted);text-transform:uppercase;display:block;margin-bottom:5px}
+select{width:100%;border:1px solid #dbe1ea;border-radius:14px;padding:12px;font-weight:850;background:#fff;color:var(--dark)}
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:20px;padding:16px;box-shadow:0 8px 22px #0f172a0d}
+.kpi span{font-size:11px;font-weight:950;text-transform:uppercase;color:var(--muted)}
+.kpi strong{display:block;font-size:34px;letter-spacing:-1.5px;margin-top:5px}
+.blue strong{color:var(--blue)}.cyan strong{color:#0e7490}.ok strong{color:var(--ok)}.bad strong{color:var(--bad)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:1.1fr 1fr 1.25fr;gap:16px}
+.bigNumber{text-align:center;padding:38px 10px}
+.bigNumber strong{font-size:92px;color:#075be8;letter-spacing:-5px}
+.bigNumber h2{font-size:46px;margin:0;color:#4b5563}
+.bigNumber h3{font-size:34px;margin:14px 0 0;color:#075be8}
+.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:18px;max-height:520px}
+table{width:100%;border-collapse:collapse;min-width:760px;font-size:12px}
+th,td{padding:10px 12px;border-bottom:1px solid #eef2f7;text-align:left;white-space:nowrap}
+th{background:#f8fafc;font-weight:950;color:#334155;position:sticky;top:0;z-index:2}
+.table-cds{min-width:1300px;table-layout:fixed}
+.table-cds th,.table-cds td{overflow:hidden;text-overflow:ellipsis;vertical-align:middle}
+.table-cds th:nth-child(1),.table-cds td:nth-child(1){width:230px}
+.table-cds th:nth-child(2),.table-cds td:nth-child(2){width:260px}
+.table-cds th:nth-child(3),.table-cds td:nth-child(3){width:170px}
+.table-cds th:nth-child(4),.table-cds td:nth-child(4){width:170px}
+.table-cds th:nth-child(5),.table-cds td:nth-child(5){width:260px}
+.table-cds th:nth-child(6),.table-cds td:nth-child(6){width:120px;text-align:center}
+.table-cds th:nth-child(7),.table-cds td:nth-child(7){width:120px;text-align:center}
+.table-cds th:nth-child(8),.table-cds td:nth-child(8){width:140px;text-align:center}
+.table-kpis{min-width:2050px;table-layout:fixed}
+.table-kpis th,.table-kpis td{text-align:center;vertical-align:middle;overflow:hidden;text-overflow:ellipsis;white-space:normal}
+.table-kpis th:nth-child(1),.table-kpis td:nth-child(1){width:100px}
+.table-kpis th:nth-child(2),.table-kpis td:nth-child(2){width:260px;text-align:left}
+.table-kpis th:nth-child(3),.table-kpis td:nth-child(3){width:120px}
+.table-kpis th:nth-child(4),.table-kpis td:nth-child(4){width:160px}
+.table-kpis th:nth-child(5),.table-kpis td:nth-child(5){width:230px;text-align:left}
+.table-kpis th:nth-child(6),.table-kpis td:nth-child(6){width:280px;text-align:left}
+.table-kpis th:nth-child(n+7),.table-kpis td:nth-child(n+7){width:130px}
+.badge{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;padding:5px 8px;font-size:10px;font-weight:950;background:#e0f2fe;color:#075985;min-width:88px;max-width:118px;white-space:normal;text-align:center;line-height:1.15}
+.badge.ok{background:#dcfce7;color:#166534}
+.badge.warn{background:#fef9c3;color:#854d0e}
+.badge.bad{background:#fee2e2;color:#991b1b}
+.bar{height:24px;background:#bfdbfe;border-radius:999px;overflow:hidden;min-width:150px}
+.bar i{display:block;height:100%;background:#3b82f6;border-radius:999px}
+.msg{font-weight:850;color:#334155;font-size:14px;line-height:1.6}
+.hide{display:none}
+@media(max-width:1100px){.header h1{font-size:30px}.filters,.kpis,.grid2,.grid3{grid-template-columns:1fr}main{padding:12px}.bigNumber strong{font-size:60px}}
+</style>
+</head>
+
+<body>
+<header class="header">
+  <h1>Cobertura e Força dos Treinamentos</h1>
+  <p>Visão por mês, CD, GRC, analista, treinamento, tipo e evolução dos KPIs.</p>
+</header>
+
+<main>
+  <nav class="tabs">
+    <button class="tab active" data-tab="cobertura">Cobertura dos Treinamentos</button>
+    <button class="tab" data-tab="forca">Força do Treinamento</button>
+  </nav>
+
+  <section id="cobertura">
+    <section class="card">
+      <div class="filters">
+        <div><label>Mês</label><select id="cMes"><option value="">Todos</option></select></div>
+        <div><label>Analista</label><select id="cAnalista"><option value="">Todos</option></select></div>
+        <div><label>CD</label><select id="cCd"><option value="">Todos</option></select></div>
+        <div><label>GRC</label><select id="cGrc"><option value="">Todos</option></select></div>
+        <div><label>Treinamento</label><select id="cTreino"><option value="">Todos</option></select></div>
+        <div><label>Tipo</label><select id="cTipo"><option value="">Todos</option><option>Presencial</option><option>Online</option></select></div>
+      </div>
+    </section>
+
+    <section class="kpis">
+      <div class="kpi blue"><span>Cobertura Geral</span><strong id="cCobertura">0%</strong></div>
+      <div class="kpi"><span>CDs Treinados</span><strong id="cCds">0</strong></div>
+      <div class="kpi cyan"><span>CDs Vendedores</span><strong id="cVend">0</strong></div>
+      <div class="kpi"><span>CDs Gestores</span><strong id="cGest">0</strong></div>
+      <div class="kpi ok"><span>Treinamentos</span><strong id="cTotal">0</strong></div>
+    </section>
+
+    <section class="grid3">
+      <div class="card">
+        <h3>Ranking GRC</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>GRC</th><th>CDs</th><th>Cobertura</th></tr></thead>
+            <tbody id="tbGrc"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card bigNumber">
+        <strong id="cCentro">0%</strong>
+        <h2 id="cCentroTxt">0 CDs Treinados</h2>
+        <h3 id="cCentroSub">0 Vendedores • 0 Gestores</h3>
+      </div>
+
+      <div class="card">
+        <h3>Ranking Analistas</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Analista</th><th>Área</th><th>Treinados</th><th>Fora Área</th><th>%</th></tr></thead>
+            <tbody id="tbAnalista"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h3>CDs Filtrados</h3>
+      <p class="msg">Lista de CDs conforme os filtros aplicados na cobertura.</p>
+      <div class="table-wrap">
+        <table class="table-cds">
+          <thead>
+            <tr>
+              <th>CD</th><th>GRC</th><th>Analista</th><th>Resp. Área</th>
+              <th>Treinamento</th><th>Tipo</th><th>Data</th><th>Público</th>
+            </tr>
+          </thead>
+          <tbody id="tbCdsFiltrados"></tbody>
+        </table>
+      </div>
+    </section>
+  </section>
+
+  <section id="forca" class="hide">
+    <section class="card">
+      <div class="filters">
+        <div><label>Mês Treino</label><select id="fMesTreino"><option value="">Todos</option></select></div>
+        <div><label>Mês Apuração</label><select id="fMesAp"><option value="">Todos</option></select></div>
+        <div><label>Analista</label><select id="fAnalista"><option value="">Todos</option></select></div>
+        <div><label>CD</label><select id="fCd"><option value="">Todos</option></select></div>
+        <div><label>GRC</label><select id="fGrc"><option value="">Todos</option></select></div>
+        <div><label>Treinamento</label><select id="fTreino"><option value="">Todos</option></select></div>
+        <div><label>Tipo</label><select id="fTipo"><option value="">Todos</option><option>Presencial</option><option>Online</option></select></div>
+        <div><label>KPI</label><select id="fKpi"><option value="">Todos</option></select></div>
+      </div>
+    </section>
+
+    <section class="kpis">
+      <div class="kpi blue"><span>% Positivo</span><strong id="fPositivo">0%</strong></div>
+      <div class="kpi ok"><span>Evoluíram</span><strong id="fEvoluiu">0</strong></div>
+      <div class="kpi"><span>Mantiveram</span><strong id="fManteve">0</strong></div>
+      <div class="kpi bad"><span>Regrediram</span><strong id="fRegrediu">0</strong></div>
+      <div class="kpi cyan"><span>Score Médio</span><strong id="fScore">0%</strong></div>
+    </section>
+
+    <section class="card">
+      <h3>Conclusão automática</h3>
+      <p id="fResumo" class="msg">Carregando análise...</p>
+    </section>
+
+    <section class="card">
+      <h3>Detalhe por Treinamento e KPI</h3>
+      <p class="msg">Visão por data, treinamento, CD e status de cada indicador.</p>
+      <div class="table-wrap">
+        <table class="table-kpis">
+          <thead>
+            <tr>
+              <th>Data</th><th>Treinamento</th><th>Tipo</th><th>Analista</th><th>CD</th><th>GRC</th>
+              <th>1000ML</th><th>300ML</th><th>600ML</th><th>Cob. GP</th><th>Ef. Visitas</th>
+              <th>HL Ret.</th><th>HL Total</th><th>Ocorrências</th><th>Score</th>
+            </tr>
+          </thead>
+          <tbody id="tbDetalheForca"></tbody>
+        </table>
+      </div>
+    </section>
+  </section>
+</main>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getFirestore, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+const firebaseConfig={
+  apiKey:"AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
+  authDomain:"jornada-portal.firebaseapp.com",
+  projectId:"jornada-portal",
+  storageBucket:"jornada-portal.firebasestorage.app",
+  messagingSenderId:"669362296644",
+  appId:"1:669362296644:web:f590d9834a8e4e60012911"
+};
+
+const db=getFirestore(initializeApp(firebaseConfig));
+const $=id=>document.getElementById(id);
+
+let TREINOS=[],RESUMOS=[],KPIS=[],CADASTRO_CD=[],RESPONSAVEIS_CD=[];
+
+const KPIS_FIXOS=["1000ML","300ML","600ML","Cobertura GP","Eficiência de Visitas","HL Retornáveis","HL Total","Ocorrências"];
+const clean=v=>String(v??"").replace(/\s+/g," ").trim();
+const html=v=>String(v??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
+const key=v=>clean(v).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]/g,"");
+const mes=data=>{const p=String(data||"").split("-");return p.length>=2?`${p[0]}-${p[1]}`:""};
+const mesLabel=m=>{const mm={"01":"Jan","02":"Fev","03":"Mar","04":"Abr","05":"Mai","06":"Jun","07":"Jul","08":"Ago","09":"Set","10":"Out","11":"Nov","12":"Dez"};const [a,b]=String(m||"").split("-");return a&&b?`${mm[b]||b}/${String(a).slice(-2)}`:(m||"-")};
+const dataLabel=data=>{if(!data)return "-";const p=String(data).split("-");return p.length>=3?`${p[2]}/${p[1]}/${p[0]}`:data};
+const cdKey=cd=>key(cd).replace(/^cd/,"");
+
+function getCadastroCd(cd){const k=cdKey(cd);return CADASTRO_CD.find(x=>cdKey(x.cd)===k)||null}
+function getResponsavelCd(cd){const k=cdKey(cd);return RESPONSAVEIS_CD.find(x=>cdKey(x.cd)===k)||null}
+
+function aplicarCadastro(item){
+  const cad=getCadastroCd(item.cd);
+  const resp=getResponsavelCd(item.cd);
+  const grcFinal=clean(item.grc||item.regional||item.area||cad?.grc||"Sem GRC");
+  const responsavelArea=clean(resp?.responsavel||"");
+  return {...item,grc:grcFinal,grcKey:key(grcFinal),responsavelArea,responsavelAreaKey:key(responsavelArea)};
+}
+
+document.querySelectorAll(".tab").forEach(btn=>{
+  btn.onclick=()=>{
+    document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+    btn.classList.add("active");
+    $("cobertura").classList.toggle("hide",btn.dataset.tab!=="cobertura");
+    $("forca").classList.toggle("hide",btn.dataset.tab!=="forca");
+  };
+});
+
+function fill(select,arr,todos="Todos",labelFn=x=>x){
+  const atual=select.value;
+  const vals=[...new Set(arr.filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b),"pt-BR"));
+  select.innerHTML=`<option value="">${todos}</option>`+vals.map(v=>`<option value="${html(v)}">${html(labelFn(v))}</option>`).join("");
+  if([...select.options].some(o=>o.value===atual))select.value=atual;
+}
+
+function passaCob(t){
+  if($("cMes").value&&mes(t.data)!==$("cMes").value)return false;
+  if($("cAnalista").value&&clean(t.usuarioNome||t.analista||t.uidKey)!==$("cAnalista").value)return false;
+  if($("cCd").value&&clean(t.cd)!==$("cCd").value)return false;
+  if($("cGrc").value&&clean(t.grc)!==$("cGrc").value)return false;
+  if($("cTreino").value&&clean(t.treinamento)!==$("cTreino").value)return false;
+  if($("cTipo").value&&clean(t.tipoTreinamento)!==$("cTipo").value)return false;
+  return true;
+}
+
+function passaForca(x){
+  if($("fMesTreino").value&&x.mesTreinamento!==$("fMesTreino").value)return false;
+  if($("fMesAp").value&&x.mesApuracao!==$("fMesAp").value)return false;
+  if($("fAnalista").value&&clean(x.analista)!==$("fAnalista").value)return false;
+  if($("fCd").value&&clean(x.cd)!==$("fCd").value)return false;
+  if($("fGrc").value&&clean(x.grc)!==$("fGrc").value)return false;
+  if($("fTreino").value&&clean(x.treinamento)!==$("fTreino").value)return false;
+  if($("fTipo").value&&clean(x.tipoTreinamento)!==$("fTipo").value)return false;
+  if($("fKpi").value&&clean(x.kpi)!==$("fKpi").value)return false;
+  return true;
+}
+
+function groupCount(lista,campo){
+  const m=new Map();
+  lista.forEach(x=>{
+    const n=clean(typeof campo==="function"?campo(x):x[campo])||"-";
+    if(!m.has(n))m.set(n,{nome:n,cds:new Set(),qtd:0});
+    m.get(n).qtd++;
+    if(x.cd)m.get(n).cds.add(clean(x.cd));
+  });
+  return [...m.values()].map(x=>({...x,cdsQtd:x.cds.size})).sort((a,b)=>b.cdsQtd-a.cdsQtd||b.qtd-a.qtd);
+}
+
+function nomeAnalista(item){return clean(item.usuarioNome||item.analista||item.uidKey||"-")}
+function ehAreaDoAnalista(item){
+  const analista=key(nomeAnalista(item));
+  const responsavel=key(item.responsavelArea||"");
+  return !!(analista&&responsavel&&(analista===responsavel||analista.includes(responsavel)||responsavel.includes(analista)));
+}
+function totalCdsAreaAnalista(analista){
+  const kAnalista=key(analista);
+  return new Set(TREINOS.filter(x=>{
+    const resp=key(x.responsavelArea||"");
+    return resp&&(resp===kAnalista||resp.includes(kAnalista)||kAnalista.includes(resp));
+  }).map(x=>clean(x.cd)).filter(Boolean)).size;
+}
+function rankingAnalistasPorArea(base){
+  const mapa=new Map();
+  base.forEach(item=>{
+    const analista=nomeAnalista(item);
+    if(!mapa.has(analista))mapa.set(analista,{nome:analista,cdsArea:new Set(),cdsForaArea:new Set(),totalArea:totalCdsAreaAnalista(analista)});
+    const ref=mapa.get(analista);
+    if(ehAreaDoAnalista(item))ref.cdsArea.add(clean(item.cd));else ref.cdsForaArea.add(clean(item.cd));
+  });
+  return [...mapa.values()].map(x=>{
+    const treinadosArea=x.cdsArea.size;
+    const pct=x.totalArea?Math.round((treinadosArea/x.totalArea)*100):0;
+    return {...x,treinadosArea,foraArea:x.cdsForaArea.size,pct};
+  }).sort((a,b)=>b.pct-a.pct||b.treinadosArea-a.treinadosArea||a.nome.localeCompare(b.nome,"pt-BR"));
+}
+
+function renderCdsFiltrados(base){
+  if(!base.length){$("tbCdsFiltrados").innerHTML=`<tr><td colspan="8">Sem CDs no filtro atual.</td></tr>`;return}
+  $("tbCdsFiltrados").innerHTML=base.slice().sort((a,b)=>clean(a.grc).localeCompare(clean(b.grc),"pt-BR")||clean(a.cd).localeCompare(clean(b.cd),"pt-BR")).map(x=>`
+    <tr>
+      <td>${html(x.cd||"-")}</td>
+      <td>${html(x.grc||"Sem GRC")}</td>
+      <td>${html(nomeAnalista(x))}</td>
+      <td>${html(x.responsavelArea||"-")}</td>
+      <td>${html(x.treinamento||"-")}</td>
+      <td>${html(x.tipoTreinamento||"-")}</td>
+      <td>${html(dataLabel(x.data))}</td>
+      <td>${html(x.publico||x.tipoPublico||"-")}</td>
+    </tr>`).join("");
+}
+
+function renderCobertura(){
+  const base=TREINOS.filter(passaCob);
+  renderCdsFiltrados(base);
+
+  const cds=new Set(base.map(x=>clean(x.cd)).filter(Boolean));
+  const vend=new Set(base.filter(x=>key(x.publico||x.tipoPublico).includes("vendedor")).map(x=>clean(x.cd)).filter(Boolean));
+  const gest=new Set(base.filter(x=>key(x.publico||x.tipoPublico).includes("gestor")).map(x=>clean(x.cd)).filter(Boolean));
+  const totalBase=new Set(TREINOS.map(x=>clean(x.cd)).filter(Boolean)).size||1;
+  const pct=Math.round((cds.size/totalBase)*100);
+
+  $("cCobertura").textContent=`${pct}%`;
+  $("cCds").textContent=cds.size;
+  $("cVend").textContent=vend.size;
+  $("cGest").textContent=gest.size;
+  $("cTotal").textContent=base.length;
+  $("cCentro").textContent=`${pct}%`;
+  $("cCentroTxt").textContent=`${cds.size} CDs Treinados`;
+  $("cCentroSub").textContent=`${vend.size} Vendedores • ${gest.size} Gestores`;
+
+  const totalPorGrc=groupCount(TREINOS,x=>x.grc||"Sem GRC");
+  const totalGrcMap=new Map(totalPorGrc.map(x=>[x.nome,x.cdsQtd]));
+  const grc=groupCount(base,x=>x.grc||"Sem GRC");
+  $("tbGrc").innerHTML=grc.length?grc.map(x=>{
+    const totalGrc=totalGrcMap.get(x.nome)||1;
+    const p=Math.round((x.cdsQtd/totalGrc)*100);
+    return `<tr><td>${html(x.nome)}</td><td>${x.cdsQtd} / ${totalGrc}</td><td><div class="bar"><i style="width:${Math.min(p,100)}%"></i></div>${p}%</td></tr>`;
+  }).join(""):`<tr><td colspan="3">Sem dados.</td></tr>`;
+
+  const ana=rankingAnalistasPorArea(base);
+  $("tbAnalista").innerHTML=ana.length?ana.map(x=>`
+    <tr>
+      <td>${html(x.nome)}</td>
+      <td>${x.treinadosArea} / ${x.totalArea}</td>
+      <td>${x.treinadosArea}</td>
+      <td>${x.foraArea}</td>
+      <td><span class="badge ${x.pct>=70?"ok":x.pct>=40?"warn":"bad"}">${x.pct}%</span></td>
+    </tr>`).join(""):`<tr><td colspan="5">Sem dados.</td></tr>`;
+}
+
+function media(arr){return arr.length?arr.reduce((a,b)=>a+Number(b||0),0)/arr.length:0}
+
+function getKpiResumo(resumo,kpiNome){
+  return KPIS.find(x=>x.treinoId===resumo.treinoId&&x.mesBase===resumo.mesBase&&x.mesApuracao===resumo.mesApuracao&&cdKey(x.cd)===cdKey(resumo.cd)&&key(x.kpi)===key(kpiNome));
+}
+function badgeStatusKpi(item){
+  if(!item)return `<span class="badge bad">SEM BASE</span>`;
+  const cls=item.status==="EVOLUIU"?"ok":item.status==="MANTEVE"?"warn":item.status==="REGREDIU"?"bad":"bad";
+  const variacao=Number.isFinite(Number(item.variacao))?` ${Number(item.variacao).toFixed(1).replace(".",",")}%`:"";
+  return `<span class="badge ${cls}">${html(item.status||"SEM BASE")}${variacao}</span>`;
+}
+function renderDetalheForca(resumos){
+  if(!resumos.length){$("tbDetalheForca").innerHTML=`<tr><td colspan="15">Sem dados no filtro atual.</td></tr>`;return}
+
+  $("tbDetalheForca").innerHTML=resumos
+    .slice()
+    .sort((a,b)=>String(b.dataTreinamento||"").localeCompare(String(a.dataTreinamento||""))||clean(a.treinamento).localeCompare(clean(b.treinamento),"pt-BR")||clean(a.cd).localeCompare(clean(b.cd),"pt-BR"))
+    .map(r=>{
+      const cells=KPIS_FIXOS.map(kpi=>`<td>${badgeStatusKpi(getKpiResumo(r,kpi))}</td>`).join("");
+      const score=Number(r.score||0);
+
+      return `
+        <tr>
+          <td>${html(dataLabel(r.dataTreinamento||r.data||""))}</td>
+          <td>${html(r.treinamento||"-")}</td>
+          <td>${html(r.tipoTreinamento||"-")}</td>
+          <td>${html(r.analista||"-")}</td>
+          <td>${html(r.cd||"-")}</td>
+          <td>${html(r.grc||"Sem GRC")}</td>
+          ${cells}
+          <td><span class="badge ${score>=70?"ok":score>=40?"warn":"bad"}">${score}%</span></td>
+        </tr>`;
+    }).join("");
+}
+
+function renderForca(){
+  const kpis=KPIS.filter(passaForca);
+  const res=RESUMOS.filter(passaForca);
+  renderDetalheForca(res);
+
+  const avaliados=kpis.filter(x=>x.status!=="SEM BASE");
+  const evol=avaliados.filter(x=>x.status==="EVOLUIU");
+  const mant=avaliados.filter(x=>x.status==="MANTEVE");
+  const reg=avaliados.filter(x=>x.status==="REGREDIU");
+  const positivo=avaliados.length?Math.round(((evol.length+mant.length)/avaliados.length)*100):0;
+  const score=Math.round(media(res.map(x=>x.score)));
+
+  $("fPositivo").textContent=`${positivo}%`;
+  $("fEvoluiu").textContent=evol.length;
+  $("fManteve").textContent=mant.length;
+  $("fRegrediu").textContent=reg.length;
+  $("fScore").textContent=`${score}%`;
+
+  let frase="Ponto de atenção: ainda não há força suficiente para defender impacto positivo.",cls="bad";
+  if(positivo>=80){frase="Resultado positivo: os treinamentos mostram forte relação com evolução ou manutenção dos KPIs.";cls="ok"}
+  else if(positivo>=60){frase="Resultado moderado: há sinais de impacto, mas ainda existem oportunidades.";cls="warn"}
+
+  $("fResumo").innerHTML=`<span class="badge ${cls}">${positivo}% positivo</span> ${frase}<br>Base avaliada: <strong>${avaliados.length}</strong> KPIs — <strong>${evol.length}</strong> evoluíram, <strong>${mant.length}</strong> mantiveram e <strong>${reg.length}</strong> regrediram.`;
+}
+
+function popularFiltros(){
+  fill($("cMes"),TREINOS.map(x=>mes(x.data)),"Todos",mesLabel);
+  fill($("cAnalista"),TREINOS.map(x=>clean(x.usuarioNome||x.analista||x.uidKey)));
+  fill($("cCd"),TREINOS.map(x=>clean(x.cd)));
+  fill($("cGrc"),TREINOS.map(x=>clean(x.grc)));
+  fill($("cTreino"),TREINOS.map(x=>clean(x.treinamento)));
+
+  fill($("fMesTreino"),RESUMOS.map(x=>x.mesTreinamento),"Todos",mesLabel);
+  fill($("fMesAp"),RESUMOS.map(x=>x.mesApuracao),"Todos",mesLabel);
+  fill($("fAnalista"),RESUMOS.map(x=>clean(x.analista)));
+  fill($("fCd"),RESUMOS.map(x=>clean(x.cd)));
+  fill($("fGrc"),RESUMOS.map(x=>clean(x.grc)));
+  fill($("fTreino"),RESUMOS.map(x=>clean(x.treinamento)));
+  fill($("fKpi"),KPIS.map(x=>clean(x.kpi)));
+}
+
+async function carregar(){
+  const [t,r,k,cad,resp]=await Promise.all([
+    getDocs(collection(db,"treinamentos_realizados")),
+    getDocs(query(collection(db,"apuracoes_treinamentos"),where("tipo","==","correlacao_resumo_cd"))),
+    getDocs(query(collection(db,"apuracoes_treinamentos"),where("tipo","==","correlacao_treinamento_kpi"))),
+    getDocs(collection(db,"cadastro_grc_cd")),
+    getDocs(query(collection(db,"apuracoes_treinamentos"),where("tipo","==","responsavel_cd")))
+  ]);
+
+  CADASTRO_CD=[];RESPONSAVEIS_CD=[];TREINOS=[];RESUMOS=[];KPIS=[];
+  cad.forEach(d=>CADASTRO_CD.push({id:d.id,...d.data()}));
+  resp.forEach(d=>RESPONSAVEIS_CD.push({id:d.id,...d.data()}));
+
+  t.forEach(d=>TREINOS.push(aplicarCadastro({id:d.id,...d.data()})));
+  r.forEach(d=>RESUMOS.push(aplicarCadastro({id:d.id,...d.data()})));
+
+  k.forEach(d=>{
+    const item=aplicarCadastro({id:d.id,...d.data()});
+    const resumo=RESUMOS.find(r=>r.treinoId===item.treinoId&&r.mesBase===item.mesBase&&r.mesApuracao===item.mesApuracao&&cdKey(r.cd)===cdKey(item.cd));
+    KPIS.push({...item,grc:item.grc||resumo?.grc||"Sem GRC",responsavelArea:item.responsavelArea||resumo?.responsavelArea||"",tipoTreinamento:item.tipoTreinamento||resumo?.tipoTreinamento||"",analista:item.analista||resumo?.analista||"",treinamento:item.treinamento||resumo?.treinamento||""});
+  });
+
+  popularFiltros();
+  renderCobertura();
+  renderForca();
+}
+
+["cMes","cAnalista","cCd","cGrc","cTreino","cTipo"].forEach(id=>$(id).onchange=renderCobertura);
+["fMesTreino","fMesAp","fAnalista","fCd","fGrc","fTreino","fTipo","fKpi"].forEach(id=>$(id).onchange=renderForca);
+
+carregar().catch(e=>{
+  console.error(e);
+  alert("Erro ao carregar dados do Firebase. Verifique Rules, conexão, cadastro_grc_cd ou responsavel_cd.");
+});
+</script>
+</body>
+</html>

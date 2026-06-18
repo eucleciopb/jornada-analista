@@ -122,9 +122,8 @@
   /* =========================
      PATHS (ajuste se precisar)
   ========================= */
-  const PATH_INDEX = "index.html";
-  const PATH_MENU  = "menuadm.html"; // ✅ aqui é admin (se seu menu admin tiver outro nome, troque)
-
+  const PATH_INDEX = "../index.html";
+const PATH_MENU  = "../html%20menus/menuadm.html";
   /* =========================
      CONTROLE DE ACESSO (SEU PADRÃO)
   ========================= */
@@ -138,13 +137,21 @@
     window.location.href = PATH_MENU;
   }
 
-  document.getElementById("btnMenu").onclick = () => window.location.href = PATH_MENU;
-  document.getElementById("btnLogout").onclick = () => {
+document.getElementById("btnMenu").addEventListener("click", () => {
+    window.location.href = PATH_MENU;
+});
+
+document.getElementById("btnLogout").addEventListener("click", () => {
+
     localStorage.removeItem("usuarioLogado");
     localStorage.removeItem("usuarioKey");
     localStorage.removeItem("user_session");
-    window.location.href = PATH_INDEX;
-  };
+    localStorage.removeItem("analistaLogado");
+    localStorage.removeItem("usuarioSelecionado");
+
+    window.location.replace(PATH_INDEX);
+
+});
 
   /* =========================
      COLEÇÃO (GLOBAL)
