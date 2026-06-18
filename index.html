@@ -14,30 +14,35 @@
     <div class="logo-box">GP</div>
 
     <h2>Bem-vindo</h2>
-    <p class="hint">Selecione seu nome para acessar o sistema</p>
+    <p class="hint">Selecione seu nome e digite sua senha para acessar o sistema</p>
 
-<div class="form-group">
-  <label for="usuario">Usuário</label>
-  <select id="usuario">
-    <option value="" disabled selected>Selecione...</option>
-    <option>Alex</option>
-    <option>Daniel</option>
-    <option>Emerson</option>
-    <option>Euclecio</option>
-    <option>Felipe</option>
-    <option>Joice</option>
-    <option>Maiello</option>
-    <option>Michel</option>
-    <option>Muller</option>
-    <option>Robert</option>
-    <option>Rodrigo</option>
-    <option>Rosilene</option>
-    <option>Tenório</option>
-    <option>Victor</option>
-    <option>Marcio</option>
-    <option>Andre</option>
-  </select>
-</div>
+    <div class="form-group">
+      <label for="usuario">Usuário</label>
+      <select id="usuario">
+        <option value="" disabled selected>Selecione...</option>
+        <option>Alex</option>
+        <option>Daniel</option>
+        <option>Emerson</option>
+        <option>Euclecio</option>
+        <option>Felipe</option>
+        <option>Joice</option>
+        <option>Maiello</option>
+        <option>Michel</option>
+        <option>Muller</option>
+        <option>Robert</option>
+        <option>Rodrigo</option>
+        <option>Rosilene</option>
+        <option>Tenório</option>
+        <option>Victor</option>
+        <option>Marcio</option>
+        <option>Andre</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="senha">Senha</label>
+      <input id="senha" type="password" placeholder="Digite sua senha" />
+    </div>
 
     <button id="btnEntrar" class="btn-primary" type="button">Entrar</button>
 
@@ -62,19 +67,76 @@
   const db = getFirestore(app);
 
   const usuarioSelect = document.getElementById("usuario");
+  const senhaInput = document.getElementById("senha");
   const btnEntrar = document.getElementById("btnEntrar");
   const msg = document.getElementById("msg");
+
+  const USUARIOS = {
+    Alex: "A70",
+    Daniel: "D71",
+    Emerson: "B70",
+    Euclecio: "E72",
+    Felipe: "F73",
+    Joice: "J74",
+    Maiello: "M75",
+    Michel: "M76",
+    Muller: "M77",
+    Robert: "R78",
+    Rodrigo: "R79",
+    Rosilene: "R80",
+    Tenório: "T81",
+    Victor: "V82",
+    Marcio: "M83",
+    Andre: "A84"
+  };
 
   function setMsg(text, ok = false){
     msg.textContent = text || "";
     msg.style.color = ok ? "#22c55e" : "#ef4444";
   }
 
-  btnEntrar.onclick = async () => {
-    const usuario = (usuarioSelect.value || "").trim();
+  function limparErro(){
+    setMsg("");
+  }
 
-    if (!usuario) {
+  usuarioSelect.addEventListener("change", () => {
+    senhaInput.value = "";
+    limparErro();
+    senhaInput.focus();
+  });
+
+  senhaInput.addEventListener("keydown", (e) => {
+    if(e.key === "Enter"){
+      entrar();
+    }
+  });
+
+  btnEntrar.addEventListener("click", entrar);
+
+  async function entrar(){
+    const usuario = (usuarioSelect.value || "").trim();
+    const senha = (senhaInput.value || "").trim();
+
+    if(!usuario){
       setMsg("Selecione um usuário.");
+      return;
+    }
+
+    if(!USUARIOS[usuario]){
+      setMsg("Usuário não autorizado.");
+      return;
+    }
+
+    if(!senha){
+      setMsg("Digite sua senha.");
+      senhaInput.focus();
+      return;
+    }
+
+    if(USUARIOS[usuario] !== senha){
+      setMsg("Senha incorreta.");
+      senhaInput.focus();
+      senhaInput.select();
       return;
     }
 
@@ -82,9 +144,7 @@
     btnEntrar.style.opacity = ".7";
     setMsg("Entrando...", true);
 
-    try {
-
-      // Sessão padrão usada pela agenda
+    try{
       localStorage.setItem("user_session", JSON.stringify({
         nome: usuario,
         matricula: usuario,
@@ -92,25 +152,25 @@
         loginAt: Date.now()
       }));
 
-      // Log de acesso
+      localStorage.setItem("usuarioLogado", usuario);
+
       await addDoc(collection(db, "acessos"), {
         usuario,
         origem: "index.html",
-        evento: "LOGIN_SEM_AUTH",
+        evento: "LOGIN_ANALISTA_COM_SENHA",
         criadoEm: serverTimestamp(),
         userAgent: navigator.userAgent || null
       });
 
-      // ✅ CAMINHO CORRETO DO MENU
       window.location.href = "html menus/menu.html";
 
-    } catch (e) {
+    }catch(e){
       console.error(e);
       setMsg("Erro ao entrar. Verifique o Firebase.");
       btnEntrar.disabled = false;
       btnEntrar.style.opacity = "1";
     }
-  };
+  }
 </script>
 
 <style>
@@ -118,8 +178,10 @@
   display:flex;
   justify-content:center;
   align-items:center;
-  height:100vh;
+  min-height:100vh;
+  padding:20px;
 }
+
 .login-card{
   width:360px;
   padding:30px;
@@ -129,6 +191,7 @@
   box-shadow:0 20px 40px rgba(0,0,0,.4);
   text-align:center;
 }
+
 .logo-box{
   width:70px;
   height:70px;
@@ -142,19 +205,35 @@
   color:#fff;
   background:linear-gradient(135deg,#d91b2e,#ff3b3b);
 }
+
 .form-group{
   margin-top:20px;
   text-align:left;
 }
-.form-group select{
+
+.form-group label{
+  font-size:12px;
+  font-weight:800;
+  color:#d1d5db;
+}
+
+.form-group select,
+.form-group input{
   width:100%;
   padding:12px;
   border-radius:14px;
   border:1px solid rgba(255,255,255,.12);
-  background:rgba(255,255,255,.05);
-  color:#fff;
+  background:#1f2329;
+  color:#ffffff;
   margin-top:6px;
+  outline:none;
 }
+
+.form-group select option{
+  background:#ffffff;
+  color:#111827;
+}
+
 .btn-primary{
   width:100%;
   margin-top:20px;
@@ -166,10 +245,17 @@
   color:#fff;
   cursor:pointer;
 }
+
+.btn-primary:hover{
+  filter:brightness(1.08);
+}
+
 .msg{
   margin-top:12px;
   font-size:12px;
+  font-weight:800;
 }
+
 .hint{
   font-size:13px;
   opacity:.7;
