@@ -1,0 +1,1052 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Avaliação Matinal Geral | Jornada</title>
+  <link rel="stylesheet" href="../css/styles.css" />
+
+  <style>
+    :root{
+      --bg:#f6f8fb;
+      --card:#ffffff;
+      --text:#0f172a;
+      --muted:#64748b;
+      --line:#e5e7eb;
+      --blue:#1d4ed8;
+      --blue2:#eff6ff;
+      --green:#16a34a;
+      --yellow:#ca8a04;
+      --red:#dc2626;
+      --shadow:0 16px 45px rgba(15,23,42,.08);
+      --radius:22px;
+    }
+
+    *{box-sizing:border-box;}
+
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--text);
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    }
+
+    .topbar{
+      background:#fff;
+      border-bottom:1px solid var(--line);
+      padding:18px 22px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      position:sticky;
+      top:0;
+      z-index:20;
+    }
+
+    .topbar h2{
+      margin:0;
+      font-size:20px;
+      letter-spacing:-.3px;
+    }
+
+    .hint{
+      font-size:13px;
+      color:var(--muted);
+      margin-top:4px;
+    }
+
+    .top-actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    button{
+      border:none;
+      border-radius:14px;
+      padding:11px 14px;
+      font-weight:900;
+      cursor:pointer;
+      background:#e2e8f0;
+      color:#0f172a;
+      transition:.15s ease;
+    }
+
+    button:hover{
+      transform:translateY(-1px);
+      filter:brightness(.98);
+    }
+
+    button.primary{
+      background:var(--blue);
+      color:#fff;
+    }
+
+    button.danger{
+      background:#fee2e2;
+      color:#991b1b;
+    }
+
+    button:disabled{
+      opacity:.55;
+      cursor:not-allowed;
+      transform:none;
+    }
+
+    main{
+      max-width:1280px;
+      margin:0 auto;
+      padding:22px;
+      display:grid;
+      gap:18px;
+    }
+
+    .card{
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:18px;
+    }
+
+    .hero{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-end;
+      gap:16px;
+      flex-wrap:wrap;
+    }
+
+    .hero h3{
+      margin:0;
+      font-size:20px;
+      letter-spacing:-.3px;
+    }
+
+    .filters{
+      display:grid;
+      grid-template-columns:220px 1fr;
+      gap:14px;
+      align-items:end;
+      margin-top:16px;
+    }
+
+    label{
+      display:block;
+      font-size:12px;
+      font-weight:900;
+      text-transform:uppercase;
+      color:var(--muted);
+      margin-bottom:6px;
+    }
+
+    select,
+    textarea{
+      width:100%;
+      border:1px solid #dbe1ea;
+      border-radius:14px;
+      padding:11px 12px;
+      font-weight:800;
+      background:#fff;
+      color:#0f172a;
+      outline:none;
+    }
+
+    textarea{
+      min-height:58px;
+      resize:vertical;
+      font-weight:700;
+      line-height:1.3;
+    }
+
+    .cards{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:12px;
+    }
+
+    .kpi{
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:15px;
+      box-shadow:0 10px 28px rgba(15,23,42,.05);
+    }
+
+    .kpi span{
+      display:block;
+      font-size:11px;
+      font-weight:900;
+      color:var(--muted);
+      text-transform:uppercase;
+      margin-bottom:5px;
+    }
+
+    .kpi strong{
+      font-size:28px;
+      letter-spacing:-1px;
+    }
+
+    .table-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-bottom:12px;
+    }
+
+    .table-head h3{
+      margin:0;
+      font-size:18px;
+    }
+
+    .table-wrap{
+      overflow:auto;
+      border:1px solid var(--line);
+      border-radius:18px;
+      max-height:640px;
+      background:#fff;
+    }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+      min-width:1120px;
+      font-size:12px;
+    }
+
+    th,
+    td{
+      padding:11px 12px;
+      border-bottom:1px solid #eef2f7;
+      text-align:left;
+      vertical-align:top;
+    }
+
+    th{
+      background:#f8fafc;
+      font-weight:900;
+      color:#334155;
+      position:sticky;
+      top:0;
+      z-index:1;
+      white-space:nowrap;
+    }
+
+    td.cd-col{
+      width:230px;
+      font-weight:900;
+      color:#0f172a;
+      vertical-align:middle;
+    }
+
+    td.prev-col{
+      width:130px;
+      vertical-align:middle;
+    }
+
+    td.note-col{
+      width:360px;
+    }
+
+    td.obs-col{
+      width:330px;
+    }
+
+    td.status-col{
+      width:110px;
+      vertical-align:middle;
+    }
+
+    td.action-col{
+      width:110px;
+      vertical-align:middle;
+    }
+
+    .badge{
+      display:inline-flex;
+      padding:6px 9px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:900;
+      background:#e0f2fe;
+      color:#075985;
+      white-space:nowrap;
+    }
+
+    .badge.ok{
+      background:#dcfce7;
+      color:#166534;
+    }
+
+    .badge.warn{
+      background:#fef9c3;
+      color:#854d0e;
+    }
+
+    .badge.bad{
+      background:#fee2e2;
+      color:#991b1b;
+    }
+
+    .nota-buttons{
+      display:flex;
+      gap:7px;
+      flex-wrap:wrap;
+      max-width:350px;
+    }
+
+    .nota-btn{
+      width:42px;
+      height:36px;
+      border-radius:12px;
+      padding:0;
+      background:#f8fafc;
+      color:#0f172a;
+      border:1px solid #dbe1ea;
+      font-size:13px;
+      font-weight:900;
+      box-shadow:none;
+    }
+
+    .nota-btn:hover{
+      background:#eff6ff;
+      border-color:#bfdbfe;
+      color:var(--blue);
+      transform:none;
+    }
+
+    .nota-btn.active{
+      background:var(--blue);
+      color:#fff;
+      border-color:var(--blue);
+    }
+
+    .msg{
+      font-size:13px;
+      font-weight:900;
+      color:#334155;
+      margin:0;
+    }
+
+    .empty{
+      padding:14px;
+      color:var(--muted);
+      font-size:13px;
+      border:1px dashed #cbd5e1;
+      border-radius:14px;
+      background:#f8fafc;
+    }
+
+    @media(max-width:900px){
+      main{
+        padding:14px;
+      }
+
+      .topbar{
+        align-items:flex-start;
+        flex-direction:column;
+      }
+
+      .cards,
+      .filters{
+        grid-template-columns:1fr;
+      }
+
+      .top-actions{
+        width:100%;
+      }
+
+      .top-actions button{
+        flex:1;
+      }
+    }
+    </style>
+</head>
+
+<body>
+  <header class="topbar">
+    <div>
+      <h2>Avaliar Matinal Geral de Resultados</h2>
+      <div id="userInfo" class="hint">Carregando usuário...</div>
+    </div>
+
+    <div class="top-actions">
+      <button type="button" onclick="window.location.href='../html menus/menu.html'">
+        Voltar ao Menu
+      </button>
+      <button id="btnLogout" type="button" class="danger">
+        Sair
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <section class="card">
+      <div class="hero">
+        <div>
+          <h3>Avaliação mensal por CD</h3>
+          <p class="hint">
+            Todos os CDs da sua responsabilidade aparecem abaixo. Avalie a Matinal Geral de Resultados por CD.
+          </p>
+        </div>
+      </div>
+
+      <div class="filters">
+        <div>
+          <label for="mesFiltro">Mês avaliado</label>
+          <select id="mesFiltro"></select>
+        </div>
+
+        <div>
+          <label>Status</label>
+          <p id="statusLinha" class="msg">Carregando...</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="cards">
+      <div class="kpi">
+        <span>CDs responsáveis</span>
+        <strong id="cardCds">0</strong>
+      </div>
+
+      <div class="kpi">
+        <span>Avaliados</span>
+        <strong id="cardAvaliados">0</strong>
+      </div>
+
+      <div class="kpi">
+        <span>Pendentes</span>
+        <strong id="cardPendentes">0</strong>
+      </div>
+
+      <div class="kpi">
+        <span>Média atual</span>
+        <strong id="cardMedia">-</strong>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="table-head">
+        <div>
+          <h3>CDs para Avaliação</h3>
+          <p class="hint">
+            Clique na nota, preencha a observação e salve. A nota do mês anterior vem automática.
+          </p>
+        </div>
+
+        <button id="btnSalvarTudo" type="button" class="primary">
+          Salvar Tudo
+        </button>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>CD</th>
+              <th>Nota mês anterior</th>
+              <th>Nota atual</th>
+              <th>Observação</th>
+              <th>Status</th>
+              <th>Ação</th>
+            </tr>
+          </thead>
+
+          <tbody id="tbody">
+            <tr>
+              <td colspan="6">Carregando...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <p id="msg" class="msg">Carregando dados...</p>
+    </section>
+  </main>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import {
+      getFirestore,
+      collection,
+      getDocs,
+      query,
+      where,
+      doc,
+      setDoc,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
+      authDomain: "jornada-portal.firebaseapp.com",
+      projectId: "jornada-portal",
+      storageBucket: "jornada-portal.firebasestorage.app",
+      messagingSenderId: "669362296644",
+      appId: "1:669362296644:web:f590d9834a8e4e60012911"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const COLLECTION = "apuracoes_treinamentos";
+    const TIPO_RESP = "responsavel_cd";
+    const TIPO_AVAL = "avaliacao_matinal_geral";
+
+    const userInfo = document.getElementById("userInfo");
+    const btnLogout = document.getElementById("btnLogout");
+    const mesFiltro = document.getElementById("mesFiltro");
+    const tbody = document.getElementById("tbody");
+    const msg = document.getElementById("msg");
+    const statusLinha = document.getElementById("statusLinha");
+    const btnSalvarTudo = document.getElementById("btnSalvarTudo");
+
+    const cardCds = document.getElementById("cardCds");
+    const cardAvaliados = document.getElementById("cardAvaliados");
+    const cardPendentes = document.getElementById("cardPendentes");
+    const cardMedia = document.getElementById("cardMedia");
+
+    let MEUS_CDS = [];
+    let AVALIACOES = [];
+    let LINHAS = [];
+
+    function safeParse(raw){
+      try{
+        return JSON.parse(raw);
+      }catch{
+        return null;
+      }
+    }
+
+    function normalize(value){
+      return String(value ?? "").replace(/\s+/g," ").trim();
+    }
+
+    function normalizeKey(value){
+      return normalize(value)
+        .toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+        .replace(/[^a-z0-9]+/g,"");
+    }
+
+    function slug(value){
+      return normalize(value)
+        .toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+        .replace(/[^a-z0-9]+/g,"-")
+        .replace(/(^-|-$)/g,"");
+    }
+    function escapeHtml(value){
+      return String(value ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    function getUsuario(){
+      const rawSession = localStorage.getItem("user_session");
+
+      if(rawSession){
+        const session = safeParse(rawSession);
+
+        if(session?.nome){
+          return String(session.nome).trim();
+        }
+
+        if(session?.usuario){
+          return String(session.usuario).trim();
+        }
+
+        if(session?.name){
+          return String(session.name).trim();
+        }
+      }
+
+      return (
+        localStorage.getItem("usuarioLogado") ||
+        localStorage.getItem("analistaLogado") ||
+        localStorage.getItem("usuarioSelecionado") ||
+        ""
+      ).trim();
+    }
+
+    const usuario = getUsuario();
+
+    if(!usuario){
+      window.location.href = "../index.html";
+      throw new Error("Usuário não encontrado.");
+    }
+
+    const uidKey = slug(usuario);
+    userInfo.textContent = `Usuário: ${usuario}`;
+
+    btnLogout.addEventListener("click", () => {
+      localStorage.removeItem("usuarioLogado");
+      localStorage.removeItem("user_session");
+      localStorage.removeItem("analistaLogado");
+      localStorage.removeItem("usuarioSelecionado");
+      window.location.href = "../index.html";
+    });
+
+    function mesKeyAtual(){
+      const hoje = new Date();
+      return `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2,"0")}`;
+    }
+
+    function mesAnteriorKey(mesKey){
+      const [ano, mes] = String(mesKey).split("-").map(Number);
+      const data = new Date(ano, mes - 2, 1);
+
+      return `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2,"0")}`;
+    }
+
+    function mesLabel(mesKey){
+      const meses = [
+        "",
+        "Jan",
+        "Fev",
+        "Mar",
+        "Abr",
+        "Mai",
+        "Jun",
+        "Jul",
+        "Ago",
+        "Set",
+        "Out",
+        "Nov",
+        "Dez"
+      ];
+
+      const [ano, mes] = String(mesKey).split("-");
+
+      return `${meses[Number(mes)] || mes}/${String(ano).slice(-2)}`;
+    }
+
+    function popularMeses(){
+      const atual = mesKeyAtual();
+      const [anoAtual, mesAtual] = atual.split("-").map(Number);
+      const meses = [];
+
+      for(let i = 0; i < 12; i++){
+        const data = new Date(anoAtual, mesAtual - 1 - i, 1);
+        const key = `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2,"0")}`;
+
+        meses.push(key);
+      }
+
+      mesFiltro.innerHTML = meses.map(key => `
+        <option value="${key}">
+          ${mesLabel(key)}
+        </option>
+      `).join("");
+
+      mesFiltro.value = atual;
+    }
+
+    function setMsg(text, type = "info"){
+      msg.textContent = text;
+
+      if(type === "ok"){
+        msg.style.color = "#166534";
+        return;
+      }
+
+      if(type === "err"){
+        msg.style.color = "#991b1b";
+        return;
+      }
+
+      msg.style.color = "#334155";
+    }
+
+    function notaBadge(nota){
+      const n = Number(nota);
+
+      if(!Number.isFinite(n)){
+        return `<span class="badge">-</span>`;
+      }
+
+      const classe = n >= 9 ? "ok" : n >= 7 ? "warn" : "bad";
+
+      return `<span class="badge ${classe}">${String(n).replace(".",",")}</span>`;
+    }
+
+    function docId(mesKey, cd){
+      return ["avaliacao-matinal-geral", mesKey, cd].map(slug).join("__");
+    }
+
+    function isMeuResponsavel(responsavel){
+      const usuarioKey = normalizeKey(usuario);
+      const respKey = normalizeKey(responsavel);
+
+      if(!usuarioKey || !respKey){
+        return false;
+      }
+
+      return usuarioKey.includes(respKey) || respKey.includes(usuarioKey);
+    }
+
+    async function carregarCds(){
+      const qResp = query(
+        collection(db, COLLECTION),
+        where("tipo","==",TIPO_RESP)
+      );
+
+      const snap = await getDocs(qResp);
+      const cds = [];
+
+      snap.forEach(docSnap => {
+        const item = docSnap.data();
+
+        if(isMeuResponsavel(item.responsavel)){
+          const cd = normalize(item.cd);
+
+          if(cd){
+            cds.push(cd);
+          }
+        }
+      });
+
+      MEUS_CDS = Array.from(new Set(cds)).sort((a,b) =>
+        a.localeCompare(b,"pt-BR")
+      );
+    }
+
+    async function carregarAvaliacoes(){
+      const qAval = query(
+        collection(db, COLLECTION),
+        where("tipo","==",TIPO_AVAL)
+      );
+
+      const snap = await getDocs(qAval);
+
+      AVALIACOES = [];
+      snap.forEach(docSnap => {
+        AVALIACOES.push({
+          id: docSnap.id,
+          ...docSnap.data()
+        });
+      });
+    }
+
+    function montarLinhas(){
+      const mesAtual = mesFiltro.value;
+      const mesAnterior = mesAnteriorKey(mesAtual);
+
+      LINHAS = MEUS_CDS.map(cd => {
+        const atual = AVALIACOES.find(item =>
+          item.mesKey === mesAtual &&
+          normalizeKey(item.cd) === normalizeKey(cd) &&
+          normalizeKey(item.uidKey || item.analista) === normalizeKey(uidKey)
+        );
+
+        const anterior = AVALIACOES.find(item =>
+          item.mesKey === mesAnterior &&
+          normalizeKey(item.cd) === normalizeKey(cd)
+        );
+
+        return {
+          cd,
+          notaAnterior: anterior?.nota ?? null,
+          nota: atual?.nota ?? "",
+          observacao: atual?.observacao ?? "",
+          salvo: !!atual,
+          id: docId(mesAtual, cd)
+        };
+      });
+    }
+    function render(){
+      montarLinhas();
+
+      if(!LINHAS.length){
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6">
+              <div class="empty">
+                Nenhum CD vinculado ao seu usuário na base de responsáveis.
+              </div>
+            </td>
+          </tr>
+        `;
+      }else{
+        tbody.innerHTML = LINHAS.map((item, idx) => `
+          <tr>
+            <td class="cd-col">
+              ${escapeHtml(item.cd)}
+            </td>
+
+            <td class="prev-col">
+              ${notaBadge(item.notaAnterior)}
+            </td>
+
+            <td class="note-col">
+              <div class="nota-buttons">
+                ${[10,9,8,7,6,5,4,3,2,1,0].map(n => `
+                  <button
+                    type="button"
+                    class="nota-btn ${Number(item.nota) === n ? "active" : ""}"
+                    data-nota-btn="${idx}"
+                    data-value="${n}">
+                    ${n}
+                  </button>
+                `).join("")}
+              </div>
+
+              <input type="hidden" data-nota="${idx}" value="${escapeHtml(item.nota)}">
+            </td>
+
+            <td class="obs-col">
+              <textarea
+                data-obs="${idx}"
+                placeholder="Observação sobre o arquivo enviado pelo CD...">${escapeHtml(item.observacao)}</textarea>
+            </td>
+
+            <td class="status-col">
+              ${item.salvo
+                ? `<span class="badge ok">Salvo</span>`
+                : `<span class="badge warn">Pendente</span>`
+              }
+            </td>
+
+            <td class="action-col">
+              <button type="button" class="primary" data-save="${idx}">
+                Salvar
+              </button>
+            </td>
+          </tr>
+        `).join("");
+      }
+
+      tbody.querySelectorAll("[data-nota-btn]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const idx = btn.dataset.notaBtn;
+          const value = btn.dataset.value;
+
+          const input = tbody.querySelector(`[data-nota="${idx}"]`);
+          if(input){
+            input.value = value;
+          }
+
+          tbody.querySelectorAll(`[data-nota-btn="${idx}"]`).forEach(item => {
+            item.classList.remove("active");
+          });
+
+          btn.classList.add("active");
+
+          atualizarCards();
+        });
+      });
+
+      tbody.querySelectorAll("[data-save]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          salvarLinha(Number(btn.dataset.save));
+        });
+      });
+
+      tbody.querySelectorAll("[data-obs]").forEach(input => {
+        input.addEventListener("input", atualizarCards);
+      });
+
+      atualizarCards();
+    }
+
+    function lerLinhaTela(idx){
+      return {
+        nota: tbody.querySelector(`[data-nota="${idx}"]`)?.value ?? "",
+        observacao: normalize(tbody.querySelector(`[data-obs="${idx}"]`)?.value ?? "")
+      };
+    }
+
+    function atualizarCards(){
+      const preenchidos = LINHAS.map((item, idx) => {
+        const tela = lerLinhaTela(idx);
+        const nota = Number(tela.nota);
+
+        return {
+          ...item,
+          notaTela: Number.isFinite(nota) ? nota : null,
+          obsTela: tela.observacao
+        };
+      });
+
+      const avaliados = preenchidos.filter(item =>
+        item.salvo || (item.notaTela !== null && item.obsTela)
+      ).length;
+
+      const notas = preenchidos
+        .map(item => item.notaTela)
+        .filter(value => Number.isFinite(value));
+
+      const media = notas.length
+        ? (notas.reduce((acc, value) => acc + value, 0) / notas.length)
+            .toFixed(1)
+            .replace(".",",")
+        : "-";
+
+      cardCds.textContent = LINHAS.length;
+      cardAvaliados.textContent = avaliados;
+      cardPendentes.textContent = Math.max(LINHAS.length - avaliados, 0);
+      cardMedia.textContent = media;
+
+      statusLinha.textContent =
+        `${avaliados}/${LINHAS.length} CDs avaliados em ${mesLabel(mesFiltro.value)}.`;
+    }
+
+    async function salvarLinha(idx){
+      const item = LINHAS[idx];
+      const form = lerLinhaTela(idx);
+      const nota = Number(form.nota);
+
+      if(!item){
+        setMsg("Linha não encontrada.", "err");
+        return;
+      }
+
+      if(!Number.isFinite(nota) || nota < 0 || nota > 10){
+        setMsg(`Selecione uma nota válida para ${item.cd}.`, "err");
+        return;
+      }
+
+      if(!form.observacao){
+        setMsg(`Preencha a observação para ${item.cd}.`, "err");
+        return;
+      }
+
+      const mesAtual = mesFiltro.value;
+
+      try{
+        setMsg(`Salvando avaliação de ${item.cd}...`);
+
+        await setDoc(doc(db, COLLECTION, docId(mesAtual, item.cd)), {
+          tipo: TIPO_AVAL,
+          mesKey: mesAtual,
+          mesLabel: mesLabel(mesAtual),
+          cd: item.cd,
+          analista: usuario,
+          uidKey,
+          nota,
+          notaAnterior: item.notaAnterior,
+          observacao: form.observacao,
+          atualizadoEm: serverTimestamp()
+        }, { merge:true });
+
+        await carregarAvaliacoes();
+
+        render();
+
+        setMsg(`Avaliação de ${item.cd} salva com sucesso ✅`, "ok");
+
+      }catch(error){
+        console.error(error);
+        setMsg("Erro ao salvar. Verifique conexão e regras do Firestore.", "err");
+      }
+    }
+
+    async function salvarTudo(){
+      if(!LINHAS.length){
+        setMsg("Nenhum CD disponível para salvar.", "err");
+        return;
+      }
+
+      btnSalvarTudo.disabled = true;
+
+      try{
+        let salvos = 0;
+        const mesAtual = mesFiltro.value;
+
+        for(let i = 0; i < LINHAS.length; i++){
+          const item = LINHAS[i];
+          const form = lerLinhaTela(i);
+          const nota = Number(form.nota);
+
+          if(form.nota === "" && !form.observacao){
+            continue;
+          }
+
+          if(!Number.isFinite(nota) || nota < 0 || nota > 10){
+            setMsg(`Nota inválida em ${item.cd}. Corrija antes de salvar tudo.`, "err");
+            btnSalvarTudo.disabled = false;
+            return;
+          }
+
+          if(!form.observacao){
+            setMsg(`Observação pendente em ${item.cd}. Corrija antes de salvar tudo.`, "err");
+            btnSalvarTudo.disabled = false;
+            return;
+          }
+
+          await setDoc(doc(db, COLLECTION, docId(mesAtual, item.cd)), {
+            tipo: TIPO_AVAL,
+            mesKey: mesAtual,
+            mesLabel: mesLabel(mesAtual),
+            cd: item.cd,
+            analista: usuario,
+            uidKey,
+            nota,
+            notaAnterior: item.notaAnterior,
+            observacao: form.observacao,
+            atualizadoEm: serverTimestamp()
+          }, { merge:true });
+
+          salvos++;
+        }
+
+        await carregarAvaliacoes();
+
+        render();
+
+        setMsg(`Salvar tudo concluído ✅ ${salvos} avaliação(ões) salva(s).`, "ok");
+
+      }catch(error){
+        console.error(error);
+        setMsg("Erro ao salvar tudo. Verifique conexão e regras do Firestore.", "err");
+      }finally{
+        btnSalvarTudo.disabled = false;
+      }
+    }
+
+    mesFiltro.addEventListener("change", () => {
+      render();
+      setMsg(`Mês alterado para ${mesLabel(mesFiltro.value)}.`);
+    });
+
+    btnSalvarTudo.addEventListener("click", salvarTudo);
+
+    popularMeses();
+
+    try{
+      setMsg("Carregando CDs e avaliações...");
+
+      await carregarCds();
+      await carregarAvaliacoes();
+
+      render();
+
+      setMsg("Dados carregados ✅", "ok");
+
+    }catch(error){
+      console.error(error);
+
+      setMsg("Erro ao carregar dados. Verifique conexão e regras do Firestore.", "err");
+
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="6">
+            <div class="empty">
+              Erro ao carregar dados.
+            </div>
+          </td>
+        </tr>
+      `;
+    }
+  </script>
+</body>
+</html>
