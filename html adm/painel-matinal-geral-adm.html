@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Painel Matinal Geral | ADM</title>
+  <link rel="stylesheet" href="../css/styles.css" />
+
+  <style>
+    body{margin:0;background:#f6f8fb;color:#0f172a;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;}
+    .topbar{background:#fff;border-bottom:1px solid #e5e7eb;padding:18px 22px;display:flex;justify-content:space-between;align-items:center;gap:12px;position:sticky;top:0;z-index:10;}
+    .topbar h2{margin:0;font-size:20px}.hint{font-size:13px;color:#64748b;margin-top:4px}.top-actions{display:flex;gap:10px;flex-wrap:wrap}
+    button{border:none;border-radius:14px;padding:11px 14px;font-weight:900;cursor:pointer;background:#e2e8f0;color:#0f172a}
+    button.primary{background:#1d4ed8;color:#fff}.danger{background:#fee2e2;color:#991b1b}
+    main{max-width:1380px;margin:0 auto;padding:22px;display:grid;gap:18px}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:22px;box-shadow:0 16px 45px rgba(15,23,42,.08);padding:18px}
+    .cards{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+    .kpi{background:#f8fafc;border:1px solid #eef2f7;border-radius:18px;padding:14px}.kpi span{display:block;font-size:11px;font-weight:900;color:#64748b;text-transform:uppercase;margin-bottom:5px}.kpi strong{font-size:26px}
+    .filters{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+    label{display:block;font-size:12px;font-weight:900;text-transform:uppercase;color:#64748b;margin-bottom:6px}
+    select,input{width:100%;border:1px solid #dbe1ea;border-radius:14px;padding:11px;font-weight:800;background:#fff;color:#0f172a}
+    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+    .table-wrap{overflow:auto;border:1px solid #e5e7eb;border-radius:18px;max-height:430px}
+    table{width:100%;border-collapse:collapse;min-width:760px;font-size:12px}
+    th,td{padding:10px 12px;border-bottom:1px solid #eef2f7;text-align:left;white-space:nowrap;vertical-align:top}
+    th{background:#f8fafc;color:#334155;font-weight:900;position:sticky;top:0;z-index:1}
+    .badge{display:inline-flex;padding:5px 8px;border-radius:999px;font-size:11px;font-weight:900;background:#e0f2fe;color:#075985}.ok{background:#dcfce7;color:#166534}.warn{background:#fef9c3;color:#854d0e}.bad{background:#fee2e2;color:#991b1b}
+    .msg{font-size:13px;font-weight:900;color:#334155;margin:0}
+    @media(max-width:900px){main{padding:14px}.topbar{flex-direction:column;align-items:flex-start}.cards,.filters,.grid-2{grid-template-columns:1fr}}
+  </style>
+</head>
+
+<body>
+  <header class="topbar">
+    <div>
+      <h2>Painel ADM — Matinal Geral de Resultados</h2>
+      <div id="userInfo" class="hint">Carregando usuário...</div>
+    </div>
+    <div class="top-actions">
+      <button onclick="window.location.href='../html adm/menuadm.html'">Voltar ao Menu</button>
+      <button id="btnAtualizar" class="primary">Atualizar</button>
+      <button id="btnLogout" class="danger">Sair</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="card">
+      <h3 style="margin:0 0 6px;">Visão Brasil</h3>
+      <p class="hint">Resumo das avaliações feitas pelos analistas para os arquivos da Matinal Geral.</p>
+
+      <div class="filters" style="margin-top:16px;">
+        <div><label>Mês</label><select id="fMes"></select></div>
+        <div><label>Analista</label><select id="fAnalista"><option value="">Todos</option></select></div>
+        <div><label>GRC</label><select id="fGrc"><option value="">Todos</option></select></div>
+        <div><label>Diretor</label><select id="fDiretor"><option value="">Todos</option></select></div>
+        <div><label>CD</label><input id="fBusca" placeholder="Buscar CD..." /></div>
+      </div>
+    </section>
+
+    <section class="cards">
+      <div class="kpi"><span>Média Brasil</span><strong id="kMedia">-</strong></div>
+      <div class="kpi"><span>Avaliações</span><strong id="kAvaliacoes">0</strong></div>
+      <div class="kpi"><span>CDs avaliados</span><strong id="kCds">0</strong></div>
+      <div class="kpi"><span>Analistas</span><strong id="kAnalistas">0</strong></div>
+      <div class="kpi"><span>Evolução média</span><strong id="kEvolucao">-</strong></div>
+    </section>
+
+    <section class="grid-2">
+      <div class="card">
+        <h3 style="margin:0 0 12px;">Resumo por Analista</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Analista</th><th>CDs</th><th>Média</th><th>Evolução</th><th>Status</th></tr></thead>
+            <tbody id="tbAnalista"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 style="margin:0 0 12px;">Resumo por GRC</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>GRC</th><th>CDs</th><th>Média</th><th>Evolução</th><th>Status</th></tr></thead>
+            <tbody id="tbGrc"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h3 style="margin:0 0 12px;">Resumo por Diretor</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Diretor</th><th>CDs</th><th>Média</th><th>Evolução</th><th>Status</th></tr></thead>
+          <tbody id="tbDiretor"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <h3 style="margin:0 0 12px;">Detalhe das Avaliações</h3>
+      <div class="table-wrap" style="max-height:560px;">
+        <table style="min-width:1200px;">
+          <thead>
+            <tr>
+              <th>CD</th><th>Analista</th><th>GRC</th><th>Diretor</th><th>Mês</th>
+              <th>Nota Anterior</th><th>Nota Atual</th><th>Evolução</th><th>Status</th><th>Observação</th>
+            </tr>
+          </thead>
+          <tbody id="tbDetalhe"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card"><p id="msg" class="msg">Carregando...</p></section>
+  </main>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import { getFirestore, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
+      authDomain: "jornada-portal.firebaseapp.com",
+      projectId: "jornada-portal",
+      storageBucket: "jornada-portal.firebasestorage.app",
+      messagingSenderId: "669362296644",
+      appId: "1:669362296644:web:f590d9834a8e4e60012911"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const COL = "apuracoes_treinamentos";
+
+    const el = id => document.getElementById(id);
+    const fMes = el("fMes"), fAnalista = el("fAnalista"), fGrc = el("fGrc"), fDiretor = el("fDiretor"), fBusca = el("fBusca");
+    let AVAL = [], HIER = new Map(), BASE = [];
+
+    function safeParse(raw){try{return JSON.parse(raw)}catch{return null}}
+    function getUsuario(){
+      const s = safeParse(localStorage.getItem("user_session") || "{}");
+      return s?.nome || localStorage.getItem("usuarioLogado") || "Admin";
+    }
+    const usuario = getUsuario();
+    el("userInfo").textContent = `Usuário: ${usuario}`;
+
+    el("btnLogout").onclick = () => {
+      localStorage.removeItem("usuarioLogado");
+      localStorage.removeItem("user_session");
+      window.location.href = "../index.html";
+    };
+
+    function normalize(v){return String(v ?? "").replace(/\s+/g," ").trim()}
+    function key(v){return normalize(v).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"")}
+    function esc(v){return String(v ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;")}
+    function fmt(n){return Number.isFinite(Number(n)) ? Number(n).toFixed(1).replace(".",",") : "-"}
+    function badgeNota(n){
+      n = Number(n);
+      const c = n >= 9 ? "ok" : n >= 7 ? "warn" : "bad";
+      return `<span class="badge ${Number.isFinite(n) ? c : ""}">${fmt(n)}</span>`;
+    }
+    function statusMedia(n){
+      n = Number(n);
+      if(!Number.isFinite(n)) return `<span class="badge">-</span>`;
+      if(n >= 9) return `<span class="badge ok">Excelente</span>`;
+      if(n >= 7) return `<span class="badge warn">Atenção</span>`;
+      return `<span class="badge bad">Crítico</span>`;
+    }
+    function evol(nota, ant){
+      const n = Number(nota), a = Number(ant);
+      if(!Number.isFinite(n) || !Number.isFinite(a)) return null;
+      return n - a;
+    }
+    function fmtEvol(v){
+      if(v === null || !Number.isFinite(Number(v))) return "-";
+      const sinal = v > 0 ? "+" : "";
+      return `${sinal}${Number(v).toFixed(1).replace(".",",")}`;
+    }
+    function mesLabel(m){
+      const meses=["","Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+      const [a,mm]=String(m).split("-");
+      return `${meses[Number(mm)] || mm}/${String(a).slice(-2)}`;
+    }
+    function mesAtual(){
+      const d=new Date();
+      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
+    }
+
+    async function carregar(){
+      el("msg").textContent = "Carregando dados...";
+
+      const qAval = query(collection(db, COL), where("tipo","==","avaliacao_matinal_geral"));
+      const snapAval = await getDocs(qAval);
+      AVAL = [];
+      snapAval.forEach(d => AVAL.push({id:d.id,...d.data()}));
+
+      HIER = new Map();
+      const snapHier = await getDocs(collection(db, COL));
+      snapHier.forEach(d => {
+        const x = d.data();
+        if(["cadastro_cd_hierarquia","hierarquia_cd","cd_grc_diretor"].includes(x.tipo)){
+          HIER.set(key(x.cd), {
+            grc: normalize(x.grc || x.GRC || "Não cadastrado"),
+            diretor: normalize(x.diretor || x.Diretor || "Não cadastrado")
+          });
+        }
+      });
+
+      prepararBase();
+      popularFiltros();
+      render();
+      el("msg").textContent = "Dados carregados ✅";
+    }
+
+    function prepararBase(){
+      BASE = AVAL.map(x => {
+        const h = HIER.get(key(x.cd)) || {};
+        const ev = evol(x.nota, x.notaAnterior);
+        return {
+          ...x,
+          grc: h.grc || "Não cadastrado",
+          diretor: h.diretor || "Não cadastrado",
+          evolucao: ev
+        };
+      });
+    }
+
+    function optionList(arr, first="Todos"){
+      return `<option value="">${first}</option>` + arr.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join("");
+    }
+
+    function popularFiltros(){
+      const meses = [...new Set(BASE.map(x=>x.mesKey).filter(Boolean))].sort((a,b)=>b.localeCompare(a));
+      fMes.innerHTML = meses.map(m=>`<option value="${esc(m)}">${mesLabel(m)}</option>`).join("");
+      fMes.value = meses.includes(mesAtual()) ? mesAtual() : (meses[0] || "");
+
+      fAnalista.innerHTML = optionList([...new Set(BASE.map(x=>x.analista).filter(Boolean))].sort());
+      fGrc.innerHTML = optionList([...new Set(BASE.map(x=>x.grc).filter(Boolean))].sort());
+      fDiretor.innerHTML = optionList([...new Set(BASE.map(x=>x.diretor).filter(Boolean))].sort());
+    }
+
+    function filtrar(){
+      const busca = key(fBusca.value);
+      return BASE.filter(x =>
+        (!fMes.value || x.mesKey === fMes.value) &&
+        (!fAnalista.value || x.analista === fAnalista.value) &&
+        (!fGrc.value || x.grc === fGrc.value) &&
+        (!fDiretor.value || x.diretor === fDiretor.value) &&
+        (!busca || key(x.cd).includes(busca))
+      );
+    }
+
+    function media(arr, campo="nota"){
+      const nums = arr.map(x=>Number(x[campo])).filter(Number.isFinite);
+      return nums.length ? nums.reduce((a,b)=>a+b,0)/nums.length : null;
+    }
+
+    function mediaEvol(arr){
+      const nums = arr.map(x=>x.evolucao).filter(v=>Number.isFinite(Number(v)));
+      return nums.length ? nums.reduce((a,b)=>a+b,0)/nums.length : null;
+    }
+
+    function agrupar(arr, campo){
+      const map = new Map();
+      arr.forEach(x => {
+        const k = x[campo] || "Não informado";
+        if(!map.has(k)) map.set(k, []);
+        map.get(k).push(x);
+      });
+      return [...map.entries()].map(([nome,itens]) => ({
+        nome,
+        qtd: new Set(itens.map(x=>key(x.cd))).size,
+        media: media(itens),
+        evolucao: mediaEvol(itens),
+        itens
+      })).sort((a,b)=>(b.media ?? 0)-(a.media ?? 0));
+    }
+
+    function renderGrupo(tbodyId, campo){
+      const rows = agrupar(filtrar(), campo);
+      el(tbodyId).innerHTML = rows.length ? rows.map(r => `
+        <tr>
+          <td><strong>${esc(r.nome)}</strong></td>
+          <td>${r.qtd}</td>
+          <td>${badgeNota(r.media)}</td>
+          <td>${fmtEvol(r.evolucao)}</td>
+          <td>${statusMedia(r.media)}</td>
+        </tr>
+      `).join("") : `<tr><td colspan="5">Sem dados.</td></tr>`;
+    }
+
+    function render(){
+      const dados = filtrar();
+      const m = media(dados);
+      const ev = mediaEvol(dados);
+
+      el("kMedia").textContent = fmt(m);
+      el("kAvaliacoes").textContent = dados.length;
+      el("kCds").textContent = new Set(dados.map(x=>key(x.cd))).size;
+      el("kAnalistas").textContent = new Set(dados.map(x=>x.analista).filter(Boolean)).size;
+      el("kEvolucao").textContent = fmtEvol(ev);
+
+      renderGrupo("tbAnalista", "analista");
+      renderGrupo("tbGrc", "grc");
+      renderGrupo("tbDiretor", "diretor");
+
+      el("tbDetalhe").innerHTML = dados.length ? dados
+        .sort((a,b)=>String(a.cd).localeCompare(String(b.cd),"pt-BR"))
+        .map(x => `
+          <tr>
+            <td><strong>${esc(x.cd)}</strong></td>
+            <td>${esc(x.analista || "-")}</td>
+            <td>${esc(x.grc)}</td>
+            <td>${esc(x.diretor)}</td>
+            <td>${esc(x.mesLabel || mesLabel(x.mesKey))}</td>
+            <td>${badgeNota(x.notaAnterior)}</td>
+            <td>${badgeNota(x.nota)}</td>
+            <td>${fmtEvol(x.evolucao)}</td>
+            <td>${statusMedia(x.nota)}</td>
+            <td style="white-space:normal;min-width:260px;">${esc(x.observacao || "-")}</td>
+          </tr>
+        `).join("") : `<tr><td colspan="10">Sem avaliações para o filtro selecionado.</td></tr>`;
+    }
+
+    [fMes,fAnalista,fGrc,fDiretor].forEach(x => x.addEventListener("change", render));
+    fBusca.addEventListener("input", render);
+    el("btnAtualizar").onclick = carregar;
+
+    await carregar();
+  </script>
+</body>
+</html>
