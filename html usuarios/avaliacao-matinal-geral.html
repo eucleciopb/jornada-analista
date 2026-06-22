@@ -291,25 +291,24 @@
       color:#991b1b;
     }
 
-    .nota-buttons{
-      display:flex;
-      gap:7px;
-      flex-wrap:wrap;
-      max-width:350px;
-    }
+ .nota-input{
+  width:120px;
+  padding:11px 12px;
+  border:1px solid #dbe1ea;
+  border-radius:14px;
+  font-weight:900;
+  font-size:15px;
+  text-align:center;
+  background:#fff;
+  color:#0f172a;
+  outline:none;
+}
 
-    .nota-btn{
-      width:42px;
-      height:36px;
-      border-radius:12px;
-      padding:0;
-      background:#f8fafc;
-      color:#0f172a;
-      border:1px solid #dbe1ea;
-      font-size:13px;
-      font-weight:900;
-      box-shadow:none;
-    }
+.nota-input:focus{
+  border-color:#1d4ed8;
+  box-shadow:0 0 0 3px rgba(29,78,216,.12);
+}
+
 
     .nota-btn:hover{
       background:#eff6ff;
@@ -788,17 +787,15 @@
             </td>
 
             <td class="note-col">
-              <div class="nota-buttons">
-                ${[10,9,8,7,6,5,4,3,2,1,0].map(n => `
-                  <button
-                    type="button"
-                    class="nota-btn ${Number(item.nota) === n ? "active" : ""}"
-                    data-nota-btn="${idx}"
-                    data-value="${n}">
-                    ${n}
-                  </button>
-                `).join("")}
-              </div>
+<input
+    type="number"
+    class="nota-input"
+    data-nota="${idx}"
+    value="${item.nota ?? ''}"
+    min="0"
+    max="10"
+    step="0.1"
+    placeholder="0,0">
 
               <input type="hidden" data-nota="${idx}" value="${escapeHtml(item.nota)}">
             </td>
