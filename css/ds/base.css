@@ -1,0 +1,113 @@
+/* ============================================================
+   Jornada — Design System · Base
+   ============================================================ */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text, #0f172a);
+  background: var(--bg, #f8fafc);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* App shell — páginas internas (não login, não portal) */
+body.app-shell,
+body.bg.app-shell,
+body.bg.theme-user,
+body.bg.theme-admin,
+body.theme-user.app-shell,
+body.theme-admin.app-shell {
+  display: block;
+  align-items: unset;
+  justify-content: unset;
+}
+
+body.theme-user.app-shell,
+body.bg.theme-user {
+  background:
+    radial-gradient(900px 420px at 10% -5%, rgba(37, 99, 235, 0.06), transparent 55%),
+    radial-gradient(700px 350px at 95% 0%, rgba(59, 130, 246, 0.04), transparent 50%),
+    var(--bg);
+}
+
+body.theme-admin.app-shell,
+body.bg.theme-admin,
+body.bg:not(.theme-user) {
+  background:
+    radial-gradient(900px 420px at 20% 10%, rgba(217, 27, 46, 0.12), transparent 60%),
+    radial-gradient(900px 420px at 80% 0%, rgba(255, 59, 59, 0.06), transparent 60%),
+    var(--bg);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+p { margin: 0; }
+
+a {
+  color: var(--accent, var(--brand));
+  text-decoration: none;
+  transition: color var(--transition);
+}
+
+a:hover { color: var(--brand-hover, var(--brand-light)); }
+
+img, svg { display: block; max-width: 100%; }
+
+:focus-visible {
+  outline: 2px solid var(--brand, #2563eb);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--brand-soft, rgba(37, 99, 235, 0.2));
+  color: var(--text);
+}
+
+.hint {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+  font-weight: 500;
+}
+
+.msg {
+  margin: var(--space-3) 0 0;
+  min-height: 18px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+body.portal-page,
+body.portal-page.theme-user.app-shell,
+body.portal-page.theme-admin.app-shell {
+  display: block;
+  background: var(--bg, #f1f5f9);
+  background-image: none;
+}
+
+body.portal-page.theme-user {
+  --bg: #f1f5f9;
+}
+
+body.portal-page.theme-admin {
+  --bg: #f1f5f9;
+}

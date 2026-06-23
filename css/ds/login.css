@@ -1,0 +1,144 @@
+/* ============================================================
+   Jornada — Design System · Login
+   ============================================================ */
+
+body.login-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: var(--space-5);
+}
+
+body.login-page.theme-user {
+  background:
+    radial-gradient(800px 400px at 20% 10%, rgba(37, 99, 235, 0.08), transparent 60%),
+    radial-gradient(600px 300px at 80% 0%, rgba(59, 130, 246, 0.05), transparent 55%),
+    var(--bg);
+}
+
+body.login-page.theme-admin {
+  background:
+    radial-gradient(800px 400px at 20% 10%, rgba(217, 27, 46, 0.15), transparent 60%),
+    radial-gradient(800px 400px at 80% 0%, rgba(255, 59, 59, 0.08), transparent 60%),
+    var(--bg);
+}
+
+.center-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: var(--space-5);
+  width: 100%;
+}
+
+.login-card,
+body.login-page .card,
+body.login-page > .card {
+  width: min(400px, 100%);
+  padding: var(--space-8) var(--space-6);
+  border-radius: var(--radius-xl);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-lg);
+  text-align: center;
+}
+
+body.login-page.theme-admin .card,
+body.login-page.theme-admin .login-card {
+  background: var(--card-bg);
+  backdrop-filter: blur(14px);
+}
+
+.login-card h2,
+body.login-page .card h2 {
+  margin: var(--space-4) 0 var(--space-2);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.login-card .hint,
+body.login-page .card small,
+body.login-page small {
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 500;
+  display: block;
+}
+
+.login-card .logo-box,
+body.login-page .logo {
+  margin: 0 auto var(--space-4);
+  width: 64px;
+  height: 64px;
+  font-size: 20px;
+}
+
+.login-card .form-group,
+body.login-page .card label + select,
+body.login-page .card label + input {
+  text-align: left;
+}
+
+.login-card .btn-primary,
+body.login-page .card button,
+body.login-page #btnEntrar {
+  width: 100%;
+  margin-top: var(--space-5);
+  padding: 13px var(--space-4);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.login-card .msg,
+body.login-page .error {
+  margin-top: var(--space-3);
+  font-size: 12px;
+  font-weight: 600;
+  min-height: 18px;
+}
+
+body.login-page .error {
+  display: none;
+  color: var(--danger);
+  text-align: center;
+}
+
+body.login-page .info {
+  margin-top: var(--space-5);
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+body.login-page label {
+  margin-top: var(--space-4);
+  margin-bottom: var(--space-2);
+}
+
+body.login-page select,
+body.login-page input[type="password"],
+body.login-page input[type="text"] {
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+}
+
+body.login-page.theme-admin select,
+body.login-page.theme-admin input {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--line);
+  color: var(--text);
+}
+
+body.login-page.theme-user select,
+body.login-page.theme-user input {
+  background: var(--input-bg);
+}
+
+body.login-page select option {
+  color: #0f172a;
+  background: #fff;
+}

@@ -1,0 +1,192 @@
+/* ============================================================
+   Jornada — Design System · Tokens
+   ============================================================ */
+
+:root {
+  /* Typography */
+  --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+  --font-mono: ui-monospace, 'Cascadia Code', monospace;
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* Radius */
+  --radius-xs: 8px;
+  --radius-sm: 10px;
+  --radius: 12px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-xl: 22px;
+  --radius-full: 999px;
+
+  /* Layout */
+  --max-w: 1180px;
+  --sidebar-width: 272px;
+
+  /* Motion */
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --transition: 0.18s var(--ease);
+  --transition-fast: 0.12s var(--ease);
+
+  /* Shadows */
+  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-sm: 0 4px 12px rgba(15, 23, 42, 0.06);
+  --shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  --shadow-lg: 0 18px 50px rgba(15, 23, 42, 0.1);
+  --shadow-brand: 0 12px 28px rgba(37, 99, 235, 0.25);
+
+  /* Legacy aliases (JS / old CSS) */
+  --red-primary: #d91b2e;
+  --red-light: #ff3b3b;
+  --bg-dark: #0f172a;
+  --card-dark: #1e293b;
+  --text-muted: #64748b;
+  --border: rgba(148, 163, 184, 0.2);
+  --gray-soft: #334155;
+  --field: rgba(255, 255, 255, 0.06);
+}
+
+/* ── User area: light, clean, acolhedor ── */
+.theme-user {
+  --bg: #f8fafc;
+  --bg-subtle: #f1f5f9;
+  --surface: #ffffff;
+  --surface-raised: #ffffff;
+  --surface-hover: #f8fafc;
+  --text: #0f172a;
+  --text-secondary: #334155;
+  --muted: #64748b;
+  --line: #e2e8f0;
+  --line-soft: #f1f5f9;
+
+  --brand: #2563eb;
+  --brand-hover: #1d4ed8;
+  --brand-light: #3b82f6;
+  --brand-soft: rgba(37, 99, 235, 0.1);
+  --brand-glow: rgba(37, 99, 235, 0.18);
+
+  --accent: var(--brand);
+  --accent-dark: #1e40af;
+  --accent-soft: var(--brand-soft);
+
+  --danger: #dc2626;
+  --danger-soft: #fef2f2;
+  --ok: #16a34a;
+  --ok-soft: #f0fdf4;
+  --warn: #ca8a04;
+  --warn-soft: #fefce8;
+
+  --topbar-bg: rgba(255, 255, 255, 0.92);
+  --topbar-border: var(--line);
+  --card-bg: var(--surface);
+  --card-border: var(--line);
+  --card-shadow: var(--shadow-sm);
+
+  --input-bg: #ffffff;
+  --input-border: #cbd5e1;
+  --input-focus: var(--brand);
+
+  --table-head: #f8fafc;
+  --table-stripe: #fafbfc;
+  --table-hover: #f1f5f9;
+  --table-text: var(--text);
+
+  --btn-secondary-bg: #ffffff;
+  --btn-secondary-border: var(--line);
+  --btn-secondary-text: var(--text-secondary);
+
+  color-scheme: light;
+}
+
+/* ── Admin area: dark, premium, dashboard ── */
+.theme-admin,
+body.bg.theme-admin {
+  --bg: #0f172a;
+  --bg-subtle: #1e293b;
+  --surface: #1e293b;
+  --surface-raised: #334155;
+  --surface-hover: #334155;
+  --text: #f1f5f9;
+  --text-secondary: #cbd5e1;
+  --muted: #94a3b8;
+  --line: rgba(148, 163, 184, 0.15);
+  --line-soft: rgba(148, 163, 184, 0.08);
+
+  --brand: #d91b2e;
+  --brand-hover: #b91c1c;
+  --brand-light: #ff3b3b;
+  --brand-soft: rgba(217, 27, 46, 0.15);
+  --brand-glow: rgba(217, 27, 46, 0.22);
+
+  --accent: var(--brand);
+  --accent-dark: #991b1b;
+  --accent-soft: var(--brand-soft);
+
+  --danger: #f87171;
+  --danger-soft: rgba(248, 113, 113, 0.12);
+  --ok: #4ade80;
+  --ok-soft: rgba(74, 222, 128, 0.1);
+  --warn: #fbbf24;
+  --warn-soft: rgba(251, 191, 36, 0.1);
+
+  --topbar-bg: rgba(30, 41, 59, 0.88);
+  --topbar-border: var(--line);
+  --card-bg: rgba(30, 41, 59, 0.85);
+  --card-border: var(--line);
+  --card-shadow: 0 20px 45px rgba(0, 0, 0, 0.35);
+
+  --input-bg: rgba(15, 23, 42, 0.5);
+  --input-border: rgba(148, 163, 184, 0.2);
+  --input-focus: var(--brand-light);
+
+  --table-head: rgba(15, 23, 42, 0.95);
+  --table-stripe: rgba(255, 255, 255, 0.02);
+  --table-hover: rgba(255, 255, 255, 0.04);
+  --table-text: rgba(241, 245, 249, 0.95);
+
+  --btn-secondary-bg: rgba(255, 255, 255, 0.06);
+  --btn-secondary-border: rgba(148, 163, 184, 0.2);
+  --btn-secondary-text: var(--text);
+
+  color-scheme: dark;
+}
+
+/* Legacy: .bg without theme defaults to admin dark */
+body.bg:not(.theme-user) {
+  --bg: #0f172a;
+  --bg-subtle: #1e293b;
+  --surface: #1e293b;
+  --surface-raised: #334155;
+  --text: #f1f5f9;
+  --muted: #94a3b8;
+  --line: rgba(148, 163, 184, 0.15);
+  --brand: #d91b2e;
+  --brand-light: #ff3b3b;
+  --brand-soft: rgba(217, 27, 46, 0.15);
+  --accent: var(--brand);
+  --accent-soft: var(--brand-soft);
+  --danger: #f87171;
+  --danger-soft: rgba(248, 113, 113, 0.12);
+  --ok: #4ade80;
+  --ok-soft: rgba(74, 222, 128, 0.1);
+  --warn: #fbbf24;
+  --warn-soft: rgba(251, 191, 36, 0.1);
+  --topbar-bg: rgba(30, 41, 59, 0.88);
+  --card-bg: rgba(30, 41, 59, 0.85);
+  --card-border: var(--line);
+  --card-shadow: 0 20px 45px rgba(0, 0, 0, 0.35);
+  --input-bg: rgba(15, 23, 42, 0.5);
+  --input-border: rgba(148, 163, 184, 0.2);
+  --table-head: rgba(15, 23, 42, 0.95);
+  --table-hover: rgba(255, 255, 255, 0.04);
+  --btn-secondary-bg: rgba(255, 255, 255, 0.06);
+  --btn-secondary-border: rgba(148, 163, 184, 0.2);
+  --btn-secondary-text: var(--text);
+  color-scheme: dark;
+}

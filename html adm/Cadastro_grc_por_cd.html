@@ -4,41 +4,14 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Cadastro GRC por CD</title>
-<link rel="stylesheet" href="../css/styles.css"/>
-
-<style>
-:root{--bg:#f6f8fb;--txt:#0f172a;--muted:#64748b;--line:#e5e7eb;--blue:#2563eb}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
-.header{background:linear-gradient(120deg,#2563eb,#93c5fd);color:#fff;padding:22px 26px;border-bottom:8px solid #fde9a8}
-.header h1{margin:0;font-size:34px;font-weight:950;letter-spacing:-1px}
-.header p{margin:4px 0 0;font-size:14px;opacity:.95}
-main{max-width:1200px;margin:auto;padding:18px;display:grid;gap:14px}
-.card{background:#fff;border:1px solid var(--line);border-radius:20px;box-shadow:0 10px 28px #0f172a12;padding:16px}
-.actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-button,label.btn{border:0;border-radius:13px;padding:11px 14px;font-weight:900;cursor:pointer;background:#e2e8f0;color:var(--txt);font-size:13px}
-button.primary{background:var(--blue);color:#fff}
-button.ok{background:#dcfce7;color:#166534}
-button.bad{background:#fee2e2;color:#991b1b}
-label.btn{display:inline-flex}
-input[type=file]{display:none}
-input.search{width:100%;border:1px solid #dbe1ea;border-radius:13px;padding:12px;font-weight:800}
-.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.kpi{border:1px solid var(--line);border-radius:16px;padding:14px;background:#fff}
-.kpi span{display:block;font-size:11px;font-weight:950;color:var(--muted);text-transform:uppercase}
-.kpi strong{font-size:28px;letter-spacing:-1px}
-.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:16px;max-height:560px}
-table{width:100%;border-collapse:collapse;font-size:13px;min-width:760px}
-th,td{padding:10px;border-bottom:1px solid #eef2f7;text-align:left}
-th{position:sticky;top:0;background:#f8fafc;color:#334155;font-weight:950;z-index:1}
-td input{width:100%;border:1px solid #dbe1ea;border-radius:10px;padding:9px;font-weight:800}
-.msg{font-size:13px;font-weight:850;color:#334155}
-.badge{display:inline-flex;border-radius:999px;padding:5px 8px;font-size:10px;font-weight:950;background:#dbeafe;color:#1e40af}
-@media(max-width:800px){.kpis{grid-template-columns:1fr}.header h1{font-size:26px}main{padding:12px}}
-</style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/bundle-admin.css" />
+  <link rel="stylesheet" href="../css/pages/admin-Cadastro_grc_por_cd.css" />
 </head>
 
-<body>
+<body class="theme-admin app-shell">
 <header class="header">
   <h1>Cadastro GRC por CD</h1>
   <p>Importe Excel/CSV ou edite manualmente a relação CD × GRC.</p>

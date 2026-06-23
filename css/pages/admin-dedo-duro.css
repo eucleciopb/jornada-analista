@@ -1,0 +1,10 @@
+/* dedo-duro.html */
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin-top:12px;}
+    .toolbar>div{min-width:180px;}
+    .pill{display:inline-flex;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:900;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);}
+    .pill.warn{color:#facc15;}
+    .pill.ok{color:#22c55e;}
+    .pill.bad{color:#ef4444;}
+    .details{font-size:12px;line-height:1.5;white-space:normal;}
+    .btn-mini{padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:rgba(37,99,235,.95);color:white;font-weight:900;cursor:pointer;}
+    .btn-mini:hover{filter:brightness(1.08);}

@@ -1,116 +1,16 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="pt-br">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Treinamentos Realizados</title>
-  <link rel="stylesheet" href="../css/styles.css" />
-  <style>
-    /* Multi-CD (chips) */
-    .chips-wrap{
-      display:flex;
-      flex-wrap:wrap;
-      gap:8px;
-      margin-top:10px;
-    }
-    .chip{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      padding:8px 10px;
-      border-radius:999px;
-      border:1px solid rgba(255,255,255,.12);
-      background: rgba(255,255,255,.04);
-      color: rgba(255,255,255,.95);
-      font-weight: 900;
-      font-size: 12px;
-      line-height: 1;
-      max-width: 100%;
-    }
-    .chip .x{
-      border:1px solid rgba(255,255,255,.18);
-      background: rgba(255,255,255,.05);
-      color: rgba(255,255,255,.9);
-      width: 24px;
-      height: 24px;
-      border-radius: 999px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      cursor:pointer;
-      font-weight: 900;
-      flex: 0 0 auto;
-    }
-    .chip .t{
-      overflow:hidden;
-      text-overflow:ellipsis;
-      white-space:nowrap;
-    }
-    .cd-row{
-      display:flex;
-      gap:10px;
-      align-items:flex-end;
-      flex-wrap:wrap;
-    }
-    .cd-row .grow{ flex: 1; min-width: 240px; }
-    .btn-mini{
-      padding: 12px 14px;
-      border-radius: 14px;
-      border: 1px solid rgba(255,255,255,.10);
-      background: rgba(255,255,255,.04);
-      color: rgba(255,255,255,.95);
-      font-weight: 900;
-      cursor:pointer;
-      white-space:nowrap;
-    }
-    .btn-mini.primary{
-      border-color: transparent;
-      background: rgba(217,27,46,.95);
-    }
-    .btn-mini:hover{ filter: brightness(1.08); }
-    .hint-inline{ margin-top:6px; opacity:.85; font-size: 12px; }
-
-    /* Ações sticky (primeira coluna) */
-    th.actions-col, td.actions-col{
-      position: sticky;
-      left: 0;
-      z-index: 3;
-      background: rgba(11,15,20,.96);
-      border-right: 1px solid rgba(255,255,255,.08);
-    }
-    thead th.actions-col{ z-index: 4; }
-
-    .actions-inline{
-      display:flex;
-      gap:8px;
-      flex-wrap:wrap;
-    }
-    .btn-act{
-      padding:8px 10px;
-      border-radius:10px;
-      border:1px solid rgba(255,255,255,.15);
-      background:rgba(255,255,255,.06);
-      color:#e5e7eb;
-      font-weight:900;
-      cursor:pointer;
-    }
-    .btn-act:hover{ filter: brightness(1.08); }
-    .btn-act.danger{
-      border-color: rgba(255,59,59,.35);
-      color:#ff8a8a;
-    }
-
-    /* Badge edição */
-    #editBadge{
-      display:none;
-      margin-top:6px;
-      color:#facc15;
-      font-weight:900;
-    }
-  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/bundle-user.css" />
 </head>
 
-<body class="bg">
+<body class="theme-user app-shell">
   <header class="topbar">
     <div>
       <h2>Treinamentos Realizados</h2>
