@@ -5,10 +5,20 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Importar KPIs Supervisores</title>
   <link rel="stylesheet" href="../css/styles.css" />
-  <link rel="stylesheet" href="../css/page-specific.css" />
+
+  <style>
+    .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin-top:12px;}
+    .toolbar>div{min-width:220px;}
+    .pill{display:inline-flex;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:900;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);}
+    .pill.ok{color:#22c55e;}
+    .pill.warn{color:#facc15;}
+    .pill.info{color:#93c5fd;}
+    .table-wrap{margin-top:12px;max-height:520px;overflow:auto;}
+    .small{font-size:12px;opacity:.85;}
+  </style>
 </head>
 
-<body class="bg portal-page admin-page">
+<body class="bg">
   <header class="topbar">
     <div>
       <h2>Importar KPIs Supervisores</h2>

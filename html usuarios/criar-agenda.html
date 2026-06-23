@@ -5,11 +5,302 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Criar Agenda</title>
 
+  <!-- Use seu CSS global do projeto -->
   <link rel="stylesheet" href="../css/styles.css" />
-  <link rel="stylesheet" href="../css/page-specific.css" />
+
+  <!-- ✅ CSS TECH CLEAN (ISOLADO NESSA TELA) + ✅ MODAL OBSERVAÇÕES -->
+  <style>
+    /* Requer: <body class="bg page-agenda"> */
+    .page-agenda{
+      --bgA:#070A0F;
+      --bgB:#0B1018;
+      --panel:rgba(255,255,255,.06);
+      --panel2:rgba(255,255,255,.08);
+      --line:rgba(255,255,255,.10);
+      --line2:rgba(255,255,255,.14);
+      --txt:#EEF1F6;
+      --mut:rgba(238,241,246,.62);
+      --accent:#ff3b3b;
+      --accent2:#d91b2e;
+      --ok:#22c55e;
+      --warn:#facc15;
+      --danger:#ef4444;
+    }
+
+    /* fundo “tech” com grid ultra sutil + glow */
+    body.page-agenda.bg{
+      background:
+        radial-gradient(800px 420px at 16% 10%, rgba(255,59,59,.14), transparent 62%),
+        radial-gradient(760px 420px at 86% 8%, rgba(217,27,46,.10), transparent 62%),
+        linear-gradient(180deg, var(--bgA), var(--bgB));
+      min-height:100vh;
+      color:var(--txt);
+      position:relative;
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto;
+    }
+    body.page-agenda.bg::before{
+      content:"";
+      position:fixed; inset:0;
+      pointer-events:none;
+      background:
+        linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.030) 1px, transparent 1px);
+      background-size:52px 52px;
+      opacity:.18;
+      mix-blend-mode:overlay;
+    }
+
+    *{box-sizing:border-box}
+    .wrap{max-width:1200px;margin:0 auto;padding:0 18px 30px; position:relative;}
+    .hint{color:var(--mut);font-size:12px;line-height:1.35}
+    .err{color:var(--danger);font-weight:800;font-size:12px;margin-top:6px;display:none}
+    .msg{margin:10px 0 0;min-height:18px;font-size:12px;color:var(--mut);font-weight:700}
+
+    /* topbar glass */
+    .topbar{
+      max-width:1180px;
+      margin:18px auto 0;
+      padding:14px 16px;
+      display:flex;align-items:center;justify-content:space-between;gap:12px;
+      border-radius:22px;
+      border:1px solid var(--line);
+      background:linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,.05));
+      backdrop-filter: blur(14px);
+      box-shadow: 0 20px 60px rgba(0,0,0,.55);
+      position:relative;
+    }
+    .topbar h2{margin:0;font-size:18px;letter-spacing:.3px}
+    .top-actions{display:flex;gap:10px;flex-wrap:wrap}
+
+    /* card principal */
+    .card{
+      background:
+        radial-gradient(900px 440px at 10% 0%, rgba(255,59,59,.10), transparent 60%),
+        linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.05));
+      border:1px solid var(--line);
+      border-radius:26px;
+      padding:18px;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 30px 90px rgba(0,0,0,.65);
+    }
+
+    .row{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;justify-content:space-between}
+    .row h3{margin:0 0 6px;font-size:16px;letter-spacing:.2px}
+    .sep{border:none;height:1px;background:rgba(255,255,255,.10);margin:16px 0}
+
+    label{font-size:12px;color:var(--mut);display:block;margin-bottom:6px}
+
+    #monthPicker{
+      padding:10px 12px;border-radius:16px;
+      border:1px solid var(--line);
+      background:rgba(0,0,0,.25);
+      color:var(--txt);
+      outline:none;
+    }
+    #monthPicker:focus{
+      border-color:rgba(255,59,59,.60);
+      box-shadow:0 0 0 4px rgba(255,59,59,.16);
+    }
+
+    .pill{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:8px 12px;border-radius:999px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.04);
+      font-size:12px;color:rgba(238,241,246,.70);
+      user-select:none;
+    }
+
+    /* botões */
+    .btn{
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:10px 14px;
+      font-weight:900;
+      cursor:pointer;
+      background:rgba(255,255,255,.06);
+      color:var(--txt);
+      transition: transform .12s ease, background .2s ease, box-shadow .2s ease;
+    }
+    .btn:hover{
+      transform: translateY(-1px);
+      background: rgba(255,255,255,.10);
+      box-shadow: 0 14px 34px rgba(0,0,0,.40);
+    }
+    .btn-primary{
+      border:1px solid rgba(255,59,59,.35);
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+      box-shadow: 0 18px 46px rgba(255,59,59,.18);
+    }
+    .btn-primary:hover{
+      box-shadow: 0 24px 70px rgba(255,59,59,.22);
+    }
+
+    /* tabela */
+    .table-wrap{
+      overflow:auto;
+      margin-top:14px;
+      border-radius:20px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.03);
+    }
+    table{width:100%;border-collapse:collapse;min-width:980px}
+    thead th{
+      position:sticky;top:0;z-index:2;
+      text-align:left;font-size:12px;color:rgba(238,241,246,.78);
+      font-weight:900;padding:12px;
+      border-bottom:1px solid rgba(255,255,255,.10);
+      background: linear-gradient(180deg, rgba(10,12,18,.92), rgba(10,12,18,.78));
+      backdrop-filter: blur(8px);
+    }
+    tbody td{
+      padding:10px 12px;
+      border-bottom:1px solid rgba(255,255,255,.06);
+      vertical-align:top;
+      font-size:13px;color:rgba(238,241,246,.92);
+    }
+    tbody tr:hover{background:rgba(255,255,255,.04)}
+    tr.blocked{opacity:.60;background:rgba(255,255,255,.02)}
+
+    .field{
+      width:100%;
+      padding:10px 10px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.22);
+      color: var(--txt);
+      outline:none;
+      transition: border-color .15s ease, box-shadow .15s ease;
+    }
+    .field::placeholder{color:rgba(238,241,246,.45)}
+    .field:focus{
+      border-color: rgba(255,59,59,.55);
+      box-shadow: 0 0 0 4px rgba(255,59,59,.16);
+    }
+    select.field{cursor:pointer}
+
+    /* Observações: preview pequeno (modal abre no clique) */
+    textarea.field[data-field="obs"]{
+      min-height:54px;
+      height:54px;
+      resize:none;
+      overflow:hidden;
+      line-height:1.35;
+      cursor:pointer;
+    }
+
+    /* =========================
+       MODAL OBSERVAÇÕES (popup de verdade)
+    ========================= */
+    .obs-modal{
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: none;
+    }
+    .obs-modal.is-open{ display:block; }
+
+    .obs-modal__backdrop{
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,.70);
+      backdrop-filter: blur(6px);
+    }
+
+    .obs-modal__panel{
+      position: absolute;
+      left: 50%;
+      top: 8vh;
+      transform: translateX(-50%);
+      width: min(980px, calc(100% - 28px));
+      height: 78vh;
+
+      border-radius: 24px;
+      border: 1px solid rgba(255,255,255,.14);
+
+      background:
+        radial-gradient(900px 440px at 10% 0%, rgba(255,59,59,.12), transparent 60%),
+        linear-gradient(180deg, rgba(255,255,255,.07), rgba(0,0,0,.40));
+
+      box-shadow: 0 40px 110px rgba(0,0,0,.75);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .obs-modal__header{
+      padding: 14px 16px;
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap: 12px;
+      border-bottom: 1px solid rgba(255,255,255,.10);
+    }
+
+    .obs-modal__kicker{
+      font-size: 12px;
+      color: rgba(238,241,246,.60);
+      font-weight: 800;
+      letter-spacing: .2px;
+    }
+
+    .obs-modal__title{
+      margin: 2px 0 0;
+      font-size: 16px;
+      color: rgba(238,241,246,.95);
+    }
+
+    .obs-modal__x{
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color: rgba(238,241,246,.92);
+      border-radius: 14px;
+      padding: 8px 10px;
+      cursor: pointer;
+      font-weight: 900;
+    }
+
+    .obs-modal__textarea{
+      flex: 1;
+      width: 100%;
+      border: none;
+      outline: none;
+      background: transparent;
+      color: rgba(238,241,246,.95);
+      padding: 16px;
+      resize: none;
+      line-height: 1.65;
+      font-size: 14px;
+    }
+
+    .obs-modal__textarea::placeholder{
+      color: rgba(238,241,246,.40);
+    }
+
+    .obs-modal__footer{
+      padding: 14px 16px;
+      display:flex;
+      justify-content:flex-end;
+      gap: 10px;
+      border-top: 1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.18);
+    }
+
+    /* trava scroll do body quando modal abre */
+    body.page-agenda.modal-open{
+      overflow: hidden;
+    }
+
+    @media (max-width:720px){
+      .topbar{flex-direction:column;align-items:flex-start}
+      table{min-width:860px}
+      .obs-modal__panel{ top: 6vh; height: 82vh; }
+    }
+  </style>
 </head>
 
-<body class="bg portal-page page-agenda">
+<body class="bg page-agenda">
   <header class="topbar">
     <div>
       <h2>Criar Agenda</h2>

@@ -5,10 +5,49 @@
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Efetividade dos Treinamentos | Jornada</title>
   <link rel="stylesheet" href="../css/styles.css"/>
-  <link rel="stylesheet" href="../css/page-specific.css"/>
+
+  <style>
+    :root{--bg:#f6f8fb;--txt:#0f172a;--muted:#64748b;--line:#e5e7eb;--azul:#1d4ed8}
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+    .topbar{position:sticky;top:0;z-index:10;background:#fff;border-bottom:1px solid var(--line);padding:14px 22px;display:flex;justify-content:space-between;align-items:center;gap:12px}
+    h2,h3,p{margin:0}
+    h2{font-size:20px}
+    h3{font-size:16px;margin-bottom:10px}
+    .hint{font-size:12px;color:var(--muted);margin-top:3px}
+    .actions{display:flex;gap:8px;flex-wrap:wrap}
+    button{border:0;border-radius:12px;padding:10px 14px;font-weight:900;cursor:pointer;background:#e2e8f0;color:var(--txt)}
+    button.danger{background:#fee2e2;color:#991b1b}
+    main{max-width:1450px;margin:auto;padding:18px;display:grid;gap:14px}
+    .card{background:#fff;border:1px solid var(--line);border-radius:18px;box-shadow:0 10px 28px rgba(15,23,42,.06);padding:16px}
+    .filters,.cards{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+    .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+    .grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+    label{display:block;font-size:11px;font-weight:900;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+    select{width:100%;border:1px solid #dbe1ea;border-radius:12px;padding:11px;font-weight:800;background:#fff;color:var(--txt)}
+    .kpi{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px}
+    .kpi span{display:block;font-size:11px;font-weight:900;color:var(--muted);text-transform:uppercase}
+    .kpi strong{font-size:26px;letter-spacing:-1px}
+    .msg{font-size:13px;font-weight:800;color:#334155;line-height:1.55}
+    .table-wrap{overflow:auto;border:1px solid var(--line);border-radius:16px;max-height:460px}
+    table{width:100%;border-collapse:collapse;min-width:720px;font-size:12px}
+    table.wide{min-width:1350px}
+    th,td{padding:9px 11px;border-bottom:1px solid #eef2f7;text-align:left;white-space:nowrap}
+    th{background:#f8fafc;font-weight:900;color:#334155;position:sticky;top:0;z-index:1}
+    .badge{display:inline-flex;padding:5px 8px;border-radius:999px;font-size:10px;font-weight:900;background:#e0f2fe;color:#075985}
+    .ok{background:#dcfce7;color:#166534}
+    .warn{background:#fef9c3;color:#854d0e}
+    .bad{background:#fee2e2;color:#991b1b}
+    .blue{background:#dbeafe;color:#1e40af}
+    @media(max-width:1000px){
+      main{padding:12px}
+      .topbar{align-items:flex-start;flex-direction:column}
+      .filters,.cards,.grid-3,.grid-2{grid-template-columns:1fr}
+    }
+  </style>
 </head>
 
-<body class="bg portal-page admin-page">
+<body>
 <header class="topbar">
   <div>
     <h2>Painel de Efetividade dos Treinamentos</h2>

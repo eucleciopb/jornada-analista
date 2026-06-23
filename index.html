@@ -5,10 +5,9 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Portal de Treinamentos</title>
   <link rel="stylesheet" href="css/styles.css" />
-  <link rel="stylesheet" href="css/page-specific.css" />
 </head>
 
-<body class="login-page">
+<body class="bg">
 
 <main class="center-wrapper">
   <div class="login-card">
@@ -172,7 +171,96 @@
       btnEntrar.style.opacity = "1";
     }
   }
-  </script>
+</script>
+
+<style>
+.center-wrapper{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  min-height:100vh;
+  padding:20px;
+}
+
+.login-card{
+  width:360px;
+  padding:30px;
+  border-radius:20px;
+  background:rgba(23,25,29,.85);
+  border:1px solid rgba(255,255,255,.08);
+  box-shadow:0 20px 40px rgba(0,0,0,.4);
+  text-align:center;
+}
+
+.logo-box{
+  width:70px;
+  height:70px;
+  margin:0 auto 20px auto;
+  border-radius:18px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:900;
+  font-size:22px;
+  color:#fff;
+  background:linear-gradient(135deg,#d91b2e,#ff3b3b);
+}
+
+.form-group{
+  margin-top:20px;
+  text-align:left;
+}
+
+.form-group label{
+  font-size:12px;
+  font-weight:800;
+  color:#d1d5db;
+}
+
+.form-group select,
+.form-group input{
+  width:100%;
+  padding:12px;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.12);
+  background:#1f2329;
+  color:#ffffff;
+  margin-top:6px;
+  outline:none;
+}
+
+.form-group select option{
+  background:#ffffff;
+  color:#111827;
+}
+
+.btn-primary{
+  width:100%;
+  margin-top:20px;
+  padding:12px;
+  border:none;
+  border-radius:14px;
+  font-weight:800;
+  background:linear-gradient(135deg,#d91b2e,#ff3b3b);
+  color:#fff;
+  cursor:pointer;
+}
+
+.btn-primary:hover{
+  filter:brightness(1.08);
+}
+
+.msg{
+  margin-top:12px;
+  font-size:12px;
+  font-weight:800;
+}
+
+.hint{
+  font-size:13px;
+  opacity:.7;
+}
+</style>
 
 </body>
 </html>
