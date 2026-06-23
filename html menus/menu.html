@@ -5,138 +5,230 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Menu | Jornada</title>
   <link rel="stylesheet" href="../css/styles.css" />
+  <link rel="stylesheet" href="../css/page-specific.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <style>
     :root{
-      --bg:#f6f8fb;
+      --sidebar:#0f172a;
+      --sidebar-hover:#1e293b;
+      --sidebar-border:rgba(255,255,255,.08);
+      --accent:#2563eb;
+      --accent-soft:rgba(37,99,235,.12);
+      --bg:#f1f5f9;
       --card:#ffffff;
       --text:#0f172a;
       --muted:#64748b;
-      --line:#e5e7eb;
-      --blue:#1d4ed8;
+      --line:#e2e8f0;
+      --blue:#2563eb;
       --blue2:#eff6ff;
-      --shadow:0 16px 45px rgba(15,23,42,.08);
-      --radius:22px;
+      --shadow:0 18px 50px rgba(15,23,42,.08);
+      --radius:20px;
+      --sidebar-width:272px;
     }
 
     *{box-sizing:border-box;}
+
+    html{scroll-behavior:smooth;}
 
     body{
       margin:0;
       background:var(--bg);
       color:var(--text);
-      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+      font-family:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
     }
 
     .portal-shell{
       min-height:100vh;
       display:grid;
-      grid-template-columns:260px 1fr;
+      grid-template-columns:var(--sidebar-width) 1fr;
     }
 
     .sidebar{
       position:sticky;
       top:0;
       height:100vh;
-      background:#fff;
-      border-right:1px solid var(--line);
-      padding:22px;
+      background:var(--sidebar);
+      border-right:1px solid var(--sidebar-border);
+      padding:22px 16px;
       display:flex;
       flex-direction:column;
-      gap:18px;
+      gap:6px;
+      overflow-y:auto;
+      z-index:95;
     }
 
     .brand{
       display:flex;
       align-items:center;
       gap:12px;
-      padding:8px 4px 18px;
-      border-bottom:1px solid var(--line);
+      padding:4px 6px 18px;
+      border-bottom:1px solid var(--sidebar-border);
+      margin-bottom:14px;
     }
 
     .brand-logo{
       width:46px;
       height:46px;
-      border-radius:16px;
+      border-radius:14px;
       display:grid;
       place-items:center;
-      background:#0f172a;
+      background:linear-gradient(135deg,#2563eb,#1d4ed8);
       color:#fff;
-      font-weight:900;
+      font-weight:800;
+      font-size:15px;
+      box-shadow:0 10px 28px rgba(37,99,235,.35);
     }
 
     .brand h2{
       margin:0;
-      font-size:18px;
-      line-height:1.1;
+      font-size:16px;
+      font-weight:800;
+      line-height:1.2;
+      color:#fff;
+      letter-spacing:-.3px;
     }
 
     .brand small{
-      color:var(--muted);
-      font-size:12px;
+      color:#94a3b8;
+      font-size:11px;
+      font-weight:600;
+    }
+
+    .user-card{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      padding:12px;
+      background:rgba(255,255,255,.05);
+      border:1px solid var(--sidebar-border);
+      border-radius:14px;
+      margin-bottom:12px;
+    }
+
+    .avatar{
+      width:40px;
+      height:40px;
+      border-radius:11px;
+      background:linear-gradient(135deg,#3b82f6,#1d4ed8);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:14px;
+      font-weight:800;
+      color:#fff;
+      flex-shrink:0;
+    }
+
+    .user-meta small{
+      display:block;
+      font-size:10px;
+      font-weight:700;
+      color:#64748b;
+      text-transform:uppercase;
+      letter-spacing:.5px;
+    }
+
+    .user-meta strong{
+      display:block;
+      font-size:13px;
+      font-weight:700;
+      color:#e2e8f0;
+      margin-top:2px;
+      max-width:170px;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
     }
 
     .side-nav{
-      display:grid;
-      gap:10px;
-      margin-top:4px;
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+      flex:1;
     }
 
     .side-link{
+      display:flex;
+      align-items:center;
+      gap:10px;
       text-decoration:none;
-      color:#334155;
-      background:#f8fafc;
-      border:1px solid #eef2f7;
-      padding:13px 14px;
-      border-radius:16px;
-      font-size:14px;
-      font-weight:800;
-      transition:.15s ease;
+      color:#94a3b8;
+      padding:11px 12px;
+      border-radius:12px;
+      font-size:13px;
+      font-weight:600;
+      transition:background .2s,color .2s;
+      border:none;
+      background:transparent;
+    }
+
+    .side-link .nav-ico{
+      width:28px;
+      height:28px;
+      border-radius:8px;
+      display:grid;
+      place-items:center;
+      background:rgba(255,255,255,.06);
+      font-size:13px;
+      flex-shrink:0;
     }
 
     .side-link:hover{
-      background:#0f172a;
+      background:var(--sidebar-hover);
       color:#fff;
-      transform:translateY(-1px);
+      transform:none;
     }
 
     .side-link.active{
-      background:var(--blue);
+      background:var(--sidebar-hover);
       color:#fff;
-      border-color:var(--blue);
+    }
+
+    .side-link.active .nav-ico{
+      background:var(--accent);
     }
 
     .side-footer{
       margin-top:auto;
-      border-top:1px solid var(--line);
       padding-top:14px;
+      border-top:1px solid var(--sidebar-border);
     }
 
     .logout-side{
       width:100%;
-      border:none;
+      border:1px solid rgba(239,68,68,.25);
       cursor:pointer;
-      background:#fef2f2;
-      color:#b91c1c;
-      padding:13px 14px;
-      border-radius:16px;
-      font-weight:900;
+      background:rgba(239,68,68,.12);
+      color:#fca5a5;
+      padding:12px 14px;
+      border-radius:12px;
+      font-weight:700;
+      font-size:13px;
+      font-family:inherit;
+      transition:background .2s;
+    }
+
+    .logout-side:hover{
+      background:rgba(239,68,68,.22);
     }
 
     .main{
       min-width:0;
-      padding:22px;
+      padding:28px 32px 40px;
     }
 
     .top-header{
       position:sticky;
       top:0;
       z-index:20;
-      margin:-22px -22px 22px;
-      padding:18px 22px;
-      background:rgba(246,248,251,.88);
-      backdrop-filter:blur(14px);
-      border-bottom:1px solid rgba(226,232,240,.75);
+      margin:-28px -32px 28px;
+      padding:20px 32px;
+      background:rgba(241,245,249,.85);
+      backdrop-filter:blur(16px);
+      border-bottom:1px solid rgba(226,232,240,.8);
       display:flex;
       justify-content:space-between;
       align-items:center;
@@ -145,35 +237,64 @@
 
     .hello small{
       color:var(--muted);
-      font-weight:700;
+      font-weight:600;
       display:block;
-      margin-bottom:3px;
+      margin-bottom:4px;
+      font-size:12px;
+      text-transform:uppercase;
+      letter-spacing:.4px;
     }
 
     .hello h1{
       margin:0;
-      font-size:24px;
-      letter-spacing:-.5px;
+      font-size:26px;
+      font-weight:800;
+      letter-spacing:-.6px;
+    }
+
+    .header-date{
+      font-size:12px;
+      color:var(--muted);
+      font-weight:600;
+      padding:8px 14px;
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:999px;
+      text-transform:capitalize;
     }
 
     .mobile-logo{
       display:none;
       width:42px;
       height:42px;
-      border-radius:15px;
-      background:#0f172a;
+      border-radius:14px;
+      background:linear-gradient(135deg,#2563eb,#1d4ed8);
       color:#fff;
       align-items:center;
       justify-content:center;
-      font-weight:900;
+      font-weight:800;
+      font-size:14px;
     }
 
     .content{
-      max-width:1280px;
+      max-width:1200px;
       margin:0 auto;
       display:grid;
-      gap:20px;
+      gap:22px;
       padding-bottom:90px;
+    }
+
+    .content > section{
+      animation:fadeUp .4s ease both;
+    }
+
+    .content > section:nth-child(2){animation-delay:.05s;}
+    .content > section:nth-child(3){animation-delay:.1s;}
+    .content > section:nth-child(4){animation-delay:.15s;}
+
+    @keyframes fadeUp{
+      from{opacity:0;transform:translateY(10px);}
+      to{opacity:1;transform:translateY(0);}
     }
 
     .section-title{
@@ -181,18 +302,21 @@
       justify-content:space-between;
       align-items:flex-end;
       gap:12px;
-      margin-bottom:12px;
+      margin-bottom:14px;
     }
 
     .section-title h3{
       margin:0;
-      font-size:18px;
+      font-size:17px;
+      font-weight:800;
+      letter-spacing:-.3px;
     }
 
     .section-title p{
-      margin:4px 0 0;
+      margin:5px 0 0;
       color:var(--muted);
       font-size:12px;
+      font-weight:500;
     }
 
     .cards-2{
@@ -208,7 +332,13 @@
       border:1px solid var(--line);
       border-radius:var(--radius);
       box-shadow:var(--shadow);
-      padding:18px;
+      padding:20px;
+      transition:box-shadow .2s;
+    }
+
+    .metric-card:hover,
+    .kpi-card:hover{
+      box-shadow:0 22px 55px rgba(15,23,42,.1);
     }
 
     .meta-head{
@@ -272,8 +402,9 @@
       display:block;
       height:100%;
       width:0%;
-      background:var(--blue);
+      background:linear-gradient(90deg,#3b82f6,#2563eb);
       border-radius:999px;
+      transition:width .6s ease;
     }
 
     .meta-grid{
@@ -554,26 +685,45 @@
 
     .quick-actions{
       display:grid;
-      grid-template-columns:repeat(5,1fr);
+      grid-template-columns:repeat(3,1fr);
       gap:12px;
     }
 
     .quick-btn{
       border:none;
       cursor:pointer;
-      background:#fff;
+      background:#f8fafc;
       border:1px solid var(--line);
-      border-radius:18px;
-      padding:14px;
-      box-shadow:0 10px 28px rgba(15,23,42,.05);
-      font-weight:900;
+      border-radius:16px;
+      padding:16px;
+      box-shadow:none;
+      font-weight:700;
+      font-size:13px;
+      font-family:inherit;
       color:#0f172a;
-      min-height:64px;
-      transition:.15s ease;
+      min-height:72px;
+      transition:transform .2s,box-shadow .2s,background .2s,border-color .2s;
+      display:flex;
+      align-items:center;
+      gap:12px;
+      text-align:left;
+    }
+
+    .quick-btn .q-ico{
+      width:40px;
+      height:40px;
+      border-radius:12px;
+      display:grid;
+      place-items:center;
+      font-size:18px;
+      flex-shrink:0;
+      background:var(--blue2);
     }
 
     .quick-btn:hover{
       transform:translateY(-2px);
+      box-shadow:0 12px 28px rgba(15,23,42,.08);
+      background:#fff;
       border-color:#bfdbfe;
       color:var(--blue);
     }
@@ -585,12 +735,43 @@
       left:0;
       right:0;
       height:72px;
-      background:#fff;
+      background:rgba(255,255,255,.92);
+      backdrop-filter:blur(16px);
       border-top:1px solid var(--line);
       z-index:60;
       padding:8px 12px;
       justify-content:space-around;
       box-shadow:0 -10px 30px rgba(15,23,42,.08);
+    }
+
+    .sidebar-overlay{
+      display:none;
+      position:fixed;
+      inset:0;
+      background:rgba(15,23,42,.5);
+      z-index:90;
+      backdrop-filter:blur(2px);
+    }
+
+    .sidebar-overlay.open{display:block;}
+
+    .mobile-toggle{
+      display:none;
+      position:fixed;
+      bottom:88px;
+      right:18px;
+      z-index:70;
+      width:50px;
+      height:50px;
+      border-radius:15px;
+      border:none;
+      background:var(--sidebar);
+      color:#fff;
+      font-size:20px;
+      cursor:pointer;
+      box-shadow:0 8px 24px rgba(15,23,42,.3);
+      align-items:center;
+      justify-content:center;
     }
 
     .bottom-nav a,
@@ -631,12 +812,22 @@
 
     @media(max-width:1050px){
       .portal-shell{display:block;}
-      .sidebar{display:none;}
-      .main{padding:16px;}
-      .top-header{margin:-16px -16px 16px;padding:14px 16px;}
+      .sidebar{
+        position:fixed;
+        left:0;
+        top:0;
+        transform:translateX(-100%);
+        transition:transform .3s ease;
+        width:var(--sidebar-width);
+      }
+      .sidebar.open{transform:translateX(0);}
+      .main{padding:18px 18px 90px;}
+      .top-header{margin:-18px -18px 20px;padding:16px 18px;}
       .mobile-logo{display:flex;}
-      .hello h1{font-size:20px;}
+      .hello h1{font-size:22px;}
       .bottom-nav{display:flex;}
+      .mobile-toggle{display:flex;}
+      .header-date{display:none;}
     }
 
     @media(max-width:850px){
@@ -646,24 +837,27 @@
     }
 
     @media(max-width:620px){
-      .main{padding:12px;}
-      .top-header{margin:-12px -12px 14px;padding:12px;}
+      .main{padding:14px 14px 90px;}
+      .top-header{margin:-14px -14px 16px;padding:14px;}
       .content{gap:16px;}
-      .metric-card,.area-card,.kpi-card{border-radius:18px;padding:14px;}
-      .big-percent strong{font-size:40px;}
+      .metric-card,.area-card,.kpi-card{border-radius:16px;padding:16px;}
+      .big-percent strong{font-size:38px;}
       .meta-grid{grid-template-columns:1fr;}
       .area-kpis{grid-template-columns:repeat(2,1fr);}
       .rank-cols{grid-template-columns:1fr;}
       .kpi-toolbar{align-items:stretch;}
       .field{width:100%;}
       .filters{width:100%;}
+      .quick-actions{grid-template-columns:1fr;}
     }
   </style>
 </head>
 
 <body>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
   <div class="portal-shell">
-    <aside class="sidebar">
+    <aside class="sidebar" id="sidebar">
       <div class="brand">
         <div class="brand-logo">GP</div>
         <div>
@@ -672,14 +866,22 @@
         </div>
       </div>
 
+      <div class="user-card">
+        <div class="avatar" id="userAvatar">?</div>
+        <div class="user-meta">
+          <small>Analista</small>
+          <strong id="sidebarUserName">Carregando...</strong>
+        </div>
+      </div>
+
       <nav class="side-nav">
-        <a class="side-link active" href="#">Dashboard</a>
-        <a class="side-link" href="../html usuarios/criar-agenda.html">Criar Agenda</a>
-        <a class="side-link" href="../html usuarios/agenda.html">Agenda</a>
-        <a class="side-link" href="../html usuarios/treinamentos.html">Treinamentos</a>
-        <a class="side-link" href="../html usuarios/resultados.html">Resultados</a>
-        <a class="side-link" href="../html usuarios/avaliacao-matinal-geral.html">⭐ Avaliar Matinal Geral</a>
-        <a class="side-link" href="../html usuarios/biblioteca-treinamentos.html">Biblioteca</a>
+        <a class="side-link active" href="#"><span class="nav-ico">📊</span>Dashboard</a>
+        <a class="side-link" href="../html usuarios/criar-agenda.html"><span class="nav-ico">➕</span>Criar Agenda</a>
+        <a class="side-link" href="../html usuarios/agenda.html"><span class="nav-ico">📅</span>Agenda</a>
+        <a class="side-link" href="../html usuarios/treinamentos.html"><span class="nav-ico">🎓</span>Treinamentos</a>
+        <a class="side-link" href="../html usuarios/resultados.html"><span class="nav-ico">📈</span>Resultados</a>
+        <a class="side-link" href="../html usuarios/avaliacao-matinal-geral.html"><span class="nav-ico">⭐</span>Avaliar Matinal</a>
+        <a class="side-link" href="../html usuarios/biblioteca-treinamentos.html"><span class="nav-ico">📚</span>Biblioteca</a>
       </nav>
 
       <div class="side-footer">
@@ -693,11 +895,12 @@
           <small>Olá,</small>
           <h1 id="welcomeText">Carregando...</h1>
         </div>
+        <span class="header-date" id="headerDate"></span>
         <div class="mobile-logo">GP</div>
       </header>
 
       <div class="content">
-        <section>
+        <section id="metas">
           <div class="section-title">
             <div>
               <h3>Metas de Treinamento</h3>
@@ -750,7 +953,7 @@
           </div>
         </section>
 
-        <section class="area-card">
+        <section class="area-card" id="area">
           <div class="section-title">
             <div>
               <h3>Resumo da Minha Área</h3>
@@ -785,7 +988,7 @@
           </div>
         </section>
 
-        <section>
+        <section id="kpis">
           <div class="kpi-toolbar">
             <div class="section-title" style="margin-bottom:0;">
               <div>
@@ -815,7 +1018,7 @@
           <div id="kpiGrid" class="kpi-grid"></div>
         </section>
 
-             <section>
+        <section id="acesso">
           <div class="section-title">
             <div>
               <h3>Acesso Rápido</h3>
@@ -825,33 +1028,35 @@
 
           <div class="quick-actions">
             <button class="quick-btn" onclick="goTo('../html usuarios/criar-agenda.html')">
-              Criar Agenda
+              <span class="q-ico">➕</span>Criar Agenda
             </button>
 
             <button class="quick-btn" onclick="goTo('../html usuarios/agenda.html')">
-              Agenda
+              <span class="q-ico">📅</span>Agenda
             </button>
 
             <button class="quick-btn" onclick="goTo('../html usuarios/treinamentos.html')">
-              Treinamentos
+              <span class="q-ico">🎓</span>Treinamentos
             </button>
 
             <button class="quick-btn" onclick="goTo('../html usuarios/resultados.html')">
-              Resultados
+              <span class="q-ico">📈</span>Resultados
             </button>
 
             <button class="quick-btn" onclick="goTo('../html usuarios/biblioteca-treinamentos.html')">
-              Biblioteca
+              <span class="q-ico">📚</span>Biblioteca
             </button>
 
             <button class="quick-btn" onclick="goTo('../html usuarios/avaliacao-matinal-geral.html')">
-              ⭐ Avaliar Matinal
+              <span class="q-ico">⭐</span>Avaliar Matinal
             </button>
           </div>
         </section>
       </div>
     </main>
   </div>
+
+  <button class="mobile-toggle" id="mobileToggle" type="button" aria-label="Abrir menu">☰</button>
 
   <nav class="bottom-nav">
     <a class="active" href="#"><span class="ico">D</span><span>Dash</span></a>
@@ -967,6 +1172,37 @@
     }
 
     welcomeText.textContent = user.nome;
+
+    const sidebarUserName = document.getElementById("sidebarUserName");
+    const userAvatar = document.getElementById("userAvatar");
+    const headerDate = document.getElementById("headerDate");
+
+    if(sidebarUserName) sidebarUserName.textContent = user.nome;
+    if(userAvatar) userAvatar.textContent = user.nome.trim().charAt(0).toUpperCase();
+    if(headerDate){
+      headerDate.textContent = new Date().toLocaleDateString("pt-BR",{
+        weekday:"long",
+        day:"numeric",
+        month:"long"
+      });
+    }
+
+    const sidebar = document.getElementById("sidebar");
+    const sidebarOverlay = document.getElementById("sidebarOverlay");
+    const mobileToggle = document.getElementById("mobileToggle");
+
+    function toggleSidebar(open){
+      sidebar?.classList.toggle("open", open);
+      sidebarOverlay?.classList.toggle("open", open);
+    }
+
+    mobileToggle?.addEventListener("click",()=>{
+      toggleSidebar(!sidebar?.classList.contains("open"));
+    });
+
+    sidebarOverlay?.addEventListener("click",()=>{
+      toggleSidebar(false);
+    });
 
     window.goTo = function(page){
       window.location.href = page;
