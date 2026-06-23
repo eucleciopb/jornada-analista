@@ -875,12 +875,12 @@
       });
 
       const avaliados = preenchidos.filter(item =>
-        item.salvo || (item.notaTela !== null && item.obsTela)
-      ).length;
+  item.salvo || (item.notaTela !== null && item.notaTela > 0 && item.obsTela)
+).length;
 
-      const notas = preenchidos
-        .map(item => item.notaTela)
-        .filter(value => Number.isFinite(value));
+const notas = preenchidos
+  .map(item => item.notaTela)
+  .filter(value => Number.isFinite(value) && value > 0);
 
       const media = notas.length
         ? (notas.reduce((acc, value) => acc + value, 0) / notas.length)
