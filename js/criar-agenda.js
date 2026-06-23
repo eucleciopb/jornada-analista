@@ -197,6 +197,88 @@ function atividadeOptions(selected = "") {
   return opts.join("");
 }
 
+let cachedCDs = [];
+
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function filterCDs(query) {
+  const q = (query || "").trim().toLowerCase();
+  if (!q) return cachedCDs.slice(0, 14);
+  return cachedCDs.filter(cd => cd.toLowerCase().includes(q)).slice(0, 14);
+}
+
+function hideCdDropdown(input) {
+  const list = input?.closest(".cd-combobox")?.querySelector(".cd-combobox__list");
+  if (list) {
+    list.hidden = true;
+    list.innerHTML = "";
+  }
+}
+
+function showCdDropdown(input) {
+  const box = input?.closest(".cd-combobox");
+  const list = box?.querySelector(".cd-combobox__list");
+  if (!list || !cachedCDs.length) return;
+
+  const matches = filterCDs(input.value);
+  if (!matches.length) {
+    list.hidden = true;
+    list.innerHTML = "";
+    return;
+  }
+
+  list.innerHTML = matches
+    .map(cd => `<li class="cd-combobox__item" role="option" data-value="${escHtml(cd)}">${escHtml(cd)}</li>`)
+    .join("");
+  list.hidden = false;
+}
+
+function initCdCombobox() {
+  if (!tbody) return;
+
+  tbody.addEventListener("input", (e) => {
+    const input = e.target;
+    if (!input.matches("[data-field='cd']")) return;
+    showCdDropdown(input);
+  });
+
+  tbody.addEventListener("focusin", (e) => {
+    const input = e.target;
+    if (!input.matches("[data-field='cd']")) return;
+    showCdDropdown(input);
+  });
+
+  tbody.addEventListener("focusout", (e) => {
+    const input = e.target;
+    if (!input.matches("[data-field='cd']")) return;
+    setTimeout(() => hideCdDropdown(input), 160);
+  });
+
+  tbody.addEventListener("mousedown", (e) => {
+    const item = e.target.closest(".cd-combobox__item");
+    if (!item || !tbody.contains(item)) return;
+    e.preventDefault();
+    const box = item.closest(".cd-combobox");
+    const input = box?.querySelector("[data-field='cd']");
+    if (input) {
+      input.value = item.dataset.value || item.textContent.trim();
+      hideCdDropdown(input);
+    }
+  });
+
+  tbody.addEventListener("keydown", (e) => {
+    const input = e.target;
+    if (!input.matches("[data-field='cd']")) return;
+    if (e.key === "Escape") hideCdDropdown(input);
+  });
+}
+
 function normalizeCDList(arr) {
   return [...new Set((arr || []).map(s => (s || "").trim()).filter(Boolean))]
     .sort((a,b) => a.localeCompare(b, "pt-BR"));
@@ -329,14 +411,19 @@ function renderMonthSkeleton(yyyyMM) {
       tr.innerHTML = `
         <td>${br}</td>
         <td>${dia}</td>
-        <td>
-          <input
-            class="field"
-            data-field="cd"
-            list="cdList"
-            placeholder="Pesquisar CD..."
-            value=""
-          >
+        <td class="cd-cell">
+          <div class="cd-combobox">
+            <input
+              class="field"
+              type="text"
+              data-field="cd"
+              placeholder="Digite para buscar CD..."
+              autocomplete="off"
+              spellcheck="false"
+              value=""
+            >
+            <ul class="cd-combobox__list" role="listbox" hidden></ul>
+          </div>
         </td>
         <td>
           <select class="field" data-field="atividade">
@@ -390,7 +477,10 @@ async function loadCDsToDatalist() {
     cdsFromFirestore.length > 0 ? cdsFromFirestore : CDS_RAW
   );
 
-  cdList.innerHTML = cdsFinal.map(cd => `<option value="${cd}"></option>`).join("");
+  cachedCDs = cdsFinal;
+  if (cdList) {
+    cdList.innerHTML = cdsFinal.map(cd => `<option value="${escHtml(cd)}"></option>`).join("");
+  }
   setStatus(`CDs carregados: ${cdsFinal.length}`);
 }
 
@@ -527,6 +617,7 @@ if (monthPicker) {
     showErr("");
 
     initObsModalEvents();
+    initCdCombobox();
 
     const now = new Date();
     if (monthPicker) monthPicker.value = toMonthKey(now);

@@ -1,174 +1,204 @@
-<!doctype html>
-<html lang="pt-br">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Criar Agenda</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../css/bundle-user.css" />
-  <link rel="stylesheet" href="../css/pages/user-criar-agenda.css" />
-
-  <!-- Use seu CSS global do projeto -->
-  <!-- ✅ CSS TECH CLEAN (ISOLADO NESSA TELA) + ✅ MODAL OBSERVAÇÕES -->
-</head>
-
-<body class="theme-user app-shell page-agenda">
-  <header class="topbar">
-    <div>
-      <h2>Criar Agenda</h2>
-      <!-- ✅ Analista logado aparece aqui -->
-      <div class="hint" id="userInfo"></div>
-      <div class="err" id="errBox"></div>
-    </div>
-
-    <div class="top-actions">
-      <button class="btn" id="btnMenu" type="button">Voltar ao Menu</button>
-      <button class="btn" id="btnLogout" type="button">Sair</button>
-    </div>
-  </header>
-
-  <div class="wrap">
-    <main class="card">
-      <div class="row">
-        <div>
-          <h3>Agenda do Mês</h3>
-          <div class="hint">Cada dia aparece em uma linha. Domingos ficam bloqueados.</div>
-          <div class="hint">Tudo que você preencher será salvo no Firestore.</div>
-        </div>
-        <button class="btn btn-primary" id="btnSalvar" type="button">Salvar alterações</button>
-      </div>
-
-      <hr class="sep" />
-
-      <div class="row">
-        <div>
-          <label for="monthPicker">Mês</label>
-          <input id="monthPicker" type="month" />
-        </div>
-        <div class="pill" id="statusPill">Status: aguardando</div>
-      </div>
-
-      <div class="msg" id="msg"></div>
-
-      <datalist id="cdList"></datalist>
-
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th style="width:140px;">Data</th>
-              <th style="width:110px;">Dia</th>
-              <th style="width:280px;">CD</th>
-              <th style="width:260px;">Atividade</th>
-              <th>Observações</th>
-            </tr>
-          </thead>
-          <tbody id="tbodyAgenda"></tbody>
-        </table>
-      </div>
-    </main>
-  </div>
-
-  <!-- ✅ MODAL OBSERVAÇÕES -->
-  <div class="obs-modal" id="obsModal" aria-hidden="true">
-    <div class="obs-modal__backdrop" data-close="1"></div>
-
-    <div class="obs-modal__panel" role="dialog" aria-modal="true" aria-labelledby="obsTitle">
-      <div class="obs-modal__header">
-        <div>
-          <div class="obs-modal__kicker">Observações do dia</div>
-          <h3 class="obs-modal__title" id="obsTitle">Editar observações</h3>
-        </div>
-
-        <button class="obs-modal__x" id="obsClose" type="button" aria-label="Fechar">✕</button>
-      </div>
-
-      <textarea id="obsModalText" class="obs-modal__textarea" placeholder="Digite as observações..."></textarea>
-
-      <div class="obs-modal__footer">
-        <button class="btn" id="obsCancel" type="button">Cancelar</button>
-        <button class="btn btn-primary" id="obsOk" type="button">OK</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ✅ mantém seu JS externo -->
-  <script type="module" src="../js/criar-agenda.js"></script>
-
-  <!-- ✅ JS extra só do Modal (funciona junto com seu criar-agenda.js) -->
-  <script>
-    (function(){
-      const tbody = document.getElementById("tbodyAgenda");
-
-      const obsModal = document.getElementById("obsModal");
-      const obsModalText = document.getElementById("obsModalText");
-      const obsOk = document.getElementById("obsOk");
-      const obsCancel = document.getElementById("obsCancel");
-      const obsClose = document.getElementById("obsClose");
-
-      let obsTargetTextarea = null;
-
-      function openObsModal(targetTextarea){
-        obsTargetTextarea = targetTextarea;
-        obsModalText.value = targetTextarea.value || "";
-        obsModal.classList.add("is-open");
-        document.body.classList.add("modal-open");
-        obsModal.setAttribute("aria-hidden", "false");
-        setTimeout(() => obsModalText.focus(), 0);
-      }
-
-      function closeObsModal({ apply = false } = {}){
-        if (apply && obsTargetTextarea){
-          obsTargetTextarea.value = obsModalText.value || "";
-        }
-        obsModal.classList.remove("is-open");
-        document.body.classList.remove("modal-open");
-        obsModal.setAttribute("aria-hidden", "true");
-
-        if (obsTargetTextarea) obsTargetTextarea.focus();
-        obsTargetTextarea = null;
-      }
-
-      // fecha clicando no backdrop
-      if (obsModal){
-        obsModal.addEventListener("click", (e) => {
-          const el = e.target;
-          if (el && el.dataset && el.dataset.close === "1") closeObsModal({ apply: false });
-        });
-      }
-
-      if (obsOk) obsOk.addEventListener("click", () => closeObsModal({ apply: true }));
-      if (obsCancel) obsCancel.addEventListener("click", () => closeObsModal({ apply: false }));
-      if (obsClose) obsClose.addEventListener("click", () => closeObsModal({ apply: false }));
-
-      // ESC fecha
-      document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape" && obsModal && obsModal.classList.contains("is-open")) {
-          closeObsModal({ apply: false });
-        }
-      });
-
-      // clique/foco em qualquer textarea de obs abre o modal (delegação)
-      if (tbody){
-        tbody.addEventListener("focusin", (e) => {
-          const t = e.target;
-          if (t && t.matches("textarea.field[data-field='obs']")) {
-            e.preventDefault();
-            openObsModal(t);
-          }
-        });
-
-        tbody.addEventListener("click", (e) => {
-          const t = e.target;
-          if (t && t.matches("textarea.field[data-field='obs']")) {
-            e.preventDefault();
-            openObsModal(t);
-          }
-        });
-      }
-    })();
-  </script>
-</body>
-</html>
+﻿<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Criar Agenda</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/bundle-user.css" />
+  <link rel="stylesheet" href="../css/pages/user-criar-agenda.css" />
+</head>
+
+<body class="theme-user app-shell page-agenda">
+  <header class="topbar agenda-appbar">
+    <div class="agenda-appbar__left">
+      <button class="btn-icon" id="btnMenu" type="button" title="Voltar ao Menu">
+        <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+        <span class="btn-icon__label">Menu</span>
+      </button>
+      <div class="agenda-appbar__title-wrap">
+        <h2>Criar Agenda</h2>
+        <div class="hint" id="userInfo"></div>
+        <div class="err" id="errBox"></div>
+      </div>
+    </div>
+
+    <div class="top-actions">
+      <button class="btn-icon btn-icon--ghost" id="btnLogout" type="button" title="Sair">
+        <span class="material-symbols-outlined" aria-hidden="true">logout</span>
+        <span class="btn-icon__label">Sair</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div class="agenda-hero">
+      <div class="agenda-hero__text">
+        <h3>Criar Agenda</h3>
+        <p class="hint">Configure e gerencie o planejamento operacional mensal.</p>
+        <p class="hint">Cada dia aparece em uma linha. Domingos ficam bloqueados. Tudo que você preencher será salvo no Firestore.</p>
+      </div>
+
+      <div class="agenda-controls">
+        <div class="agenda-control">
+          <label for="monthPicker">Mês de referência</label>
+          <input id="monthPicker" type="month" />
+        </div>
+        <div class="agenda-control-divider" aria-hidden="true"></div>
+        <div class="agenda-control">
+          <label>Status</label>
+          <div class="pill" id="statusPill">Status: aguardando</div>
+        </div>
+        <div class="agenda-controls__save">
+          <button class="btn btn-primary" id="btnSalvar" type="button">
+            <span class="material-symbols-outlined" aria-hidden="true">save</span>
+            Salvar alterações
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="msg" id="msg"></div>
+
+    <datalist id="cdList"></datalist>
+
+    <main class="card">
+      <div class="card-head">
+        <div class="card-head__title">
+          <span>Agenda do Mês</span>
+          <span class="card-head__badge" id="monthBadge">—</span>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:120px;">Data</th>
+              <th style="width:130px;">Dia</th>
+              <th style="width:240px;">CD</th>
+              <th style="width:260px;">Atividade</th>
+              <th>Observações</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyAgenda"></tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal Observações -->
+  <div class="obs-modal" id="obsModal" aria-hidden="true">
+    <div class="obs-modal__backdrop" data-close="1"></div>
+
+    <div class="obs-modal__panel" role="dialog" aria-modal="true" aria-labelledby="obsTitle">
+      <div class="obs-modal__header">
+        <div>
+          <div class="obs-modal__kicker">Observações do dia</div>
+          <h3 class="obs-modal__title" id="obsTitle">Editar observações</h3>
+        </div>
+
+        <button class="obs-modal__x" id="obsClose" type="button" aria-label="Fechar">✕</button>
+      </div>
+
+      <textarea id="obsModalText" class="obs-modal__textarea" placeholder="Descreva detalhes específicos para este dia..."></textarea>
+
+      <div class="obs-modal__footer">
+        <button class="btn" id="obsCancel" type="button">Cancelar</button>
+        <button class="btn btn-primary" id="obsOk" type="button">Salvar observação</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="../js/criar-agenda.js"></script>
+
+  <script>
+    (function(){
+      const tbody = document.getElementById("tbodyAgenda");
+
+      const obsModal = document.getElementById("obsModal");
+      const obsModalText = document.getElementById("obsModalText");
+      const obsOk = document.getElementById("obsOk");
+      const obsCancel = document.getElementById("obsCancel");
+      const obsClose = document.getElementById("obsClose");
+
+      let obsTargetTextarea = null;
+
+      function openObsModal(targetTextarea){
+        obsTargetTextarea = targetTextarea;
+        obsModalText.value = targetTextarea.value || "";
+        obsModal.classList.add("is-open");
+        document.body.classList.add("modal-open");
+        obsModal.setAttribute("aria-hidden", "false");
+        setTimeout(() => obsModalText.focus(), 0);
+      }
+
+      function closeObsModal({ apply = false } = {}){
+        if (apply && obsTargetTextarea){
+          obsTargetTextarea.value = obsModalText.value || "";
+        }
+        obsModal.classList.remove("is-open");
+        document.body.classList.remove("modal-open");
+        obsModal.setAttribute("aria-hidden", "true");
+
+        if (obsTargetTextarea) obsTargetTextarea.focus();
+        obsTargetTextarea = null;
+      }
+
+      if (obsModal){
+        obsModal.addEventListener("click", (e) => {
+          const el = e.target;
+          if (el && el.dataset && el.dataset.close === "1") closeObsModal({ apply: false });
+        });
+      }
+
+      if (obsOk) obsOk.addEventListener("click", () => closeObsModal({ apply: true }));
+      if (obsCancel) obsCancel.addEventListener("click", () => closeObsModal({ apply: false }));
+      if (obsClose) obsClose.addEventListener("click", () => closeObsModal({ apply: false }));
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && obsModal && obsModal.classList.contains("is-open")) {
+          closeObsModal({ apply: false });
+        }
+      });
+
+      if (tbody){
+        tbody.addEventListener("focusin", (e) => {
+          const t = e.target;
+          if (t && t.matches("textarea.field[data-field='obs']")) {
+            e.preventDefault();
+            openObsModal(t);
+          }
+        });
+
+        tbody.addEventListener("click", (e) => {
+          const t = e.target;
+          if (t && t.matches("textarea.field[data-field='obs']")) {
+            e.preventDefault();
+            openObsModal(t);
+          }
+        });
+      }
+
+      /* Atualiza badge do mês no card (somente visual) */
+      const monthPicker = document.getElementById("monthPicker");
+      const monthBadge = document.getElementById("monthBadge");
+      const meses = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+
+      function updateMonthBadge(){
+        if (!monthPicker || !monthBadge || !monthPicker.value) return;
+        const [y, m] = monthPicker.value.split("-");
+        const mi = Number(m) - 1;
+        if (meses[mi]) monthBadge.textContent = meses[mi] + " " + y;
+      }
+
+      if (monthPicker){
+        monthPicker.addEventListener("change", updateMonthBadge);
+        setTimeout(updateMonthBadge, 100);
+      }
+    })();
+  </script>
+</body>
+</html>
