@@ -7,126 +7,29 @@
   <link rel="stylesheet" href="../css/styles.css" />
 
   <style>
-    .topbar{
-      position:sticky; top:0; z-index:999;
-      backdrop-filter: blur(10px);
-      background: rgba(11,15,20,.82);
-      border-bottom:1px solid rgba(255,255,255,.08);
-      padding:12px 0;
-    }
-    .topbar-inner{
-      display:flex; justify-content:space-between;
-      align-items:flex-start; gap:14px; flex-wrap:wrap;
-    }
-    .topbar h2{ margin:0; font-size:18px; }
-
-    .filters{
-      display:flex; gap:12px; flex-wrap:wrap;
-      margin-top:14px;
-      align-items:flex-end;
-    }
-    .filters > div{ min-width:220px; flex:1; }
-
-    .field{
-      width:100%; padding:10px 12px;
-      border-radius:14px;
-      border:1px solid rgba(255,255,255,.12);
-      background:rgba(255,255,255,.05);
-      color:#fff;
-      outline:none;
-    }
-    .field:focus{
-      border-color: rgba(255,59,59,.55);
-      box-shadow: 0 0 0 4px rgba(217,27,46,.18);
-    }
-
-    .kpis{
-      display:flex; gap:12px; flex-wrap:wrap;
-      margin-top:14px;
-    }
-    .kpi{
-      flex:1; min-width:220px;
-      background: rgba(255,255,255,.04);
-      border:1px solid rgba(255,255,255,.10);
-      border-radius:16px;
-      padding:12px 14px;
-    }
-    .kpi .label{ font-size:12px; opacity:.8; }
-    .kpi .value{ font-size:18px; font-weight:900; margin-top:6px; }
-
-    .table-wrap{
-      overflow:auto;
-      margin-top:16px;
-      border-radius:14px;
-      border:1px solid rgba(255,255,255,.10);
-    }
-    table{
-      width:100%;
-      border-collapse:collapse;
-      min-width:1400px;
-    }
-    thead th{
-      position:sticky; top:0;
-      background:rgba(0,0,0,.38);
-      backdrop-filter: blur(8px);
-      padding:12px;
-      font-size:12px;
-      text-align:left;
-      color:#bbb;
-      border-bottom:1px solid rgba(255,255,255,.10);
-      white-space:nowrap;
-    }
-    tbody td{
-      padding:11px 12px;
-      border-bottom:1px solid rgba(255,255,255,.06);
-      vertical-align:top;
-    }
-    tbody tr:hover{
-      background:rgba(255,255,255,.05);
-    }
-
-    .pill{
-      display:inline-flex;
-      align-items:center;
-      padding:6px 10px;
-      border-radius:999px;
-      font-weight:900;
-      font-size:12px;
-      border:1px solid rgba(255,255,255,.12);
-      background: rgba(255,255,255,.04);
-      white-space:nowrap;
-    }
-
-    .muted{ opacity:.85; }
-
-    .top-actions{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-    }
-
-    .btn-primary{
-      padding:10px 14px;
-      border:none;
-      border-radius:12px;
-      background:#d91b2e;
-      color:#fff;
-      font-weight:800;
-      cursor:pointer;
-    }
-    .btn-primary:hover{
-      filter:brightness(1.08);
-    }
-
-    #monthPicker{
-      color-scheme: dark;
-      color:#fff;
-    }
-    #monthPicker::-webkit-calendar-picker-indicator{
-      filter: invert(1) brightness(2);
-      cursor:pointer;
-      opacity:1;
-    }
+    .topbar{position:sticky;top:0;z-index:999;backdrop-filter:blur(10px);background:rgba(11,15,20,.82);border-bottom:1px solid rgba(255,255,255,.08);padding:12px 0;}
+    .topbar-inner{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;}
+    .topbar h2{margin:0;font-size:18px;}
+    .filters{display:flex;gap:12px;flex-wrap:wrap;margin-top:14px;align-items:flex-end;}
+    .filters>div{min-width:220px;flex:1;}
+    .field{width:100%;padding:10px 12px;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:#fff;outline:none;}
+    .field:focus{border-color:rgba(255,59,59,.55);box-shadow:0 0 0 4px rgba(217,27,46,.18);}
+    .kpis{display:flex;gap:12px;flex-wrap:wrap;margin-top:14px;}
+    .kpi{flex:1;min-width:220px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.10);border-radius:16px;padding:12px 14px;}
+    .kpi .label{font-size:12px;opacity:.8;}
+    .kpi .value{font-size:18px;font-weight:900;margin-top:6px;}
+    .table-wrap{overflow:auto;margin-top:16px;border-radius:14px;border:1px solid rgba(255,255,255,.10);}
+    table{width:100%;border-collapse:collapse;min-width:1520px;}
+    thead th{position:sticky;top:0;background:rgba(0,0,0,.38);backdrop-filter:blur(8px);padding:12px;font-size:12px;text-align:left;color:#bbb;border-bottom:1px solid rgba(255,255,255,.10);white-space:nowrap;}
+    tbody td{padding:11px 12px;border-bottom:1px solid rgba(255,255,255,.06);vertical-align:top;}
+    tbody tr:hover{background:rgba(255,255,255,.05);}
+    .pill{display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;font-weight:900;font-size:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);white-space:nowrap;}
+    .muted{opacity:.85;}
+    .top-actions{display:flex;gap:10px;flex-wrap:wrap;}
+    .btn-primary{padding:10px 14px;border:none;border-radius:12px;background:#d91b2e;color:#fff;font-weight:800;cursor:pointer;}
+    .btn-primary:hover{filter:brightness(1.08);}
+    #monthPicker{color-scheme:dark;color:#fff;}
+    #monthPicker::-webkit-calendar-picker-indicator{filter:invert(1) brightness(2);cursor:pointer;opacity:1;}
   </style>
 </head>
 
@@ -165,7 +68,7 @@
 
     <div style="min-width:280px; flex:2;">
       <label for="busca">Buscar</label>
-      <input id="busca" class="field" type="text" placeholder="Treinamento, CD, desafio, meta..." />
+      <input id="busca" class="field" type="text" placeholder="Treinamento, tipo, CD, desafio, meta..." />
     </div>
   </section>
 
@@ -194,6 +97,7 @@
           <th style="width:160px;">Usuário</th>
           <th style="width:140px;">Público</th>
           <th style="width:280px;">Treinamento</th>
+          <th style="width:140px;">Tipo</th>
           <th style="width:240px;">CD</th>
           <th style="width:110px; text-align:center;">Pessoas</th>
           <th style="width:90px; text-align:center;">Nota</th>
@@ -203,7 +107,7 @@
         </tr>
       </thead>
       <tbody id="tbody">
-        <tr><td colspan="10" style="opacity:.8;">Carregando…</td></tr>
+        <tr><td colspan="11" style="opacity:.8;">Carregando…</td></tr>
       </tbody>
     </table>
   </div>
@@ -220,9 +124,6 @@
     getDocs
   } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-  /* =========================
-     FIREBASE CONFIG (SEU)
-  ========================= */
   const firebaseConfig = {
     apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
     authDomain: "jornada-portal.firebaseapp.com",
@@ -235,16 +136,12 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  /* =========================
-     PATHS (este arquivo em /html adm/)
-  ========================= */
-  const PATH_INDEX  = "../index.html";
+  const PATH_INDEX = "../index.html";
   const PATH_MENUADM = "../html menus/menuadm.html";
 
-  /* =========================
-     SESSÃO (padrão do seu sistema)
-  ========================= */
-  function safeParse(raw){ try { return JSON.parse(raw); } catch { return null; } }
+  function safeParse(raw){
+    try { return JSON.parse(raw); } catch { return null; }
+  }
 
   function getCurrentUserName(){
     const raw = localStorage.getItem("user_session");
@@ -271,9 +168,6 @@
     window.location.href = PATH_INDEX;
   };
 
-  /* =========================
-     UI
-  ========================= */
   const monthPicker = document.getElementById("monthPicker");
   const fUser = document.getElementById("fUser");
   const hintUsers = document.getElementById("hintUsers");
@@ -281,7 +175,6 @@
   const tbody = document.getElementById("tbody");
   const msg = document.getElementById("msg");
   const btnExport = document.getElementById("btnExport");
-  const tabelaResumo = document.getElementById("tabelaResumo");
 
   const kpiTreinos = document.getElementById("kpiTreinos");
   const kpiPessoas = document.getElementById("kpiPessoas");
@@ -295,7 +188,9 @@
       "#d1d5db";
   }
 
-  function pad2(n){ return String(n).padStart(2,"0"); }
+  function pad2(n){
+    return String(n).padStart(2,"0");
+  }
 
   function toMonthKey(d){
     return `${d.getFullYear()}-${pad2(d.getMonth()+1)}`;
@@ -309,12 +204,9 @@
   }
 
   function normalize(s){
-    return (s || "").replace(/\s+/g," ").trim();
+    return String(s || "").replace(/\s+/g," ").trim();
   }
 
-  /* =========================
-     FIRESTORE
-  ========================= */
   const TREINOS_COLLECTION = "treinamentos_realizados";
   let CACHE_ALL = [];
 
@@ -325,9 +217,6 @@
     CACHE_ALL = arr;
   }
 
-  /* =========================
-     USERS SELECT (por mês)
-  ========================= */
   const USERS_FALLBACK = [
     "Bruna","Elaine","Euclecio","Pedro","Emerson","Joice",
     "Michel","Muller","Ricardo","Robert","Rodrigo","Rosilene","Tenório"
@@ -357,12 +246,8 @@
     hintUsers.textContent = `Usuários disponíveis: ${users.length}`;
   }
 
-  /* =========================
-     KPI
-  ========================= */
   function renderKPIs(rows){
     const totalTreinos = rows.length;
-
     let totalP = 0;
     let somaNota = 0;
     let qtdNota = 0;
@@ -383,9 +268,6 @@
     kpiNota.textContent = qtdNota ? (somaNota / qtdNota).toFixed(1) : "-";
   }
 
-  /* =========================
-     RENDER
-  ========================= */
   function getFilteredRows(){
     const yyyyMM = monthPicker.value;
     const userFilter = normalize(fUser.value);
@@ -406,6 +288,7 @@
           t.usuarioNome,
           t.publico,
           t.treinamento,
+          t.tipoTreinamento,
           t.cd,
           t.desafio,
           t.meta,
@@ -428,13 +311,11 @@
 
   function render(){
     const rows = getFilteredRows();
-
     renderKPIs(rows);
-
     tbody.innerHTML = "";
 
     if(rows.length === 0){
-      tbody.innerHTML = `<tr><td colspan="10" style="opacity:.8;">Sem registros para este mês/filtros.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="11" style="opacity:.8;">Sem registros para este mês/filtros.</td></tr>`;
       return;
     }
 
@@ -445,6 +326,7 @@
           <td><span class="pill">${t.usuarioNome || "-"}</span></td>
           <td class="muted">${t.publico || "-"}</td>
           <td>${t.treinamento || "-"}</td>
+          <td><span class="pill">${t.tipoTreinamento || "-"}</span></td>
           <td>${t.cd || "-"}</td>
           <td style="text-align:center;">${t.totalPessoas ?? "-"}</td>
           <td style="text-align:center;">${t.notaMedia ?? "-"}</td>
@@ -456,9 +338,6 @@
     }
   }
 
-  /* =========================
-     EXPORTAR EXCEL
-  ========================= */
   function exportarExcel(){
     const rows = getFilteredRows();
 
@@ -472,6 +351,7 @@
       "Usuário": t.usuarioNome || "-",
       "Público": t.publico || "-",
       "Treinamento": t.treinamento || "-",
+      "Tipo": t.tipoTreinamento || "-",
       "CD": t.cd || "-",
       "Pessoas": t.totalPessoas ?? "-",
       "Nota": t.notaMedia ?? "-",
@@ -482,11 +362,12 @@
 
     const ws = XLSX.utils.json_to_sheet(dados);
 
-    const colunas = [
+    ws["!cols"] = [
       { wch: 12 },
       { wch: 18 },
       { wch: 14 },
       { wch: 35 },
+      { wch: 15 },
       { wch: 28 },
       { wch: 12 },
       { wch: 10 },
@@ -494,7 +375,6 @@
       { wch: 40 },
       { wch: 40 }
     ];
-    ws["!cols"] = colunas;
 
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Treinamentos");
@@ -514,9 +394,6 @@
 
   btnExport.addEventListener("click", exportarExcel);
 
-  /* =========================
-     INIT
-  ========================= */
   monthPicker.value = toMonthKey(new Date());
 
   try{
@@ -527,13 +404,12 @@
   }catch(e){
     console.error(e);
     setMsg("Erro ao carregar do Firebase. Verifique Rules/Conexão.", "error");
-    tbody.innerHTML = `<tr><td colspan="10" style="opacity:.8;">Falha ao carregar.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="11" style="opacity:.8;">Falha ao carregar.</td></tr>`;
   }
 
   monthPicker.addEventListener("change", render);
   fUser.addEventListener("change", render);
   busca.addEventListener("input", render);
-
 </script>
 
 </body>
