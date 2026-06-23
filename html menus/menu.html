@@ -471,6 +471,34 @@
 
     .rank-row:last-child{border-bottom:none;}
 
+    .rank-row.rank-top{
+      background:#f0fdf4;
+      border-left:4px solid #16a34a;
+    }
+
+    .rank-row.rank-bottom{
+      background:#fef2f2;
+      border-left:4px solid #dc2626;
+    }
+
+    .rank-row.rank-top .rank-n{
+      background:#dcfce7;
+      color:#166534;
+    }
+
+    .rank-row.rank-bottom .rank-n{
+      background:#fee2e2;
+      color:#991b1b;
+    }
+
+    .rank-row.rank-top .rank-value{
+      color:#166534;
+    }
+
+    .rank-row.rank-bottom .rank-value{
+      color:#991b1b;
+    }
+
     .rank-n{
       width:24px;
       height:24px;
@@ -650,8 +678,8 @@
         <a class="side-link" href="../html usuarios/agenda.html">Agenda</a>
         <a class="side-link" href="../html usuarios/treinamentos.html">Treinamentos</a>
         <a class="side-link" href="../html usuarios/resultados.html">Resultados</a>
-    <a class="side-link" href="../html usuarios/avaliacao-matinal-geral.html">
-        ⭐ Avaliar Matinal Geral        <a class="side-link" href="../html usuarios/biblioteca-treinamentos.html">Biblioteca</a>
+        <a class="side-link" href="../html usuarios/avaliacao-matinal-geral.html">⭐ Avaliar Matinal Geral</a>
+        <a class="side-link" href="../html usuarios/biblioteca-treinamentos.html">Biblioteca</a>
       </nav>
 
       <div class="side-footer">
@@ -787,7 +815,7 @@
           <div id="kpiGrid" class="kpi-grid"></div>
         </section>
 
-        <section>
+             <section>
           <div class="section-title">
             <div>
               <h3>Acesso Rápido</h3>
@@ -795,40 +823,35 @@
             </div>
           </div>
 
-<div class="quick-actions">
+          <div class="quick-actions">
+            <button class="quick-btn" onclick="goTo('../html usuarios/criar-agenda.html')">
+              Criar Agenda
+            </button>
 
-    <button class="quick-btn"
-        onclick="goTo('../html usuarios/criar-agenda.html')">
-        Criar Agenda
-    </button>
+            <button class="quick-btn" onclick="goTo('../html usuarios/agenda.html')">
+              Agenda
+            </button>
 
-    <button class="quick-btn"
-        onclick="goTo('../html usuarios/agenda.html')">
-        Agenda
-    </button>
+            <button class="quick-btn" onclick="goTo('../html usuarios/treinamentos.html')">
+              Treinamentos
+            </button>
 
-    <button class="quick-btn"
-        onclick="goTo('../html usuarios/treinamentos.html')">
-        Treinamentos
-    </button>
+            <button class="quick-btn" onclick="goTo('../html usuarios/resultados.html')">
+              Resultados
+            </button>
 
-    <button class="quick-btn"
-        onclick="goTo('../html usuarios/resultados.html')">
-        Resultados
-    </button>
+            <button class="quick-btn" onclick="goTo('../html usuarios/biblioteca-treinamentos.html')">
+              Biblioteca
+            </button>
 
-    <button class="quick-btn"
-        onclick="goTo('../html usuarios/biblioteca-treinamentos.html')">
-        Biblioteca
-    </button>
-
-    <!-- NOVO -->
-    <button class="quick-btn"
-        onclick="goTo('../html usuarios/avaliacao-matinal-geral.html')">
-        ⭐ Avaliar Matinal
-    </button>
-
-</div>
+            <button class="quick-btn" onclick="goTo('../html usuarios/avaliacao-matinal-geral.html')">
+              ⭐ Avaliar Matinal
+            </button>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
 
   <nav class="bottom-nav">
     <a class="active" href="#"><span class="ico">D</span><span>Dash</span></a>
@@ -1240,9 +1263,38 @@
       return `${Number(v).toFixed(1).replace(".",",")}%`;
     }
 
-    function renderKpiLine(item, idx){
+    function getRankUniqueKey(item){
+      const supervisor = normalizeKey(item.supervisor);
+
+      if(supervisor) return supervisor;
+
+      return normalizeKey(
+        `${item.id || ""}-${item.cd || ""}-${item.kpi || ""}-${item.percentual || ""}`
+      );
+    }
+
+    function filtrarUnicosPorSupervisor(lista, bloqueados = new Set()){
+      const usados = new Set(bloqueados);
+      const resultado = [];
+
+      for(const item of lista){
+        const chave = getRankUniqueKey(item);
+
+        if(!chave) continue;
+        if(usados.has(chave)) continue;
+
+        usados.add(chave);
+        resultado.push(item);
+      }
+
+      return resultado;
+    }
+
+    function renderKpiLine(item, idx, tipoRank){
+      const classeRank = tipoRank === "top" ? "rank-top" : "rank-bottom";
+
       return `
-        <div class="rank-row">
+        <div class="rank-row ${classeRank}">
           <div class="rank-n">${idx + 1}</div>
 
           <div class="rank-info">
@@ -1300,13 +1352,15 @@
             : Number(a.percentual) - Number(b.percentual)
         );
 
-        const top5 = ordenadoTop.slice(0,5);
+        const top5 = filtrarUnicosPorSupervisor(ordenadoTop).slice(0,5);
 
-        const bottom5 = menorMelhor
-          ? ordenadoBottom.slice(0,5)
-          : ordenadoBottom
-              .filter(x => Number(x.percentual) >= 10)
-              .slice(0,5);
+        const chavesTop = new Set(top5.map(getRankUniqueKey));
+
+        const baseBottom = menorMelhor
+          ? ordenadoBottom
+          : ordenadoBottom.filter(x => Number(x.percentual) >= 10);
+
+        const bottom5 = filtrarUnicosPorSupervisor(baseBottom, chavesTop).slice(0,5);
 
         return `
           <div class="kpi-card">
@@ -1321,7 +1375,7 @@
                   ${menorMelhor ? "Top 5 menor resultado" : "Top 5 maior resultado"}
                 </div>
                 <div class="rank-box">
-                  ${top5.length ? top5.map(renderKpiLine).join("") : `<div class="empty">Sem dados</div>`}
+                  ${top5.length ? top5.map((item, idx) => renderKpiLine(item, idx, "top")).join("") : `<div class="empty">Sem dados</div>`}
                 </div>
               </div>
 
@@ -1330,7 +1384,7 @@
                   ${menorMelhor ? "Bottom 5 maior resultado" : "Bottom 5 menor resultado"}
                 </div>
                 <div class="rank-box">
-                  ${bottom5.length ? bottom5.map(renderKpiLine).join("") : `<div class="empty">Sem dados</div>`}
+                  ${bottom5.length ? bottom5.map((item, idx) => renderKpiLine(item, idx, "bottom")).join("") : `<div class="empty">Sem dados</div>`}
                 </div>
               </div>
             </div>
@@ -1392,4 +1446,4 @@
     await carregarKpisSupervisores();
   </script>
 </body>
-</html>
+</html>   
