@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Links Úteis</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/bundle-user.css" />
+</head>
+
+<body class="theme-user app-shell">
+  <header class="topbar">
+    <div>
+      <h2>Links Úteis</h2>
+      <div id="userInfo" class="hint" style="color:#d1d5db;margin-top:4px;"></div>
+    </div>
+
+    <div class="top-actions">
+      <button id="btnMenu" class="btn-secondary" type="button">Voltar ao Menu</button>
+      <button id="btnLogout" class="btn-secondary" type="button">Sair</button>
+    </div>
+  </header>
+
+  <main class="card wide">
+    <section class="row-between" style="align-items:flex-end;">
+      <div>
+        <h3>Links importantes</h3>
+        <p class="hint">Acesse rapidamente os links cadastrados pela administração.</p>
+      </div>
+
+      <div style="min-width:280px;">
+        <label for="busca">Buscar</label>
+        <input id="busca" type="text" placeholder="Nome do link..." />
+      </div>
+    </section>
+
+    <p id="msg" class="msg"></p>
+
+    <div class="table-wrap" style="margin-top:12px;">
+      <table class="table table-sticky">
+        <thead>
+          <tr>
+            <th style="width:70px;">#</th>
+            <th>Qual Link</th>
+            <th style="width:180px;">Acessar</th>
+          </tr>
+        </thead>
+        <tbody id="tbody">
+          <tr><td colspan="3" style="opacity:.8;">Carregando…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import {
+      getFirestore,
+      collection,
+      getDocs
+    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
+      authDomain: "jornada-portal.firebaseapp.com",
+      projectId: "jornada-portal",
+      storageBucket: "jornada-portal.firebasestorage.app",
+      messagingSenderId: "669362296644",
+      appId: "1:669362296644:web:f590d9834a8e4e60012911"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const COL = "links_uteis";
+    const PATH_INDEX = "../index.html";
+    const PATH_MENU = "../html menus/menu.html";
+
+    function safeParse(raw) {
+      try { return JSON.parse(raw); } catch { return null; }
+    }
+
+    function getCurrentUserName() {
+      const s = safeParse(localStorage.getItem("user_session"));
+      if (s?.nome) return String(s.nome).trim();
+      return (localStorage.getItem("usuarioLogado") || "").trim();
+    }
+
+    function escapeHtml(s) {
+      return String(s ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    const usuario = getCurrentUserName();
+    if (!usuario) window.location.href = PATH_INDEX;
+
+    document.getElementById("userInfo").textContent = `Usuário: ${usuario}`;
+    document.getElementById("btnMenu").onclick = () => window.location.href = PATH_MENU;
+    document.getElementById("btnLogout").onclick = () => {
+      localStorage.removeItem("user_session");
+      localStorage.removeItem("usuarioLogado");
+      window.location.href = PATH_INDEX;
+    };
+
+    const tbody = document.getElementById("tbody");
+    const busca = document.getElementById("busca");
+    const msg = document.getElementById("msg");
+
+    function setMsg(text, type = "info") {
+      msg.textContent = text || "";
+      msg.style.color = type === "success" ? "#22c55e" : (type === "error" ? "#ef4444" : "#64748b");
+    }
+
+    let CACHE = [];
+
+    async function loadAll() {
+      const snap = await getDocs(collection(db, COL));
+      const arr = [];
+      snap.forEach(d => arr.push({ id: d.id, ...d.data() }));
+      arr.sort((a, b) => String(a.titulo || "").localeCompare(String(b.titulo || ""), "pt-BR"));
+      CACHE = arr;
+      return arr;
+    }
+
+    function render() {
+      const q = (busca.value || "").toLowerCase();
+      const filtered = q
+        ? CACHE.filter(x => String(x.titulo || "").toLowerCase().includes(q))
+        : CACHE;
+
+      tbody.innerHTML = "";
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="3" style="opacity:.8;">Nenhum link disponível.</td></tr>`;
+        return;
+      }
+
+      filtered.forEach((item, i) => {
+        const tr = document.createElement("tr");
+        const titulo = escapeHtml(item.titulo || "-");
+        const url = item.url || "";
+
+        tr.innerHTML = `
+          <td>${i + 1}</td>
+          <td><strong>${titulo}</strong></td>
+          <td>${url
+            ? `<a class="btn-primary" href="${escapeHtml(url)}" target="_blank" rel="noopener" style="display:inline-flex;padding:8px 14px;font-size:12px;text-decoration:none;">Abrir link</a>`
+            : "-"}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    setMsg("Carregando…");
+    try {
+      await loadAll();
+      setMsg(CACHE.length ? `${CACHE.length} link(s) disponível(is).` : "");
+      render();
+    } catch (e) {
+      console.error(e);
+      setMsg("Erro ao carregar. Tente novamente mais tarde.", "error");
+      tbody.innerHTML = `<tr><td colspan="3" style="opacity:.8;">Falha ao carregar.</td></tr>`;
+    }
+
+    busca.addEventListener("input", render);
+  </script>
+</body>
+</html>

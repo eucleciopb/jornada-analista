@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Links Úteis | Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/bundle-admin.css" />
+</head>
+
+<body class="theme-admin app-shell">
+
+<header class="topbar">
+  <div>
+    <h2>Links Úteis</h2>
+    <div id="userInfo" class="hint" style="color:#d1d5db;margin-top:4px;"></div>
+  </div>
+
+  <div class="top-actions">
+    <button id="btnMenu" class="btn-secondary" type="button">Voltar ao Menu</button>
+    <button id="btnLogout" class="btn-secondary" type="button">Sair</button>
+  </div>
+</header>
+
+<main class="card wide">
+
+  <section class="row-between">
+    <div>
+      <h3 id="formTitle">Novo Link</h3>
+      <p class="hint">Cadastre links importantes para os analistas acessarem no portal.</p>
+    </div>
+  </section>
+
+  <hr class="sep" />
+
+  <section class="form-grid">
+    <div>
+      <label for="titulo">Qual Link</label>
+      <input id="titulo" type="text" maxlength="120" placeholder="Ex: Planilha de Metas, Portal RH..." />
+    </div>
+
+    <div>
+      <label for="url">Link (URL)</label>
+      <input id="url" type="url" placeholder="https://..." />
+    </div>
+
+    <div class="page-actions" style="grid-column:1/-1; justify-content:flex-end; gap:10px;">
+      <button id="btnCancelar" class="btn-secondary" type="button" style="display:none;">Cancelar</button>
+      <button id="btnSalvar" class="btn-primary" type="button">Adicionar</button>
+    </div>
+  </section>
+
+  <p id="msg" class="msg"></p>
+
+  <hr class="sep" />
+
+  <section class="row-between">
+    <div>
+      <h3>Links Cadastrados</h3>
+      <p class="hint">Lista global — os analistas visualizam no menu deles.</p>
+    </div>
+
+    <div>
+      <label for="busca">Buscar</label>
+      <input id="busca" type="text" placeholder="Filtrar por nome..." />
+    </div>
+  </section>
+
+  <div class="table-wrap" style="margin-top:12px;">
+    <table class="table table-sticky">
+      <thead>
+        <tr>
+          <th style="width:70px;">#</th>
+          <th>Qual Link</th>
+          <th style="width:140px;">Abrir</th>
+          <th style="width:160px;">Cadastrado por</th>
+          <th style="width:220px;">Ações</th>
+        </tr>
+      </thead>
+      <tbody id="tbody">
+        <tr><td colspan="5" style="opacity:.8;">Carregando…</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</main>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+  import {
+    getFirestore,
+    collection,
+    getDocs,
+    doc,
+    setDoc,
+    deleteDoc,
+    serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
+    authDomain: "jornada-portal.firebaseapp.com",
+    projectId: "jornada-portal",
+    storageBucket: "jornada-portal.firebasestorage.app",
+    messagingSenderId: "669362296644",
+    appId: "1:669362296644:web:f590d9834a8e4e60012911"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  const PATH_INDEX = "../index2.html";
+  const PATH_MENU = "../html%20menus/menuadm.html";
+  const COL = "links_uteis";
+
+  function safeParse(raw) {
+    try { return JSON.parse(raw); } catch { return null; }
+  }
+
+  function getCurrentUserName() {
+    const s = safeParse(localStorage.getItem("user_session"));
+    if (s?.nome) return String(s.nome).trim();
+    return (localStorage.getItem("usuarioLogado") || "").trim();
+  }
+
+  const usuario = getCurrentUserName();
+  if (!usuario) window.location.href = PATH_INDEX;
+
+  document.getElementById("userInfo").textContent = `Admin: ${usuario}`;
+
+  document.getElementById("btnMenu").addEventListener("click", () => {
+    window.location.href = PATH_MENU;
+  });
+
+  document.getElementById("btnLogout").addEventListener("click", () => {
+    localStorage.removeItem("usuarioLogado");
+    localStorage.removeItem("user_session");
+    localStorage.removeItem("analistaLogado");
+    localStorage.removeItem("usuarioSelecionado");
+    window.location.replace(PATH_INDEX);
+  });
+
+  const formTitle = document.getElementById("formTitle");
+  const tituloInput = document.getElementById("titulo");
+  const urlInput = document.getElementById("url");
+  const btnSalvar = document.getElementById("btnSalvar");
+  const btnCancelar = document.getElementById("btnCancelar");
+  const tbody = document.getElementById("tbody");
+  const busca = document.getElementById("busca");
+  const msg = document.getElementById("msg");
+
+  let editId = null;
+  let CACHE = [];
+
+  function setMsg(text, type = "info") {
+    msg.textContent = text || "";
+    msg.style.color = type === "success" ? "#4ade80" : (type === "error" ? "#f87171" : "#d1d5db");
+  }
+
+  function normalize(s) {
+    return (s || "").replace(/\s+/g, " ").trim();
+  }
+
+  function isValidUrl(v) {
+    const x = normalize(v);
+    if (!x) return false;
+    try { new URL(x); return true; } catch { return false; }
+  }
+
+  function escapeHtml(s) {
+    return String(s ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function makeId() {
+    if (globalThis.crypto?.randomUUID) return crypto.randomUUID();
+    return `${Date.now()}_${Math.random().toString(16).slice(2)}`;
+  }
+
+  function resetForm() {
+    editId = null;
+    formTitle.textContent = "Novo Link";
+    btnSalvar.textContent = "Adicionar";
+    btnCancelar.style.display = "none";
+    tituloInput.value = "";
+    urlInput.value = "";
+    tituloInput.focus();
+  }
+
+  async function loadAll() {
+    const snap = await getDocs(collection(db, COL));
+    const arr = [];
+    snap.forEach(d => arr.push({ id: d.id, ...d.data() }));
+    arr.sort((a, b) => String(a.titulo || "").localeCompare(String(b.titulo || ""), "pt-BR"));
+    CACHE = arr;
+    return arr;
+  }
+
+  function render() {
+    const q = (busca.value || "").toLowerCase();
+    const filtered = q
+      ? CACHE.filter(x => String(x.titulo || "").toLowerCase().includes(q))
+      : CACHE;
+
+    tbody.innerHTML = "";
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="5" style="opacity:.8;">Nenhum link cadastrado.</td></tr>`;
+      return;
+    }
+
+    filtered.forEach((item, i) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${i + 1}</td>
+        <td>${escapeHtml(item.titulo || "-")}</td>
+        <td>${item.url ? `<a href="${escapeHtml(item.url)}" target="_blank" rel="noopener">Abrir</a>` : "-"}</td>
+        <td style="opacity:.9;">${escapeHtml(item.createdBy || "-")}</td>
+        <td style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="btn-secondary" type="button" data-edit="${item.id}">Editar</button>
+          <button class="btn-secondary" type="button" data-del="${item.id}" style="border-color:rgba(248,113,113,.35);color:#f87171;">
+            Excluir
+          </button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    tbody.querySelectorAll("[data-edit]").forEach(btn => {
+      btn.onclick = () => startEdit(btn.getAttribute("data-edit"));
+    });
+
+    tbody.querySelectorAll("[data-del]").forEach(btn => {
+      btn.onclick = () => removeItem(btn.getAttribute("data-del"));
+    });
+  }
+
+  function startEdit(id) {
+    const item = CACHE.find(x => x.id === id);
+    if (!item) return;
+
+    editId = id;
+    formTitle.textContent = "Editar Link";
+    btnSalvar.textContent = "Salvar edição";
+    btnCancelar.style.display = "inline-flex";
+    tituloInput.value = item.titulo || "";
+    urlInput.value = item.url || "";
+    setMsg("Editando: ajuste os campos e clique em Salvar edição.", "info");
+    tituloInput.focus();
+  }
+
+  async function removeItem(id) {
+    if (!id) return;
+    const item = CACHE.find(x => x.id === id);
+    if (!confirm(`Excluir o link "${item?.titulo || ""}"?`)) return;
+
+    try {
+      setMsg("Excluindo…");
+      await deleteDoc(doc(db, COL, id));
+      CACHE = CACHE.filter(x => x.id !== id);
+      render();
+      if (editId === id) resetForm();
+      setMsg("Link excluído.", "success");
+    } catch (e) {
+      console.error(e);
+      setMsg("Erro ao excluir. Verifique as Rules do Firestore.", "error");
+    }
+  }
+
+  btnSalvar.onclick = async () => {
+    setMsg("");
+
+    const titulo = normalize(tituloInput.value);
+    const url = normalize(urlInput.value);
+
+    if (!titulo) {
+      setMsg("Informe o nome do link (Qual Link).", "error");
+      return;
+    }
+    if (!isValidUrl(url)) {
+      setMsg("Informe uma URL válida (ex: https://...).", "error");
+      return;
+    }
+
+    const duplicated = CACHE.some(x =>
+      String(x.titulo || "").toLowerCase() === titulo.toLowerCase() && x.id !== editId
+    );
+    if (duplicated) {
+      setMsg("Já existe um link com esse nome.", "error");
+      return;
+    }
+
+    const id = editId || makeId();
+    const existing = CACHE.find(x => x.id === id);
+
+    try {
+      setMsg(editId ? "Salvando edição…" : "Adicionando…");
+
+      await setDoc(doc(db, COL, id), {
+        titulo,
+        url,
+        createdBy: editId ? (existing?.createdBy || usuario) : usuario,
+        createdAt: editId ? (existing?.createdAt || serverTimestamp()) : serverTimestamp(),
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+
+      setMsg(editId ? "Edição salva." : "Link adicionado.", "success");
+      resetForm();
+      await loadAll();
+      render();
+    } catch (e) {
+      console.error(e);
+      setMsg("Erro ao salvar. Verifique as Rules do Firestore.", "error");
+    }
+  };
+
+  btnCancelar.onclick = () => {
+    resetForm();
+    setMsg("");
+  };
+
+  tituloInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); btnSalvar.click(); }
+  });
+
+  urlInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); btnSalvar.click(); }
+  });
+
+  busca.addEventListener("input", render);
+
+  resetForm();
+  try {
+    setMsg("Carregando…");
+    await loadAll();
+    setMsg("");
+    render();
+  } catch (e) {
+    console.error(e);
+    setMsg("Erro ao carregar. Verifique as Rules do Firestore.", "error");
+    tbody.innerHTML = `<tr><td colspan="5" style="opacity:.8;">Falha ao carregar.</td></tr>`;
+  }
+</script>
+
+</body>
+</html>
