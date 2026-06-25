@@ -1,5 +1,40 @@
 ﻿/* Portal Admin — extracted from menuadm.html */
 
+body.theme-admin.portal-page {
+  background: var(--bg);
+  color: var(--text);
+}
+
+body.theme-admin.portal-page .main,
+body.theme-admin.portal-page .content,
+body.theme-admin.portal-page .top-bar h1,
+body.theme-admin.portal-page .section-header h2 {
+  color: var(--text);
+}
+
+body.theme-admin.portal-page .portal .grid > a.card {
+  background: #f8fafc;
+  border: 1px solid var(--line);
+  color: var(--text);
+  box-shadow: none;
+}
+
+body.theme-admin.portal-page .portal .grid > a.card h3 {
+  color: #0f172a;
+}
+
+body.theme-admin.portal-page .portal .grid > a.card p {
+  color: #64748b;
+}
+
+body.theme-admin.portal-page .section {
+  background: #ffffff;
+  border-color: var(--line);
+}
+
+body.theme-admin.portal-page .footer {
+  color: #64748b;
+}
 
 *,*::before,*::after{
   margin:0;
