@@ -59,7 +59,9 @@
     import {
       getFirestore,
       collection,
-      getDocs
+      getDocs,
+      query,
+      where
     } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -74,7 +76,8 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    const COL = "links_uteis";
+    const COL = "apuracoes_treinamentos";
+    const TIPO = "link_util";
     const PATH_INDEX = "../index.html";
     const PATH_MENU = "../html menus/menu.html";
 
@@ -119,7 +122,10 @@
     let CACHE = [];
 
     async function loadAll() {
-      const snap = await getDocs(collection(db, COL));
+      const snap = await getDocs(query(
+        collection(db, COL),
+        where("tipo", "==", TIPO)
+      ));
       const arr = [];
       snap.forEach(d => arr.push({ id: d.id, ...d.data() }));
       arr.sort((a, b) => String(a.titulo || "").localeCompare(String(b.titulo || ""), "pt-BR"));
