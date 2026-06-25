@@ -55,6 +55,7 @@ const errorBox = document.getElementById("errorBox");
 const kpiUsers = document.getElementById("kpiUsers");
 const kpiOk = document.getElementById("kpiOk");
 const kpiPend = document.getElementById("kpiPend");
+const statusPill = document.getElementById("statusPill");
 
 const btnReload = document.getElementById("btnReload");
 
@@ -82,8 +83,23 @@ function normalize(s){ return (s || "").toString().trim(); }
 
 function showError(text){
   if (!errorBox) return;
-  errorBox.style.display = text ? "block" : "none";
-  errorBox.textContent = text || "";
+  if (text) {
+    errorBox.hidden = false;
+    errorBox.textContent = text;
+  } else {
+    errorBox.hidden = true;
+    errorBox.textContent = "";
+  }
+}
+
+function statusBadge(hasDoc, preenchido){
+  if (hasDoc && preenchido) {
+    return `<span class="pill pill-ok">Lançado</span>`;
+  }
+  if (hasDoc) {
+    return `<span class="pill pill-warn">Não preenchido</span>`;
+  }
+  return `<span class="pill pill-bad">Pendente</span>`;
 }
 
 /* =========================
@@ -110,7 +126,8 @@ async function loadAgendaDia(){
     console.error(err);
     hint.textContent = "Falha ao buscar no Firestore.";
     showError(err?.message || String(err));
-    tbody.innerHTML = `<tr><td colspan="4">Erro ao buscar no Firebase.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="4" class="cell-empty">Erro ao buscar no Firebase.</td></tr>`;
+    if (statusPill) statusPill.textContent = "Erro ao carregar";
     kpiUsers.textContent = USERS.length;
     kpiOk.textContent = "0";
     kpiPend.textContent = USERS.length;
@@ -144,18 +161,17 @@ async function loadAgendaDia(){
 
     if (hasDoc && preenchido) okCount++;
 
-    const statusText = hasDoc
-      ? (preenchido ? "Lançado" : "Não preenchido")
-      : "Pendente";
-
-    const statusClass = (hasDoc && preenchido) ? "ok" : "pend";
-
     const tr = document.createElement("tr");
+    if (!hasDoc || !preenchido) tr.className = "row-pendente";
+
+    const cdHtml = cd ? cd : `<span class="cell-empty">Não preenchido</span>`;
+    const atvHtml = atividade ? atividade : `<span class="cell-empty">Não preenchido</span>`;
+
     tr.innerHTML = `
       <td>${user}</td>
-      <td class="${statusClass}">${statusText}</td>
-      <td>${cd ? cd : "<span class='empty'>Não preenchido</span>"}</td>
-      <td>${atividade ? atividade : "<span class='empty'>Não preenchido</span>"}</td>
+      <td>${statusBadge(hasDoc, preenchido)}</td>
+      <td>${cdHtml}</td>
+      <td>${atvHtml}</td>
     `;
     tbody.appendChild(tr);
   }
@@ -165,7 +181,11 @@ async function loadAgendaDia(){
   kpiOk.textContent = String(okCount);
   kpiPend.textContent = String(USERS.length - okCount);
 
-  hint.textContent = `Atualizado • Registros no Firebase hoje: ${registros.length}`;
+  hint.textContent = `Última atualização • ${registros.length} registro(s) no Firebase hoje`;
+  if (statusPill) {
+    statusPill.className = "pill " + (okCount === USERS.length ? "pill-ok" : "pill-warn");
+    statusPill.textContent = `${okCount}/${USERS.length} lançados`;
+  }
 }
 
 /* =========================

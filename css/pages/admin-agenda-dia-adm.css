@@ -1,90 +1,67 @@
-/* agenda-dia-adm.html */
-body{
-    margin:0;
-    background:#ffffff;
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-    display:flex;
-    justify-content:center;
-    padding:40px 20px;
-    color:#000;
-  }
-  .card{
-    width:100%;
-    max-width:1100px;
-    background:#fff;
-    border-radius:28px;
-    padding:30px;
-    box-shadow:0 20px 60px rgba(0,0,0,0.08);
-  }
-  .header{
-    display:flex;
-    justify-content:space-between;
-    align-items:flex-start;
-    gap:12px;
-  }
-  .header h2{ margin:0; font-size:20px; }
-  small{ color:#666; display:block; margin-top:4px; }
-  hr{ margin:22px 0; border:none; height:1px; background:#eee; }
+/* agenda-dia-adm.html — complementa o Design System admin */
 
-  .kpis{
-    display:flex;
-    gap:14px;
-    flex-wrap:wrap;
-    margin-bottom:18px;
-  }
-  .kpi{
-    background:#f7f7f7;
-    border:1px solid #eee;
-    padding:12px 18px;
-    border-radius:18px;
-    font-weight:800;
-    font-size:13px;
-  }
+.page-agenda-dia .topbar-inner {
+  max-width: var(--max-w);
+  margin: 0 auto;
+  padding: 0 var(--space-6);
+  width: 100%;
+}
 
-  .actions{ display:flex; gap:10px; flex-wrap:wrap; }
-  .btn{
-    padding:10px 16px;
-    border-radius:12px;
-    border:1px solid #ddd;
-    background:#fff;
-    cursor:pointer;
-    font-weight:800;
-    transition:.15s;
-  }
-  .btn:hover{ background:#000; color:#fff; border-color:#000; }
+.page-agenda-dia main.card.wide {
+  max-width: var(--max-w);
+}
 
-  .error{
-    margin-top:10px;
-    font-size:13px;
-    font-weight:800;
-    color:#b00000;
-    display:none;
-  }
-  .hint{
-    margin-top:6px;
-    font-size:12px;
-    color:#666;
-    font-weight:700;
-  }
+.agenda-dia-kpis {
+  grid-template-columns: repeat(3, minmax(160px, 1fr));
+  margin-bottom: var(--space-5);
+}
 
-  table{ width:100%; border-collapse:collapse; }
-  th, td{
-    padding:14px;
-    border-bottom:1px solid #eee;
-    text-align:left;
-    font-size:14px;
+@media (max-width: 720px) {
+  .agenda-dia-kpis {
+    grid-template-columns: 1fr;
   }
-  th{
-    font-size:12px;
-    text-transform:uppercase;
-    color:#777;
-    letter-spacing:.06em;
-  }
-  .ok{ color:#0a8f3c; font-weight:900; }
-  .pend{ color:#c00000; font-weight:900; }
-  .empty{ color:#999; font-style:italic; }
+}
 
-  @media (max-width: 700px){
-    .header{ flex-direction:column; align-items:stretch; }
-    .actions{ justify-content:flex-start; }
-  }
+.kpi-ok {
+  border-color: rgba(74, 222, 128, 0.25);
+  background: var(--ok-soft);
+}
+
+.kpi-pend {
+  border-color: rgba(248, 113, 113, 0.25);
+  background: var(--danger-soft);
+}
+
+.error-box {
+  margin-top: var(--space-2);
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.page-agenda-dia .table {
+  min-width: 760px;
+}
+
+.page-agenda-dia .table tbody td:first-child {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.cell-empty {
+  color: var(--muted);
+  font-style: italic;
+  font-size: 13px;
+}
+
+.page-agenda-dia tbody tr.row-pendente {
+  background: rgba(251, 191, 36, 0.06);
+}
+
+.page-agenda-dia tbody tr.row-pendente:hover {
+  background: rgba(251, 191, 36, 0.1);
+}

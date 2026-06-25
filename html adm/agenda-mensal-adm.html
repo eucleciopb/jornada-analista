@@ -11,19 +11,19 @@
   <link rel="stylesheet" href="../css/pages/admin-agenda-mensal-adm.css" />
 </head>
 
-<body class="theme-admin app-shell">
+<body class="theme-admin app-shell page-agenda-mensal">
 
 <header class="topbar">
   <div class="topbar-inner">
     <div>
       <h2>Agenda Mensal — Admin</h2>
-      <div id="userInfo" class="hint" style="margin-top:4px;"></div>
+      <div id="userInfo" class="hint"></div>
     </div>
 
-    <div class="actions">
-      <button id="btnExportar" class="btn-export">Exportar Excel</button>
-      <button id="btnMenu" class="btn-secondary">Voltar ao Menu</button>
-      <button id="btnLogout" class="btn-secondary">Sair</button>
+    <div class="top-actions">
+      <button id="btnExportar" class="btn-primary" type="button">Exportar Excel</button>
+      <button id="btnMenu" class="btn-secondary" type="button">Voltar ao Menu</button>
+      <button id="btnLogout" class="btn-secondary" type="button">Sair</button>
     </div>
   </div>
 </header>
@@ -32,20 +32,33 @@
 
 <section class="filters">
   <div>
-    <label>Mês</label>
+    <label for="monthPicker">Mês</label>
     <input id="monthPicker" class="field" type="month">
   </div>
 
   <div>
-    <label>Buscar</label>
-    <input id="busca" class="field" type="text" placeholder="Analista ou CD">
+    <label for="busca">Buscar</label>
+    <input id="busca" class="field" type="text" placeholder="Analista, CD ou atividade">
   </div>
 </section>
 
-<div id="resumo" class="resumo"></div>
+<section class="kpi-grid agenda-mensal-kpis">
+  <div class="kpi">
+    <span class="kpi-label">Total exibido</span>
+    <div class="kpi-value" id="kpiTotal">0</div>
+  </div>
+  <div class="kpi kpi-ok">
+    <span class="kpi-label">Preenchidos</span>
+    <div class="kpi-value" id="kpiPreenchidos">0</div>
+  </div>
+  <div class="kpi kpi-pend">
+    <span class="kpi-label">Não preenchidos</span>
+    <div class="kpi-value" id="kpiPendentes">0</div>
+  </div>
+</section>
 
 <div class="table-wrap">
-<table id="tabelaAgenda">
+<table class="table table-sticky" id="tabelaAgenda">
 <thead>
 <tr>
 <th>Data</th>
@@ -108,7 +121,9 @@ document.getElementById("btnLogout").onclick = () => {
 const monthPicker = document.getElementById("monthPicker");
 const busca = document.getElementById("busca");
 const tbody = document.getElementById("tbody");
-const resumo = document.getElementById("resumo");
+const kpiTotal = document.getElementById("kpiTotal");
+const kpiPreenchidos = document.getElementById("kpiPreenchidos");
+const kpiPendentes = document.getElementById("kpiPendentes");
 const btnExportar = document.getElementById("btnExportar");
 
 let CACHE = [];
@@ -149,8 +164,10 @@ function isFilled(x){
 async function load(){
   const yyyyMM = monthPicker.value;
 
-  tbody.innerHTML = `<tr><td colspan="7">Carregando…</td></tr>`;
-  resumo.textContent = "";
+  tbody.innerHTML = `<tr><td colspan="7" class="cell-empty">Carregando…</td></tr>`;
+  if (kpiTotal) kpiTotal.textContent = "0";
+  if (kpiPreenchidos) kpiPreenchidos.textContent = "0";
+  if (kpiPendentes) kpiPendentes.textContent = "0";
 
   try{
     const q = query(
@@ -220,10 +237,12 @@ function render(){
   const preenchidos = rows.filter(isFilled).length;
   const pendentes = total - preenchidos;
 
-  resumo.textContent = `Total exibido: ${total} | Preenchidos: ${preenchidos} | Não preenchidos: ${pendentes}`;
+  if (kpiTotal) kpiTotal.textContent = String(total);
+  if (kpiPreenchidos) kpiPreenchidos.textContent = String(preenchidos);
+  if (kpiPendentes) kpiPendentes.textContent = String(pendentes);
 
   if(rows.length === 0){
-    tbody.innerHTML = `<tr><td colspan="7">Sem registros</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" class="cell-empty">Sem registros para o filtro selecionado.</td></tr>`;
     return;
   }
 

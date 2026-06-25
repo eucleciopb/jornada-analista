@@ -101,22 +101,6 @@ td.status-col, td.action-col { width: 110px; vertical-align: middle; }
 
 .page-matinal .nota-input { width: 120px; text-align: center; font-weight: 800; font-size: 15px; }
 
-/* ── Agenda dia admin (centered) ── */
-
-body.page-centered {
-  display: flex;
-  justify-content: center;
-  padding: 32px 20px;
-}
-
-body.page-centered .card {
-  width: min(960px, 100%);
-}
-
-body.page-centered .header { margin-bottom: 16px; }
-body.page-centered .header h2 { margin: 0 0 6px; font-size: 22px; font-weight: 800; }
-body.page-centered .actions { display: flex; gap: 10px; flex-wrap: wrap; margin: 14px 0; }
-
 /* ── Criar agenda: modal observações (BEM) ── */
 
 textarea.field[data-field="obs"] {

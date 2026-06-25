@@ -1,9 +1,9 @@
 <!doctype html>
 <html lang="pt-br">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Agenda do Dia | Admin</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Agenda do Dia | Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -11,50 +11,61 @@
   <link rel="stylesheet" href="../css/pages/admin-agenda-dia-adm.css" />
 </head>
 
-<body class="theme-admin app-shell page-centered">
-  <div class="card">
-
-    <div class="header">
+<body class="theme-admin app-shell page-agenda-dia">
+  <header class="topbar">
+    <div class="topbar-inner">
       <div>
-        <h2>Agenda do Dia — Admin</h2>
-        <small id="todayLabel">Data: —</small>
+        <h2>Agenda do Dia — Analistas</h2>
+        <div class="hint" id="todayLabel">Data: —</div>
         <div class="hint" id="hint">Carregando…</div>
-        <div class="error" id="errorBox"></div>
+        <div class="error-box" id="errorBox" hidden></div>
       </div>
 
-      <div class="actions">
-        <button class="btn" id="btnReload">Atualizar</button>
-
-        <!-- ✅ caminho certo -->
-        <button class="btn" onclick="location.href='../html menus/menuadm.html'">Voltar</button>
+      <div class="top-actions">
+        <button class="btn-primary" id="btnReload" type="button">Atualizar</button>
+        <button class="btn-secondary" type="button" onclick="location.href='../html menus/menuadm.html'">Voltar ao Menu</button>
       </div>
     </div>
+  </header>
 
-    <hr>
+  <main class="card wide">
+    <section class="kpi-grid agenda-dia-kpis">
+      <div class="kpi">
+        <span class="kpi-label">Total analistas</span>
+        <div class="kpi-value" id="kpiUsers">0</div>
+      </div>
+      <div class="kpi kpi-ok">
+        <span class="kpi-label">Lançaram hoje</span>
+        <div class="kpi-value" id="kpiOk">0</div>
+      </div>
+      <div class="kpi kpi-pend">
+        <span class="kpi-label">Pendentes</span>
+        <div class="kpi-value" id="kpiPend">0</div>
+      </div>
+    </section>
 
-    <div class="kpis">
-      <div class="kpi">Total usuários: <span id="kpiUsers">0</span></div>
-      <div class="kpi">Lançaram hoje: <span id="kpiOk">0</span></div>
-      <div class="kpi">Pendentes: <span id="kpiPend">0</span></div>
+    <div class="section-head">
+      <h3>Status por analista</h3>
+      <span class="pill pill-muted" id="statusPill">Aguardando dados…</span>
     </div>
 
-    <table>
-      <thead>
-        <tr>
-          <th>Usuário</th>
-          <th>Status</th>
-          <th>CD / Local</th>
-          <th>Atividade</th>
-        </tr>
-      </thead>
-      <tbody id="tbody">
-        <tr><td colspan="4">Carregando…</td></tr>
-      </tbody>
-    </table>
+    <div class="table-wrap">
+      <table class="table table-sticky">
+        <thead>
+          <tr>
+            <th style="width:160px;">Analista</th>
+            <th style="width:140px;">Status</th>
+            <th style="width:220px;">CD / Local</th>
+            <th>Atividade</th>
+          </tr>
+        </thead>
+        <tbody id="tbody">
+          <tr><td colspan="4" class="cell-empty">Carregando…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
 
-  </div>
-
-  <!-- ✅ CAMINHO CERTO: sai de /html adm/ e vai para /js/ -->
   <script type="module" src="../js/agenda-dia-adm.js"></script>
 </body>
 </html>
