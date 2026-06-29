@@ -673,6 +673,22 @@
       return `${Number(v).toFixed(1).replace(".",",")}%`;
     }
 
+    function calcPctRealMeta(item){
+      const meta = Number(item?.meta);
+      const real = Number(item?.real);
+
+      if(Number.isFinite(meta) && Number.isFinite(real) && meta !== 0){
+        return Math.round((real / meta) * 10000) / 100;
+      }
+
+      const fallback = Number(item?.percentual);
+      return Number.isFinite(fallback) ? fallback : null;
+    }
+
+    function getItemPct(item){
+      return calcPctRealMeta(item);
+    }
+
     function getSupervisorLabel(item){
       return normalize(item.supervisor) || normalize(item.matriculaSupervisor) || "-";
     }
@@ -692,8 +708,8 @@
 
       for(const item of lista){
         const chave = getSupervisorKey(item);
-        const pct = Number(item.percentual);
-        if(!chave || !Number.isFinite(pct)) continue;
+        const pct = getItemPct(item);
+        if(!chave || pct === null) continue;
 
         const atual = map.get(chave);
         if(!atual){
@@ -701,7 +717,7 @@
           continue;
         }
 
-        const pctAtual = Number(atual.percentual);
+        const pctAtual = getItemPct(atual);
         const melhor = menorMelhor ? pct < pctAtual : pct > pctAtual;
         if(melhor) map.set(chave, item);
       }
@@ -714,8 +730,8 @@
 
       const ordenado = [...unicos].sort((a,b) =>
         menorMelhor
-          ? Number(a.percentual) - Number(b.percentual)
-          : Number(b.percentual) - Number(a.percentual)
+          ? getItemPct(a) - getItemPct(b)
+          : getItemPct(b) - getItemPct(a)
       );
 
       if(ordenado.length <= 1){
@@ -730,8 +746,8 @@
         .filter(item => !topKeys.has(getSupervisorKey(item)))
         .sort((a,b) =>
           menorMelhor
-            ? Number(b.percentual) - Number(a.percentual)
-            : Number(a.percentual) - Number(b.percentual)
+            ? getItemPct(b) - getItemPct(a)
+            : getItemPct(a) - getItemPct(b)
         );
 
       return { topList, bottomList };
@@ -753,7 +769,7 @@
             </div>
           </div>
 
-          <div class="rank-value">${formatPct(item.percentual)}</div>
+          <div class="rank-value">${formatPct(getItemPct(item))}</div>
         </div>
       `;
     }
@@ -783,7 +799,7 @@
       kpiGrid.innerHTML = KPI_BASE.map(kpiBase => {
         const lista = baseMes
           .filter(x => kpiMatches(kpiBase, x.kpi))
-          .filter(x => Number.isFinite(Number(x.percentual)));
+          .filter(x => getItemPct(x) !== null);
 
         const menorMelhor = normalizeKey(kpiBase.nome).includes("ocorrencia");
         const { topList, bottomList } = dividirRankingSupervisores(lista, menorMelhor);
