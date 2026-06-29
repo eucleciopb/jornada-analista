@@ -151,7 +151,7 @@
             <div class="section-title" style="margin-bottom:0;">
               <div>
                 <h3>Ranking KPIs dos Supervisores</h3>
-                <p>Top 5 e Bottom 5 dos supervisores dos CDs da sua área.</p>
+                <p>Melhores e menores resultados dos supervisores dos CDs da sua área (sem repetir entre as colunas).</p>
               </div>
               <span id="statusKpi" class="status-pill">Carregando...</span>
             </div>
@@ -293,6 +293,14 @@
         .toLowerCase()
         .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
         .replace(/[^a-z0-9]+/g,"");
+    }
+
+    function normalizeCdKey(cd){
+      return normalizeKey(
+        String(cd || "")
+          .replace(/^cd\s*[-–]\s*/i, "")
+          .trim()
+      );
     }
 
     function escapeHtml(value){
@@ -510,8 +518,12 @@
       const resp = normalizeKey(responsavel);
 
       if(!usuario || !resp) return false;
+      if(usuario === resp) return true;
+      if(usuario.includes(resp) || resp.includes(usuario)) return true;
 
-      return usuario.includes(resp) || resp.includes(usuario);
+      const usuarioFirst = usuario.slice(0, Math.min(usuario.length, 4));
+      const respFirst = resp.slice(0, Math.min(resp.length, 4));
+      return usuarioFirst.length >= 3 && (usuarioFirst === respFirst || resp.includes(usuarioFirst) || usuario.includes(respFirst));
     }
 
     function pctClassArea(pct){
@@ -583,7 +595,7 @@
         const mapa = new Map();
 
         MEUS_CDS.forEach(cd => {
-          mapa.set(cd, { cd, meses:new Set(), totalTreinos:0 });
+          mapa.set(normalizeCdKey(cd), { cd, meses:new Set(), totalTreinos:0 });
         });
 
         snapTreinos.forEach(docSnap => {
@@ -591,13 +603,13 @@
 
           if(!isPresencial(item)) return;
 
-          const cd = getCd(item);
-          if(!mapa.has(cd)) return;
+          const cdKey = normalizeCdKey(getCd(item));
+          if(!mapa.has(cdKey)) return;
 
           const { ano, mes } = getAnoMes(item.data);
           if(ano !== anoAtual || !mes) return;
 
-          const ref = mapa.get(cd);
+          const ref = mapa.get(cdKey);
           ref.meses.add(mes);
           ref.totalTreinos++;
         });
@@ -661,31 +673,68 @@
       return `${Number(v).toFixed(1).replace(".",",")}%`;
     }
 
-    function getRankUniqueKey(item){
-      const supervisor = normalizeKey(item.supervisor);
-
-      if(supervisor) return supervisor;
-
-      return normalizeKey(
-        `${item.id || ""}-${item.cd || ""}-${item.kpi || ""}-${item.percentual || ""}`
-      );
+    function getSupervisorLabel(item){
+      return normalize(item.supervisor) || normalize(item.matriculaSupervisor) || "-";
     }
 
-    function filtrarUnicosPorSupervisor(lista, bloqueados = new Set()){
-      const usados = new Set(bloqueados);
-      const resultado = [];
+    function getSupervisorKey(item){
+      const supervisor = normalizeKey(item.supervisor);
+      if(supervisor) return `sv:${supervisor}`;
+
+      const matricula = normalizeKey(item.matriculaSupervisor);
+      if(matricula) return `mat:${matricula}`;
+
+      return `row:${item.id || ""}-${normalizeCdKey(item.cd)}`;
+    }
+
+    function agruparMelhorPorSupervisor(lista, menorMelhor){
+      const map = new Map();
 
       for(const item of lista){
-        const chave = getRankUniqueKey(item);
+        const chave = getSupervisorKey(item);
+        const pct = Number(item.percentual);
+        if(!chave || !Number.isFinite(pct)) continue;
 
-        if(!chave) continue;
-        if(usados.has(chave)) continue;
+        const atual = map.get(chave);
+        if(!atual){
+          map.set(chave, item);
+          continue;
+        }
 
-        usados.add(chave);
-        resultado.push(item);
+        const pctAtual = Number(atual.percentual);
+        const melhor = menorMelhor ? pct < pctAtual : pct > pctAtual;
+        if(melhor) map.set(chave, item);
       }
 
-      return resultado;
+      return Array.from(map.values());
+    }
+
+    function dividirRankingSupervisores(lista, menorMelhor){
+      const unicos = agruparMelhorPorSupervisor(lista, menorMelhor);
+
+      const ordenado = [...unicos].sort((a,b) =>
+        menorMelhor
+          ? Number(a.percentual) - Number(b.percentual)
+          : Number(b.percentual) - Number(a.percentual)
+      );
+
+      if(ordenado.length <= 1){
+        return { topList: ordenado, bottomList: [] };
+      }
+
+      const meio = Math.ceil(ordenado.length / 2);
+      const topList = ordenado.slice(0, meio);
+      const topKeys = new Set(topList.map(getSupervisorKey));
+
+      const bottomList = [...unicos]
+        .filter(item => !topKeys.has(getSupervisorKey(item)))
+        .sort((a,b) =>
+          menorMelhor
+            ? Number(b.percentual) - Number(a.percentual)
+            : Number(a.percentual) - Number(b.percentual)
+        );
+
+      return { topList, bottomList };
     }
 
     function renderKpiLine(item, idx, tipoRank){
@@ -696,7 +745,7 @@
           <div class="rank-n">${idx + 1}</div>
 
           <div class="rank-info">
-            <div class="rank-name">${escapeHtml(item.supervisor || "-")}</div>
+            <div class="rank-name">${escapeHtml(getSupervisorLabel(item))}</div>
             <div class="rank-cd">${escapeHtml(item.cd || "-")}</div>
             <div class="rank-meta">
               Meta: ${Number(item.meta || 0).toLocaleString("pt-BR")} |
@@ -719,13 +768,13 @@
         return;
       }
 
-      const meusSet = new Set(MEUS_CDS.map(normalizeKey));
+      const meusSet = new Set(MEUS_CDS.map(normalizeCdKey));
       const cdSelecionado = cdKpiFiltro.value;
 
       const baseMes = KPIS_CACHE.filter(x =>
         x.mesKey === mesKey &&
-        meusSet.has(normalizeKey(x.cd)) &&
-        (!cdSelecionado || normalize(x.cd) === cdSelecionado)
+        meusSet.has(normalizeCdKey(x.cd)) &&
+        (!cdSelecionado || normalizeCdKey(x.cd) === normalizeCdKey(cdSelecionado))
       );
 
       statusKpi.textContent = baseMes.length ? `${baseMes.length} registros` : "Sem dados";
@@ -737,52 +786,31 @@
           .filter(x => Number.isFinite(Number(x.percentual)));
 
         const menorMelhor = normalizeKey(kpiBase.nome).includes("ocorrencia");
-
-        const ordenadoTop = [...lista].sort((a,b) =>
-          menorMelhor
-            ? Number(a.percentual) - Number(b.percentual)
-            : Number(b.percentual) - Number(a.percentual)
-        );
-
-        const ordenadoBottom = [...lista].sort((a,b) =>
-          menorMelhor
-            ? Number(b.percentual) - Number(a.percentual)
-            : Number(a.percentual) - Number(b.percentual)
-        );
-
-        const top5 = filtrarUnicosPorSupervisor(ordenadoTop).slice(0,5);
-
-        const chavesTop = new Set(top5.map(getRankUniqueKey));
-
-        const baseBottom = menorMelhor
-          ? ordenadoBottom
-          : ordenadoBottom.filter(x => Number(x.percentual) >= 10);
-
-        const bottom5 = filtrarUnicosPorSupervisor(baseBottom, chavesTop).slice(0,5);
+        const { topList, bottomList } = dividirRankingSupervisores(lista, menorMelhor);
 
         return `
           <div class="kpi-card">
             <div class="kpi-card-head">
               <h4>${escapeHtml(kpiBase.nome)}</h4>
-              <span class="kpi-count">${lista.length} SVs</span>
+              <span class="kpi-count">${lista.length} reg. • ${topList.length + bottomList.length} SVs</span>
             </div>
 
             <div class="rank-cols">
               <div>
                 <div class="rank-title">
-                  ${menorMelhor ? "Top 5 menor resultado" : "Top 5 maior resultado"}
+                  ${menorMelhor ? "Menores resultados" : "Melhores resultados"}
                 </div>
                 <div class="rank-box">
-                  ${top5.length ? top5.map((item, idx) => renderKpiLine(item, idx, "top")).join("") : `<div class="empty">Sem dados</div>`}
+                  ${topList.length ? topList.map((item, idx) => renderKpiLine(item, idx, "top")).join("") : `<div class="empty">Sem dados</div>`}
                 </div>
               </div>
 
               <div>
                 <div class="rank-title">
-                  ${menorMelhor ? "Bottom 5 maior resultado" : "Bottom 5 menor resultado"}
+                  ${menorMelhor ? "Maiores resultados" : "Menores resultados"}
                 </div>
                 <div class="rank-box">
-                  ${bottom5.length ? bottom5.map((item, idx) => renderKpiLine(item, idx, "bottom")).join("") : `<div class="empty">Sem dados</div>`}
+                  ${bottomList.length ? bottomList.map((item, idx) => renderKpiLine(item, idx, "bottom")).join("") : `<div class="empty">Sem dados</div>`}
                 </div>
               </div>
             </div>
