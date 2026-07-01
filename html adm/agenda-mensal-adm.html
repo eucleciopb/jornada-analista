@@ -250,8 +250,8 @@ function render(){
     const statusTexto = isFilled(x) ? "Preenchido" : "Não preenchido";
 
     const statusHtml = isFilled(x)
-      ? `<span class="pill ok">Preenchido</span>`
-      : `<span class="pill pend">Não preenchido</span>`;
+      ? `<span class="status-btn status-ok">Preenchido</span>`
+      : `<span class="status-btn status-bad">Não preenchido</span>`;
 
     const tr = document.createElement("tr");
 
