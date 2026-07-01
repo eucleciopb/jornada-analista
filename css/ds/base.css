@@ -133,3 +133,22 @@ body.portal-page.theme-admin {
   color: var(--text);
   color-scheme: light;
 }
+
+/* Agendas admin — tema claro garantido */
+body.page-agenda-dia.app-shell,
+body.page-agenda-mensal.app-shell {
+  --bg: #f6f8fb;
+  --surface: #ffffff;
+  --text: #0f172a;
+  --muted: #64748b;
+  --line: #e2e8f0;
+  --card-bg: #ffffff;
+  --card-border: #e5e7eb;
+  --table-head: #f8fafc;
+  --table-stripe: #fafbfc;
+  --table-hover: #f1f5f9;
+  --table-text: #0f172a;
+  background: #f6f8fb !important;
+  background-image: none !important;
+  color: #0f172a !important;
+}

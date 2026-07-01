@@ -1,159 +1,141 @@
-/* agenda-mensal-adm.html — tema claro admin (igual agenda do dia) */
+/* agenda-mensal-adm.html — tema claro forçado (admin) */
 
-body.page-agenda-mensal.theme-admin {
-  --bg: #f6f8fb;
-  --surface: #ffffff;
-  --surface-hover: #f8fafc;
-  --text: #0f172a;
-  --text-secondary: #334155;
-  --muted: #64748b;
-  --line: #e2e8f0;
-  --line-soft: #f1f5f9;
-  --topbar-bg: #ffffff;
-  --topbar-border: #e5e7eb;
-  --card-bg: #ffffff;
-  --card-border: #e5e7eb;
-  --card-shadow: 0 16px 45px rgba(15, 23, 42, 0.08);
-  --table-head: #f8fafc;
-  --table-stripe: #fafbfc;
-  --table-hover: #f1f5f9;
-  --table-text: #0f172a;
-  --input-bg: #ffffff;
-  --input-border: #dbe1ea;
-  --btn-secondary-bg: #ffffff;
-  --btn-secondary-border: #e2e8f0;
-  --btn-secondary-text: #334155;
-  background: #f6f8fb;
-  color: #0f172a;
-  background-image: none;
+html,
+body.page-agenda-mensal {
+  background: #f6f8fb !important;
+  background-image: none !important;
+  color: #0f172a !important;
   color-scheme: light;
 }
 
-.page-agenda-mensal .topbar {
-  background: #ffffff;
-  border-bottom: 1px solid #e5e7eb;
-  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
+body.page-agenda-mensal .topbar {
+  background: #ffffff !important;
+  border-bottom: 1px solid #e5e7eb !important;
 }
 
-.page-agenda-mensal .topbar h2 {
-  color: #0f172a;
+body.page-agenda-mensal .topbar h2,
+body.page-agenda-mensal .kpi-value {
+  color: #0f172a !important;
 }
 
-.page-agenda-mensal .hint {
-  color: #64748b;
+body.page-agenda-mensal .hint {
+  color: #64748b !important;
 }
 
-.page-agenda-mensal .topbar-inner {
-  max-width: var(--max-w);
+body.page-agenda-mensal .topbar-inner {
+  max-width: 1180px;
   margin: 0 auto;
-  padding: 0 var(--space-6);
+  padding: 0 24px;
   width: 100%;
 }
 
-.page-agenda-mensal main.card.wide {
-  max-width: var(--max-w);
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 16px 45px rgba(15, 23, 42, 0.08);
+body.page-agenda-mensal main.card.wide {
+  max-width: 1180px;
+  background: #ffffff !important;
+  border: 1px solid #e5e7eb !important;
+  box-shadow: 0 16px 45px rgba(15, 23, 42, 0.08) !important;
+  color: #0f172a !important;
 }
 
-.page-agenda-mensal .btn-primary {
-  background: linear-gradient(135deg, #1d4ed8, #2563eb);
-  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.25);
+body.page-agenda-mensal .btn-primary {
+  background: linear-gradient(135deg, #1d4ed8, #2563eb) !important;
+  color: #ffffff !important;
 }
 
-.page-agenda-mensal .btn-secondary {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  color: #334155;
+body.page-agenda-mensal .btn-secondary {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #334155 !important;
 }
 
-.page-agenda-mensal .filters {
+body.page-agenda-mensal .filters {
   display: grid;
   grid-template-columns: repeat(2, minmax(200px, 1fr));
-  gap: var(--space-3);
-  margin-bottom: var(--space-4);
-  padding: var(--space-4);
-  border-radius: var(--radius-lg);
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 16px;
+  border-radius: 18px;
   border: 1px solid #e2e8f0;
   background: #f8fafc;
 }
 
-.page-agenda-mensal .filters label {
-  color: #64748b;
+body.page-agenda-mensal .filters label {
+  color: #64748b !important;
 }
 
-.page-agenda-mensal .field {
-  background: #ffffff;
-  border: 1px solid #dbe1ea;
-  color: #0f172a;
+body.page-agenda-mensal .field {
+  background: #ffffff !important;
+  border: 1px solid #dbe1ea !important;
+  color: #0f172a !important;
 }
 
 .agenda-mensal-kpis {
   grid-template-columns: repeat(3, minmax(160px, 1fr));
-  margin-bottom: var(--space-5);
+  margin-bottom: 20px;
 }
 
-.page-agenda-mensal .kpi {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+body.page-agenda-mensal .kpi {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
 }
 
-.page-agenda-mensal .kpi-label {
-  color: #64748b;
+body.page-agenda-mensal .kpi-label {
+  color: #64748b !important;
 }
 
-.page-agenda-mensal .kpi-value {
-  color: #0f172a;
+body.page-agenda-mensal .kpi-ok {
+  border-color: #bbf7d0 !important;
+  background: #f0fdf4 !important;
 }
 
-.kpi-ok {
-  border-color: #bbf7d0;
-  background: #f0fdf4;
+body.page-agenda-mensal .kpi-pend {
+  border-color: #fecaca !important;
+  background: #fef2f2 !important;
 }
 
-.kpi-pend {
-  border-color: #fecaca;
-  background: #fef2f2;
+body.page-agenda-mensal .kpi-ok .kpi-value {
+  color: #166534 !important;
 }
 
-.kpi-ok .kpi-value {
-  color: #166534;
+body.page-agenda-mensal .kpi-pend .kpi-value {
+  color: #991b1b !important;
 }
 
-.kpi-pend .kpi-value {
-  color: #991b1b;
+body.page-agenda-mensal .table-wrap {
+  border: 1px solid #e5e7eb !important;
+  background: #ffffff !important;
 }
 
-.page-agenda-mensal .table-wrap {
-  border: 1px solid #e5e7eb;
-  background: #ffffff;
-}
-
-.page-agenda-mensal .table {
+body.page-agenda-mensal .table {
   min-width: 1100px;
+  background: #ffffff !important;
 }
 
-.page-agenda-mensal .table thead th {
-  background: #f8fafc;
-  color: #334155;
+body.page-agenda-mensal .table thead th {
+  background: #f8fafc !important;
+  color: #334155 !important;
 }
 
-.page-agenda-mensal .table tbody td {
-  color: #0f172a;
-  border-bottom-color: #f1f5f9;
+body.page-agenda-mensal .table tbody td {
+  color: #0f172a !important;
+  border-bottom-color: #f1f5f9 !important;
+  background: #ffffff !important;
 }
 
-.page-agenda-mensal .table tbody td:nth-child(3) {
+body.page-agenda-mensal .table tbody tr:nth-child(even) td {
+  background: #fafbfc !important;
+}
+
+body.page-agenda-mensal .table tbody td:nth-child(3) {
   font-weight: 700;
 }
 
-.cell-empty {
-  color: #94a3b8;
+body.page-agenda-mensal .cell-empty {
+  color: #94a3b8 !important;
   font-style: italic;
 }
 
-.status-btn {
+body.page-agenda-mensal .status-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -162,27 +144,22 @@ body.page-agenda-mensal.theme-admin {
   border-radius: 999px;
   font-size: 12px;
   font-weight: 800;
-  border: none;
+  border: none !important;
   white-space: nowrap;
 }
 
-.status-btn.status-ok {
-  background: #16a34a;
-  color: #ffffff;
-  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.25);
+body.page-agenda-mensal .status-btn.status-ok {
+  background: #16a34a !important;
+  color: #ffffff !important;
 }
 
-.status-btn.status-bad {
-  background: #dc2626;
-  color: #ffffff;
-  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.22);
+body.page-agenda-mensal .status-btn.status-bad {
+  background: #dc2626 !important;
+  color: #ffffff !important;
 }
 
 @media (max-width: 720px) {
-  .page-agenda-mensal .filters {
-    grid-template-columns: 1fr;
-  }
-
+  body.page-agenda-mensal .filters,
   .agenda-mensal-kpis {
     grid-template-columns: 1fr;
   }
