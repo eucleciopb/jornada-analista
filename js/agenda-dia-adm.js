@@ -94,12 +94,12 @@ function showError(text){
 
 function statusBadge(hasDoc, preenchido){
   if (hasDoc && preenchido) {
-    return `<span class="pill pill-ok">Lançado</span>`;
+    return `<span class="status-btn status-ok">Lançado</span>`;
   }
   if (hasDoc) {
-    return `<span class="pill pill-warn">Não preenchido</span>`;
+    return `<span class="status-btn status-bad">Não preenchido</span>`;
   }
-  return `<span class="pill pill-bad">Pendente</span>`;
+  return `<span class="status-btn status-bad">Pendente</span>`;
 }
 
 /* =========================
@@ -183,7 +183,7 @@ async function loadAgendaDia(){
 
   hint.textContent = `Última atualização • ${registros.length} registro(s) no Firebase hoje`;
   if (statusPill) {
-    statusPill.className = "pill " + (okCount === USERS.length ? "pill-ok" : "pill-warn");
+    statusPill.className = "pill " + (okCount === USERS.length ? "pill-ok" : "pill-bad");
     statusPill.textContent = `${okCount}/${USERS.length} lançados`;
   }
 }

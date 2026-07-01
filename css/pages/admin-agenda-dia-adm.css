@@ -1,4 +1,45 @@
-/* agenda-dia-adm.html — complementa o Design System admin */
+/* agenda-dia-adm.html — tema claro (fundo branco, texto escuro) */
+
+body.page-agenda-dia.theme-admin {
+  --bg: #f6f8fb;
+  --surface: #ffffff;
+  --surface-hover: #f8fafc;
+  --text: #0f172a;
+  --text-secondary: #334155;
+  --muted: #64748b;
+  --line: #e2e8f0;
+  --line-soft: #f1f5f9;
+  --topbar-bg: #ffffff;
+  --topbar-border: #e5e7eb;
+  --card-bg: #ffffff;
+  --card-border: #e5e7eb;
+  --card-shadow: 0 16px 45px rgba(15, 23, 42, 0.08);
+  --table-head: #f8fafc;
+  --table-stripe: #fafbfc;
+  --table-hover: #f1f5f9;
+  --table-text: #0f172a;
+  --btn-secondary-bg: #ffffff;
+  --btn-secondary-border: #e2e8f0;
+  --btn-secondary-text: #334155;
+  background: #f6f8fb;
+  color: #0f172a;
+  background-image: none;
+  color-scheme: light;
+}
+
+.page-agenda-dia .topbar {
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
+}
+
+.page-agenda-dia .topbar h2 {
+  color: #0f172a;
+}
+
+.page-agenda-dia .hint {
+  color: #64748b;
+}
 
 .page-agenda-dia .topbar-inner {
   max-width: var(--max-w);
@@ -9,6 +50,24 @@
 
 .page-agenda-dia main.card.wide {
   max-width: var(--max-w);
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 16px 45px rgba(15, 23, 42, 0.08);
+}
+
+.page-agenda-dia .section-head h3 {
+  color: #0f172a;
+}
+
+.page-agenda-dia .btn-primary {
+  background: linear-gradient(135deg, #1d4ed8, #2563eb);
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.25);
+}
+
+.page-agenda-dia .btn-secondary {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  color: #334155;
 }
 
 .agenda-dia-kpis {
@@ -16,52 +75,134 @@
   margin-bottom: var(--space-5);
 }
 
-@media (max-width: 720px) {
-  .agenda-dia-kpis {
-    grid-template-columns: 1fr;
-  }
+.page-agenda-dia .kpi {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.page-agenda-dia .kpi-label {
+  color: #64748b;
+}
+
+.page-agenda-dia .kpi-value {
+  color: #0f172a;
 }
 
 .kpi-ok {
-  border-color: rgba(74, 222, 128, 0.25);
-  background: var(--ok-soft);
+  border-color: #bbf7d0;
+  background: #f0fdf4;
 }
 
 .kpi-pend {
-  border-color: rgba(248, 113, 113, 0.25);
-  background: var(--danger-soft);
+  border-color: #fecaca;
+  background: #fef2f2;
+}
+
+.kpi-ok .kpi-value {
+  color: #166534;
+}
+
+.kpi-pend .kpi-value {
+  color: #991b1b;
 }
 
 .error-box {
   margin-top: var(--space-2);
   padding: 10px 12px;
   border-radius: var(--radius-md);
-  border: 1px solid rgba(248, 113, 113, 0.35);
-  background: var(--danger-soft);
-  color: var(--danger);
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #991b1b;
   font-size: 12px;
   font-weight: 700;
+}
+
+.page-agenda-dia .table-wrap {
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
 }
 
 .page-agenda-dia .table {
   min-width: 760px;
 }
 
+.page-agenda-dia .table thead th {
+  background: #f8fafc;
+  color: #334155;
+}
+
+.page-agenda-dia .table tbody td {
+  color: #0f172a;
+  border-bottom-color: #f1f5f9;
+}
+
 .page-agenda-dia .table tbody td:first-child {
   font-weight: 700;
-  color: var(--text);
+  color: #0f172a;
 }
 
 .cell-empty {
-  color: var(--muted);
+  color: #94a3b8;
   font-style: italic;
   font-size: 13px;
 }
 
 .page-agenda-dia tbody tr.row-pendente {
-  background: rgba(251, 191, 36, 0.06);
+  background: #fff7f7;
 }
 
 .page-agenda-dia tbody tr.row-pendente:hover {
-  background: rgba(251, 191, 36, 0.1);
+  background: #fef2f2;
+}
+
+/* Status — botão verde ou vermelho */
+.status-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 108px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  border: none;
+  white-space: nowrap;
+}
+
+.status-btn.status-ok {
+  background: #16a34a;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.25);
+}
+
+.status-btn.status-bad {
+  background: #dc2626;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.22);
+}
+
+.page-agenda-dia .pill-ok {
+  background: #dcfce7;
+  color: #166534;
+  border-color: #bbf7d0;
+}
+
+.page-agenda-dia .pill-warn,
+.page-agenda-dia .pill-bad {
+  background: #fee2e2;
+  color: #991b1b;
+  border-color: #fecaca;
+}
+
+.page-agenda-dia .pill-muted {
+  background: #f1f5f9;
+  color: #475569;
+  border-color: #e2e8f0;
+}
+
+@media (max-width: 720px) {
+  .agenda-dia-kpis {
+    grid-template-columns: 1fr;
+  }
 }
