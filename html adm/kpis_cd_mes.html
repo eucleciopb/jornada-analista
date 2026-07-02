@@ -92,25 +92,95 @@
   </div>
 
   <div class="section">
-    <div class="section-title">Importação em Lote</div>
-    <div class="section-desc">
-      Aceita cabeçalhos como: CD, Ano, Mês, KPI, %, Percentual, Resultado ou Valor.
+    <div class="section-title">Como importar o arquivo</div>
+    <div class="import-guide">
+      <p class="section-desc" style="margin-bottom:12px;">
+        Use uma planilha Excel (.xlsx) ou CSV com estas colunas na <strong>primeira linha</strong>:
+      </p>
+      <div class="import-cols">
+        <span>CD</span>
+        <span>Ano</span>
+        <span>Mês</span>
+        <span>KPI</span>
+        <span>%</span>
+      </div>
+      <p class="import-example">
+        Exemplo de linha: <code>CD - Belém</code> · <code>2026</code> · <code>Jan/26</code> ou <code>1</code> · <code>600ML</code> · <code>95,5</code>
+      </p>
+      <ol class="import-steps">
+        <li>Prepare o arquivo com um registro por linha (CD + Ano + Mês + KPI + %).</li>
+        <li>Selecione o arquivo abaixo <strong>ou</strong> cole os dados na caixa de texto.</li>
+        <li>Clique em <strong>Importar Excel</strong> — não apaga a base, só atualiza o que já existe.</li>
+      </ol>
     </div>
 
-    <div class="form-group">
-      <textarea id="importArea" placeholder="Cole aqui os dados do Excel..."></textarea>
+    <div class="import-file-box">
+      <label class="file-drop-label" for="arquivoExcel">
+        <span class="file-drop-icon">📁</span>
+        <span class="file-drop-title">Clique para escolher o arquivo Excel/CSV</span>
+        <span class="file-drop-hint">Formatos: .xlsx, .xls, .csv</span>
+      </label>
+      <input type="file" id="arquivoExcel" accept=".xlsx,.xls,.csv" class="file-input-hidden">
+      <span id="nomeArquivo" class="file-name">Nenhum arquivo selecionado</span>
+      <div class="import-actions">
+        <button class="btn btn-primary" id="btnImportarExcel">Importar Excel</button>
+        <button class="btn btn-secondary" id="btnModelo" type="button">Baixar modelo</button>
+      </div>
     </div>
-
-    <button class="btn btn-primary" id="btnImportar">Importar Base Colada</button>
 
     <hr>
 
+    <div class="section-desc">Ou cole direto do Excel (Ctrl+V):</div>
     <div class="form-group">
-      <label>Importar arquivo Excel/CSV sem apagar base atual</label>
-      <input type="file" id="arquivoExcel" accept=".xlsx,.xls,.csv">
+      <textarea id="importArea" placeholder="CD&#9;Ano&#9;Mês&#9;KPI&#9;%&#10;CD - Belém&#9;2026&#9;1&#9;600ML&#9;95,5"></textarea>
+    </div>
+    <button class="btn btn-primary" id="btnImportar">Importar base colada</button>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Mapa de Cobertura — 2026</div>
+    <div class="section-desc">
+      Por CD e KPI: verde = mês com dado importado · vermelho = sem informação.
     </div>
 
-    <button class="btn btn-primary" id="btnImportarExcel">Importar Excel sem apagar base</button>
+    <div class="coverage-toolbar">
+      <div class="form-group" style="margin:0;">
+        <label for="anoMapa">Ano</label>
+        <select id="anoMapa">
+          <option value="2026" selected>2026</option>
+          <option value="2025">2025</option>
+          <option value="2027">2027</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin:0;flex:1;min-width:200px;">
+        <label for="buscaMapa">Filtrar CD ou KPI</label>
+        <input type="text" id="buscaMapa" placeholder="Ex: Belém, 600ML...">
+      </div>
+    </div>
+
+    <div class="coverage-legend">
+      <span><i class="dot dot-ok"></i> Com dado</span>
+      <span><i class="dot dot-miss"></i> Sem dado</span>
+    </div>
+
+    <div class="coverage-summary" id="coverageSummary">Carregando mapa...</div>
+
+    <div class="table-wrapper coverage-wrapper">
+      <table class="coverage-table">
+        <thead>
+          <tr>
+            <th class="sticky-col">CD</th>
+            <th class="sticky-col-2">KPI</th>
+            <th>Jan</th><th>Fev</th><th>Mar</th><th>Abr</th>
+            <th>Mai</th><th>Jun</th><th>Jul</th><th>Ago</th>
+            <th>Set</th><th>Out</th><th>Nov</th><th>Dez</th>
+          </tr>
+        </thead>
+        <tbody id="tbodyCobertura">
+          <tr><td colspan="14" class="empty-message">Carregando...</td></tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 
   <div class="section">
@@ -171,11 +241,24 @@ const tbody=document.getElementById("tbody");
 const busca=document.getElementById("busca");
 const importArea=document.getElementById("importArea");
 const arquivoExcel=document.getElementById("arquivoExcel");
+const nomeArquivo=document.getElementById("nomeArquivo");
+const tbodyCobertura=document.getElementById("tbodyCobertura");
+const coverageSummary=document.getElementById("coverageSummary");
+const anoMapa=document.getElementById("anoMapa");
+const buscaMapa=document.getElementById("buscaMapa");
 
 const btnSalvar=document.getElementById("btnSalvar");
 const btnImportar=document.getElementById("btnImportar");
 const btnImportarExcel=document.getElementById("btnImportarExcel");
 const btnNovoMes=document.getElementById("btnNovoMes");
+const btnModelo=document.getElementById("btnModelo");
+
+const KPIS_PADRAO=[
+  "1000ML","300ML","600ML","Cobertura GP",
+  "Eficiência de Visitas","HL Retornáveis","HL Total","Ocorrências"
+];
+
+const MESES_CURTOS=["","Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
 
 let CACHE=[];
 let EDITING_ID=null;
@@ -573,6 +656,106 @@ async function carregar(){
 
   CACHE=arr;
   render();
+  renderCobertura();
+}
+
+function formatPctCell(v){
+  if(v===null||v===undefined||v==="")return "✓";
+  const n=Number(v);
+  if(!Number.isFinite(n))return "✓";
+  return `${n.toFixed(1).replace(".",",")}%`;
+}
+
+function buildCoverageIndex(ano){
+  const index=new Map();
+  for(const item of CACHE){
+    if(Number(item.ano)!==Number(ano))continue;
+    const key=`${normalizeKey(item.cd)}|${normalizeKey(item.kpi)}|${Number(item.mes)}`;
+    index.set(key,item);
+  }
+  return index;
+}
+
+function getCdKpiPairs(ano){
+  const map=new Map();
+
+  for(const item of CACHE){
+    if(Number(item.ano)!==Number(ano))continue;
+    const cd=normalize(item.cd);
+    const kpi=normalize(item.kpi);
+    if(!cd||!kpi)continue;
+    const key=`${normalizeKey(cd)}|${normalizeKey(kpi)}`;
+    if(!map.has(key))map.set(key,{cd,kpi});
+  }
+
+  return Array.from(map.values()).sort((a,b)=>
+    a.cd.localeCompare(b.cd,"pt-BR")||
+    a.kpi.localeCompare(b.kpi,"pt-BR")
+  );
+}
+
+function renderCobertura(){
+  const ano=Number(anoMapa?.value)||2026;
+  const filtro=normalize(buscaMapa?.value||"").toLowerCase();
+  const index=buildCoverageIndex(ano);
+  const pairs=getCdKpiPairs(ano).filter(p=>{
+    if(!filtro)return true;
+    return `${p.cd} ${p.kpi}`.toLowerCase().includes(filtro);
+  });
+
+  if(!tbodyCobertura)return;
+
+  if(!pairs.length){
+    tbodyCobertura.innerHTML=`<tr><td colspan="14" class="empty-message">Nenhum dado para ${ano}. Importe o arquivo acima.</td></tr>`;
+    if(coverageSummary)coverageSummary.textContent=`0 registros em ${ano}`;
+    return;
+  }
+
+  let preenchidos=0;
+  const totalCelulas=pairs.length*12;
+
+  tbodyCobertura.innerHTML=pairs.map(pair=>{
+    const cdKey=normalizeKey(pair.cd);
+    const kpiKey=normalizeKey(pair.kpi);
+    let cells="";
+
+    for(let m=1;m<=12;m++){
+      const item=index.get(`${cdKey}|${kpiKey}|${m}`);
+      if(item)preenchidos++;
+
+      cells+=item
+        ? `<td class="cell-ok" title="${pair.cd} · ${pair.kpi} · ${MESES_CURTOS[m]}/${ano}: ${item.percentual}%">${formatPctCell(item.percentual)}</td>`
+        : `<td class="cell-miss" title="${pair.cd} · ${pair.kpi} · ${MESES_CURTOS[m]}/${ano}: sem dado">—</td>`;
+    }
+
+    return `<tr><td class="sticky-col">${pair.cd}</td><td class="sticky-col-2">${pair.kpi}</td>${cells}</tr>`;
+  }).join("");
+
+  const pctTotal=totalCelulas?Math.round((preenchidos/totalCelulas)*100):0;
+  if(coverageSummary){
+    coverageSummary.innerHTML=`
+      <strong>${preenchidos}</strong> de <strong>${totalCelulas}</strong> células preenchidas (${pctTotal}%)
+      · <strong>${pairs.length}</strong> combinações CD+KPI em ${ano}
+    `;
+  }
+}
+
+function baixarModelo(){
+  const linhas=[
+    ["CD","Ano","Mês","KPI","%"],
+    ["CD - Belém","2026","1","600ML","95,5"],
+    ["CD - Belém","2026","2","600ML","98,2"],
+    ["CD - Boituva","2026","1","HL Total","102,1"]
+  ];
+
+  const csv=linhas.map(l=>l.join(";")).join("\n");
+  const blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;
+  a.download="modelo_kpis_cd_2026.csv";
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 function render(){
@@ -645,7 +828,17 @@ function render(){
 }
 
 busca.addEventListener("input",render);
+buscaMapa?.addEventListener("input",renderCobertura);
+anoMapa?.addEventListener("change",renderCobertura);
 btnImportarExcel.onclick=importarExcelArquivo;
+btnModelo?.addEventListener("click",baixarModelo);
+
+arquivoExcel?.addEventListener("change",()=>{
+  const file=arquivoExcel.files?.[0];
+  if(nomeArquivo){
+    nomeArquivo.textContent=file?file.name:"Nenhum arquivo selecionado";
+  }
+});
 
 ano.value="2026";
 
