@@ -128,8 +128,8 @@
     <section class="card">
       <h3>Ranking — Gabarito Mensal</h3>
       <p class="hint">
-        Meta: 3 treinamentos para gestores + 3 para vendedores.
-        % = min(realizado, 3) ÷ 3 · Média final = (% Gestores + % Vendedores) ÷ 2
+        Meta: 3 CDs com treinamento para gestores + 3 CDs com treinamento para vendedores.
+        % = min(CDs realizados, 3) ÷ 3 · Média final = (% Gestores + % Vendedores) ÷ 2
       </p>
 
       <div class="table-wrap">
@@ -138,9 +138,9 @@
             <tr>
               <th>Ranking</th>
               <th>Analista</th>
-              <th>Gestores</th>
+              <th>CDs Gest.</th>
               <th>% Gestores</th>
-              <th>Vendedores</th>
+              <th>CDs Vend.</th>
               <th>% Vendedores</th>
               <th>Média Final</th>
               <th>Status</th>
@@ -365,6 +365,8 @@ function agregarPorAnalista(registrosFiltrados, registrosMes){
         analista: nome,
         gestores: 0,
         vendedores: 0,
+        gestoresCds: new Set(),
+        vendedoresCds: new Set(),
         presenciais: 0,
         cds: new Set()
       });
@@ -380,9 +382,15 @@ function agregarPorAnalista(registrosFiltrados, registrosMes){
 
   registrosFiltrados.forEach(item => {
     const ref = garantir(getAnalista(item));
-    if(isGestor(item)) ref.gestores++;
-    if(isVendedor(item)) ref.vendedores++;
     const cd = normalize(item.cd);
+    if(isGestor(item)){
+      ref.gestores++;
+      if(cd) ref.gestoresCds.add(cd);
+    }
+    if(isVendedor(item)){
+      ref.vendedores++;
+      if(cd) ref.vendedoresCds.add(cd);
+    }
     if(cd) ref.cds.add(cd);
   });
 
@@ -394,13 +402,17 @@ function agregarPorAnalista(registrosFiltrados, registrosMes){
   return Array.from(mapa.values())
     .filter(row => !analistaOculto(row.analista))
     .map(row => {
-    const pctGest = pctGabarito(row.gestores);
-    const pctVend = pctGabarito(row.vendedores);
+    const cdsGest = row.gestoresCds.size;
+    const cdsVend = row.vendedoresCds.size;
+    const pctGest = pctGabarito(cdsGest);
+    const pctVend = pctGabarito(cdsVend);
     const media = mediaFinal(pctGest, pctVend);
     const st = statusInfo(media);
 
     return {
       ...row,
+      cdsGest,
+      cdsVend,
       cdsCount: row.cds.size,
       pctGest,
       pctVend,
@@ -501,9 +513,9 @@ function renderTabela(ranking){
     <tr>
       <td>${medalha(i + 1)}</td>
       <td><strong>${escapeHtml(row.analista)}</strong></td>
-      <td>${row.gestores}</td>
+      <td>${row.cdsGest}</td>
       <td class="${pctClass(row.pctGest)}">${row.pctGest}%</td>
-      <td>${row.vendedores}</td>
+      <td>${row.cdsVend}</td>
       <td class="${pctClass(row.pctVend)}">${row.pctVend}%</td>
       <td class="${pctClass(row.media)}"><strong>${row.media}%</strong></td>
       <td><span class="badge ${row.status.cls}">${row.status.emoji} ${row.status.label}</span></td>
@@ -566,9 +578,11 @@ function exportarExcel(){
   const dadosRanking = ranking.map((row, i) => ({
     "Ranking": i + 1,
     "Analista": row.analista,
-    "Gestores": row.gestores,
+    "CDs Gestores": row.cdsGest,
+    "Treinamentos Gestores": row.gestores,
     "% Gestores": row.pctGest,
-    "Vendedores": row.vendedores,
+    "CDs Vendedores": row.cdsVend,
+    "Treinamentos Vendedores": row.vendedores,
     "% Vendedores": row.pctVend,
     "Média Final": row.media,
     "Status": row.status.label,
