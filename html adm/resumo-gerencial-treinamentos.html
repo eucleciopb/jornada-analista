@@ -1,0 +1,616 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Resumo Gerencial de Treinamentos | Jornada</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/bundle-admin.css" />
+  <link rel="stylesheet" href="../css/pages/admin-resumo-gerencial-treinamentos.css" />
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+
+<body class="theme-admin app-shell">
+  <header class="topbar">
+    <div>
+      <h2>📊 Resumo Gerencial de Treinamentos</h2>
+      <div id="userInfo" class="hint">Carregando usuário...</div>
+    </div>
+    <div class="top-actions">
+      <button type="button" id="btnExport" class="primary">📄 Exportar Resumo</button>
+      <button type="button" id="btnCopy">📋 Copiar Resumo</button>
+      <button type="button" id="btnMenu">Voltar ao Menu</button>
+      <button type="button" id="btnLogout" class="danger">Sair</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="card">
+      <h3>Filtros</h3>
+      <p class="hint">Ao alterar qualquer filtro, todos os indicadores são recalculados automaticamente.</p>
+
+      <div class="filters">
+        <div>
+          <label for="filtroMes">Mês</label>
+          <select id="filtroMes"></select>
+        </div>
+        <div>
+          <label for="filtroAno">Ano</label>
+          <select id="filtroAno"></select>
+        </div>
+        <div>
+          <label for="filtroAnalista">Analista</label>
+          <select id="filtroAnalista">
+            <option value="">Todos</option>
+          </select>
+        </div>
+        <div>
+          <label for="filtroTipo">Tipo</label>
+          <select id="filtroTipo">
+            <option value="">Todos</option>
+            <option value="presencial">Presencial</option>
+            <option value="online">Online</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <section class="big-numbers" id="bigNumbers">
+      <div class="big-card">
+        <div class="icon">👨‍💼</div>
+        <div class="label">Treinamentos para Gestores</div>
+        <div class="value" id="bnGestores">0</div>
+      </div>
+      <div class="big-card">
+        <div class="icon">👨‍💼</div>
+        <div class="label">Treinamentos para Vendedores</div>
+        <div class="value" id="bnVendedores">0</div>
+      </div>
+      <div class="big-card green">
+        <div class="icon">📚</div>
+        <div class="label">Total Presenciais</div>
+        <div class="value" id="bnPresenciais">0</div>
+      </div>
+      <div class="big-card">
+        <div class="icon">💻</div>
+        <div class="label">Total Online</div>
+        <div class="value" id="bnOnline">0</div>
+      </div>
+      <div class="big-card green">
+        <div class="icon">🏢</div>
+        <div class="label">CDs Visitados</div>
+        <div class="value" id="bnCds">0</div>
+      </div>
+      <div class="big-card">
+        <div class="icon">👥</div>
+        <div class="label">Analistas com Treinamentos</div>
+        <div class="value" id="bnAnalistas">0</div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h3>Resumo Automático</h3>
+      <p class="hint">Texto gerado automaticamente para materiais gerenciais.</p>
+      <div id="resumoTexto" class="summary-text">Carregando...</div>
+      <p id="msg" class="msg" style="margin-top:10px;"></p>
+    </section>
+
+    <section class="card">
+      <h3>Destaques do Mês</h3>
+      <div class="highlights">
+        <div class="highlight-box">
+          <h4>🏆 Analistas que atingiram 100%</h4>
+          <ul id="destaque100"></ul>
+        </div>
+        <div class="highlight-box">
+          <h4>📈 Maior número de treinamentos para vendedores</h4>
+          <ul id="destaqueVend"></ul>
+        </div>
+        <div class="highlight-box">
+          <h4>📈 Maior número de treinamentos para gestores</h4>
+          <ul id="destaqueGest"></ul>
+        </div>
+        <div class="highlight-box">
+          <h4>🏢 Maior número de CDs visitados</h4>
+          <ul id="destaqueCds"></ul>
+        </div>
+        <div class="highlight-box" style="grid-column:1/-1;">
+          <h4>⚠️ Analistas sem treinamentos presenciais</h4>
+          <ul id="destaqueSemPres"></ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h3>Ranking — Gabarito Mensal</h3>
+      <p class="hint">
+        Meta: 3 treinamentos para gestores + 3 para vendedores.
+        % = min(realizado, 3) ÷ 3 · Média final = (% Gestores + % Vendedores) ÷ 2
+      </p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Ranking</th>
+              <th>Analista</th>
+              <th>Gestores</th>
+              <th>% Gestores</th>
+              <th>Vendedores</th>
+              <th>% Vendedores</th>
+              <th>Média Final</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyRanking">
+            <tr><td colspan="8">Carregando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
+  authDomain: "jornada-portal.firebaseapp.com",
+  projectId: "jornada-portal",
+  storageBucket: "jornada-portal.firebasestorage.app",
+  messagingSenderId: "669362296644",
+  appId: "1:669362296644:web:f590d9834a8e4e60012911"
+};
+
+const db = getFirestore(initializeApp(firebaseConfig));
+const COLLECTION = "treinamentos_realizados";
+const META_MENSAL = 3;
+
+const PATH_INDEX = "../index.html";
+const PATH_MENU = "../html menus/menuadm.html";
+const ANALISTAS_OCULTOS = ["Ricardo"];
+
+const MESES_NOME = [
+  "", "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+];
+
+const MESES_CURTO = [
+  "", "Jan", "Fev", "Mar", "Abr", "Mai", "Jun",
+  "Jul", "Ago", "Set", "Out", "Nov", "Dez"
+];
+
+const filtroMes = document.getElementById("filtroMes");
+const filtroAno = document.getElementById("filtroAno");
+const filtroAnalista = document.getElementById("filtroAnalista");
+const filtroTipo = document.getElementById("filtroTipo");
+const tbodyRanking = document.getElementById("tbodyRanking");
+const resumoTexto = document.getElementById("resumoTexto");
+const msg = document.getElementById("msg");
+
+let CACHE = [];
+let ULTIMO_RESUMO = { ranking: [], texto: "" };
+
+function safeParse(raw){ try{return JSON.parse(raw)}catch{return null} }
+
+function getCurrentUserName(){
+  const raw = localStorage.getItem("user_session");
+  if(raw){
+    const s = safeParse(raw);
+    if(s?.nome) return String(s.nome).trim();
+  }
+  return (localStorage.getItem("usuarioLogado") || "").trim();
+}
+
+const usuario = getCurrentUserName();
+if(!usuario) window.location.href = PATH_INDEX;
+
+document.getElementById("userInfo").textContent = `Usuário: ${usuario}`;
+document.getElementById("btnMenu").onclick = () => window.location.href = PATH_MENU;
+document.getElementById("btnLogout").onclick = () => {
+  localStorage.removeItem("user_session");
+  localStorage.removeItem("usuarioLogado");
+  window.location.href = PATH_INDEX;
+};
+
+function setMsg(text, type="info"){
+  msg.textContent = text || "";
+  msg.className = `msg ${type === "ok" || type === "success" ? "ok" : type === "err" || type === "error" ? "err" : ""}`.trim();
+}
+
+function normalize(s){
+  return String(s ?? "").replace(/\s+/g, " ").trim();
+}
+
+function normalizeKey(s){
+  return normalize(s)
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+function lower(s){ return normalize(s).toLowerCase(); }
+
+function escapeHtml(v){
+  return String(v ?? "")
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+}
+
+function getAnalista(item){
+  return normalize(item.usuarioNome || item.usuario || item.analista || "Sem analista");
+}
+
+function analistaOculto(nome){
+  const n = normalizeKey(nome);
+  return ANALISTAS_OCULTOS.some(x => n.includes(normalizeKey(x)));
+}
+
+function getAnoMes(data){
+  if(!data) return { ano: null, mes: null };
+  const p = String(data).split("-");
+  if(p.length < 2) return { ano: null, mes: null };
+  return { ano: Number(p[0]), mes: Number(p[1]) };
+}
+
+function isPresencial(item){ return lower(item.tipoTreinamento) === "presencial"; }
+function isOnline(item){ return lower(item.tipoTreinamento) === "online"; }
+function isVendedor(item){ return lower(item.publico) === "vendedor"; }
+function isGestor(item){ return lower(item.publico) === "gestor"; }
+
+function pctGabarito(qtd){
+  return Math.round((Math.min(qtd, META_MENSAL) / META_MENSAL) * 100);
+}
+
+function mediaFinal(pctGest, pctVend){
+  return Math.round((pctGest + pctVend) / 2);
+}
+
+function statusInfo(media){
+  if(media >= 100) return { label: "Gabarito Completo", cls: "ok", emoji: "🟢" };
+  if(media >= 67) return { label: "Quase lá", cls: "warn", emoji: "🟡" };
+  if(media >= 34) return { label: "Atenção", cls: "attn", emoji: "🟠" };
+  return { label: "Abaixo do esperado", cls: "bad", emoji: "🔴" };
+}
+
+function pctClass(media){
+  if(media >= 100) return "pct-ok";
+  if(media >= 67) return "pct-warn";
+  if(media >= 34) return "pct-attn";
+  return "pct-bad";
+}
+
+function medalha(pos){
+  if(pos === 1) return '<span class="rank-medal">🥇</span>';
+  if(pos === 2) return '<span class="rank-medal">🥈</span>';
+  if(pos === 3) return '<span class="rank-medal">🥉</span>';
+  return `<span class="rank-num">${pos}º</span>`;
+}
+
+function popularFiltrosData(){
+  const hoje = new Date();
+  const anoAtual = hoje.getFullYear();
+  const mesAtual = hoje.getMonth() + 1;
+
+  filtroMes.innerHTML = MESES_NOME.slice(1).map((nome, i) => {
+    const n = i + 1;
+    const sel = n === mesAtual ? "selected" : "";
+    return `<option value="${n}" ${sel}>${nome}</option>`;
+  }).join("");
+
+  const anos = [];
+  for(let a = anoAtual - 2; a <= anoAtual + 1; a++) anos.push(a);
+
+  filtroAno.innerHTML = anos.map(a => {
+    const sel = a === anoAtual ? "selected" : "";
+    return `<option value="${a}" ${sel}>${a}</option>`;
+  }).join("");
+}
+
+function popularAnalistas(mesRegistros){
+  const atual = filtroAnalista.value;
+  const nomes = new Set();
+
+  mesRegistros.forEach(item => {
+    const a = getAnalista(item);
+    if(a && !analistaOculto(a)) nomes.add(a);
+  });
+
+  const lista = Array.from(nomes).sort((a, b) => a.localeCompare(b, "pt-BR"));
+
+  filtroAnalista.innerHTML = `<option value="">Todos</option>` +
+    lista.map(a => `<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`).join("");
+
+  if(lista.includes(atual)) filtroAnalista.value = atual;
+}
+
+function registrosDoMes(){
+  const ano = Number(filtroAno.value);
+  const mes = Number(filtroMes.value);
+
+  return CACHE.filter(item => {
+    const { ano: a, mes: m } = getAnoMes(item.data);
+    if(a !== ano || m !== mes) return false;
+    const analista = getAnalista(item);
+    if(analistaOculto(analista)) return false;
+    return true;
+  });
+}
+
+function aplicarFiltros(registros){
+  const tipo = lower(filtroTipo.value);
+  const analista = normalize(filtroAnalista.value);
+
+  return registros.filter(item => {
+    if(tipo === "presencial" && !isPresencial(item)) return false;
+    if(tipo === "online" && !isOnline(item)) return false;
+    if(analista && getAnalista(item) !== analista) return false;
+    return true;
+  });
+}
+
+function agregarPorAnalista(registrosFiltrados, registrosMes){
+  const mapa = new Map();
+
+  const garantir = (nome) => {
+    if(!mapa.has(nome)){
+      mapa.set(nome, {
+        analista: nome,
+        gestores: 0,
+        vendedores: 0,
+        presenciais: 0,
+        cds: new Set()
+      });
+    }
+    return mapa.get(nome);
+  };
+
+  registrosMes.forEach(item => {
+    const nome = getAnalista(item);
+    if(analistaOculto(nome)) return;
+    garantir(nome);
+  });
+
+  registrosFiltrados.forEach(item => {
+    const ref = garantir(getAnalista(item));
+    if(isGestor(item)) ref.gestores++;
+    if(isVendedor(item)) ref.vendedores++;
+    const cd = normalize(item.cd);
+    if(cd) ref.cds.add(cd);
+  });
+
+  registrosMes.forEach(item => {
+    const ref = garantir(getAnalista(item));
+    if(isPresencial(item)) ref.presenciais++;
+  });
+
+  return Array.from(mapa.values()).map(row => {
+    const pctGest = pctGabarito(row.gestores);
+    const pctVend = pctGabarito(row.vendedores);
+    const media = mediaFinal(pctGest, pctVend);
+    const st = statusInfo(media);
+
+    return {
+      ...row,
+      cdsCount: row.cds.size,
+      pctGest,
+      pctVend,
+      media,
+      status: st
+    };
+  });
+}
+
+function ordenarRanking(lista){
+  return lista.sort((a, b) => {
+    if(b.media !== a.media) return b.media - a.media;
+    if(b.presenciais !== a.presenciais) return b.presenciais - a.presenciais;
+    return a.analista.localeCompare(b.analista, "pt-BR");
+  });
+}
+
+function mesLabel(){
+  const mes = Number(filtroMes.value);
+  const ano = Number(filtroAno.value);
+  return `${MESES_NOME[mes]}/${String(ano).slice(-2)}`;
+}
+
+function gerarTextoResumo(stats, ranking){
+  const mes = mesLabel();
+  const completos = ranking.filter(r => r.media >= 100).map(r => r.analista);
+
+  let nomesCompletos;
+  if(!completos.length){
+    nomesCompletos = "nenhum analista";
+  }else if(completos.length === 1){
+    nomesCompletos = completos[0];
+  }else if(completos.length === 2){
+    nomesCompletos = `${completos[0]} e ${completos[1]}`;
+  }else{
+    nomesCompletos = `${completos.slice(0, -1).join(", ")} e ${completos[completos.length - 1]}`;
+  }
+
+  const fraseGabarito = completos.length
+    ? `Os analistas ${nomesCompletos} atingiram integralmente o gabarito mensal de treinamentos.`
+    : "Nenhum analista atingiu integralmente o gabarito mensal de treinamentos neste período.";
+
+  return `Durante o mês de ${mes} foram realizados ${stats.presenciais} treinamentos presenciais, sendo ${stats.vendedores} para vendedores e ${stats.gestores} para gestores.
+
+${fraseGabarito}
+
+O foco continua sendo garantir, em cada CD visitado, pelo menos um treinamento para vendedores e um treinamento para gestores.`;
+}
+
+function renderDestaques(ranking, registrosMes){
+  const top = (arr, key, fmt) => {
+    if(!arr.length) return '<li class="empty">Nenhum dado</li>';
+    const max = Math.max(...arr.map(x => x[key]));
+    if(!max) return '<li class="empty">Nenhum registro</li>';
+    const tops = arr.filter(x => x[key] === max);
+    return tops.map(x => `<li>${escapeHtml(x.analista)} — ${fmt(x)}</li>`).join("");
+  };
+
+  document.getElementById("destaque100").innerHTML =
+    ranking.filter(r => r.media >= 100).length
+      ? ranking.filter(r => r.media >= 100).map(r => `<li>${escapeHtml(r.analista)} (${r.media}%)</li>`).join("")
+      : '<li class="empty">Nenhum analista atingiu 100%</li>';
+
+  document.getElementById("destaqueVend").innerHTML =
+    top(ranking, "vendedores", x => `${x.vendedores} treinamento(s)`);
+
+  document.getElementById("destaqueGest").innerHTML =
+    top(ranking, "gestores", x => `${x.gestores} treinamento(s)`);
+
+  document.getElementById("destaqueCds").innerHTML =
+    top(ranking, "cdsCount", x => `${x.cdsCount} CD(s)`);
+
+  const semPres = ranking.filter(r => r.presenciais === 0);
+  document.getElementById("destaqueSemPres").innerHTML =
+    semPres.length
+      ? semPres.map(r => `<li>${escapeHtml(r.analista)}</li>`).join("")
+      : '<li class="empty">Todos os analistas realizaram treinamentos presenciais</li>';
+}
+
+function renderBigNumbers(stats){
+  document.getElementById("bnGestores").textContent = stats.gestores;
+  document.getElementById("bnVendedores").textContent = stats.vendedores;
+  document.getElementById("bnPresenciais").textContent = stats.presenciais;
+  document.getElementById("bnOnline").textContent = stats.online;
+  document.getElementById("bnCds").textContent = stats.cds;
+  document.getElementById("bnAnalistas").textContent = stats.analistas;
+}
+
+function renderTabela(ranking){
+  if(!ranking.length){
+    tbodyRanking.innerHTML = '<tr><td colspan="8" style="opacity:.8;">Nenhum dado para os filtros selecionados.</td></tr>';
+    return;
+  }
+
+  tbodyRanking.innerHTML = ranking.map((row, i) => `
+    <tr>
+      <td>${medalha(i + 1)}</td>
+      <td><strong>${escapeHtml(row.analista)}</strong></td>
+      <td>${row.gestores}</td>
+      <td class="${pctClass(row.pctGest)}">${row.pctGest}%</td>
+      <td>${row.vendedores}</td>
+      <td class="${pctClass(row.pctVend)}">${row.pctVend}%</td>
+      <td class="${pctClass(row.media)}"><strong>${row.media}%</strong></td>
+      <td><span class="badge ${row.status.cls}">${row.status.emoji} ${row.status.label}</span></td>
+    </tr>
+  `).join("");
+}
+
+function calcular(){
+  const registrosMes = registrosDoMes();
+  popularAnalistas(registrosMes);
+
+  const filtrados = aplicarFiltros(registrosMes);
+  const ranking = ordenarRanking(agregarPorAnalista(filtrados, registrosMes));
+
+  const stats = {
+    gestores: filtrados.filter(isGestor).length,
+    vendedores: filtrados.filter(isVendedor).length,
+    presenciais: filtrados.filter(isPresencial).length,
+    online: filtrados.filter(isOnline).length,
+    cds: new Set(filtrados.map(x => normalize(x.cd)).filter(Boolean)).size,
+    analistas: new Set(filtrados.map(getAnalista).filter(Boolean)).size
+  };
+
+  renderBigNumbers(stats);
+  renderTabela(ranking);
+  renderDestaques(ranking, registrosMes);
+
+  const texto = gerarTextoResumo(stats, ranking);
+  resumoTexto.textContent = texto;
+  ULTIMO_RESUMO = { ranking, stats, texto, mes: mesLabel() };
+  setMsg("");
+}
+
+async function carregar(){
+  try{
+    setMsg("Carregando treinamentos...");
+    const snap = await getDocs(collection(db, COLLECTION));
+    CACHE = [];
+    snap.forEach(d => CACHE.push({ id: d.id, ...d.data() }));
+    calcular();
+  }catch(e){
+    console.error(e);
+    setMsg("Erro ao carregar dados. Verifique conexão e Rules do Firestore.", "err");
+  }
+}
+
+function exportarExcel(){
+  const { ranking, stats, texto, mes } = ULTIMO_RESUMO;
+
+  if(!ranking?.length){
+    setMsg("Não há dados para exportar.", "err");
+    return;
+  }
+
+  const dadosRanking = ranking.map((row, i) => ({
+    "Ranking": i + 1,
+    "Analista": row.analista,
+    "Gestores": row.gestores,
+    "% Gestores": row.pctGest,
+    "Vendedores": row.vendedores,
+    "% Vendedores": row.pctVend,
+    "Média Final": row.media,
+    "Status": row.status.label,
+    "Presenciais": row.presenciais,
+    "CDs Visitados": row.cdsCount
+  }));
+
+  const dadosResumo = [
+    { "Indicador": "Mês", "Valor": mes },
+    { "Indicador": "Treinamentos Gestores", "Valor": stats.gestores },
+    { "Indicador": "Treinamentos Vendedores", "Valor": stats.vendedores },
+    { "Indicador": "Total Presenciais", "Valor": stats.presenciais },
+    { "Indicador": "Total Online", "Valor": stats.online },
+    { "Indicador": "CDs Visitados", "Valor": stats.cds },
+    { "Indicador": "Analistas com Treinamentos", "Valor": stats.analistas },
+    { "Indicador": "Resumo", "Valor": texto }
+  ];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(dadosResumo), "Resumo");
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(dadosRanking), "Ranking");
+
+  const nomeArquivo = `resumo_gerencial_treinamentos_${mes.replace("/", "-")}.xlsx`;
+  XLSX.writeFile(wb, nomeArquivo);
+  setMsg("Resumo exportado com sucesso.", "ok");
+}
+
+async function copiarResumo(){
+  const texto = ULTIMO_RESUMO.texto || resumoTexto.textContent;
+
+  try{
+    await navigator.clipboard.writeText(texto);
+    setMsg("Resumo copiado para a área de transferência.", "ok");
+  }catch{
+    const ta = document.createElement("textarea");
+    ta.value = texto;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    document.body.removeChild(ta);
+    setMsg("Resumo copiado para a área de transferência.", "ok");
+  }
+}
+
+[filtroMes, filtroAno, filtroAnalista, filtroTipo].forEach(el => {
+  el.addEventListener("change", calcular);
+});
+
+document.getElementById("btnExport").addEventListener("click", exportarExcel);
+document.getElementById("btnCopy").addEventListener("click", copiarResumo);
+
+popularFiltrosData();
+carregar();
+</script>
+</body>
+</html>
