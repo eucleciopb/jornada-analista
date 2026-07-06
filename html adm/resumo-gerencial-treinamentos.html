@@ -60,13 +60,15 @@
     <section class="big-numbers" id="bigNumbers">
       <div class="big-card">
         <div class="icon">👨‍💼</div>
-        <div class="label">Treinamentos para Gestores</div>
+        <div class="label">Gestores — Total de Treinamentos</div>
         <div class="value" id="bnGestores">0</div>
+        <div class="sub">CDs treinados: <strong id="bnCdsGestores">0</strong></div>
       </div>
       <div class="big-card">
         <div class="icon">👨‍💼</div>
-        <div class="label">Treinamentos para Vendedores</div>
+        <div class="label">Vendedores — Total de Treinamentos</div>
         <div class="value" id="bnVendedores">0</div>
+        <div class="sub">CDs treinados: <strong id="bnCdsVendedores">0</strong></div>
       </div>
       <div class="big-card green">
         <div class="icon">📚</div>
@@ -171,7 +173,7 @@ const META_MENSAL = 3;
 
 const PATH_INDEX = "../index.html";
 const PATH_MENU = "../html menus/menuadm.html";
-const ANALISTAS_OCULTOS = ["Ricardo"];
+const ANALISTAS_OCULTOS = ["Ricardo", "Alex"];
 
 const MESES_NOME = [
   "", "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -389,7 +391,9 @@ function agregarPorAnalista(registrosFiltrados, registrosMes){
     if(isPresencial(item)) ref.presenciais++;
   });
 
-  return Array.from(mapa.values()).map(row => {
+  return Array.from(mapa.values())
+    .filter(row => !analistaOculto(row.analista))
+    .map(row => {
     const pctGest = pctGabarito(row.gestores);
     const pctVend = pctGabarito(row.vendedores);
     const media = mediaFinal(pctGest, pctVend);
@@ -478,7 +482,9 @@ function renderDestaques(ranking, registrosMes){
 
 function renderBigNumbers(stats){
   document.getElementById("bnGestores").textContent = stats.gestores;
+  document.getElementById("bnCdsGestores").textContent = stats.cdsGestores;
   document.getElementById("bnVendedores").textContent = stats.vendedores;
+  document.getElementById("bnCdsVendedores").textContent = stats.cdsVendedores;
   document.getElementById("bnPresenciais").textContent = stats.presenciais;
   document.getElementById("bnOnline").textContent = stats.online;
   document.getElementById("bnCds").textContent = stats.cds;
@@ -512,13 +518,18 @@ function calcular(){
   const filtrados = aplicarFiltros(registrosMes);
   const ranking = ordenarRanking(agregarPorAnalista(filtrados, registrosMes));
 
+  const gestorFiltrados = filtrados.filter(isGestor);
+  const vendedorFiltrados = filtrados.filter(isVendedor);
+
   const stats = {
-    gestores: filtrados.filter(isGestor).length,
-    vendedores: filtrados.filter(isVendedor).length,
+    gestores: gestorFiltrados.length,
+    cdsGestores: new Set(gestorFiltrados.map(x => normalize(x.cd)).filter(Boolean)).size,
+    vendedores: vendedorFiltrados.length,
+    cdsVendedores: new Set(vendedorFiltrados.map(x => normalize(x.cd)).filter(Boolean)).size,
     presenciais: filtrados.filter(isPresencial).length,
     online: filtrados.filter(isOnline).length,
     cds: new Set(filtrados.map(x => normalize(x.cd)).filter(Boolean)).size,
-    analistas: new Set(filtrados.map(getAnalista).filter(Boolean)).size
+    analistas: new Set(filtrados.map(getAnalista).filter(a => a && !analistaOculto(a))).size
   };
 
   renderBigNumbers(stats);
@@ -568,7 +579,9 @@ function exportarExcel(){
   const dadosResumo = [
     { "Indicador": "Mês", "Valor": mes },
     { "Indicador": "Treinamentos Gestores", "Valor": stats.gestores },
+    { "Indicador": "CDs Treinados Gestores", "Valor": stats.cdsGestores },
     { "Indicador": "Treinamentos Vendedores", "Valor": stats.vendedores },
+    { "Indicador": "CDs Treinados Vendedores", "Valor": stats.cdsVendedores },
     { "Indicador": "Total Presenciais", "Valor": stats.presenciais },
     { "Indicador": "Total Online", "Valor": stats.online },
     { "Indicador": "CDs Visitados", "Valor": stats.cds },
