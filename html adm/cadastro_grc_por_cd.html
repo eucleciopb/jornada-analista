@@ -14,7 +14,7 @@
 <body class="theme-user app-shell page-grc-cd">
 <header class="header">
   <h1>Cadastro GRC por CD</h1>
-  <p>Importe Excel/CSV ou edite manualmente a relação CD × GRC × Diretor.</p>
+  <p>Importe Excel/CSV ou edite manualmente a relação CD × GRC × Diretor. O diretor é salvo automaticamente ao digitar.</p>
 </header>
 
 <main>
@@ -114,6 +114,114 @@ const html=v=>String(v??"")
 
 const docId=cd=>`cd_${key(cd)}`;
 
+const autoSaveTimers=new Map();
+
+async function persistirItem(item, { silencioso = false } = {}){
+  const payload={
+    cd:clean(item.cd),
+    grc:clean(item.grc),
+    diretor:clean(item.diretor)
+  };
+
+  if(!payload.cd || !payload.grc){
+    if(!silencioso){
+      setMsg("Preencha CD e GRC antes de salvar o diretor.","#991b1b");
+    }
+    return false;
+  }
+
+  const id=docId(payload.cd);
+
+  try{
+    await setDoc(
+      doc(db,COLLECTION,id),
+      {
+        cd:payload.cd,
+        cdKey:key(payload.cd),
+        grc:payload.grc,
+        grcKey:key(payload.grc),
+        diretor:payload.diretor || "",
+        diretorKey:key(payload.diretor || ""),
+        atualizadoEm:new Date()
+      },
+      {merge:true}
+    );
+
+    await setDoc(
+      doc(db, COL_APURACOES, `cd_grc_diretor_${key(payload.cd)}`),
+      {
+        tipo:"cd_grc_diretor",
+        cd:payload.cd,
+        grc:payload.grc,
+        diretor:payload.diretor || "",
+        atualizadoEm:new Date()
+      },
+      {merge:true}
+    );
+
+    item.id=id;
+    item.cd=payload.cd;
+    item.grc=payload.grc;
+    item.diretor=payload.diretor;
+    item.status="SALVO";
+
+    if(!silencioso){
+      setMsg(`Diretor salvo para ${payload.cd}.`,"#166534");
+    }
+
+    return true;
+  }catch(e){
+    console.error("ERRO AO SALVAR LINHA",e);
+    item.status="ERRO";
+
+    if(!silencioso){
+      setMsg(`${e.code || "erro"} - ${e.message}`,"#991b1b");
+    }
+
+    return false;
+  }
+}
+
+function atualizarBadgeLinha(index, texto){
+  const badge=document.querySelector(`tr[data-row="${index}"] .badge`);
+  if(!badge) return;
+  badge.textContent=texto;
+  badge.classList.remove("saving","err");
+  if(texto==="SALVANDO...") badge.classList.add("saving");
+  if(texto==="ERRO") badge.classList.add("err");
+}
+
+function agendarAutoSalvarDiretor(index){
+  clearTimeout(autoSaveTimers.get(index));
+
+  autoSaveTimers.set(index, setTimeout(async ()=>{
+    const item=DADOS[index];
+    if(!item) return;
+
+    atualizarBadgeLinha(index, "SALVANDO...");
+    const ok=await persistirItem(item, { silencioso:true });
+
+    atualizarBadgeLinha(index, ok ? "SALVO" : (item.status || "ERRO"));
+
+    if(ok){
+      setMsg(`Diretor salvo automaticamente: ${item.cd}`,"#166534");
+    }else if(!clean(item.cd) || !clean(item.grc)){
+      setMsg("Preencha CD e GRC para salvar o diretor automaticamente.","#991b1b");
+    }
+  }, 700));
+}
+
+async function salvarDiretorAgora(index){
+  clearTimeout(autoSaveTimers.get(index));
+  const item=DADOS[index];
+  if(!item) return;
+
+  atualizarBadgeLinha(index, "SALVANDO...");
+  const ok=await persistirItem(item);
+
+  atualizarBadgeLinha(index, ok ? "SALVO" : (item.status || "ERRO"));
+}
+
 function setMsg(text,color="#334155"){
   $("msg").textContent=text;
   $("msg").style.color=color;
@@ -201,7 +309,7 @@ function render(){
     const realIndex=DADOS.indexOf(x);
 
     return `
-      <tr>
+      <tr data-row="${realIndex}">
         <td>${idx+1}</td>
 
         <td>
@@ -243,10 +351,10 @@ function render(){
   }).join("");
 
   document.querySelectorAll("td input").forEach(inp=>{
-    inp.oninput=()=>{
-      const i=Number(inp.dataset.i);
-      const campo=inp.dataset.campo;
+    const i=Number(inp.dataset.i);
+    const campo=inp.dataset.campo;
 
+    inp.oninput=()=>{
       DADOS[i][campo]=clean(inp.value);
 
       if(DADOS[i].status==="SALVO"){
@@ -254,7 +362,16 @@ function render(){
       }
 
       resumo(filtrados());
+
+      if(campo==="diretor"){
+        atualizarBadgeLinha(i, "EDITADO");
+        agendarAutoSalvarDiretor(i);
+      }
     };
+
+    if(campo==="diretor"){
+      inp.onblur=()=>salvarDiretorAgora(i);
+    }
   });
 
   document.querySelectorAll("[data-del]").forEach(btn=>{
@@ -410,36 +527,8 @@ async function salvar(){
     let gravados=0;
 
     for(const item of lista){
-
-      const id=docId(item.cd);
-
-      await setDoc(
-        doc(db,COLLECTION,id),
-        {
-          cd:item.cd,
-          cdKey:key(item.cd),
-          grc:item.grc,
-          grcKey:key(item.grc),
-          diretor:item.diretor || "",
-          diretorKey:key(item.diretor || ""),
-          atualizadoEm:new Date()
-        },
-        {merge:true}
-      );
-
-      await setDoc(
-        doc(db, COL_APURACOES, `cd_grc_diretor_${key(item.cd)}`),
-        {
-          tipo:"cd_grc_diretor",
-          cd:item.cd,
-          grc:item.grc,
-          diretor:item.diretor || "",
-          atualizadoEm:new Date()
-        },
-        {merge:true}
-      );
-
-      gravados++;
+      const ok=await persistirItem(item, { silencioso:true });
+      if(ok) gravados++;
 
       if(gravados%10===0 || gravados===lista.length){
         setMsg(`Gravando ${gravados} de ${lista.length}...`);
