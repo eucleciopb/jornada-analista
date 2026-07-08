@@ -46,6 +46,37 @@
       <div class="kpi"><span>Evolução média</span><strong id="kEvolucao">-</strong></div>
     </section>
 
+    <section class="card">
+      <h3 style="margin:0 0 6px;">Ranking de CDs — Brasil</h3>
+      <p class="hint">Top 5 e Bottom 5 CDs do país conforme a média de nota no mês filtrado.</p>
+      <div class="grid-2" style="margin-top:14px;">
+        <div>
+          <h4 class="rank-title top">🏆 Top 5 CDs</h4>
+          <div class="table-wrap rank-table">
+            <table>
+              <thead><tr><th>#</th><th>CD</th><th>Diretoria</th><th>GRC</th><th>Nota</th></tr></thead>
+              <tbody id="tbTopBrasil"></tbody>
+            </table>
+          </div>
+        </div>
+        <div>
+          <h4 class="rank-title bottom">📉 Bottom 5 CDs</h4>
+          <div class="table-wrap rank-table">
+            <table>
+              <thead><tr><th>#</th><th>CD</th><th>Diretoria</th><th>GRC</th><th>Nota</th></tr></thead>
+              <tbody id="tbBottomBrasil"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h3 style="margin:0 0 6px;">Ranking de CDs — Por Diretoria</h3>
+      <p class="hint">Top 5 e Bottom 5 CDs dentro de cada diretoria (diretor).</p>
+      <div id="rankDiretorias" class="diretorias-grid"></div>
+    </section>
+
     <section class="grid-2">
       <div class="card">
         <h3 style="margin:0 0 12px;">Resumo por Analista</h3>
@@ -257,6 +288,129 @@
       })).sort((a,b)=>(b.media ?? 0)-(a.media ?? 0));
     }
 
+    function agruparCds(arr){
+      const map = new Map();
+      arr.forEach(x => {
+        const k = key(x.cd);
+        if(!k) return;
+        if(!map.has(k)){
+          map.set(k, {
+            cd: normalize(x.cd),
+            diretor: x.diretor || "Não cadastrado",
+            grc: x.grc || "Não cadastrado",
+            notas: [],
+            evolucoes: []
+          });
+        }
+        const ref = map.get(k);
+        const n = Number(x.nota);
+        if(Number.isFinite(n)) ref.notas.push(n);
+        if(Number.isFinite(Number(x.evolucao))) ref.evolucoes.push(Number(x.evolucao));
+      });
+
+      return [...map.values()]
+        .map(x => ({
+          cd: x.cd,
+          diretor: x.diretor,
+          grc: x.grc,
+          media: x.notas.length ? x.notas.reduce((a,b)=>a+b,0) / x.notas.length : null,
+          evolucao: x.evolucoes.length ? x.evolucoes.reduce((a,b)=>a+b,0) / x.evolucoes.length : null
+        }))
+        .filter(x => Number.isFinite(x.media))
+        .sort((a,b) => b.media - a.media);
+    }
+
+    function topBottom(lista, qtd = 5){
+      const ordenado = [...lista].sort((a,b) => b.media - a.media);
+      const top = ordenado.slice(0, qtd);
+      const bottom = [...ordenado].reverse().slice(0, qtd);
+      return { top, bottom };
+    }
+
+    function renderRankingCds(tbodyId, lista, tipo = "top"){
+      const elTb = el(tbodyId);
+      if(!lista.length){
+        elTb.innerHTML = `<tr><td colspan="5">Sem dados suficientes.</td></tr>`;
+        return;
+      }
+
+      elTb.innerHTML = lista.map((x, i) => `
+        <tr>
+          <td><strong>${tipo === "top" ? i + 1 : i + 1}º</strong></td>
+          <td><strong>${esc(x.cd)}</strong></td>
+          <td>${esc(x.diretor)}</td>
+          <td>${esc(x.grc)}</td>
+          <td>${badgeNota(x.media)}</td>
+        </tr>
+      `).join("");
+    }
+
+    function renderRankingBrasil(dados){
+      const cds = agruparCds(dados);
+      const { top, bottom } = topBottom(cds, 5);
+      renderRankingCds("tbTopBrasil", top, "top");
+      renderRankingCds("tbBottomBrasil", bottom, "bottom");
+    }
+
+    function renderRankingDiretorias(dados){
+      const container = el("rankDiretorias");
+      const porDiretor = new Map();
+
+      agruparCds(dados).forEach(cd => {
+        const dir = cd.diretor || "Não cadastrado";
+        if(!porDiretor.has(dir)) porDiretor.set(dir, []);
+        porDiretor.get(dir).push(cd);
+      });
+
+      const diretorias = [...porDiretor.entries()]
+        .sort((a,b) => a[0].localeCompare(b[0], "pt-BR"));
+
+      if(!diretorias.length){
+        container.innerHTML = `<p class="hint">Sem dados de diretoria para o filtro selecionado.</p>`;
+        return;
+      }
+
+      container.innerHTML = diretorias.map(([diretor, lista]) => {
+        const { top, bottom } = topBottom(lista, 5);
+        const mkRows = (items, tipo) => items.length
+          ? items.map((x, i) => `
+              <tr>
+                <td><strong>${i + 1}º</strong></td>
+                <td><strong>${esc(x.cd)}</strong></td>
+                <td>${esc(x.grc)}</td>
+                <td>${badgeNota(x.media)}</td>
+              </tr>
+            `).join("")
+          : `<tr><td colspan="4">Sem CDs nesta faixa.</td></tr>`;
+
+        return `
+          <div class="diretoria-block">
+            <h4 class="diretoria-name">${esc(diretor)} <span class="hint-inline">${lista.length} CD(s)</span></h4>
+            <div class="grid-2">
+              <div>
+                <h5 class="rank-title top">🏆 Top 5</h5>
+                <div class="table-wrap rank-table">
+                  <table>
+                    <thead><tr><th>#</th><th>CD</th><th>GRC</th><th>Nota</th></tr></thead>
+                    <tbody>${mkRows(top, "top")}</tbody>
+                  </table>
+                </div>
+              </div>
+              <div>
+                <h5 class="rank-title bottom">📉 Bottom 5</h5>
+                <div class="table-wrap rank-table">
+                  <table>
+                    <thead><tr><th>#</th><th>CD</th><th>GRC</th><th>Nota</th></tr></thead>
+                    <tbody>${mkRows(bottom, "bottom")}</tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
     function renderGrupo(tbodyId, campo){
       const rows = agrupar(filtrar(), campo);
       el(tbodyId).innerHTML = rows.length ? rows.map(r => `
@@ -284,6 +438,9 @@
       renderGrupo("tbAnalista", "analista");
       renderGrupo("tbGrc", "grc");
       renderGrupo("tbDiretor", "diretor");
+
+      renderRankingBrasil(dados);
+      renderRankingDiretorias(dados);
 
       el("tbDetalhe").innerHTML = dados.length ? dados
         .sort((a,b)=>String(a.cd).localeCompare(String(b.cd),"pt-BR"))
