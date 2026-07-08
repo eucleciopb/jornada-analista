@@ -1,7 +1,15 @@
-/* Cadastro_grc_por_cd.html */
+/* cadastro_grc_por_cd.html */
 :root{--bg:#f6f8fb;--txt:#0f172a;--muted:#64748b;--line:#e5e7eb;--blue:#2563eb}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+body.page-grc-cd{margin:0;background:var(--bg)!important;color:var(--txt)!important;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+body.page-grc-cd input,
+body.page-grc-cd select,
+body.page-grc-cd textarea{
+  background:#fff!important;
+  color:#0f172a!important;
+  border:1px solid #dbe1ea!important;
+}
+body.page-grc-cd input::placeholder{color:#64748b!important;opacity:1}
 .header{background:linear-gradient(120deg,#2563eb,#93c5fd);color:#fff;padding:22px 26px;border-bottom:8px solid #fde9a8}
 .header h1{margin:0;font-size:34px;font-weight:950;letter-spacing:-1px}
 .header p{margin:4px 0 0;font-size:14px;opacity:.95}
@@ -14,7 +22,8 @@ button.ok{background:#dcfce7;color:#166534}
 button.bad{background:#fee2e2;color:#991b1b}
 label.btn{display:inline-flex}
 input[type=file]{display:none}
-input.search{width:100%;border:1px solid #dbe1ea;border-radius:13px;padding:12px;font-weight:800}
+input.search{width:100%;border:1px solid #dbe1ea;border-radius:13px;padding:12px;font-weight:800;background:#fff!important;color:#0f172a!important}
+.filtro-hint{margin:8px 0 0;font-size:12px;font-weight:700;color:var(--muted)}
 .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .kpi{border:1px solid var(--line);border-radius:16px;padding:14px;background:#fff}
 .kpi span{display:block;font-size:11px;font-weight:950;color:var(--muted);text-transform:uppercase}

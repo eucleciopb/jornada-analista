@@ -8,10 +8,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/bundle-admin.css" />
-  <link rel="stylesheet" href="../css/pages/admin-Cadastro_grc_por_cd.css" />
+  <link rel="stylesheet" href="../css/pages/admin-cadastro_grc_por_cd.css?v=2" />
 </head>
 
-<body class="theme-admin app-shell">
+<body class="theme-user app-shell page-grc-cd">
 <header class="header">
   <h1>Cadastro GRC por CD</h1>
   <p>Importe Excel/CSV ou edite manualmente a relação CD × GRC.</p>
@@ -38,7 +38,8 @@
   </section>
 
   <section class="card">
-    <input id="busca" class="search" placeholder="Pesquisar por CD ou GRC..."/>
+    <input id="busca" class="search" type="text" placeholder="Pesquisar por CD ou GRC..." autocomplete="off"/>
+    <p id="filtroHint" class="filtro-hint"></p>
   </section>
 
   <section class="card">
@@ -125,40 +126,69 @@ function addLinha(cd="",grc="",status="NOVO"){
   render();
 }
 
-function resumo(){
-  $("kTotal").textContent=DADOS.length;
+function resumo(lista = DADOS){
+  $("kTotal").textContent = lista.length;
 
-  $("kCds").textContent=new Set(
-    DADOS.map(x=>key(x.cd)).filter(Boolean)
+  $("kCds").textContent = new Set(
+    lista.map(x => key(x.cd)).filter(Boolean)
   ).size;
 
-  $("kGrcs").textContent=new Set(
-    DADOS.map(x=>key(x.grc)).filter(Boolean)
+  $("kGrcs").textContent = new Set(
+    lista.map(x => key(x.grc)).filter(Boolean)
   ).size;
+}
+
+function combinaBusca(valor, busca){
+  const texto = clean(valor).toLowerCase();
+  const qTexto = clean(busca).toLowerCase();
+  const qKey = key(busca);
+  if(!qTexto) return true;
+  return texto.includes(qTexto) || key(valor).includes(qKey);
 }
 
 function filtrados(){
-  const q=key($("busca").value);
-
-  if(!q) return DADOS;
-
-  return DADOS.filter(x=>
-    key(x.cd).includes(q) ||
-    key(x.grc).includes(q)
+  const busca = $("busca")?.value || "";
+  if(!clean(busca)) return DADOS;
+  return DADOS.filter(x =>
+    combinaBusca(x.cd, busca) ||
+    combinaBusca(x.grc, busca)
   );
 }
 
-function render(){
-  resumo();
+function atualizarFiltroHint(lista, busca){
+  const hint = $("filtroHint");
+  if(!hint) return;
+  if(!clean(busca)){
+    hint.textContent = "";
+    return;
+  }
+  hint.textContent = lista.length
+    ? `Exibindo ${lista.length} de ${DADOS.length} registro(s) para "${clean(busca)}".`
+    : `Nenhum CD ou GRC encontrado para "${clean(busca)}".`;
+}
 
-  const lista=filtrados();
+function render(){
+  const buscaEl = $("busca");
+  const buscaValor = buscaEl?.value || "";
+  const cursor = buscaEl?.selectionStart ?? null;
+
+  const lista = filtrados();
+  resumo(lista);
+  atualizarFiltroHint(lista, buscaValor);
 
   if(!lista.length){
-    $("tbody").innerHTML=`<tr><td colspan="5">Sem dados.</td></tr>`;
+    $("tbody").innerHTML = clean(buscaValor)
+      ? `<tr><td colspan="5">Nenhum resultado para a busca.</td></tr>`
+      : `<tr><td colspan="5">Sem dados.</td></tr>`;
+
+    if(buscaEl && cursor !== null){
+      buscaEl.focus();
+      buscaEl.setSelectionRange(cursor, cursor);
+    }
     return;
   }
 
-  $("tbody").innerHTML=lista.map((x,idx)=>{
+  $("tbody").innerHTML = lista.map((x, idx) => {
     const realIndex=DADOS.indexOf(x);
 
     return `
@@ -205,7 +235,7 @@ function render(){
         DADOS[i].status="EDITADO";
       }
 
-      resumo();
+      resumo(filtrados());
     };
   });
 
@@ -242,6 +272,11 @@ ${e.message}`
       render();
     };
   });
+
+  if(buscaEl && cursor !== null && document.activeElement === buscaEl){
+    buscaEl.focus();
+    buscaEl.setSelectionRange(cursor, cursor);
+  }
 }
 
 function normalizarLinha(row){
@@ -470,12 +505,17 @@ $("btnSalvar").onclick=salvar;
 $("btnLimpar").onclick=()=>{
   if(confirm("Limpar apenas a tela? Isso não apaga o Firebase.")){
     DADOS=[];
+    if($("busca")) $("busca").value = "";
     render();
     setMsg("Tela limpa. Base do Firebase não foi apagada.");
   }
 };
 
-$("busca").oninput=render;
+const buscaEl = $("busca");
+if(buscaEl){
+  buscaEl.addEventListener("input", render);
+  buscaEl.addEventListener("keyup", render);
+}
 
 $("fileExcel").onchange=e=>{
   const file=e.target.files?.[0];
