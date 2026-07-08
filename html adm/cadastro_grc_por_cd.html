@@ -14,7 +14,7 @@
 <body class="theme-user app-shell page-grc-cd">
 <header class="header">
   <h1>Cadastro GRC por CD</h1>
-  <p>Importe Excel/CSV ou edite manualmente a relação CD × GRC.</p>
+  <p>Importe Excel/CSV ou edite manualmente a relação CD × GRC × Diretor.</p>
 </header>
 
 <main>
@@ -35,10 +35,11 @@
     <div class="kpi"><span>Total Linhas</span><strong id="kTotal">0</strong></div>
     <div class="kpi"><span>CDs Únicos</span><strong id="kCds">0</strong></div>
     <div class="kpi"><span>GRCs Únicos</span><strong id="kGrcs">0</strong></div>
+    <div class="kpi"><span>Diretores Únicos</span><strong id="kDiretores">0</strong></div>
   </section>
 
   <section class="card">
-    <input id="busca" class="search" type="text" placeholder="Pesquisar por CD ou GRC..." autocomplete="off"/>
+    <input id="busca" class="search" type="text" placeholder="Pesquisar por CD, GRC ou Diretor..." autocomplete="off"/>
     <p id="filtroHint" class="filtro-hint"></p>
   </section>
 
@@ -54,6 +55,7 @@
             <th style="width:80px">#</th>
             <th>CD</th>
             <th>GRC</th>
+            <th>Diretor</th>
             <th style="width:110px">Status</th>
             <th style="width:100px">Ação</th>
           </tr>
@@ -89,6 +91,7 @@ const firebaseConfig={
 const db=getFirestore(initializeApp(firebaseConfig));
 
 const COLLECTION="cadastro_grc_cd";
+const COL_APURACOES="apuracoes_treinamentos";
 
 const $=id=>document.getElementById(id);
 
@@ -116,10 +119,11 @@ function setMsg(text,color="#334155"){
   $("msg").style.color=color;
 }
 
-function addLinha(cd="",grc="",status="NOVO"){
+function addLinha(cd="",grc="",diretor="",status="NOVO"){
   DADOS.push({
     cd:clean(cd),
     grc:clean(grc),
+    diretor:clean(diretor),
     status
   });
 
@@ -136,6 +140,10 @@ function resumo(lista = DADOS){
   $("kGrcs").textContent = new Set(
     lista.map(x => key(x.grc)).filter(Boolean)
   ).size;
+
+  $("kDiretores").textContent = new Set(
+    lista.map(x => key(x.diretor)).filter(Boolean)
+  ).size;
 }
 
 function combinaBusca(valor, busca){
@@ -151,7 +159,8 @@ function filtrados(){
   if(!clean(busca)) return DADOS;
   return DADOS.filter(x =>
     combinaBusca(x.cd, busca) ||
-    combinaBusca(x.grc, busca)
+    combinaBusca(x.grc, busca) ||
+    combinaBusca(x.diretor, busca)
   );
 }
 
@@ -164,7 +173,7 @@ function atualizarFiltroHint(lista, busca){
   }
   hint.textContent = lista.length
     ? `Exibindo ${lista.length} de ${DADOS.length} registro(s) para "${clean(busca)}".`
-    : `Nenhum CD ou GRC encontrado para "${clean(busca)}".`;
+    : `Nenhum CD, GRC ou Diretor encontrado para "${clean(busca)}".`;
 }
 
 function render(){
@@ -178,8 +187,8 @@ function render(){
 
   if(!lista.length){
     $("tbody").innerHTML = clean(buscaValor)
-      ? `<tr><td colspan="5">Nenhum resultado para a busca.</td></tr>`
-      : `<tr><td colspan="5">Sem dados.</td></tr>`;
+      ? `<tr><td colspan="6">Nenhum resultado para a busca.</td></tr>`
+      : `<tr><td colspan="6">Sem dados.</td></tr>`;
 
     if(buscaEl && cursor !== null){
       buscaEl.focus();
@@ -210,6 +219,15 @@ function render(){
             data-i="${realIndex}" 
             data-campo="grc" 
             placeholder="Ex: CNS | Thiago Gerbasi"
+          />
+        </td>
+
+        <td>
+          <input 
+            value="${html(x.diretor || "")}" 
+            data-i="${realIndex}" 
+            data-campo="diretor" 
+            placeholder="Ex: Diretor Norte"
           />
         </td>
 
@@ -302,11 +320,18 @@ function normalizarLinha(row){
     obj.territorio
   );
 
+  const diretor=clean(
+    obj.diretor ||
+    obj.diretoria ||
+    obj.director
+  );
+
   if(!cd || !grc) return null;
 
   return {
     cd,
     grc,
+    diretor,
     status:"IMPORTADO"
   };
 }
@@ -326,6 +351,7 @@ async function carregar(){
         id:d.id,
         cd:clean(x.cd),
         grc:clean(x.grc),
+        diretor:clean(x.diretor || x.diretoria),
         status:"SALVO"
       });
     });
@@ -356,7 +382,8 @@ async function salvar(){
   const validos=DADOS
     .map(x=>({
       cd:clean(x.cd),
-      grc:clean(x.grc)
+      grc:clean(x.grc),
+      diretor:clean(x.diretor)
     }))
     .filter(x=>x.cd && x.grc);
 
@@ -393,6 +420,20 @@ async function salvar(){
           cdKey:key(item.cd),
           grc:item.grc,
           grcKey:key(item.grc),
+          diretor:item.diretor || "",
+          diretorKey:key(item.diretor || ""),
+          atualizadoEm:new Date()
+        },
+        {merge:true}
+      );
+
+      await setDoc(
+        doc(db, COL_APURACOES, `cd_grc_diretor_${key(item.cd)}`),
+        {
+          tipo:"cd_grc_diretor",
+          cd:item.cd,
+          grc:item.grc,
+          diretor:item.diretor || "",
           atualizadoEm:new Date()
         },
         {merge:true}
@@ -459,7 +500,7 @@ function importarArquivo(file){
         .filter(Boolean);
 
       if(!importados.length){
-        setMsg("Arquivo não reconhecido. Use colunas CD e GRC.","#991b1b");
+        setMsg("Arquivo não reconhecido. Use colunas CD, GRC e Diretor (opcional).","#991b1b");
         return;
       }
 
@@ -468,6 +509,7 @@ function importarArquivo(file){
 
         if(existe){
           existe.grc=x.grc;
+          existe.diretor=x.diretor;
 
           if(existe.status==="SALVO"){
             existe.status="EDITADO";

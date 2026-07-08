@@ -24,12 +24,12 @@ label.btn{display:inline-flex}
 input[type=file]{display:none}
 input.search{width:100%;border:1px solid #dbe1ea;border-radius:13px;padding:12px;font-weight:800;background:#fff!important;color:#0f172a!important}
 .filtro-hint{margin:8px 0 0;font-size:12px;font-weight:700;color:var(--muted)}
-.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
 .kpi{border:1px solid var(--line);border-radius:16px;padding:14px;background:#fff}
 .kpi span{display:block;font-size:11px;font-weight:950;color:var(--muted);text-transform:uppercase}
 .kpi strong{font-size:28px;letter-spacing:-1px}
 .table-wrap{overflow:auto;border:1px solid var(--line);border-radius:16px;max-height:560px}
-table{width:100%;border-collapse:collapse;font-size:13px;min-width:760px}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:940px}
 th,td{padding:10px;border-bottom:1px solid #eef2f7;text-align:left}
 th{position:sticky;top:0;background:#f8fafc;color:#334155;font-weight:950;z-index:1}
 td input{width:100%;border:1px solid #dbe1ea;border-radius:10px;padding:9px;font-weight:800}

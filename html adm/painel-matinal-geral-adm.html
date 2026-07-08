@@ -254,6 +254,19 @@
         }
       });
 
+      const snapCadastro = await getDocs(collection(db, "cadastro_grc_cd"));
+      snapCadastro.forEach(d => {
+        const x = d.data();
+        const cd = normalize(x.cd);
+        if(!cd) return;
+        const cdKey = key(cd);
+        const atual = HIER.get(cdKey) || {};
+        HIER.set(cdKey, {
+          grc: normalize(x.grc || atual.grc || "Não cadastrado"),
+          diretor: normalize(x.diretor || x.diretoria || atual.diretor || "Não cadastrado")
+        });
+      });
+
       prepararBase();
       popularFiltros();
       render();
