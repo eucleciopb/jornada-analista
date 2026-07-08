@@ -110,6 +110,32 @@
     </section>
 
     <section class="card">
+      <h3 style="margin:0 0 6px;">CDs sem avaliação no mês</h3>
+      <p class="hint">
+        CDs com responsável cadastrado que ainda <strong>não</strong> receberam avaliação em
+        <span id="mesPendenteLabel">-</span>.
+      </p>
+      <div class="pendente-kpi">
+        <span>Pendentes</span>
+        <strong id="kPendentes">0</strong>
+      </div>
+      <div class="table-wrap" style="margin-top:14px;max-height:480px;">
+        <table>
+          <thead>
+            <tr>
+              <th>CD</th>
+              <th>Analista responsável</th>
+              <th>GRC</th>
+              <th>Diretoria</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="tbPendentes"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
       <h3 style="margin:0 0 12px;">Detalhe das Avaliações</h3>
       <div class="table-wrap" style="max-height:560px;">
         <table style="min-width:1200px;">
@@ -146,7 +172,7 @@
 
     const el = id => document.getElementById(id);
     const fMes = el("fMes"), fAnalista = el("fAnalista"), fGrc = el("fGrc"), fDiretor = el("fDiretor"), fBusca = el("fBusca");
-    let AVAL = [], HIER = new Map(), BASE = [];
+    let AVAL = [], HIER = new Map(), RESP = new Map(), BASE = [];
 
     function safeParse(raw){try{return JSON.parse(raw)}catch{return null}}
     function getUsuario(){
@@ -207,6 +233,7 @@
       snapAval.forEach(d => AVAL.push({id:d.id,...d.data()}));
 
       HIER = new Map();
+      RESP = new Map();
       const snapHier = await getDocs(collection(db, COL));
       snapHier.forEach(d => {
         const x = d.data();
@@ -215,6 +242,15 @@
             grc: normalize(x.grc || x.GRC || "Não cadastrado"),
             diretor: normalize(x.diretor || x.Diretor || "Não cadastrado")
           });
+        }
+        if(x.tipo === "responsavel_cd"){
+          const cd = normalize(x.cd);
+          if(cd){
+            RESP.set(key(cd), {
+              cd,
+              responsavel: normalize(x.responsavel || "Sem responsável")
+            });
+          }
         }
       });
 
@@ -246,7 +282,12 @@
       fMes.innerHTML = meses.map(m=>`<option value="${esc(m)}">${mesLabel(m)}</option>`).join("");
       fMes.value = meses.includes(mesAtual()) ? mesAtual() : (meses[0] || "");
 
-      fAnalista.innerHTML = optionList([...new Set(BASE.map(x=>x.analista).filter(Boolean))].sort());
+      fAnalista.innerHTML = optionList([
+        ...new Set([
+          ...BASE.map(x => x.analista),
+          ...Array.from(RESP.values()).map(x => x.responsavel)
+        ].filter(Boolean))
+      ].sort());
       fGrc.innerHTML = optionList([...new Set(BASE.map(x=>x.grc).filter(Boolean))].sort());
       fDiretor.innerHTML = optionList([...new Set(BASE.map(x=>x.diretor).filter(Boolean))].sort());
     }
@@ -411,6 +452,57 @@
       }).join("");
     }
 
+    function montarPendentes(){
+      const mes = fMes.value;
+      if(!mes) return [];
+
+      const avaliadosMes = new Set(
+        BASE.filter(x => x.mesKey === mes).map(x => key(x.cd))
+      );
+      const busca = key(fBusca.value);
+
+      return [...RESP.values()]
+        .filter(x => !avaliadosMes.has(key(x.cd)))
+        .map(x => {
+          const h = HIER.get(key(x.cd)) || {};
+          return {
+            cd: x.cd,
+            analista: x.responsavel || "Sem responsável",
+            grc: h.grc || "Não cadastrado",
+            diretor: h.diretor || "Não cadastrado"
+          };
+        })
+        .filter(x => {
+          if(fAnalista.value && x.analista !== fAnalista.value) return false;
+          if(fGrc.value && x.grc !== fGrc.value) return false;
+          if(fDiretor.value && x.diretor !== fDiretor.value) return false;
+          if(busca && !key(x.cd).includes(busca)) return false;
+          return true;
+        })
+        .sort((a, b) =>
+          a.analista.localeCompare(b.analista, "pt-BR") ||
+          a.cd.localeCompare(b.cd, "pt-BR")
+        );
+    }
+
+    function renderPendentes(){
+      const pendentes = montarPendentes();
+      el("kPendentes").textContent = pendentes.length;
+      el("mesPendenteLabel").textContent = fMes.value ? mesLabel(fMes.value) : "-";
+
+      el("tbPendentes").innerHTML = pendentes.length
+        ? pendentes.map(x => `
+            <tr>
+              <td><strong>${esc(x.cd)}</strong></td>
+              <td>${esc(x.analista)}</td>
+              <td>${esc(x.grc)}</td>
+              <td>${esc(x.diretor)}</td>
+              <td><span class="badge bad">Pendente</span></td>
+            </tr>
+          `).join("")
+        : `<tr><td colspan="5">Todos os CDs cadastrados já foram avaliados neste mês 🎉</td></tr>`;
+    }
+
     function renderGrupo(tbodyId, campo){
       const rows = agrupar(filtrar(), campo);
       el(tbodyId).innerHTML = rows.length ? rows.map(r => `
@@ -441,6 +533,7 @@
 
       renderRankingBrasil(dados);
       renderRankingDiretorias(dados);
+      renderPendentes();
 
       el("tbDetalhe").innerHTML = dados.length ? dados
         .sort((a,b)=>String(a.cd).localeCompare(String(b.cd),"pt-BR"))
