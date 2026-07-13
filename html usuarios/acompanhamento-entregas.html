@@ -119,7 +119,8 @@
 
   const PATH_INDEX = "../index.html";
   const PATH_MENU = "../html%20menus/menu.html";
-  const COLLECTION = "entregas_gestor";
+  const COLLECTION = "apuracoes_treinamentos";
+  const TIPO = "entrega_gestor";
 
   function safeParse(raw) { try { return JSON.parse(raw); } catch { return null; } }
   function getCurrentUserName() {
@@ -333,15 +334,24 @@
   async function loadData() {
     if (!usuario) return;
     setMsg("Carregando…");
-    const periodo = currentPeriodo();
-    const snap = await getDocs(query(
-      collection(db, COLLECTION),
-      where("periodo", "==", periodo),
-      where("responsavel", "==", usuario)
-    ));
-    MINHAS_ENTREGAS = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    setMsg("");
-    render();
+    try {
+      const snap = await getDocs(query(
+        collection(db, COLLECTION),
+        where("tipo", "==", TIPO)
+      ));
+      const periodo = currentPeriodo();
+      MINHAS_ENTREGAS = snap.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .filter(e => String(e.periodo || "") === periodo)
+        .filter(e => String(e.responsavel || "") === usuario);
+      setMsg("");
+      render();
+    } catch (err) {
+      console.error(err);
+      setMsg("Erro ao carregar entregas.", "error");
+      MINHAS_ENTREGAS = [];
+      render();
+    }
   }
 
   async function saveProgress(id) {
@@ -360,6 +370,7 @@
 
     try {
       await setDoc(doc(db, COLLECTION, id), {
+        tipo: TIPO,
         progresso,
         observacoes,
         updatedAt: serverTimestamp(),
@@ -372,7 +383,10 @@
       render();
     } catch (err) {
       console.error(err);
-      setMsg("Erro ao salvar. Tente novamente.", "error");
+      const detail = err?.code === "permission-denied"
+        ? "Sem permissão no Firestore."
+        : (err?.message || "Erro ao salvar. Tente novamente.");
+      setMsg(detail, "error");
     } finally {
       btn.disabled = false;
     }
