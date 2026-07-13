@@ -108,14 +108,6 @@
   </section>
 
   <section class="card">
-    <h3 style="margin:0 0 6px">Por Responsável</h3>
-    <div class="hint">Clique em um membro do time para ver e demandar entregas.</div>
-    <div class="team-grid" id="teamGrid">
-      <div class="hint">Carregando...</div>
-    </div>
-  </section>
-
-  <section class="card">
     <h3 style="margin:0 0 6px">Todas as Entregas</h3>
     <div class="table-wrap">
       <table>
@@ -271,7 +263,6 @@
   const btnNova = document.getElementById("btnNova");
   const msg = document.getElementById("msg");
   const tbodyMain = document.getElementById("tbodyMain");
-  const teamGrid = document.getElementById("teamGrid");
 
   const percGeral = document.getElementById("percGeral");
   const pillGeral = document.getElementById("pillGeral");
@@ -418,11 +409,6 @@
     return { total, done, progress, pending, late, avgPct };
   }
 
-  function statsByResp(resp, list) {
-    const mine = list.filter(e => String(e.responsavel || "") === resp);
-    return computeStats(mine);
-  }
-
   function renderKPIs(list) {
     const stats = computeStats(list);
     kpiTotal.textContent = stats.total;
@@ -451,35 +437,6 @@
       pillGeral.className = "pill pill-warn";
       pillGeral.textContent = "Atenção necessária";
     }
-  }
-
-  function renderTeamGrid(list) {
-    const respsComEntrega = new Set(list.map(e => e.responsavel).filter(Boolean));
-    const resps = [...respsComEntrega, ...TEAM.filter(t => !respsComEntrega.has(t))];
-
-    teamGrid.innerHTML = resps.map(resp => {
-      const st = statsByResp(resp, list);
-      const barClass = progressBarClass(st.avgPct);
-      return `
-        <div class="team-card" data-resp="${escapeHtml(resp)}">
-          <h4>${escapeHtml(resp)}</h4>
-          <div class="team-stats">
-            <span>${st.total} entrega(s)</span>
-            <span>${st.done} concluída(s)</span>
-          </div>
-          <div class="team-pct">${st.avgPct}%</div>
-          <div class="${barClass}" style="margin-top:6px"><span style="width:${st.avgPct}%"></span></div>
-        </div>
-      `;
-    }).join("");
-
-    teamGrid.querySelectorAll(".team-card").forEach(card => {
-      card.addEventListener("click", () => {
-        respFiltro.value = card.dataset.resp || "";
-        renderMain();
-        openModalNew(card.dataset.resp);
-      });
-    });
   }
 
   function renderTable(list) {
@@ -533,7 +490,6 @@
   function renderMain() {
     const list = filteredEntregas();
     renderKPIs(list);
-    renderTeamGrid(list);
     renderTable(list);
   }
 
