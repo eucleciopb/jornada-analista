@@ -190,6 +190,9 @@
           <label for="mObs">Observações</label>
           <textarea id="mObs" class="field" rows="2" placeholder="Notas internas..."></textarea>
         </div>
+        <div class="full">
+          <div id="mMsg" class="msg" style="margin:0;min-height:18px"></div>
+        </div>
       </div>
     </div>
     <div class="modal-actions">
@@ -227,7 +230,9 @@
 
   const PATH_INDEX = "../index2.html";
   const PATH_MENUADM = "../html%20menus/menuadm.html";
-  const COLLECTION = "entregas_gestor";
+  // Usa a mesma coleção liberada nas Rules (padrão do portal)
+  const COLLECTION = "apuracoes_treinamentos";
+  const TIPO = "entrega_gestor";
 
   const TEAM = [
     "Alex", "Andre", "Bruna", "Daniel", "Elaine", "Emerson", "Euclecio",
@@ -291,6 +296,7 @@
   const mGestor = document.getElementById("mGestor");
   const mCategoria = document.getElementById("mCategoria");
   const mObs = document.getElementById("mObs");
+  const mMsg = document.getElementById("mMsg");
 
   let ALL_ENTREGAS = [];
   let editingId = null;
@@ -299,6 +305,11 @@
   function setMsg(text, type = "info") {
     msg.textContent = text || "";
     msg.style.color = type === "success" ? "#22c55e" : (type === "error" ? "#ef4444" : "#d1d5db");
+  }
+
+  function setModalMsg(text, type = "info") {
+    mMsg.textContent = text || "";
+    mMsg.style.color = type === "success" ? "#22c55e" : (type === "error" ? "#ef4444" : "#d1d5db");
   }
 
   function pad2(n) { return String(n).padStart(2, "0"); }
@@ -528,14 +539,27 @@
 
   async function loadData() {
     setMsg("Carregando entregas…");
-    const periodo = currentPeriodo();
-    const snap = await getDocs(query(collection(db, COLLECTION), where("periodo", "==", periodo)));
-    ALL_ENTREGAS = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    setMsg("");
-    renderMain();
+    try {
+      // Query só por tipo (evita índice composto). Filtra período no cliente.
+      const snap = await getDocs(query(collection(db, COLLECTION), where("tipo", "==", TIPO)));
+      const periodo = currentPeriodo();
+      ALL_ENTREGAS = snap.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .filter(e => String(e.periodo || "") === periodo);
+      setMsg("");
+      renderMain();
+    } catch (err) {
+      console.error(err);
+      setMsg("Erro ao carregar. Verifique conexão e Rules do Firestore.", "error");
+      ALL_ENTREGAS = [];
+      renderMain();
+    }
   }
 
-  function openModal() { modalBackdrop.classList.add("open"); }
+  function openModal() {
+    setModalMsg("");
+    modalBackdrop.classList.add("open");
+  }
   function closeModal() {
     modalBackdrop.classList.remove("open");
     editingId = null;
@@ -582,14 +606,15 @@
   async function saveEntrega() {
     const titulo = (mTitulo.value || "").trim();
     const responsavel = (mResponsavel.value || "").trim();
-    if (!titulo) { setMsg("Informe o título da entrega.", "error"); return; }
-    if (!responsavel) { setMsg("Selecione o responsável.", "error"); return; }
+    if (!titulo) { setModalMsg("Informe o título da entrega.", "error"); return; }
+    if (!responsavel) { setModalMsg("Selecione o responsável.", "error"); return; }
 
     const progresso = Math.min(100, Math.max(0, Number(mProgresso.value) || 0));
-    const id = editingId || makeId();
+    const id = editingId || `entrega_${makeId()}`;
     const periodo = currentPeriodo();
 
     const payload = {
+      tipo: TIPO,
       titulo,
       descricao: (mDescricao.value || "").trim(),
       responsavel,
@@ -609,24 +634,42 @@
       payload.createdBy = admin;
     }
 
-    setMsg("Salvando…");
-    await setDoc(doc(db, COLLECTION, id), payload, { merge: true });
-    setMsg("Salvo com sucesso!", "success");
-    closeModal();
-    await loadData();
+    btnSaveModal.disabled = true;
+    setModalMsg("Salvando…");
+    try {
+      await setDoc(doc(db, COLLECTION, id), payload, { merge: true });
+      setModalMsg("");
+      setMsg("Salvo com sucesso!", "success");
+      closeModal();
+      await loadData();
+    } catch (err) {
+      console.error(err);
+      const code = err?.code || "";
+      const detail = code === "permission-denied"
+        ? "Sem permissão no Firestore. A escrita foi bloqueada pelas Rules."
+        : (err?.message || "Erro ao salvar.");
+      setModalMsg(detail, "error");
+    } finally {
+      btnSaveModal.disabled = false;
+    }
   }
 
   async function deleteEntrega(id) {
     if (!confirm("Excluir esta entrega?")) return;
     setMsg("Excluindo…");
-    await deleteDoc(doc(db, COLLECTION, id));
-    setMsg("Excluída.", "success");
-    await loadData();
+    try {
+      await deleteDoc(doc(db, COLLECTION, id));
+      setMsg("Excluída.", "success");
+      await loadData();
+    } catch (err) {
+      console.error(err);
+      setMsg(err?.message || "Erro ao excluir.", "error");
+    }
   }
 
   mClose.onclick = closeModal;
   btnCancelModal.onclick = closeModal;
-  btnSaveModal.onclick = saveEntrega;
+  btnSaveModal.onclick = () => { saveEntrega(); };
   btnNova.onclick = () => openModalNew();
   btnReload.onclick = loadData;
 
