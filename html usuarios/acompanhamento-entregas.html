@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Minhas Entregas | Jornada</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/bundle-user.css" />
+  <link rel="stylesheet" href="../css/pages/user-acompanhamento-entregas.css" />
+</head>
+
+<body class="theme-user app-shell page-entregas">
+
+  <div id="blocker" class="blocker" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);align-items:center;justify-content:center;padding:18px">
+    <div class="card" style="width:min(520px,100%);border-radius:18px;border:1px solid rgba(255,255,255,.12);background:rgba(17,24,39,.96);padding:16px">
+      <h3 style="margin:0 0 8px">Sessão expirada</h3>
+      <p style="margin:0 0 12px;opacity:.85">Volte para o Index e entre novamente.</p>
+      <button id="btnIrIndex" class="btn primary" type="button" style="padding:10px 12px;border-radius:14px;border:none;background:#2563eb;color:#fff;font-weight:700;cursor:pointer">Ir para o Index</button>
+    </div>
+  </div>
+
+  <header class="topbar">
+    <div>
+      <h2>Minhas Entregas</h2>
+      <div id="userInfo" class="hint" style="color:#d1d5db;margin-top:4px;"></div>
+      <div class="hint" style="opacity:.85;">Atualize o progresso das entregas demandadas para você e acompanhe o atingimento.</div>
+    </div>
+    <div class="top-actions" style="display:flex;gap:10px;flex-wrap:wrap">
+      <button id="btnMenu" class="btn-secondary" type="button">Voltar ao Menu</button>
+      <button id="btnReload" class="btn-secondary" type="button">Atualizar</button>
+      <button id="btnLogout" class="btn-secondary" type="button">Sair</button>
+    </div>
+  </header>
+
+  <main class="card wide">
+    <section class="row-between" style="align-items:flex-end;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap">
+      <div>
+        <h3 style="margin:0">Painel de Acompanhamento</h3>
+        <p class="hint">Entregas atribuídas a você para cobertura do gestor.</p>
+      </div>
+      <div style="min-width:200px">
+        <label for="periodoPicker">Período</label>
+        <input id="periodoPicker" type="month" style="width:100%;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.15);color:inherit" />
+      </div>
+    </section>
+
+    <div class="overall-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+        <div>
+          <div class="hint">Seu atingimento no período</div>
+          <div class="big-pct" id="percGeral">0%</div>
+        </div>
+        <span id="pillGeral" class="pill pill-warn">Carregando...</span>
+      </div>
+      <div class="progress-bar"><span id="barGeral" style="width:0%"></span></div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi">
+        <div class="label">Total</div>
+        <div class="value" id="kTotal">0</div>
+        <div class="sub">Entregas atribuídas</div>
+      </div>
+      <div class="kpi">
+        <div class="label">Concluídas</div>
+        <div class="value" id="kDone">0</div>
+        <div class="sub">100% de progresso</div>
+      </div>
+      <div class="kpi">
+        <div class="label">Em andamento</div>
+        <div class="value" id="kProgress">0</div>
+        <div class="sub">Parcialmente feitas</div>
+      </div>
+      <div class="kpi">
+        <div class="label">Atrasadas</div>
+        <div class="value" id="kLate">0</div>
+        <div class="sub">Prazo vencido</div>
+      </div>
+    </div>
+
+    <p id="msg" class="msg" style="margin-top:12px;min-height:18px"></p>
+
+    <hr class="sep" style="margin:16px 0;border:none;border-top:1px solid rgba(255,255,255,.1)" />
+
+    <div id="listaEntregas">
+      <div class="empty-state">
+        <div class="ico">📋</div>
+        <div>Carregando entregas…</div>
+      </div>
+    </div>
+  </main>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+  import {
+    getFirestore,
+    collection,
+    getDocs,
+    query,
+    where,
+    doc,
+    setDoc,
+    serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
+    authDomain: "jornada-portal.firebaseapp.com",
+    projectId: "jornada-portal",
+    storageBucket: "jornada-portal.firebasestorage.app",
+    messagingSenderId: "669362296644",
+    appId: "1:669362296644:web:f590d9834a8e4e60012911"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  const PATH_INDEX = "../index.html";
+  const PATH_MENU = "../html%20menus/menu.html";
+  const COLLECTION = "entregas_gestor";
+
+  function safeParse(raw) { try { return JSON.parse(raw); } catch { return null; } }
+  function getCurrentUserName() {
+    const raw = localStorage.getItem("user_session");
+    if (raw) {
+      const s = safeParse(raw);
+      if (s?.nome) return String(s.nome).trim();
+    }
+    return (localStorage.getItem("usuarioLogado") || "").trim();
+  }
+
+  const usuario = getCurrentUserName();
+  const blocker = document.getElementById("blocker");
+
+  if (!usuario) {
+    blocker.style.display = "flex";
+    document.getElementById("btnIrIndex").onclick = () => window.location.href = PATH_INDEX;
+  } else {
+    document.getElementById("userInfo").textContent = `Analista: ${usuario}`;
+  }
+
+  document.getElementById("btnMenu").onclick = () => window.location.href = PATH_MENU;
+  document.getElementById("btnLogout").onclick = () => {
+    localStorage.removeItem("user_session");
+    localStorage.removeItem("usuarioLogado");
+    localStorage.removeItem("usuarioKey");
+    window.location.href = PATH_INDEX;
+  };
+
+  const periodoPicker = document.getElementById("periodoPicker");
+  const btnReload = document.getElementById("btnReload");
+  const msg = document.getElementById("msg");
+  const listaEntregas = document.getElementById("listaEntregas");
+  const percGeral = document.getElementById("percGeral");
+  const pillGeral = document.getElementById("pillGeral");
+  const barGeral = document.getElementById("barGeral");
+  const kTotal = document.getElementById("kTotal");
+  const kDone = document.getElementById("kDone");
+  const kProgress = document.getElementById("kProgress");
+  const kLate = document.getElementById("kLate");
+
+  let MINHAS_ENTREGAS = [];
+
+  function setMsg(text, type = "info") {
+    msg.textContent = text || "";
+    msg.style.color = type === "success" ? "#22c55e" : (type === "error" ? "#ef4444" : "#d1d5db");
+  }
+
+  function pad2(n) { return String(n).padStart(2, "0"); }
+  function todayISO() {
+    const d = new Date();
+    return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+  }
+  function toBR(iso) {
+    if (!iso) return "-";
+    const [y, m, d] = String(iso).split("-");
+    return `${d}/${m}/${y}`;
+  }
+  function escapeHtml(s) {
+    return (s || "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function deriveStatus(e) {
+    const prog = Number(e.progresso) || 0;
+    if (prog >= 100) return "concluida";
+    const prazo = String(e.prazo || "").slice(0, 10);
+    if (prazo && todayISO() > prazo) return "atrasada";
+    if (prog > 0) return "em_andamento";
+    return "pendente";
+  }
+
+  function statusLabel(st) {
+    const map = {
+      pendente: "Pendente",
+      em_andamento: "Em andamento",
+      concluida: "Concluída",
+      atrasada: "Atrasada"
+    };
+    return map[st] || st;
+  }
+
+  function statusPill(st) {
+    if (st === "concluida") return `<span class="pill pill-ok">${statusLabel(st)}</span>`;
+    if (st === "atrasada") return `<span class="pill pill-bad">${statusLabel(st)}</span>`;
+    if (st === "em_andamento") return `<span class="pill pill-info">${statusLabel(st)}</span>`;
+    return `<span class="pill pill-warn">${statusLabel(st)}</span>`;
+  }
+
+  function currentPeriodo() {
+    return periodoPicker.value || `${new Date().getFullYear()}-${pad2(new Date().getMonth() + 1)}`;
+  }
+
+  function computeStats(list) {
+    const withStatus = list.map(e => ({ ...e, statusEfetivo: deriveStatus(e) }));
+    const total = withStatus.length;
+    const done = withStatus.filter(e => e.statusEfetivo === "concluida").length;
+    const progress = withStatus.filter(e => e.statusEfetivo === "em_andamento").length;
+    const late = withStatus.filter(e => e.statusEfetivo === "atrasada").length;
+    const avgPct = total > 0
+      ? Math.round(withStatus.reduce((s, e) => s + (Number(e.progresso) || 0), 0) / total)
+      : 0;
+    return { total, done, progress, late, avgPct, withStatus };
+  }
+
+  function renderKPIs(stats) {
+    kTotal.textContent = stats.total;
+    kDone.textContent = stats.done;
+    kProgress.textContent = stats.progress;
+    kLate.textContent = stats.late;
+    percGeral.textContent = `${stats.avgPct}%`;
+    barGeral.style.width = `${stats.avgPct}%`;
+
+    if (stats.total === 0) {
+      pillGeral.className = "pill";
+      pillGeral.textContent = "Nenhuma entrega";
+    } else if (stats.avgPct >= 100) {
+      pillGeral.className = "pill pill-ok";
+      pillGeral.textContent = "Tudo entregue!";
+    } else if (stats.late > 0) {
+      pillGeral.className = "pill pill-bad";
+      pillGeral.textContent = `${stats.late} atrasada(s)`;
+    } else {
+      pillGeral.className = "pill pill-info";
+      pillGeral.textContent = "Em andamento";
+    }
+  }
+
+  function renderList(list) {
+    if (list.length === 0) {
+      listaEntregas.innerHTML = `
+        <div class="empty-state">
+          <div class="ico">✅</div>
+          <div>Nenhuma entrega atribuída a você neste período.</div>
+        </div>
+      `;
+      return;
+    }
+
+    const sorted = [...list].sort((a, b) => {
+      const order = { atrasada: 0, pendente: 1, em_andamento: 2, concluida: 3 };
+      const sa = deriveStatus(a);
+      const sb = deriveStatus(b);
+      return (order[sa] ?? 9) - (order[sb] ?? 9);
+    });
+
+    listaEntregas.innerHTML = sorted.map(e => {
+      const st = deriveStatus(e);
+      const pct = Number(e.progresso) || 0;
+      const cardClass = st === "atrasada" ? "entrega-card late" : (st === "concluida" ? "entrega-card done" : "entrega-card");
+      return `
+        <div class="${cardClass}" data-id="${escapeHtml(e.id)}">
+          <div class="entrega-head">
+            <div>
+              <h4>${escapeHtml(e.titulo)}</h4>
+              <div class="entrega-meta">
+                Prazo: ${toBR(e.prazo)}
+                ${e.gestorAusente ? ` • Gestor: ${escapeHtml(e.gestorAusente)}` : ""}
+                ${e.categoria ? ` • ${escapeHtml(e.categoria)}` : ""}
+                ${e.prioridade === "alta" ? ' • <strong style="color:#ef4444">Prioridade Alta</strong>' : ""}
+              </div>
+            </div>
+            ${statusPill(st)}
+          </div>
+          ${e.descricao ? `<div class="entrega-desc">${escapeHtml(e.descricao)}</div>` : ""}
+          <div class="progress-control">
+            <span style="font-size:12px;opacity:.8;min-width:70px">Progresso:</span>
+            <input type="range" min="0" max="100" value="${pct}" data-range="${escapeHtml(e.id)}" />
+            <input type="number" min="0" max="100" value="${pct}" data-num="${escapeHtml(e.id)}" />
+            <span class="pct-val" data-pct="${escapeHtml(e.id)}">${pct}%</span>
+          </div>
+          <div class="obs-area">
+            <label style="font-size:12px;opacity:.8">Observações / atualização</label>
+            <textarea data-obs="${escapeHtml(e.id)}" placeholder="Descreva o andamento...">${escapeHtml(e.observacoes || "")}</textarea>
+          </div>
+          <button class="btn-save-row" data-save="${escapeHtml(e.id)}" type="button">Salvar progresso</button>
+        </div>
+      `;
+    }).join("");
+
+    listaEntregas.querySelectorAll("[data-range]").forEach(range => {
+      const id = range.dataset.range;
+      const num = listaEntregas.querySelector(`[data-num="${id}"]`);
+      const pctEl = listaEntregas.querySelector(`[data-pct="${id}"]`);
+      range.addEventListener("input", () => {
+        num.value = range.value;
+        pctEl.textContent = `${range.value}%`;
+      });
+      num.addEventListener("input", () => {
+        const v = Math.min(100, Math.max(0, Number(num.value) || 0));
+        range.value = v;
+        pctEl.textContent = `${v}%`;
+      });
+    });
+
+    listaEntregas.querySelectorAll("[data-save]").forEach(btn => {
+      btn.addEventListener("click", () => saveProgress(btn.dataset.save));
+    });
+  }
+
+  function render() {
+    const stats = computeStats(MINHAS_ENTREGAS);
+    renderKPIs(stats);
+    renderList(stats.withStatus);
+  }
+
+  async function loadData() {
+    if (!usuario) return;
+    setMsg("Carregando…");
+    const periodo = currentPeriodo();
+    const snap = await getDocs(query(
+      collection(db, COLLECTION),
+      where("periodo", "==", periodo),
+      where("responsavel", "==", usuario)
+    ));
+    MINHAS_ENTREGAS = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    setMsg("");
+    render();
+  }
+
+  async function saveProgress(id) {
+    const e = MINHAS_ENTREGAS.find(x => x.id === id);
+    if (!e) return;
+
+    const range = listaEntregas.querySelector(`[data-range="${id}"]`);
+    const obs = listaEntregas.querySelector(`[data-obs="${id}"]`);
+    const btn = listaEntregas.querySelector(`[data-save="${id}"]`);
+
+    const progresso = Math.min(100, Math.max(0, Number(range?.value) || 0));
+    const observacoes = (obs?.value || "").trim();
+
+    btn.disabled = true;
+    setMsg("Salvando…");
+
+    try {
+      await setDoc(doc(db, COLLECTION, id), {
+        progresso,
+        observacoes,
+        updatedAt: serverTimestamp(),
+        updatedBy: usuario
+      }, { merge: true });
+
+      e.progresso = progresso;
+      e.observacoes = observacoes;
+      setMsg("Progresso salvo!", "success");
+      render();
+    } catch (err) {
+      console.error(err);
+      setMsg("Erro ao salvar. Tente novamente.", "error");
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  btnReload.onclick = loadData;
+  periodoPicker.addEventListener("change", loadData);
+
+  const now = new Date();
+  periodoPicker.value = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}`;
+  if (usuario) loadData();
+</script>
+</body>
+</html>
