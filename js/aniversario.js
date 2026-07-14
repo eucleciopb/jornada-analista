@@ -236,13 +236,11 @@ export async function salvarDataNascimento(db, { doc, setDoc, serverTimestamp },
   return payload;
 }
 
-export async function listarAniversariantesDoMes(
+export async function listarTodosAniversariantes(
   db,
   { collection, getDocs, doc, getDoc },
-  mes = new Date().getMonth() + 1,
   nomes = USUARIOS_CONHECIDOS
 ) {
-  const mesNum = Number(mes);
   const anoAtual = new Date().getFullYear();
   const porId = new Map();
 
@@ -250,7 +248,7 @@ export async function listarAniversariantesDoMes(
     if (!data) return;
     const iso = data.dataNascimento || "";
     const partes = partesDataISO(iso);
-    if (!partes || partes.mes !== mesNum) return;
+    if (!partes) return;
 
     porId.set(id, {
       id,
@@ -309,11 +307,39 @@ export async function listarAniversariantesDoMes(
 
   const lista = [...porId.values()];
   lista.sort((a, b) => {
+    if (a.mes !== b.mes) return a.mes - b.mes;
     if (a.dia !== b.dia) return a.dia - b.dia;
     return String(a.nome).localeCompare(String(b.nome), "pt-BR");
   });
 
   return lista;
+}
+
+/** Agrupa [{mes, nomeMes, itens[]}] cobrindo 1–12 (meses vazios incluídos). */
+export function agruparAniversariantesPorMes(lista) {
+  const grupos = Array.from({ length: 12 }, (_, i) => ({
+    mes: i + 1,
+    nomeMes: nomeMes(i + 1),
+    itens: []
+  }));
+
+  for (const item of lista || []) {
+    const m = Number(item.mes);
+    if (m >= 1 && m <= 12) grupos[m - 1].itens.push(item);
+  }
+
+  return grupos;
+}
+
+export async function listarAniversariantesDoMes(
+  db,
+  api,
+  mes = new Date().getMonth() + 1,
+  nomes = USUARIOS_CONHECIDOS
+) {
+  const mesNum = Number(mes);
+  const todos = await listarTodosAniversariantes(db, api, nomes);
+  return todos.filter((item) => item.mes === mesNum);
 }
 
 export function temDataNascimento(perfil) {
