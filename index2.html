@@ -49,27 +49,11 @@
 
 </div>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
-import { obterPerfil, temDataNascimento } from "./js/aniversario.js";
-
+<script>
 const btn = document.getElementById("btnEntrar");
 const select = document.getElementById("usuarioSelect");
 const senha = document.getElementById("senha");
 const errorMsg = document.getElementById("errorMsg");
-
-const firebaseConfig = {
-  apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
-  authDomain: "jornada-portal.firebaseapp.com",
-  projectId: "jornada-portal",
-  storageBucket: "jornada-portal.firebasestorage.app",
-  messagingSenderId: "669362296644",
-  appId: "1:669362296644:web:f590d9834a8e4e60012911"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
 
 /*
 -----------------------------------
@@ -98,7 +82,7 @@ select.addEventListener("change", function(){
   errorMsg.style.display = "none";
 });
 
-async function login(){
+function login(){
   const usuario = select.value.trim();
   const senhaDigitada = senha.value.trim();
 
@@ -124,29 +108,19 @@ async function login(){
     return;
   }
 
+  // Sempre força o gate de nascimento no pós-login.
   const session = {
     nome: usuario,
     usuario: usuario,
     perfil: "admin",
-    login: new Date().toISOString()
+    login: new Date().toISOString(),
+    nascimentoOk: false
   };
 
   localStorage.setItem("usuarioLogado", usuario);
   localStorage.setItem("user_session", JSON.stringify(session));
 
-  btn.disabled = true;
-
-  let destino = "html menus/cadastro-nascimento.html";
-  try{
-    const perfil = await obterPerfil(db, { doc, getDoc }, usuario);
-    if(temDataNascimento(perfil)){
-      destino = "html menus/menuadm.html";
-    }
-  }catch(err){
-    console.warn("Não foi possível verificar data de nascimento:", err);
-  }
-
-  window.location.href = destino;
+  window.location.href = "html%20menus/cadastro-nascimento.html";
 }
 </script>
 

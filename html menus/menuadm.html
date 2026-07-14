@@ -14,7 +14,7 @@
   <link rel="stylesheet" href="../css/pages/cadastro-nascimento.css" />
 </head>
 
-<body class="theme-admin portal-page">
+<body class="theme-admin portal-page gate-pending">
 
 <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
@@ -516,7 +516,9 @@ import {
   isAniversarioNoMes,
   mensagemAniversario,
   nomeMes,
-  listarAniversariantesDoMes
+  listarAniversariantesDoMes,
+  sessaoTemNascimentoOk,
+  marcarNascimentoNaSessao
 } from "../js/aniversario.js";
 
 const firebaseConfig = {
@@ -568,14 +570,33 @@ if(!ADMINS.includes(session.nome)){
    GATE DATA DE NASCIMENTO
 ============================ */
 
-try{
-  const perfil = await obterPerfil(db, { doc, getDoc }, session.nome);
-  if(!temDataNascimento(perfil)){
+if(!sessaoTemNascimentoOk()){
+  try{
+    const perfil = await obterPerfil(db, { doc, getDoc }, session.nome);
+    if(temDataNascimento(perfil)){
+      marcarNascimentoNaSessao(perfil.dataNascimento);
+    }else{
+      window.location.replace("cadastro-nascimento.html");
+      throw new Error("Data de nascimento pendente.");
+    }
+  }catch(err){
+    if(String(err?.message || "").includes("pendente")) throw err;
     window.location.replace("cadastro-nascimento.html");
     throw new Error("Data de nascimento pendente.");
   }
+}
 
-  if(isAniversarioNoMes(perfil.dataNascimento)){
+document.body.classList.remove("gate-pending");
+
+try{
+  const sess = safeParse(localStorage.getItem("user_session")) || {};
+  let iso = sess.dataNascimento || null;
+  if(!iso){
+    const perfil = await obterPerfil(db, { doc, getDoc }, session.nome);
+    iso = perfil?.dataNascimento || null;
+    if(iso) marcarNascimentoNaSessao(iso);
+  }
+  if(iso && isAniversarioNoMes(iso)){
     const banner = document.getElementById("birthdayBanner");
     const title = document.getElementById("birthdayTitle");
     const subtitle = document.getElementById("birthdaySubtitle");
@@ -585,8 +606,7 @@ try{
     banner?.classList.add("is-visible");
   }
 }catch(err){
-  if(String(err?.message || "").includes("pendente")) throw err;
-  console.warn("Falha ao verificar aniversário/perfil:", err);
+  console.warn("Falha ao verificar aniversário:", err);
 }
 
 /* ============================

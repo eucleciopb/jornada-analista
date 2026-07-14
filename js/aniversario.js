@@ -22,33 +22,75 @@ export function safeParse(raw) {
   }
 }
 
+export function getSession() {
+  return safeParse(localStorage.getItem("user_session"));
+}
+
 export function getSessionUser() {
-  const raw = localStorage.getItem("user_session");
-  if (raw) {
-    const s = safeParse(raw);
-    if (s?.nome) {
-      return {
-        nome: String(s.nome).trim(),
-        perfil: String(s.perfil || "").trim() || "analista"
-      };
-    }
-    if (s?.usuario) {
-      return {
-        nome: String(s.usuario).trim(),
-        perfil: String(s.perfil || "").trim() || "analista"
-      };
-    }
+  const s = getSession();
+  if (s?.nome) {
+    return {
+      nome: String(s.nome).trim(),
+      perfil: String(s.perfil || "").trim() || "analista",
+      nascimentoOk: Boolean(s.nascimentoOk),
+      dataNascimento: s.dataNascimento || null
+    };
+  }
+  if (s?.usuario) {
+    return {
+      nome: String(s.usuario).trim(),
+      perfil: String(s.perfil || "").trim() || "analista",
+      nascimentoOk: Boolean(s.nascimentoOk),
+      dataNascimento: s.dataNascimento || null
+    };
   }
 
   const nome = (localStorage.getItem("usuarioLogado") || "").trim();
   if (!nome) return null;
-  return { nome, perfil: "analista" };
+  return { nome, perfil: "analista", nascimentoOk: false, dataNascimento: null };
+}
+
+/** Marca na sessão que a data de nascimento foi confirmada (libera o menu). */
+export function marcarNascimentoNaSessao(dataNascimento) {
+  const s = getSession() || {};
+  const parsed = parseDataNascimento(dataNascimento);
+  s.nascimentoOk = Boolean(parsed);
+  s.dataNascimento = parsed ? parsed.dataNascimento : null;
+  if (parsed) {
+    s.dataNascimentoExibida = parsed.dataNascimentoExibida;
+  }
+  localStorage.setItem("user_session", JSON.stringify(s));
+  return s;
+}
+
+/** Limpa a confirmação de nascimento (força o formulário pós-login). */
+export function limparNascimentoDaSessao() {
+  const s = getSession() || {};
+  s.nascimentoOk = false;
+  delete s.dataNascimento;
+  delete s.dataNascimentoExibida;
+  localStorage.setItem("user_session", JSON.stringify(s));
+  return s;
+}
+
+export function sessaoTemNascimentoOk() {
+  const s = getSession();
+  if (!s) return false;
+  if (s.nascimentoOk && parseDataNascimento(s.dataNascimento)) return true;
+  return false;
 }
 
 export function destinoMenuPorPerfil(perfil) {
   return String(perfil || "").toLowerCase() === "admin"
     ? "menuadm.html"
     : "menu.html";
+}
+
+/** Caminhos com espaço no nome da pasta (GitHub Pages). */
+export function caminhoCadastroNascimento(fromRoot = false) {
+  return fromRoot
+    ? "html%20menus/cadastro-nascimento.html"
+    : "cadastro-nascimento.html";
 }
 
 /** Aceita DD/MM/AAAA ou AAAA-MM-DD. Retorna null se inválido. */

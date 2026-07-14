@@ -1,4 +1,21 @@
-/* Cadastro obrigatório de data de nascimento */
+body.gate-pending .portal-shell,
+body.gate-pending .portal,
+body.gate-pending .bottom-nav,
+body.gate-pending .mobile-toggle {
+  visibility: hidden !important;
+}
+
+body.gate-pending::before {
+  content: "Verificando perfil...";
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--bg, #f8fafc);
+  color: var(--muted, #64748b);
+  font-weight: 600;
+  z-index: 9999;
+}
 
 .nasc-page .nasc-card {
   text-align: left;
