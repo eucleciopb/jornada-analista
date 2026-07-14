@@ -8,9 +8,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/bundle-portal-user.css" />
+  <link rel="stylesheet" href="../css/pages/cadastro-nascimento.css" />
 </head>
 
-<body class="theme-user portal-page">
+<body class="theme-user portal-page gate-pending">
   <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
   <div class="portal-shell">
@@ -59,6 +60,14 @@
       </header>
 
       <div class="content">
+        <div id="birthdayBanner" class="birthday-banner" role="status" aria-live="polite">
+          <div class="bday-ico" aria-hidden="true">🎂</div>
+          <div class="bday-text">
+            <strong id="birthdayTitle">Feliz aniversário!</strong>
+            <span id="birthdaySubtitle">Desejamos um mês especial para você.</span>
+          </div>
+        </div>
+
         <section id="metas">
           <div class="section-title">
             <div>
@@ -236,8 +245,19 @@
       collection,
       getDocs,
       query,
-      where
+      where,
+      doc,
+      getDoc
     } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+    import {
+      obterPerfil,
+      temDataNascimento,
+      isAniversarioNoMes,
+      mensagemAniversario,
+      nomeMes,
+      sessaoTemNascimentoOk,
+      marcarNascimentoNaSessao
+    } from "../js/aniversario.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
@@ -340,6 +360,49 @@
     if(!user || !user.nome){
       window.location.href = "../index.html";
       throw new Error("Usuário não encontrado no localStorage.");
+    }
+
+    // Gate síncrono: sem nascimentoOk na sessão, manda para o formulário.
+    // (O login sempre zera nascimentoOk — só o cadastro-nascimento libera.)
+    if(!sessaoTemNascimentoOk()){
+      // Tenta confirmar no Firestore antes de bloquear (sessões antigas).
+      try{
+        const perfil = await obterPerfil(db, { doc, getDoc }, user.nome);
+        if(temDataNascimento(perfil)){
+          marcarNascimentoNaSessao(perfil.dataNascimento);
+        }else{
+          window.location.replace("cadastro-nascimento.html");
+          throw new Error("Data de nascimento pendente.");
+        }
+      }catch(err){
+        if(String(err?.message || "").includes("pendente")) throw err;
+        window.location.replace("cadastro-nascimento.html");
+        throw new Error("Data de nascimento pendente.");
+      }
+    }
+
+    document.body.classList.remove("gate-pending");
+
+    // Banner de aniversário (apenas no mês correto)
+    try{
+      const sess = safeParse(localStorage.getItem("user_session")) || {};
+      let iso = sess.dataNascimento || null;
+      if(!iso){
+        const perfil = await obterPerfil(db, { doc, getDoc }, user.nome);
+        iso = perfil?.dataNascimento || null;
+        if(iso) marcarNascimentoNaSessao(iso);
+      }
+      if(iso && isAniversarioNoMes(iso)){
+        const banner = document.getElementById("birthdayBanner");
+        const title = document.getElementById("birthdayTitle");
+        const subtitle = document.getElementById("birthdaySubtitle");
+        const mes = nomeMes(new Date().getMonth() + 1);
+        if(title) title.textContent = mensagemAniversario(user.nome);
+        if(subtitle) subtitle.textContent = `Celebramos com você durante todo o mês de ${mes}.`;
+        banner?.classList.add("is-visible");
+      }
+    }catch(err){
+      console.warn("Falha ao verificar aniversário:", err);
     }
 
     welcomeText.textContent = user.nome;

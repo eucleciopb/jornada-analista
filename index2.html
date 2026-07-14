@@ -69,12 +69,6 @@ const USUARIOS = {
   Pedro: "P3D5GP26"
 };
 
-/*
------------------------------------
-LOGIN
------------------------------------
-*/
-
 btn.addEventListener("click", login);
 
 senha.addEventListener("keydown", function(e){
@@ -114,17 +108,19 @@ function login(){
     return;
   }
 
+  // Sempre força o gate de nascimento no pós-login.
   const session = {
     nome: usuario,
     usuario: usuario,
     perfil: "admin",
-    login: new Date().toISOString()
+    login: new Date().toISOString(),
+    nascimentoOk: false
   };
 
   localStorage.setItem("usuarioLogado", usuario);
   localStorage.setItem("user_session", JSON.stringify(session));
 
-  window.location.href = "html menus/menuadm.html";
+  window.location.href = "html%20menus/cadastro-nascimento.html";
 }
 </script>
 
