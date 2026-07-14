@@ -37,14 +37,19 @@
   <main class="card wide">
     <section class="row-between" style="align-items:flex-end;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap">
       <div>
-        <h3 style="margin:0">Painel de Acompanhamento</h3>
-        <p class="hint">Entregas atribuídas a você para cobertura do gestor.</p>
+        <h3 style="margin:0" id="grupoTitulo">Minhas Entregas</h3>
+        <p class="hint" id="grupoHint">Escolha o grupo e atualize o progresso.</p>
       </div>
       <div style="min-width:200px">
         <label for="periodoPicker">Período</label>
         <input id="periodoPicker" type="month" style="width:100%;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.15);color:inherit" />
       </div>
     </section>
+
+    <div class="grupo-tabs" id="grupoTabs">
+      <button type="button" class="grupo-tab active" data-grupo="pedro_ferias">Pedro — Férias</button>
+      <button type="button" class="grupo-tab" data-grupo="demandas_diarias">Demandas Diárias</button>
+    </div>
 
     <div class="overall-card">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
@@ -121,6 +126,24 @@
   const PATH_MENU = "../html%20menus/menu.html";
   const COLLECTION = "apuracoes_treinamentos";
   const TIPO = "entrega_gestor";
+  const GRUPO_META = {
+    pedro_ferias: {
+      titulo: "Demandas do Pedro — Férias",
+      hint: "Cobertura enquanto o Pedro está de férias."
+    },
+    demandas_diarias: {
+      titulo: "Demandas Diárias",
+      hint: "Rotina do dia a dia atribuída a você."
+    }
+  };
+
+  function resolveGrupo(e) {
+    const g = String(e?.grupo || "").trim();
+    if (g === "demandas_diarias") return "demandas_diarias";
+    return "pedro_ferias";
+  }
+
+  let CURRENT_GRUPO = "pedro_ferias";
 
   function safeParse(raw) { try { return JSON.parse(raw); } catch { return null; } }
   function getCurrentUserName() {
@@ -161,8 +184,30 @@
   const kDone = document.getElementById("kDone");
   const kProgress = document.getElementById("kProgress");
   const kLate = document.getElementById("kLate");
+  const grupoTabs = document.getElementById("grupoTabs");
+  const grupoTitulo = document.getElementById("grupoTitulo");
+  const grupoHint = document.getElementById("grupoHint");
 
   let MINHAS_ENTREGAS = [];
+  let TODAS_MINHAS = [];
+
+  function applyGrupoUI() {
+    const meta = GRUPO_META[CURRENT_GRUPO] || GRUPO_META.pedro_ferias;
+    grupoTitulo.textContent = meta.titulo;
+    grupoHint.textContent = meta.hint;
+    grupoTabs.querySelectorAll(".grupo-tab").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.grupo === CURRENT_GRUPO);
+    });
+  }
+
+  grupoTabs.querySelectorAll(".grupo-tab").forEach(btn => {
+    btn.addEventListener("click", () => {
+      CURRENT_GRUPO = btn.dataset.grupo;
+      applyGrupoUI();
+      MINHAS_ENTREGAS = TODAS_MINHAS.filter(e => resolveGrupo(e) === CURRENT_GRUPO);
+      render();
+    });
+  });
 
   function setMsg(text, type = "info") {
     msg.textContent = text || "";
@@ -340,22 +385,24 @@
         where("tipo", "==", TIPO)
       ));
       const periodo = currentPeriodo();
-      MINHAS_ENTREGAS = snap.docs
+      TODAS_MINHAS = snap.docs
         .map(d => ({ id: d.id, ...d.data() }))
         .filter(e => String(e.periodo || "") === periodo)
         .filter(e => String(e.responsavel || "") === usuario);
+      MINHAS_ENTREGAS = TODAS_MINHAS.filter(e => resolveGrupo(e) === CURRENT_GRUPO);
       setMsg("");
       render();
     } catch (err) {
       console.error(err);
       setMsg("Erro ao carregar entregas.", "error");
+      TODAS_MINHAS = [];
       MINHAS_ENTREGAS = [];
       render();
     }
   }
 
   async function saveProgress(id) {
-    const e = MINHAS_ENTREGAS.find(x => x.id === id);
+    const e = MINHAS_ENTREGAS.find(x => x.id === id) || TODAS_MINHAS.find(x => x.id === id);
     if (!e) return;
 
     const range = listaEntregas.querySelector(`[data-range="${id}"]`);
@@ -371,6 +418,7 @@
     try {
       await setDoc(doc(db, COLLECTION, id), {
         tipo: TIPO,
+        grupo: resolveGrupo(e),
         progresso,
         observacoes,
         updatedAt: serverTimestamp(),
@@ -397,6 +445,7 @@
 
   const now = new Date();
   periodoPicker.value = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}`;
+  applyGrupoUI();
   if (usuario) loadData();
 </script>
 </body>

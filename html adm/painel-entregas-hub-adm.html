@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Demandas | Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/bundle-admin.css" />
+  <link rel="stylesheet" href="../css/pages/admin-painel-entregas.css" />
+  <link rel="stylesheet" href="../css/pages/admin-painel-entregas-hub.css" />
+</head>
+
+<body class="theme-admin app-shell page-entregas">
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div>
+      <h2>Painel de Entregas</h2>
+      <div id="userInfo" class="hint"></div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-ghost" id="btnMenu" type="button">Voltar ao Menu</button>
+      <button class="btn btn-ghost" id="btnLogout" type="button">Sair</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="card">
+    <div class="row-between">
+      <div>
+        <h3 style="margin:0 0 6px">Escolha o grupo de demandas</h3>
+        <div class="hint">As entregas ficam separadas para não misturar cobertura de férias com a rotina diária.</div>
+      </div>
+      <button class="btn btn-ghost" id="btnReload" type="button">Atualizar</button>
+    </div>
+
+    <div class="filters" style="max-width:240px">
+      <div>
+        <label for="periodoPicker">Período</label>
+        <input id="periodoPicker" class="field" type="month" />
+      </div>
+    </div>
+
+    <div class="msg" id="msg"></div>
+
+    <div class="hub-grid">
+      <a class="hub-card" id="cardPedro" href="./painel-entregas-adm.html?grupo=pedro_ferias">
+        <div class="hub-ico">🏖️</div>
+        <h3>Demandas do Pedro — Férias</h3>
+        <p>Tudo que já foi lançado para cobertura enquanto o Pedro está de férias.</p>
+        <div class="hub-meta">
+          <div>
+            <div class="hub-pct" id="pctPedro">0%</div>
+            <div class="hub-stats" id="statsPedro">0 entregas</div>
+          </div>
+          <span class="pill pill-warn" id="pillPedro">Carregando...</span>
+        </div>
+        <div class="progress-bar warn" id="barPedro"><span style="width:0%"></span></div>
+      </a>
+
+      <a class="hub-card diarias" id="cardDiarias" href="./painel-entregas-adm.html?grupo=demandas_diarias">
+        <div class="hub-ico">📅</div>
+        <h3>Demandas Diárias</h3>
+        <p>Rotina do dia a dia — demandas operacionais separadas da cobertura de férias.</p>
+        <div class="hub-meta">
+          <div>
+            <div class="hub-pct" id="pctDiarias">0%</div>
+            <div class="hub-stats" id="statsDiarias">0 entregas</div>
+          </div>
+          <span class="pill" id="pillDiarias">Carregando...</span>
+        </div>
+        <div class="progress-bar" id="barDiarias"><span style="width:0%"></span></div>
+      </a>
+    </div>
+  </section>
+</main>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+  import {
+    getFirestore,
+    collection,
+    getDocs,
+    query,
+    where
+  } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
+    authDomain: "jornada-portal.firebaseapp.com",
+    projectId: "jornada-portal",
+    storageBucket: "jornada-portal.firebasestorage.app",
+    messagingSenderId: "669362296644",
+    appId: "1:669362296644:web:f590d9834a8e4e60012911"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  const PATH_INDEX = "../index2.html";
+  const PATH_MENUADM = "../html%20menus/menuadm.html";
+  const COLLECTION = "apuracoes_treinamentos";
+  const TIPO = "entrega_gestor";
+
+  const GRUPOS = {
+    pedro_ferias: {
+      pct: document.getElementById("pctPedro"),
+      stats: document.getElementById("statsPedro"),
+      pill: document.getElementById("pillPedro"),
+      bar: document.getElementById("barPedro")
+    },
+    demandas_diarias: {
+      pct: document.getElementById("pctDiarias"),
+      stats: document.getElementById("statsDiarias"),
+      pill: document.getElementById("pillDiarias"),
+      bar: document.getElementById("barDiarias")
+    }
+  };
+
+  function safeParse(raw) { try { return JSON.parse(raw); } catch { return null; } }
+  function getCurrentUserName() {
+    const raw = localStorage.getItem("user_session");
+    if (raw) {
+      const s = safeParse(raw);
+      if (s?.nome) return String(s.nome).trim();
+    }
+    return (localStorage.getItem("usuarioLogado") || "").trim();
+  }
+
+  const admin = getCurrentUserName();
+  if (!admin) window.location.href = PATH_INDEX;
+  document.getElementById("userInfo").textContent = `Admin: ${admin}`;
+
+  document.getElementById("btnMenu").onclick = () => window.location.href = PATH_MENUADM;
+  document.getElementById("btnLogout").onclick = () => {
+    localStorage.removeItem("user_session");
+    localStorage.removeItem("usuarioLogado");
+    localStorage.removeItem("usuarioKey");
+    window.location.href = PATH_INDEX;
+  };
+
+  const periodoPicker = document.getElementById("periodoPicker");
+  const msg = document.getElementById("msg");
+
+  function setMsg(text, type = "info") {
+    msg.textContent = text || "";
+    msg.style.color = type === "success" ? "#22c55e" : (type === "error" ? "#ef4444" : "#d1d5db");
+  }
+
+  function pad2(n) { return String(n).padStart(2, "0"); }
+  function todayISO() {
+    const d = new Date();
+    return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+  }
+  function currentPeriodo() {
+    return periodoPicker.value || `${new Date().getFullYear()}-${pad2(new Date().getMonth() + 1)}`;
+  }
+
+  /** Entregas antigas sem grupo → Pedro Férias */
+  function resolveGrupo(e) {
+    const g = String(e.grupo || "").trim();
+    if (g === "demandas_diarias") return "demandas_diarias";
+    return "pedro_ferias";
+  }
+
+  function deriveStatus(e) {
+    const prog = Number(e.progresso) || 0;
+    if (prog >= 100) return "concluida";
+    const prazo = String(e.prazo || "").slice(0, 10);
+    if (prazo && todayISO() > prazo) return "atrasada";
+    if (prog > 0) return "em_andamento";
+    return "pendente";
+  }
+
+  function computeStats(list) {
+    const withStatus = list.map(e => ({ ...e, statusEfetivo: deriveStatus(e) }));
+    const total = withStatus.length;
+    const done = withStatus.filter(e => e.statusEfetivo === "concluida").length;
+    const late = withStatus.filter(e => e.statusEfetivo === "atrasada").length;
+    const avgPct = total > 0
+      ? Math.round(withStatus.reduce((s, e) => s + (Number(e.progresso) || 0), 0) / total)
+      : 0;
+    return { total, done, late, avgPct };
+  }
+
+  function paintGrupo(key, list) {
+    const el = GRUPOS[key];
+    const stats = computeStats(list);
+    el.pct.textContent = `${stats.avgPct}%`;
+    el.stats.textContent = `${stats.total} entrega(s) · ${stats.done} concluída(s)`;
+    el.bar.querySelector("span").style.width = `${stats.avgPct}%`;
+
+    if (stats.total === 0) {
+      el.pill.className = "pill";
+      el.pill.textContent = "Sem itens";
+      el.bar.className = "progress-bar warn";
+    } else if (stats.avgPct >= 100) {
+      el.pill.className = "pill pill-ok";
+      el.pill.textContent = "Tudo entregue";
+      el.bar.className = "progress-bar";
+    } else if (stats.late > 0) {
+      el.pill.className = "pill pill-bad";
+      el.pill.textContent = `${stats.late} atrasada(s)`;
+      el.bar.className = "progress-bar bad";
+    } else {
+      el.pill.className = "pill pill-info";
+      el.pill.textContent = "Em andamento";
+      el.bar.className = stats.avgPct >= 50 ? "progress-bar warn" : "progress-bar bad";
+    }
+  }
+
+  async function loadData() {
+    setMsg("Carregando…");
+    try {
+      const snap = await getDocs(query(collection(db, COLLECTION), where("tipo", "==", TIPO)));
+      const periodo = currentPeriodo();
+      const all = snap.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .filter(e => String(e.periodo || "") === periodo);
+
+      const pedro = all.filter(e => resolveGrupo(e) === "pedro_ferias");
+      const diarias = all.filter(e => resolveGrupo(e) === "demandas_diarias");
+
+      paintGrupo("pedro_ferias", pedro);
+      paintGrupo("demandas_diarias", diarias);
+      setMsg("");
+    } catch (err) {
+      console.error(err);
+      setMsg("Erro ao carregar resumo dos grupos.", "error");
+    }
+  }
+
+  document.getElementById("btnReload").onclick = loadData;
+  periodoPicker.addEventListener("change", () => {
+    const p = currentPeriodo();
+    document.getElementById("cardPedro").href = `./painel-entregas-adm.html?grupo=pedro_ferias&periodo=${p}`;
+    document.getElementById("cardDiarias").href = `./painel-entregas-adm.html?grupo=demandas_diarias&periodo=${p}`;
+    loadData();
+  });
+
+  const now = new Date();
+  periodoPicker.value = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}`;
+  const p0 = currentPeriodo();
+  document.getElementById("cardPedro").href = `./painel-entregas-adm.html?grupo=pedro_ferias&periodo=${p0}`;
+  document.getElementById("cardDiarias").href = `./painel-entregas-adm.html?grupo=demandas_diarias&periodo=${p0}`;
+  loadData();
+</script>
+</body>
+</html>

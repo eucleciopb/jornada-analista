@@ -1,0 +1,62 @@
+/* hub + grupos do painel de entregas */
+.grupo-tabs{
+  display:flex;gap:8px;flex-wrap:wrap;
+  margin:14px 0 4px;
+}
+.grupo-tab{
+  border:1px solid var(--border);
+  background:rgba(255,255,255,.04);
+  color:var(--text);
+  border-radius:999px;
+  padding:8px 14px;
+  font-weight:700;
+  font-size:13px;
+  cursor:pointer;
+}
+.grupo-tab.active{
+  background:rgba(217,27,46,.92);
+  border-color:transparent;
+}
+.grupo-tab:hover{filter:brightness(1.06)}
+
+.hub-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(240px,1fr));
+  gap:16px;
+  margin-top:18px;
+}
+.hub-card{
+  display:block;
+  text-decoration:none;
+  color:inherit;
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:20px;
+  background:rgba(255,255,255,.04);
+  transition:border-color .2s,background .2s,transform .15s;
+}
+.hub-card:hover{
+  border-color:rgba(217,27,46,.45);
+  background:rgba(255,255,255,.07);
+  transform:translateY(-2px);
+}
+.hub-card .hub-ico{
+  width:44px;height:44px;border-radius:14px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;margin-bottom:12px;
+  background:rgba(217,27,46,.15);
+}
+.hub-card.diarias .hub-ico{background:rgba(37,99,235,.18)}
+.hub-card h3{margin:0 0 6px;font-size:18px}
+.hub-card p{margin:0;color:var(--muted);font-size:13px;line-height:1.4}
+.hub-meta{
+  display:flex;justify-content:space-between;align-items:flex-end;
+  gap:12px;margin-top:18px;flex-wrap:wrap;
+}
+.hub-meta .hub-pct{font-size:28px;font-weight:900}
+.hub-meta .hub-stats{font-size:12px;color:var(--muted)}
+.hub-card .progress-bar{margin-top:10px;height:8px}
+
+@media(max-width:720px){
+  .hub-grid{grid-template-columns:1fr}
+}
