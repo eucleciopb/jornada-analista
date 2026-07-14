@@ -361,3 +361,81 @@ body.theme-admin.portal-page #aniversariantes .aniversariantes-panel {
   background: rgba(255, 255, 255, 0.92);
   border: 1px solid rgba(226, 232, 240, 0.9);
 }
+
+/* Lista completa por mês */
+.mes-nav{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin:12px 0 18px;
+}
+.mes-nav-link{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:7px 10px;
+  border-radius:999px;
+  border:1px solid rgba(148,163,184,.35);
+  background:rgba(255,255,255,.06);
+  color:inherit;
+  text-decoration:none;
+  font-size:12px;
+  font-weight:700;
+}
+.mes-nav-link small{
+  opacity:.75;
+  font-weight:600;
+}
+.mes-nav-link.is-atual,
+.mes-nav-link:hover{
+  border-color:rgba(217,27,46,.55);
+  background:rgba(217,27,46,.14);
+}
+.mes-bloco{
+  margin-bottom:18px;
+  padding:14px;
+  border-radius:16px;
+  border:1px solid rgba(148,163,184,.28);
+  background:rgba(255,255,255,.04);
+}
+.mes-bloco.is-atual{
+  border-color:rgba(217,27,46,.45);
+  background:rgba(217,27,46,.08);
+}
+.mes-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-bottom:10px;
+}
+.mes-head h4{
+  margin:0;
+  font-size:16px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.mes-count{
+  font-size:12px;
+  opacity:.8;
+}
+.mes-badge-atual{
+  display:inline-flex;
+  padding:3px 8px;
+  border-radius:999px;
+  font-size:11px;
+  font-weight:700;
+  background:rgba(217,27,46,.9);
+  color:#fff;
+}
+.mes-empty{
+  font-size:13px;
+  opacity:.7;
+  padding:8px 0;
+}
+.theme-admin .mes-bloco .aniversariantes-table,
+.theme-admin .mes-bloco table{
+  background:#fff;
+}

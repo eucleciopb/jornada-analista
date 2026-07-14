@@ -3,17 +3,17 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Aniversariantes do Mês | Admin</title>
+  <title>Aniversariantes do Time | Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../css/bundle-admin.css?v=20260714d" />
-  <link rel="stylesheet" href="../css/pages/cadastro-nascimento.css?v=20260714d" />
+  <link rel="stylesheet" href="../css/bundle-admin.css?v=20260714e" />
+  <link rel="stylesheet" href="../css/pages/cadastro-nascimento.css?v=20260714e" />
 </head>
 <body class="theme-admin app-shell">
   <header class="topbar">
     <div>
-      <h2>Aniversariantes do Mês</h2>
+      <h2>Aniversariantes do Time</h2>
       <div id="userInfo" class="hint" style="color:#d1d5db;margin-top:4px;"></div>
     </div>
     <div class="top-actions">
@@ -24,10 +24,10 @@
 
   <main class="card wide">
     <section>
-      <h3 id="tituloMes">Aniversariantes</h3>
+      <h3>Lista completa classificada por mês</h3>
       <p class="hint">
-        Lista usuários com data de nascimento cadastrada cujo mês coincide com o mês atual.
-        Ordenado pelo dia. Visível apenas para administradores.
+        Todo o time com data de nascimento cadastrada, agrupado de janeiro a dezembro
+        e ordenado pelo dia. O mês atual fica em destaque. Visível apenas para administradores.
       </p>
     </section>
 
@@ -55,8 +55,9 @@
     import {
       safeParse,
       nomeMes,
-      listarAniversariantesDoMes
-    } from "../js/aniversario.js?v=20260714d";
+      listarTodosAniversariantes,
+      agruparAniversariantesPorMes
+    } from "../js/aniversario.js?v=20260714e";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
@@ -85,14 +86,12 @@
     }
 
     const userInfo = document.getElementById("userInfo");
-    const tituloMes = document.getElementById("tituloMes");
     const listaEl = document.getElementById("listaAniversariantes");
     const statusLista = document.getElementById("statusLista");
     const msg = document.getElementById("msg");
     const mesAtual = new Date().getMonth() + 1;
 
     userInfo.textContent = `${session.nome} · Administrador`;
-    tituloMes.textContent = `Aniversariantes de ${nomeMes(mesAtual)}`;
 
     document.getElementById("btnMenu").addEventListener("click", () => {
       window.location.href = "../html menus/menuadm.html";
@@ -123,50 +122,36 @@
       msg.textContent = text || "";
     }
 
-    async function carregar() {
-      setMsg("");
-      statusLista.textContent = "Carregando...";
-      listaEl.innerHTML = `<div class="aniversariantes-empty">Buscando aniversariantes...</div>`;
+    function renderLinha(item, idx) {
+      const idade =
+        item.idadeQueCompleta != null
+          ? `${item.idadeQueCompleta} anos`
+          : "—";
+      return `
+        <tr>
+          <td>${idx + 1}</td>
+          <td class="dia-cell">Dia ${String(item.dia).padStart(2, "0")}</td>
+          <td>${escapeHtml(item.nome)}</td>
+          <td>${escapeHtml(item.dataNascimentoExibida || "—")}</td>
+          <td>${escapeHtml(idade)}</td>
+        </tr>`;
+    }
 
-      try {
-        const lista = await listarAniversariantesDoMes(
-          db,
-          { collection, getDocs, doc, getDoc },
-          mesAtual
-        );
+    function renderMes(grupo) {
+      const atual = grupo.mes === mesAtual;
+      const count = grupo.itens.length;
+      const badge = atual ? `<span class="mes-badge-atual">Mês atual</span>` : "";
+      const countLabel = count === 0
+        ? "Nenhum cadastrado"
+        : `${count} aniversariante${count === 1 ? "" : "s"}`;
 
-        if (!lista.length) {
-          statusLista.textContent = "0 aniversariantes";
-          listaEl.innerHTML = `
-            <div class="aniversariantes-empty">
-              <strong>Nenhum aniversariante neste mês</strong>
-              <p>
-                Assim que os usuários cadastrarem a data de nascimento e houver coincidência
-                com ${escapeHtml(nomeMes(mesAtual))}, a lista aparece aqui ordenada por dia.
-              </p>
-            </div>`;
-          return;
-        }
-
-        statusLista.textContent = `${lista.length} aniversariante${lista.length === 1 ? "" : "s"}`;
-
-        const rows = lista.map((item, idx) => {
-          const idade =
-            item.idadeQueCompleta != null
-              ? `${item.idadeQueCompleta} anos`
-              : "—";
-          return `
-            <tr>
-              <td>${idx + 1}</td>
-              <td class="dia-cell">Dia ${String(item.dia).padStart(2, "0")}</td>
-              <td>${escapeHtml(item.nome)}</td>
-              <td>${escapeHtml(item.dataNascimentoExibida || "—")}</td>
-              <td>${escapeHtml(idade)}</td>
-            </tr>`;
-        }).join("");
-
-        listaEl.innerHTML = `
-          <div class="table-wrap" style="margin-top:8px;">
+      let body;
+      if (!count) {
+        body = `<div class="mes-empty">Sem nascimentos cadastrados em ${escapeHtml(grupo.nomeMes)}.</div>`;
+      } else {
+        const rows = grupo.itens.map((item, idx) => renderLinha(item, idx)).join("");
+        body = `
+          <div class="table-wrap">
             <table class="big-table aniversariantes-table" style="width:100%;">
               <thead>
                 <tr>
@@ -180,6 +165,60 @@
               <tbody>${rows}</tbody>
             </table>
           </div>`;
+      }
+
+      return `
+        <section class="mes-bloco${atual ? " is-atual" : ""}" id="mes-${grupo.mes}">
+          <div class="mes-head">
+            <h4>${escapeHtml(grupo.nomeMes)} ${badge}</h4>
+            <span class="mes-count">${escapeHtml(countLabel)}</span>
+          </div>
+          ${body}
+        </section>`;
+    }
+
+    async function carregar() {
+      setMsg("");
+      statusLista.textContent = "Carregando...";
+      listaEl.innerHTML = `<div class="aniversariantes-empty">Buscando aniversariantes do time...</div>`;
+
+      try {
+        const lista = await listarTodosAniversariantes(
+          db,
+          { collection, getDocs, doc, getDoc }
+        );
+        const grupos = agruparAniversariantesPorMes(lista);
+        const comData = lista.length;
+
+        statusLista.textContent = `${comData} cadastrado${comData === 1 ? "" : "s"} no total`;
+
+        if (!comData) {
+          listaEl.innerHTML = `
+            <div class="aniversariantes-empty">
+              <strong>Nenhuma data de nascimento cadastrada</strong>
+              <p>
+                Assim que o time registrar a data no portal, a lista completa
+                aparece aqui classificada por mês.
+              </p>
+            </div>`;
+          return;
+        }
+
+        listaEl.innerHTML = `
+          <nav class="mes-nav">
+            ${grupos.map(g => `
+              <a href="#mes-${g.mes}" class="mes-nav-link${g.mes === mesAtual ? " is-atual" : ""}">
+                ${escapeHtml(g.nomeMes.slice(0, 3))}
+                <small>${g.itens.length}</small>
+              </a>`).join("")}
+          </nav>
+          ${grupos.map(renderMes).join("")}
+        `;
+
+        // Rola até o mês atual
+        requestAnimationFrame(() => {
+          document.getElementById(`mes-${mesAtual}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
       } catch (err) {
         console.error(err);
         statusLista.textContent = "Erro";
