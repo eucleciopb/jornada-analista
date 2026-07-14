@@ -9,8 +9,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/bundle-login-user.css" />
-  <link rel="stylesheet" href="css/pages/cadastro-nascimento.css" />
+  <link rel="stylesheet" href="css/bundle-login-user.css?v=20260714c" />
+  <link rel="stylesheet" href="css/pages/cadastro-nascimento.css?v=20260714c" />
 </head>
 
 <body class="login-page theme-user">
@@ -56,7 +56,7 @@
   </div>
 </main>
 
-<main class="center-wrapper" id="birthView" hidden>
+<main class="center-wrapper is-hidden" id="birthView" hidden>
   <div class="login-card nasc-card">
     <div class="logo-box">GP</div>
     <h2>Complete seu perfil</h2>
@@ -172,7 +172,9 @@
     usuarioAtual = nome;
     nomeUsuarioNasc.textContent = nome;
     loginView.hidden = true;
+    loginView.classList.add("is-hidden");
     birthView.hidden = false;
+    birthView.classList.remove("is-hidden");
     dataNascimentoInput.value = "";
     setMsgNasc("");
     dataNascimentoInput.focus();

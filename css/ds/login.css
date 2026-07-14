@@ -33,6 +33,14 @@ body.login-page.theme-admin {
   width: 100%;
 }
 
+/* Impede que display:flex do .center-wrapper ignore o atributo hidden */
+.center-wrapper[hidden],
+#birthView[hidden],
+#loginView[hidden],
+.is-hidden {
+  display: none !important;
+}
+
 .login-card,
 body.login-page .card,
 body.login-page > .card {
