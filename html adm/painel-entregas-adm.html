@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/bundle-admin.css" />
   <link rel="stylesheet" href="../css/pages/admin-painel-entregas.css" />
+  <link rel="stylesheet" href="../css/pages/admin-painel-entregas-hub.css" />
 </head>
 
 <body class="theme-admin app-shell page-entregas">
@@ -16,10 +17,11 @@
 <header class="topbar">
   <div class="topbar-inner">
     <div>
-      <h2>Painel de Acompanhamento de Entregas</h2>
+      <h2 id="pageTitle">Painel de Entregas</h2>
       <div id="userInfo" class="hint"></div>
     </div>
     <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-ghost" id="btnHub" type="button">← Grupos</button>
       <button class="btn btn-ghost" id="btnMenu" type="button">Voltar ao Menu</button>
       <button class="btn btn-ghost" id="btnLogout" type="button">Sair</button>
     </div>
@@ -30,8 +32,8 @@
   <section class="card">
     <div class="row-between">
       <div>
-        <h3 style="margin:0 0 6px">Cobertura do Gestor</h3>
-        <div class="hint">Acompanhe as entregas enquanto o gestor está ausente. Demande para o time e monitore o % de atingimento.</div>
+        <h3 style="margin:0 0 6px" id="grupoTitulo">Demandas</h3>
+        <div class="hint" id="grupoHint">Acompanhe as entregas do grupo selecionado.</div>
       </div>
       <div style="display:flex;gap:10px;flex-wrap:wrap">
         <button class="btn btn-primary" id="btnNova" type="button">+ Nova Entrega</button>
@@ -39,14 +41,19 @@
       </div>
     </div>
 
+    <div class="grupo-tabs" id="grupoTabs">
+      <button type="button" class="grupo-tab" data-grupo="pedro_ferias">Demandas do Pedro — Férias</button>
+      <button type="button" class="grupo-tab" data-grupo="demandas_diarias">Demandas Diárias</button>
+    </div>
+
     <div class="filters">
       <div>
         <label for="periodoPicker">Período</label>
         <input id="periodoPicker" class="field" type="month" />
       </div>
-      <div>
+      <div id="gestorFiltroWrap">
         <label for="gestorFiltro">Gestor Ausente</label>
-        <input id="gestorFiltro" class="field" type="text" placeholder="Ex: Ricardo" />
+        <input id="gestorFiltro" class="field" type="text" placeholder="Ex: Pedro" />
       </div>
       <div>
         <label for="respFiltro">Responsável</label>
@@ -108,7 +115,7 @@
   </section>
 
   <section class="card">
-    <h3 style="margin:0 0 6px">Todas as Entregas</h3>
+    <h3 style="margin:0 0 6px" id="tableTitle">Entregas do grupo</h3>
     <div class="table-wrap">
       <table>
         <thead>
@@ -175,6 +182,13 @@
           <input id="mGestor" class="field" type="text" placeholder="Nome do gestor de férias" />
         </div>
         <div>
+          <label for="mGrupo">Grupo</label>
+          <select id="mGrupo" class="field">
+            <option value="pedro_ferias">Demandas do Pedro — Férias</option>
+            <option value="demandas_diarias">Demandas Diárias</option>
+          </select>
+        </div>
+        <div>
           <label for="mCategoria">Categoria</label>
           <input id="mCategoria" class="field" type="text" placeholder="Ex: Relatório, KPI, Rotina" />
         </div>
@@ -222,9 +236,35 @@
 
   const PATH_INDEX = "../index2.html";
   const PATH_MENUADM = "../html%20menus/menuadm.html";
+  const PATH_HUB = "./painel-entregas-hub-adm.html";
   // Usa a mesma coleção liberada nas Rules (padrão do portal)
   const COLLECTION = "apuracoes_treinamentos";
   const TIPO = "entrega_gestor";
+
+  const GRUPO_META = {
+    pedro_ferias: {
+      titulo: "Demandas do Pedro — Férias",
+      hint: "Cobertura das entregas enquanto o Pedro está de férias. O que já foi lançado fica neste grupo.",
+      gestorDefault: "Pedro"
+    },
+    demandas_diarias: {
+      titulo: "Demandas Diárias",
+      hint: "Rotina do dia a dia — separada da cobertura de férias.",
+      gestorDefault: ""
+    }
+  };
+
+  function resolveGrupo(e) {
+    const g = String(e?.grupo || "").trim();
+    if (g === "demandas_diarias") return "demandas_diarias";
+    return "pedro_ferias";
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  let CURRENT_GRUPO = params.get("grupo") || "";
+  if (CURRENT_GRUPO !== "pedro_ferias" && CURRENT_GRUPO !== "demandas_diarias") {
+    window.location.href = PATH_HUB;
+  }
 
   const TEAM = [
     "Alex", "Andre", "Bruna", "Daniel", "Elaine", "Emerson", "Euclecio",
@@ -246,6 +286,7 @@
   if (!admin) window.location.href = PATH_INDEX;
   document.getElementById("userInfo").textContent = `Admin: ${admin}`;
 
+  document.getElementById("btnHub").onclick = () => window.location.href = PATH_HUB;
   document.getElementById("btnMenu").onclick = () => window.location.href = PATH_MENUADM;
   document.getElementById("btnLogout").onclick = () => {
     localStorage.removeItem("user_session");
@@ -256,6 +297,7 @@
 
   const periodoPicker = document.getElementById("periodoPicker");
   const gestorFiltro = document.getElementById("gestorFiltro");
+  const gestorFiltroWrap = document.getElementById("gestorFiltroWrap");
   const respFiltro = document.getElementById("respFiltro");
   const statusFiltro = document.getElementById("statusFiltro");
   const searchBox = document.getElementById("searchBox");
@@ -263,6 +305,10 @@
   const btnNova = document.getElementById("btnNova");
   const msg = document.getElementById("msg");
   const tbodyMain = document.getElementById("tbodyMain");
+  const grupoTabs = document.getElementById("grupoTabs");
+  const grupoTitulo = document.getElementById("grupoTitulo");
+  const grupoHint = document.getElementById("grupoHint");
+  const pageTitle = document.getElementById("pageTitle");
 
   const percGeral = document.getElementById("percGeral");
   const pillGeral = document.getElementById("pillGeral");
@@ -285,6 +331,7 @@
   const mPrioridade = document.getElementById("mPrioridade");
   const mProgresso = document.getElementById("mProgresso");
   const mGestor = document.getElementById("mGestor");
+  const mGrupo = document.getElementById("mGrupo");
   const mCategoria = document.getElementById("mCategoria");
   const mObs = document.getElementById("mObs");
   const mMsg = document.getElementById("mMsg");
@@ -292,6 +339,33 @@
   let ALL_ENTREGAS = [];
   let editingId = null;
   let preselectResp = "";
+
+  function applyGrupoUI() {
+    const meta = GRUPO_META[CURRENT_GRUPO] || GRUPO_META.pedro_ferias;
+    grupoTitulo.textContent = meta.titulo;
+    grupoHint.textContent = meta.hint;
+    pageTitle.textContent = meta.titulo;
+    const tableTitle = document.getElementById("tableTitle");
+    if (tableTitle) tableTitle.textContent = `Entregas — ${meta.titulo}`;
+    gestorFiltroWrap.style.display = CURRENT_GRUPO === "pedro_ferias" ? "" : "none";
+    grupoTabs.querySelectorAll(".grupo-tab").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.grupo === CURRENT_GRUPO);
+    });
+  }
+
+  function setGrupo(grupo) {
+    CURRENT_GRUPO = grupo;
+    const url = new URL(window.location.href);
+    url.searchParams.set("grupo", grupo);
+    if (periodoPicker.value) url.searchParams.set("periodo", periodoPicker.value);
+    history.replaceState(null, "", url.toString());
+    applyGrupoUI();
+    renderMain();
+  }
+
+  grupoTabs.querySelectorAll(".grupo-tab").forEach(btn => {
+    btn.addEventListener("click", () => setGrupo(btn.dataset.grupo));
+  });
 
   function setMsg(text, type = "info") {
     msg.textContent = text || "";
@@ -382,7 +456,8 @@
     const q = (searchBox.value || "").toLowerCase().trim();
 
     return ALL_ENTREGAS
-      .map(e => ({ ...e, statusEfetivo: deriveStatus(e) }))
+      .map(e => ({ ...e, statusEfetivo: deriveStatus(e), grupoResolvido: resolveGrupo(e) }))
+      .filter(e => e.grupoResolvido === CURRENT_GRUPO)
       .filter(e => String(e.periodo || "") === periodo)
       .filter(e => !gestor || String(e.gestorAusente || "").toLowerCase().includes(gestor))
       .filter(e => !resp || String(e.responsavel || "") === resp)
@@ -529,7 +604,9 @@
     mPrazo.value = "";
     mPrioridade.value = "media";
     mProgresso.value = "0";
-    mGestor.value = gestorFiltro.value || "";
+    mGrupo.value = CURRENT_GRUPO;
+    const meta = GRUPO_META[CURRENT_GRUPO] || GRUPO_META.pedro_ferias;
+    mGestor.value = gestorFiltro.value || meta.gestorDefault || "";
     mCategoria.value = "";
     mObs.value = "";
   }
@@ -537,7 +614,7 @@
   function openModalNew(resp = "") {
     editingId = null;
     preselectResp = resp || "";
-    mTitle.textContent = "Nova Entrega";
+    mTitle.textContent = `Nova Entrega — ${GRUPO_META[CURRENT_GRUPO]?.titulo || ""}`;
     clearModal();
     openModal();
   }
@@ -554,6 +631,7 @@
     mPrioridade.value = e.prioridade || "media";
     mProgresso.value = String(Number(e.progresso) || 0);
     mGestor.value = e.gestorAusente || "";
+    mGrupo.value = resolveGrupo(e);
     mCategoria.value = e.categoria || "";
     mObs.value = e.observacoes || "";
     openModal();
@@ -568,9 +646,11 @@
     const progresso = Math.min(100, Math.max(0, Number(mProgresso.value) || 0));
     const id = editingId || `entrega_${makeId()}`;
     const periodo = currentPeriodo();
+    const grupo = (mGrupo.value === "demandas_diarias") ? "demandas_diarias" : "pedro_ferias";
 
     const payload = {
       tipo: TIPO,
+      grupo,
       titulo,
       descricao: (mDescricao.value || "").trim(),
       responsavel,
@@ -597,6 +677,7 @@
       setModalMsg("");
       setMsg("Salvo com sucesso!", "success");
       closeModal();
+      if (grupo !== CURRENT_GRUPO) setGrupo(grupo);
       await loadData();
     } catch (err) {
       console.error(err);
@@ -639,8 +720,10 @@
   });
 
   const now = new Date();
-  periodoPicker.value = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}`;
+  const periodoParam = params.get("periodo");
+  periodoPicker.value = periodoParam || `${now.getFullYear()}-${pad2(now.getMonth() + 1)}`;
   populateSelects();
+  applyGrupoUI();
   loadData();
 </script>
 </body>
