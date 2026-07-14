@@ -295,45 +295,69 @@ body.gate-pending::before {
   line-height: 1.45;
 }
 
-.aniversariantes-panel .table-scroll {
+.aniversariantes-panel .table-scroll,
+.aniversariantes-table-wrap {
   overflow: auto;
   border-radius: var(--radius-lg, 16px);
-  border: 1px solid var(--line, rgba(148, 163, 184, 0.2));
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: #fff;
 }
 
 .aniversariantes-panel table.portal-table,
-.aniversariantes-panel table.aniversariantes-table {
+.aniversariantes-panel table.aniversariantes-table,
+.aniversariantes-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 14px;
+  background: #fff;
+  color: #0f172a;
 }
 
 .aniversariantes-panel table th,
-.aniversariantes-panel table td {
+.aniversariantes-panel table td,
+.aniversariantes-table th,
+.aniversariantes-table td {
   padding: 12px 14px;
   text-align: left;
-  border-bottom: 1px solid var(--line, rgba(148, 163, 184, 0.15));
+  border-bottom: 1px solid #e2e8f0;
+  color: #0f172a;
 }
 
-.aniversariantes-panel table th {
+.aniversariantes-panel table th,
+.aniversariantes-table th {
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--muted);
+  color: #64748b;
   font-weight: 700;
+  background: #f8fafc;
+}
+
+.aniversariantes-panel table td.dia-cell,
+.aniversariantes-table td.dia-cell {
+  font-weight: 800;
+  white-space: nowrap;
+  color: #1d4ed8;
 }
 
 .theme-admin .aniversariantes-panel table th,
 .theme-admin .aniversariantes-panel table td {
-  color: inherit;
+  color: #0f172a;
 }
 
 .theme-admin .aniversariantes-empty {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(148, 163, 184, 0.25);
-  color: #94a3b8;
+  background: #fff;
+  border: 1px dashed #cbd5e1;
+  color: #64748b;
 }
 
 .theme-admin .aniversariantes-empty strong {
-  color: #f8fafc;
+  color: #0f172a;
+}
+
+body.theme-admin.portal-page #aniversariantes .aniversariantes-panel {
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(226, 232, 240, 0.9);
 }

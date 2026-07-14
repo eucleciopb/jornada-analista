@@ -10,8 +10,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../css/bundle-portal-admin.css" />
-  <link rel="stylesheet" href="../css/pages/cadastro-nascimento.css" />
+  <link rel="stylesheet" href="../css/bundle-portal-admin.css?v=20260714d" />
+  <link rel="stylesheet" href="../css/pages/cadastro-nascimento.css?v=20260714d" />
 </head>
 
 <body class="theme-admin portal-page gate-pending">
@@ -541,7 +541,7 @@ import {
   marcarNascimentoNaSessao,
   parseDataNascimento,
   salvarDataNascimento
-} from "../js/aniversario.js?v=20260714b";
+} from "../js/aniversario.js?v=20260714d";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
@@ -740,13 +740,17 @@ async function carregarAniversariantes(){
   if(!listaEl) return;
 
   try{
-    const lista = await listarAniversariantesDoMes(db, { collection, getDocs }, mesAtual);
+    const lista = await listarAniversariantesDoMes(
+      db,
+      { collection, getDocs, doc, getDoc },
+      mesAtual
+    );
 
     if(!lista.length){
       listaEl.innerHTML = `
         <div class="aniversariantes-empty">
-          <strong>Nenhum aniversariante este mês</strong>
-          <p>Quando houver usuários com data de nascimento neste mês, eles aparecerão aqui.</p>
+          <strong>Nenhum aniversariante em ${escapeHtml(nomeMes(mesAtual))}</strong>
+          <p>Quando os usuários cadastrarem a data de nascimento e o mês coincidir com ${escapeHtml(nomeMes(mesAtual))}, a lista aparece aqui ordenada pelo dia.</p>
         </div>`;
       return;
     }
@@ -764,8 +768,8 @@ async function carregarAniversariantes(){
     }).join("");
 
     listaEl.innerHTML = `
-      <div class="table-scroll">
-        <table class="portal-table aniversariantes-table" style="width:100%;">
+      <div class="table-scroll aniversariantes-table-wrap">
+        <table class="aniversariantes-table" style="width:100%;">
           <thead>
             <tr>
               <th>Dia</th>
@@ -780,8 +784,8 @@ async function carregarAniversariantes(){
     console.error(err);
     listaEl.innerHTML = `
       <div class="aniversariantes-empty">
-        <strong>Não foi possível carregar</strong>
-        <p>Tente novamente em instantes.</p>
+        <strong>Nenhum aniversariante carregado</strong>
+        <p>Ainda não há datas de nascimento disponíveis para ${escapeHtml(nomeMes(mesAtual))}. Peça aos usuários para entrar e cadastrar a data.</p>
       </div>`;
   }
 }
