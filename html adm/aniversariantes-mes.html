@@ -7,8 +7,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../css/bundle-admin.css" />
-  <link rel="stylesheet" href="../css/pages/cadastro-nascimento.css" />
+  <link rel="stylesheet" href="../css/bundle-admin.css?v=20260714d" />
+  <link rel="stylesheet" href="../css/pages/cadastro-nascimento.css?v=20260714d" />
 </head>
 <body class="theme-admin app-shell">
   <header class="topbar">
@@ -48,13 +48,15 @@
     import {
       getFirestore,
       collection,
-      getDocs
+      getDocs,
+      doc,
+      getDoc
     } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
     import {
       safeParse,
       nomeMes,
       listarAniversariantesDoMes
-    } from "../js/aniversario.js";
+    } from "../js/aniversario.js?v=20260714d";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
@@ -127,7 +129,11 @@
       listaEl.innerHTML = `<div class="aniversariantes-empty">Buscando aniversariantes...</div>`;
 
       try {
-        const lista = await listarAniversariantesDoMes(db, { collection, getDocs }, mesAtual);
+        const lista = await listarAniversariantesDoMes(
+          db,
+          { collection, getDocs, doc, getDoc },
+          mesAtual
+        );
 
         if (!lista.length) {
           statusLista.textContent = "0 aniversariantes";

@@ -5,6 +5,16 @@
 
 export const PERFIS_COLLECTION = "perfis";
 
+/** Lista canônica de usuários do portal (para leitura individual no Firestore). */
+export const USUARIOS_CONHECIDOS = [
+  // Analistas
+  "Alex", "Daniel", "Emerson", "Euclecio", "Felipe", "Joice", "Maiello",
+  "Michel", "Muller", "Robert", "Rodrigo", "Rosilene", "Tenório", "Victor",
+  "Marcio", "Andre",
+  // Admins
+  "Bruna", "Elaine", "Pedro"
+];
+
 export function slug(s) {
   return String(s || "")
     .toLowerCase()
@@ -226,21 +236,25 @@ export async function salvarDataNascimento(db, { doc, setDoc, serverTimestamp },
   return payload;
 }
 
-export async function listarAniversariantesDoMes(db, { collection, getDocs }, mes = new Date().getMonth() + 1) {
-  const snap = await getDocs(collection(db, PERFIS_COLLECTION));
+export async function listarAniversariantesDoMes(
+  db,
+  { collection, getDocs, doc, getDoc },
+  mes = new Date().getMonth() + 1,
+  nomes = USUARIOS_CONHECIDOS
+) {
   const mesNum = Number(mes);
   const anoAtual = new Date().getFullYear();
-  const lista = [];
+  const porId = new Map();
 
-  snap.forEach((item) => {
-    const data = item.data() || {};
+  function adicionarPerfil(id, data) {
+    if (!data) return;
     const iso = data.dataNascimento || "";
     const partes = partesDataISO(iso);
     if (!partes || partes.mes !== mesNum) return;
 
-    lista.push({
-      id: item.id,
-      nome: data.nome || item.id,
+    porId.set(id, {
+      id,
+      nome: data.nome || id,
       dia: partes.dia,
       mes: partes.mes,
       ano: partes.ano,
@@ -249,8 +263,51 @@ export async function listarAniversariantesDoMes(db, { collection, getDocs }, me
       idadeQueCompleta: idadeQueCompleta(iso, anoAtual),
       perfil: data.perfil || null
     });
-  });
+  }
 
+  // 1) Tenta listar a coleção inteira (quando as regras permitem).
+  if (typeof getDocs === "function" && typeof collection === "function") {
+    try {
+      const snap = await getDocs(collection(db, PERFIS_COLLECTION));
+      snap.forEach((item) => adicionarPerfil(item.id, item.data() || {}));
+    } catch (err) {
+      console.warn("Listagem de perfis falhou; usando leitura individual.", err);
+    }
+  }
+
+  // 2) Fallback / complemento: getDoc por usuário conhecido (não exige regra de list).
+  if (typeof getDoc === "function" && typeof doc === "function") {
+    const nomesUnicos = [...new Set((nomes || USUARIOS_CONHECIDOS).filter(Boolean))];
+    await Promise.all(
+      nomesUnicos.map(async (nome) => {
+        const id = slug(nome);
+        if (!id || porId.has(id)) return;
+        try {
+          const snap = await getDoc(doc(db, PERFIS_COLLECTION, id));
+          if (snap.exists()) adicionarPerfil(snap.id, snap.data() || {});
+        } catch (err) {
+          console.warn("Falha ao ler perfil", nome, err);
+        }
+      })
+    );
+  }
+
+  // 3) Complemento local (mesmo navegador em que a pessoa salvou).
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key || !key.startsWith("perfil_nascimento_")) continue;
+      try {
+        const local = JSON.parse(localStorage.getItem(key) || "null");
+        if (!local) continue;
+        const id = slug(local.nome || key.replace("perfil_nascimento_", ""));
+        if (!id || porId.has(id)) continue;
+        adicionarPerfil(id, local);
+      } catch (_) { /* ignore */ }
+    }
+  } catch (_) { /* ignore */ }
+
+  const lista = [...porId.values()];
   lista.sort((a, b) => {
     if (a.dia !== b.dia) return a.dia - b.dia;
     return String(a.nome).localeCompare(String(b.nome), "pt-BR");
