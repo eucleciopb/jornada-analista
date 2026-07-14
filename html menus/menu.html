@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/bundle-portal-user.css" />
+  <link rel="stylesheet" href="../css/pages/cadastro-nascimento.css" />
 </head>
 
 <body class="theme-user portal-page">
@@ -59,6 +60,14 @@
       </header>
 
       <div class="content">
+        <div id="birthdayBanner" class="birthday-banner" role="status" aria-live="polite">
+          <div class="bday-ico" aria-hidden="true">🎂</div>
+          <div class="bday-text">
+            <strong id="birthdayTitle">Feliz aniversário!</strong>
+            <span id="birthdaySubtitle">Desejamos um mês especial para você.</span>
+          </div>
+        </div>
+
         <section id="metas">
           <div class="section-title">
             <div>
@@ -236,8 +245,17 @@
       collection,
       getDocs,
       query,
-      where
+      where,
+      doc,
+      getDoc
     } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+    import {
+      obterPerfil,
+      temDataNascimento,
+      isAniversarioNoMes,
+      mensagemAniversario,
+      nomeMes
+    } from "../js/aniversario.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
@@ -340,6 +358,28 @@
     if(!user || !user.nome){
       window.location.href = "../index.html";
       throw new Error("Usuário não encontrado no localStorage.");
+    }
+
+    // Bloqueia menu até cadastrar data de nascimento
+    try{
+      const perfil = await obterPerfil(db, { doc, getDoc }, user.nome);
+      if(!temDataNascimento(perfil)){
+        window.location.replace("cadastro-nascimento.html");
+        throw new Error("Data de nascimento pendente.");
+      }
+
+      if(isAniversarioNoMes(perfil.dataNascimento)){
+        const banner = document.getElementById("birthdayBanner");
+        const title = document.getElementById("birthdayTitle");
+        const subtitle = document.getElementById("birthdaySubtitle");
+        const mes = nomeMes(new Date().getMonth() + 1);
+        if(title) title.textContent = mensagemAniversario(user.nome);
+        if(subtitle) subtitle.textContent = `Celebramos com você durante todo o mês de ${mes}.`;
+        banner?.classList.add("is-visible");
+      }
+    }catch(err){
+      if(String(err?.message || "").includes("pendente")) throw err;
+      console.warn("Falha ao verificar aniversário/perfil:", err);
     }
 
     welcomeText.textContent = user.nome;

@@ -11,6 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/bundle-portal-admin.css" />
+  <link rel="stylesheet" href="../css/pages/cadastro-nascimento.css" />
 </head>
 
 <body class="theme-admin portal-page">
@@ -42,6 +43,7 @@
 
 <nav class="side-nav">
 
+<a href="#aniversariantes">Aniversariantes</a>
 <a href="#operacional">Gestão Operacional</a>
 <a href="#cadastros">Cadastros e Bases</a>
 <a href="#kpis">KPIs e Importações</a>
@@ -67,6 +69,42 @@
 </header>
 
 <div class="content">
+
+<div id="birthdayBanner" class="birthday-banner" role="status" aria-live="polite">
+  <div class="bday-ico" aria-hidden="true">🎂</div>
+  <div class="bday-text">
+    <strong id="birthdayTitle">Feliz aniversário!</strong>
+    <span id="birthdaySubtitle">Desejamos um mês especial para você.</span>
+  </div>
+</div>
+
+<!-- ANIVERSARIANTES DO MÊS -->
+
+<section class="section" id="aniversariantes">
+
+<div class="section-header">
+
+<h2>Aniversariantes do Mês</h2>
+
+<span id="mesAniversariantesLabel">Mês atual</span>
+
+</div>
+
+<div class="aniversariantes-panel">
+  <p class="hint" style="margin:0 0 14px;color:var(--muted);font-size:13px;">
+    Usuários cujo mês de nascimento coincide com o mês atual. Visível apenas para ADM.
+  </p>
+  <div id="listaAniversariantes" class="aniversariantes-list">
+    <div class="aniversariantes-empty">Carregando aniversariantes...</div>
+  </div>
+  <p style="margin:12px 0 0;">
+    <a href="../html%20adm/aniversariantes-mes.html" style="font-weight:700;color:inherit;">
+      Abrir página completa de aniversariantes →
+    </a>
+  </p>
+</div>
+
+</section>
 
 <!-- GESTÃO OPERACIONAL -->
 
@@ -211,6 +249,20 @@
 </div>
 
 <div class="grid">
+
+<a class="card" href="../html%20adm/aniversariantes-mes.html">
+
+<div class="icon orange">🎂</div>
+
+<div class="card-body">
+
+<h3>Aniversariantes do Mês</h3>
+
+<p>Lista dos usuários que fazem aniversário no mês atual.</p>
+
+</div>
+
+</a>
 
 <a class="card" href="../html%20adm/cadastro-treinamento.html">
 
@@ -448,15 +500,36 @@ Menu Administrativo Jornada Comercial • Grupo Petrópolis
 
 <button class="mobile-toggle" id="mobileToggle" aria-label="Abrir menu">☰</button>
 
-<script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+import {
+  getFirestore,
+  collection,
+  getDocs,
+  doc,
+  getDoc
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+import {
+  safeParse,
+  obterPerfil,
+  temDataNascimento,
+  isAniversarioNoMes,
+  mensagemAniversario,
+  nomeMes,
+  listarAniversariantesDoMes
+} from "../js/aniversario.js";
 
-function safeParse(raw){
-    try{
-        return JSON.parse(raw);
-    }catch{
-        return null;
-    }
-}
+const firebaseConfig = {
+  apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
+  authDomain: "jornada-portal.firebaseapp.com",
+  projectId: "jornada-portal",
+  storageBucket: "jornada-portal.firebasestorage.app",
+  messagingSenderId: "669362296644",
+  appId: "1:669362296644:web:f590d9834a8e4e60012911"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
 /* ============================
    VALIDA SESSÃO
@@ -471,6 +544,7 @@ if(
 ){
     localStorage.clear();
     window.location.replace("../index2.html");
+    throw new Error("Sessão inválida");
 }
 
 /* ============================
@@ -487,6 +561,32 @@ const ADMINS = [
 if(!ADMINS.includes(session.nome)){
     localStorage.clear();
     window.location.replace("../index2.html");
+    throw new Error("Usuário sem permissão ADM");
+}
+
+/* ============================
+   GATE DATA DE NASCIMENTO
+============================ */
+
+try{
+  const perfil = await obterPerfil(db, { doc, getDoc }, session.nome);
+  if(!temDataNascimento(perfil)){
+    window.location.replace("cadastro-nascimento.html");
+    throw new Error("Data de nascimento pendente.");
+  }
+
+  if(isAniversarioNoMes(perfil.dataNascimento)){
+    const banner = document.getElementById("birthdayBanner");
+    const title = document.getElementById("birthdayTitle");
+    const subtitle = document.getElementById("birthdaySubtitle");
+    const mes = nomeMes(new Date().getMonth() + 1);
+    if(title) title.textContent = mensagemAniversario(session.nome);
+    if(subtitle) subtitle.textContent = `Celebramos com você durante todo o mês de ${mes}.`;
+    banner?.classList.add("is-visible");
+  }
+}catch(err){
+  if(String(err?.message || "").includes("pendente")) throw err;
+  console.warn("Falha ao verificar aniversário/perfil:", err);
 }
 
 /* ============================
@@ -499,6 +599,77 @@ const initials = session.nome.trim().charAt(0).toUpperCase();
 
 userAvatar.textContent = initials;
 userInfo.innerHTML = `Olá, ${session.nome}<span>Administrador</span>`;
+
+/* ============================
+   ANIVERSARIANTES DO MÊS
+============================ */
+
+const mesAtual = new Date().getMonth() + 1;
+const labelMes = document.getElementById("mesAniversariantesLabel");
+const listaEl = document.getElementById("listaAniversariantes");
+
+if(labelMes) labelMes.textContent = nomeMes(mesAtual);
+
+function escapeHtml(value){
+  return String(value ?? "")
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+}
+
+async function carregarAniversariantes(){
+  if(!listaEl) return;
+
+  try{
+    const lista = await listarAniversariantesDoMes(db, { collection, getDocs }, mesAtual);
+
+    if(!lista.length){
+      listaEl.innerHTML = `
+        <div class="aniversariantes-empty">
+          <strong>Nenhum aniversariante este mês</strong>
+          <p>Quando houver usuários com data de nascimento neste mês, eles aparecerão aqui.</p>
+        </div>`;
+      return;
+    }
+
+    const rows = lista.map((item) => {
+      const idade = item.idadeQueCompleta != null
+        ? `completa ${item.idadeQueCompleta} anos`
+        : "—";
+      return `
+        <tr>
+          <td class="dia-cell">Dia ${String(item.dia).padStart(2,"0")}</td>
+          <td>${escapeHtml(item.nome)}</td>
+          <td>${escapeHtml(idade)}</td>
+        </tr>`;
+    }).join("");
+
+    listaEl.innerHTML = `
+      <div class="table-scroll">
+        <table class="portal-table aniversariantes-table" style="width:100%;">
+          <thead>
+            <tr>
+              <th>Dia</th>
+              <th>Nome</th>
+              <th>Idade que completa</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+  }catch(err){
+    console.error(err);
+    listaEl.innerHTML = `
+      <div class="aniversariantes-empty">
+        <strong>Não foi possível carregar</strong>
+        <p>Tente novamente em instantes.</p>
+      </div>`;
+  }
+}
+
+carregarAniversariantes();
 
 /* ============================
    LOGOUT

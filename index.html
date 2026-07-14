@@ -55,7 +55,15 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-  import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+  import {
+    getFirestore,
+    collection,
+    addDoc,
+    serverTimestamp,
+    doc,
+    getDoc
+  } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+  import { obterPerfil, temDataNascimento } from "./js/aniversario.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
@@ -165,7 +173,17 @@
         userAgent: navigator.userAgent || null
       });
 
-      window.location.href = "html menus/menu.html";
+      let destino = "html menus/cadastro-nascimento.html";
+      try{
+        const perfil = await obterPerfil(db, { doc, getDoc }, usuario);
+        if(temDataNascimento(perfil)){
+          destino = "html menus/menu.html";
+        }
+      }catch(perfilErr){
+        console.warn("Não foi possível verificar data de nascimento:", perfilErr);
+      }
+
+      window.location.href = destino;
 
     }catch(e){
       console.error(e);

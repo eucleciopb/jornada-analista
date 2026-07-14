@@ -49,11 +49,27 @@
 
 </div>
 
-<script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+import { obterPerfil, temDataNascimento } from "./js/aniversario.js";
+
 const btn = document.getElementById("btnEntrar");
 const select = document.getElementById("usuarioSelect");
 const senha = document.getElementById("senha");
 const errorMsg = document.getElementById("errorMsg");
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
+  authDomain: "jornada-portal.firebaseapp.com",
+  projectId: "jornada-portal",
+  storageBucket: "jornada-portal.firebasestorage.app",
+  messagingSenderId: "669362296644",
+  appId: "1:669362296644:web:f590d9834a8e4e60012911"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
 /*
 -----------------------------------
@@ -69,12 +85,6 @@ const USUARIOS = {
   Pedro: "P3D5GP26"
 };
 
-/*
------------------------------------
-LOGIN
------------------------------------
-*/
-
 btn.addEventListener("click", login);
 
 senha.addEventListener("keydown", function(e){
@@ -88,7 +98,7 @@ select.addEventListener("change", function(){
   errorMsg.style.display = "none";
 });
 
-function login(){
+async function login(){
   const usuario = select.value.trim();
   const senhaDigitada = senha.value.trim();
 
@@ -124,7 +134,19 @@ function login(){
   localStorage.setItem("usuarioLogado", usuario);
   localStorage.setItem("user_session", JSON.stringify(session));
 
-  window.location.href = "html menus/menuadm.html";
+  btn.disabled = true;
+
+  let destino = "html menus/cadastro-nascimento.html";
+  try{
+    const perfil = await obterPerfil(db, { doc, getDoc }, usuario);
+    if(temDataNascimento(perfil)){
+      destino = "html menus/menuadm.html";
+    }
+  }catch(err){
+    console.warn("Não foi possível verificar data de nascimento:", err);
+  }
+
+  window.location.href = destino;
 }
 </script>
 

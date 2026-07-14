@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Data de nascimento | Jornada</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/bundle-login-user.css" />
+  <link rel="stylesheet" href="../css/pages/cadastro-nascimento.css" />
+</head>
+<body class="login-page theme-user nasc-page">
+  <main class="center-wrapper">
+    <div class="login-card nasc-card">
+      <div class="logo-box">GP</div>
+      <h2>Complete seu perfil</h2>
+      <p class="hint" id="subtitulo">
+        Para liberar o acesso ao menu, informe sua data de nascimento.
+      </p>
+
+      <div class="nasc-user" id="nomeUsuario">—</div>
+
+      <form id="formNascimento" class="nasc-form" autocomplete="off" novalidate>
+        <div class="form-group">
+          <label for="dataNascimento">Data de nascimento</label>
+          <input
+            id="dataNascimento"
+            name="dataNascimento"
+            type="text"
+            inputmode="numeric"
+            maxlength="10"
+            placeholder="DD/MM/AAAA"
+            required
+          />
+          <small class="field-hint">Formato obrigatório: dia/mês/ano (ex.: 15/03/1990)</small>
+        </div>
+
+        <button id="btnSalvar" class="btn-primary" type="submit">Salvar e continuar</button>
+      </form>
+
+      <p id="msg" class="msg" role="status"></p>
+
+      <button id="btnSair" class="btn-link" type="button">Sair e voltar ao login</button>
+    </div>
+  </main>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+    import {
+      getFirestore,
+      doc,
+      getDoc,
+      setDoc,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+    import {
+      getSessionUser,
+      destinoMenuPorPerfil,
+      parseDataNascimento,
+      obterPerfil,
+      salvarDataNascimento,
+      temDataNascimento
+    } from "../js/aniversario.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
+      authDomain: "jornada-portal.firebaseapp.com",
+      projectId: "jornada-portal",
+      storageBucket: "jornada-portal.firebasestorage.app",
+      messagingSenderId: "669362296644",
+      appId: "1:669362296644:web:f590d9834a8e4e60012911"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const fs = { doc, getDoc, setDoc, serverTimestamp };
+
+    const user = getSessionUser();
+    if (!user?.nome) {
+      window.location.replace("../index.html");
+      throw new Error("Sem sessão.");
+    }
+
+    const isAdmin = String(user.perfil).toLowerCase() === "admin";
+    const menuFile = destinoMenuPorPerfil(user.perfil);
+    const loginFile = isAdmin ? "../index2.html" : "../index.html";
+
+    document.body.classList.toggle("theme-admin", isAdmin);
+    document.body.classList.toggle("theme-user", !isAdmin);
+
+    const nomeUsuario = document.getElementById("nomeUsuario");
+    const form = document.getElementById("formNascimento");
+    const input = document.getElementById("dataNascimento");
+    const btnSalvar = document.getElementById("btnSalvar");
+    const btnSair = document.getElementById("btnSair");
+    const msg = document.getElementById("msg");
+
+    nomeUsuario.textContent = user.nome;
+
+    function setMsg(text, ok = false) {
+      msg.textContent = text || "";
+      msg.classList.toggle("ok", Boolean(ok));
+    }
+
+    function mascararData(valor) {
+      const digits = String(valor || "").replace(/\D/g, "").slice(0, 8);
+      if (digits.length <= 2) return digits;
+      if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+      return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+    }
+
+    input.addEventListener("input", () => {
+      const pos = input.selectionStart;
+      const before = input.value;
+      input.value = mascararData(input.value);
+      if (document.activeElement === input && typeof pos === "number") {
+        const delta = input.value.length - before.length;
+        const next = Math.max(0, pos + delta);
+        input.setSelectionRange(next, next);
+      }
+      setMsg("");
+    });
+
+    function irParaMenu() {
+      window.location.replace(menuFile);
+    }
+
+    btnSair.addEventListener("click", () => {
+      localStorage.removeItem("usuarioLogado");
+      localStorage.removeItem("user_session");
+      localStorage.removeItem("analistaLogado");
+      localStorage.removeItem("usuarioSelecionado");
+      window.location.replace(loginFile);
+    });
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const parsed = parseDataNascimento(input.value);
+
+      if (!parsed) {
+        setMsg("Informe uma data válida no formato DD/MM/AAAA.");
+        input.focus();
+        input.select();
+        return;
+      }
+
+      btnSalvar.disabled = true;
+      setMsg("Salvando...", true);
+
+      try {
+        await salvarDataNascimento(db, fs, user.nome, parsed, {
+          perfil: user.perfil || null,
+          criadoEm: serverTimestamp()
+        });
+        setMsg("Data salva! Liberando o menu...", true);
+        irParaMenu();
+      } catch (err) {
+        console.error(err);
+        setMsg("Não foi possível salvar. Tente novamente.");
+        btnSalvar.disabled = false;
+      }
+    });
+
+    try {
+      const perfil = await obterPerfil(db, fs, user.nome);
+      if (temDataNascimento(perfil)) {
+        irParaMenu();
+      } else {
+        input.focus();
+      }
+    } catch (err) {
+      console.error(err);
+      setMsg("Não foi possível verificar seu perfil. Você ainda pode informar a data.");
+      input.focus();
+    }
+  </script>
+</body>
+</html>
