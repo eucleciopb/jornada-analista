@@ -3,16 +3,19 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
 <title>Login Admin | Jornada</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/bundle-login-admin.css" />
+  <link rel="stylesheet" href="css/pages/cadastro-nascimento.css" />
 </head>
 
 <body class="login-page theme-admin">
 
-<div class="card">
+<div class="card" id="loginView">
 
   <div class="logo">GP</div>
 
@@ -49,18 +52,69 @@
 
 </div>
 
-<script>
+<main class="center-wrapper" id="birthView" hidden>
+  <div class="login-card nasc-card">
+    <div class="logo-box">GP</div>
+    <h2>Complete seu perfil</h2>
+    <p class="hint">Informe sua data de nascimento para liberar o menu.</p>
+    <div class="nasc-user" id="nomeUsuarioNasc">—</div>
+    <form id="formNascimento" class="nasc-form" autocomplete="off" novalidate>
+      <div class="form-group">
+        <label for="dataNascimento">Data de nascimento</label>
+        <input id="dataNascimento" type="text" inputmode="numeric" maxlength="10" placeholder="DD/MM/AAAA" required />
+        <small class="field-hint">Formato obrigatório: dia/mês/ano (ex.: 15/03/1990)</small>
+      </div>
+      <button id="btnSalvarNasc" class="btn-primary" type="submit">Salvar e continuar</button>
+    </form>
+    <p id="msgNasc" class="msg" role="status"></p>
+  </div>
+</main>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  setDoc,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+import {
+  parseDataNascimento,
+  obterPerfil,
+  salvarDataNascimento,
+  temDataNascimento,
+  marcarNascimentoNaSessao
+} from "./js/aniversario.js?v=20260714b";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
+  authDomain: "jornada-portal.firebaseapp.com",
+  projectId: "jornada-portal",
+  storageBucket: "jornada-portal.firebasestorage.app",
+  messagingSenderId: "669362296644",
+  appId: "1:669362296644:web:f590d9834a8e4e60012911"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const fs = { doc, getDoc, setDoc, serverTimestamp };
+
+const MENU_URL = "html%20menus/menuadm.html?v=20260714b";
+
 const btn = document.getElementById("btnEntrar");
 const select = document.getElementById("usuarioSelect");
 const senha = document.getElementById("senha");
 const errorMsg = document.getElementById("errorMsg");
+const loginView = document.getElementById("loginView");
+const birthView = document.getElementById("birthView");
+const nomeUsuarioNasc = document.getElementById("nomeUsuarioNasc");
+const formNascimento = document.getElementById("formNascimento");
+const dataNascimentoInput = document.getElementById("dataNascimento");
+const btnSalvarNasc = document.getElementById("btnSalvarNasc");
+const msgNasc = document.getElementById("msgNasc");
 
-/*
------------------------------------
-SENHAS POR USUÁRIO
-Altere aqui quando quiser
------------------------------------
-*/
+let usuarioAtual = "";
 
 const USUARIOS = {
   Bruna: "B7N4GP26",
@@ -82,7 +136,87 @@ select.addEventListener("change", function(){
   errorMsg.style.display = "none";
 });
 
-function login(){
+function setMsgNasc(text, ok = false){
+  msgNasc.textContent = text || "";
+  msgNasc.classList.toggle("ok", Boolean(ok));
+}
+
+function mascararData(valor){
+  const digits = String(valor || "").replace(/\D/g, "").slice(0, 8);
+  if(digits.length <= 2) return digits;
+  if(digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+}
+
+function mostrarFormNascimento(nome){
+  usuarioAtual = nome;
+  nomeUsuarioNasc.textContent = nome;
+  loginView.hidden = true;
+  birthView.hidden = false;
+  dataNascimentoInput.value = "";
+  setMsgNasc("");
+  dataNascimentoInput.focus();
+}
+
+function irParaMenu(){
+  window.location.replace(MENU_URL);
+}
+
+dataNascimentoInput.addEventListener("input", () => {
+  dataNascimentoInput.value = mascararData(dataNascimentoInput.value);
+  setMsgNasc("");
+});
+
+formNascimento.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const parsed = parseDataNascimento(dataNascimentoInput.value);
+  if(!parsed){
+    setMsgNasc("Informe uma data válida no formato DD/MM/AAAA.");
+    dataNascimentoInput.focus();
+    return;
+  }
+
+  btnSalvarNasc.disabled = true;
+  setMsgNasc("Salvando...", true);
+
+  try{
+    await salvarDataNascimento(db, fs, usuarioAtual, parsed, {
+      perfil: "admin",
+      criadoEm: serverTimestamp()
+    });
+  }catch(err){
+    console.warn("Firestore falhou ao salvar nascimento; seguindo com sessão local.", err);
+    try{
+      localStorage.setItem(`perfil_nascimento_${usuarioAtual}`, JSON.stringify({
+        nome: usuarioAtual,
+        dataNascimento: parsed.dataNascimento,
+        dataNascimentoExibida: parsed.dataNascimentoExibida,
+        salvoLocalEm: Date.now()
+      }));
+    }catch(_){ /* ignore */ }
+  }
+
+  marcarNascimentoNaSessao(parsed.dataNascimento);
+  setMsgNasc("Data salva! Abrindo o menu...", true);
+  irParaMenu();
+});
+
+async function usuarioJaTemNascimento(nome){
+  try{
+    const perfil = await obterPerfil(db, fs, nome);
+    if(temDataNascimento(perfil)) return perfil.dataNascimento;
+  }catch(err){
+    console.warn(err);
+  }
+  try{
+    const raw = localStorage.getItem(`perfil_nascimento_${nome}`);
+    const local = raw ? JSON.parse(raw) : null;
+    if(temDataNascimento(local)) return local.dataNascimento;
+  }catch(_){ /* ignore */ }
+  return null;
+}
+
+async function login(){
   const usuario = select.value.trim();
   const senhaDigitada = senha.value.trim();
 
@@ -108,7 +242,8 @@ function login(){
     return;
   }
 
-  // Sempre força o gate de nascimento no pós-login.
+  btn.disabled = true;
+
   const session = {
     nome: usuario,
     usuario: usuario,
@@ -120,7 +255,15 @@ function login(){
   localStorage.setItem("usuarioLogado", usuario);
   localStorage.setItem("user_session", JSON.stringify(session));
 
-  window.location.href = "html%20menus/cadastro-nascimento.html";
+  const jaTem = await usuarioJaTemNascimento(usuario);
+  if(jaTem){
+    marcarNascimentoNaSessao(jaTem);
+    irParaMenu();
+    return;
+  }
+
+  mostrarFormNascimento(usuario);
+  btn.disabled = false;
 }
 </script>
 

@@ -1,20 +1,89 @@
+/* Overlay bloqueante de data de nascimento (menus) */
+.birth-gate-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background:
+    radial-gradient(800px 400px at 20% 10%, rgba(37, 99, 235, 0.12), transparent 60%),
+    rgba(15, 23, 42, 0.72);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.birth-gate-overlay.is-done {
+  display: none !important;
+}
+
+.birth-gate-card {
+  width: min(400px, 100%);
+  margin: 0;
+  padding: 28px 22px;
+  border-radius: 22px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 18px 50px rgba(15, 23, 42, 0.2);
+  text-align: left;
+  color: #0f172a;
+}
+
+.birth-gate-card .logo-box {
+  margin: 0 auto 14px;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #fff;
+  font-weight: 800;
+}
+
+.birth-gate-card h2,
+.birth-gate-card > .hint {
+  text-align: center;
+}
+
+.birth-gate-card h2 {
+  margin: 0 0 8px;
+  font-size: 22px;
+}
+
+.birth-gate-card > .hint {
+  margin: 0 0 8px;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.birth-gate-card .btn-primary {
+  width: 100%;
+  margin-top: 4px;
+  padding: 12px 16px;
+  border: 0;
+  border-radius: 12px;
+  background: #2563eb;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.theme-admin .birth-gate-card .btn-primary,
+.theme-admin .birth-gate-card .logo-box {
+  background: linear-gradient(135deg, #d91b2e, #b91c1c);
+}
+
 body.gate-pending .portal-shell,
 body.gate-pending .portal,
 body.gate-pending .bottom-nav,
 body.gate-pending .mobile-toggle {
   visibility: hidden !important;
+  pointer-events: none !important;
 }
 
 body.gate-pending::before {
-  content: "Verificando perfil...";
-  position: fixed;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  background: var(--bg, #f8fafc);
-  color: var(--muted, #64748b);
-  font-weight: 600;
-  z-index: 9999;
+  display: none !important;
 }
 
 .nasc-page .nasc-card {
