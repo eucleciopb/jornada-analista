@@ -16,6 +16,24 @@
 
 <body class="theme-admin portal-page gate-pending">
 
+<div id="birthGateOverlay" class="birth-gate-overlay" aria-modal="true" role="dialog" aria-labelledby="birthGateTitle">
+  <div class="login-card nasc-card birth-gate-card">
+    <div class="logo-box">GP</div>
+    <h2 id="birthGateTitle">Complete seu perfil</h2>
+    <p class="hint">Informe sua data de nascimento para liberar o menu.</p>
+    <div class="nasc-user" id="birthGateUser">—</div>
+    <form id="birthGateForm" class="nasc-form" autocomplete="off" novalidate>
+      <div class="form-group">
+        <label for="birthGateInput">Data de nascimento</label>
+        <input id="birthGateInput" type="text" inputmode="numeric" maxlength="10" placeholder="DD/MM/AAAA" required />
+        <small class="field-hint">Formato: dia/mês/ano (ex.: 15/03/1990)</small>
+      </div>
+      <button id="birthGateSave" class="btn-primary" type="submit">Salvar e continuar</button>
+    </form>
+    <p id="birthGateMsg" class="msg" role="status"></p>
+  </div>
+</div>
+
 <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
 <div class="portal">
@@ -507,7 +525,9 @@ import {
   collection,
   getDocs,
   doc,
-  getDoc
+  getDoc,
+  setDoc,
+  serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 import {
   safeParse,
@@ -518,8 +538,10 @@ import {
   nomeMes,
   listarAniversariantesDoMes,
   sessaoTemNascimentoOk,
-  marcarNascimentoNaSessao
-} from "../js/aniversario.js";
+  marcarNascimentoNaSessao,
+  parseDataNascimento,
+  salvarDataNascimento
+} from "../js/aniversario.js?v=20260714b";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
@@ -532,6 +554,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const fs = { doc, getDoc, setDoc, serverTimestamp };
 
 /* ============================
    VALIDA SESSÃO
@@ -570,32 +593,106 @@ if(!ADMINS.includes(session.nome)){
    GATE DATA DE NASCIMENTO
 ============================ */
 
-if(!sessaoTemNascimentoOk()){
+const birthGateOverlay = document.getElementById("birthGateOverlay");
+const birthGateUser = document.getElementById("birthGateUser");
+const birthGateForm = document.getElementById("birthGateForm");
+const birthGateInput = document.getElementById("birthGateInput");
+const birthGateSave = document.getElementById("birthGateSave");
+const birthGateMsg = document.getElementById("birthGateMsg");
+
+function setBirthMsg(text, ok = false){
+  if(!birthGateMsg) return;
+  birthGateMsg.textContent = text || "";
+  birthGateMsg.classList.toggle("ok", Boolean(ok));
+}
+
+function liberarMenu(iso){
+  if(iso) marcarNascimentoNaSessao(iso);
+  birthGateOverlay?.classList.add("is-done");
+  document.body.classList.remove("gate-pending");
+}
+
+function mascararData(valor){
+  const digits = String(valor || "").replace(/\D/g, "").slice(0, 8);
+  if(digits.length <= 2) return digits;
+  if(digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+}
+
+async function buscarNascimentoSalvo(nome){
   try{
-    const perfil = await obterPerfil(db, { doc, getDoc }, session.nome);
-    if(temDataNascimento(perfil)){
-      marcarNascimentoNaSessao(perfil.dataNascimento);
-    }else{
-      window.location.replace("cadastro-nascimento.html");
-      throw new Error("Data de nascimento pendente.");
-    }
+    const perfil = await obterPerfil(db, fs, nome);
+    if(temDataNascimento(perfil)) return perfil.dataNascimento;
   }catch(err){
-    if(String(err?.message || "").includes("pendente")) throw err;
-    window.location.replace("cadastro-nascimento.html");
-    throw new Error("Data de nascimento pendente.");
+    console.warn(err);
+  }
+  try{
+    const raw = localStorage.getItem(`perfil_nascimento_${nome}`);
+    const local = raw ? JSON.parse(raw) : null;
+    if(temDataNascimento(local)) return local.dataNascimento;
+  }catch(_){ /* ignore */ }
+  return null;
+}
+
+function mostrarGateNascimento(){
+  if(birthGateUser) birthGateUser.textContent = session.nome;
+  birthGateOverlay?.classList.remove("is-done");
+  document.body.classList.add("gate-pending");
+  birthGateInput?.focus();
+}
+
+birthGateInput?.addEventListener("input", () => {
+  birthGateInput.value = mascararData(birthGateInput.value);
+  setBirthMsg("");
+});
+
+birthGateForm?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const parsed = parseDataNascimento(birthGateInput?.value);
+  if(!parsed){
+    setBirthMsg("Informe uma data válida no formato DD/MM/AAAA.");
+    birthGateInput?.focus();
+    return;
+  }
+  if(birthGateSave) birthGateSave.disabled = true;
+  setBirthMsg("Salvando...", true);
+
+  try{
+    await salvarDataNascimento(db, fs, session.nome, parsed, {
+      perfil: "admin",
+      criadoEm: serverTimestamp()
+    });
+  }catch(err){
+    console.warn(err);
+    try{
+      localStorage.setItem(`perfil_nascimento_${session.nome}`, JSON.stringify({
+        nome: session.nome,
+        dataNascimento: parsed.dataNascimento,
+        dataNascimentoExibida: parsed.dataNascimentoExibida,
+        salvoLocalEm: Date.now()
+      }));
+    }catch(_){ /* ignore */ }
+  }
+
+  liberarMenu(parsed.dataNascimento);
+  setBirthMsg("Pronto!", true);
+});
+
+let dataConfirmada = null;
+if(sessaoTemNascimentoOk()){
+  dataConfirmada = (safeParse(localStorage.getItem("user_session")) || {}).dataNascimento || null;
+  liberarMenu(dataConfirmada);
+}else{
+  dataConfirmada = await buscarNascimentoSalvo(session.nome);
+  if(dataConfirmada){
+    liberarMenu(dataConfirmada);
+  }else{
+    mostrarGateNascimento();
   }
 }
 
-document.body.classList.remove("gate-pending");
-
 try{
-  const sess = safeParse(localStorage.getItem("user_session")) || {};
-  let iso = sess.dataNascimento || null;
-  if(!iso){
-    const perfil = await obterPerfil(db, { doc, getDoc }, session.nome);
-    iso = perfil?.dataNascimento || null;
-    if(iso) marcarNascimentoNaSessao(iso);
-  }
+  const iso = dataConfirmada || (safeParse(localStorage.getItem("user_session")) || {}).dataNascimento || null;
   if(iso && isAniversarioNoMes(iso)){
     const banner = document.getElementById("birthdayBanner");
     const title = document.getElementById("birthdayTitle");
