@@ -10,8 +10,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../css/bundle-portal-admin.css?v=20260715a" />
-  <link rel="stylesheet" href="../css/pages/cadastro-nascimento.css?v=20260715a" />
+  <link rel="stylesheet" href="../css/bundle-portal-admin.css?v=20260715b" />
+  <link rel="stylesheet" href="../css/pages/cadastro-nascimento.css?v=20260715b" />
 </head>
 
 <body class="theme-admin portal-page gate-pending">
@@ -540,7 +540,7 @@ import {
   parseDataNascimento,
   salvarDataNascimento,
   buscarDataNascimentoSalva
-} from "../js/aniversario.js?v=20260715a";
+} from "../js/aniversario.js?v=20260715b";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
@@ -664,38 +664,38 @@ birthGateForm?.addEventListener("submit", async (e) => {
     return;
   }
   if(birthGateSave) birthGateSave.disabled = true;
-  setBirthMsg("Salvando...", true);
+  setBirthMsg("Salvando no banco...", true);
 
   try{
     await salvarDataNascimento(db, fs, session.nome, parsed, {
-      perfil: "admin",
-      criadoEm: serverTimestamp()
+      perfil: "admin"
     });
     liberarMenu(parsed.dataNascimento);
-    setBirthMsg("Pronto!", true);
+    setBirthMsg("Salvo no banco!", true);
   }catch(err){
     console.error(err);
-    setBirthMsg("Não foi possível salvar. Tente novamente.");
+    setBirthMsg(err?.message || "Não foi possível salvar no banco. Tente novamente.");
     if(birthGateSave) birthGateSave.disabled = false;
   }
 });
 
+// Sempre valida no banco
 let dataConfirmada = null;
-if(sessaoTemNascimentoOk()){
-  dataConfirmada = (safeParse(localStorage.getItem("user_session")) || {}).dataNascimento || null;
-  liberarMenu(dataConfirmada);
-}else{
+try{
   dataConfirmada = await buscarNascimentoSalvo(session.nome);
   if(dataConfirmada){
     liberarMenu(dataConfirmada);
   }else{
     mostrarGateNascimento();
   }
+}catch(err){
+  console.error(err);
+  mostrarGateNascimento();
+  setBirthMsg("Não foi possível verificar no banco. Informe a data novamente.");
 }
 
 try{
-  const iso = dataConfirmada || (safeParse(localStorage.getItem("user_session")) || {}).dataNascimento || null;
-  if(iso && isAniversarioNoMes(iso)){
+  if(dataConfirmada && isAniversarioNoMes(dataConfirmada)){
     const banner = document.getElementById("birthdayBanner");
     const title = document.getElementById("birthdayTitle");
     const subtitle = document.getElementById("birthdaySubtitle");

@@ -1,12 +1,9 @@
 /**
  * Perfil / aniversário — helpers compartilhados.
  *
- * Persistência (em ordem de confiabilidade neste projeto):
- * 1) localStorage (sempre)
- * 2) Firestore acessos/nascimento_{slug}  ← mesma coleção do login (já libera escrita)
- * 3) Firestore perfis/{slug}             ← coleção dedicada (melhor esforço)
- *
- * Campo canônico: dataNascimento (YYYY-MM-DD).
+ * Fonte da verdade: Firestore `acessos/nascimento_{slug}`.
+ * (A coleção `perfis` está bloqueada pelas regras atuais do projeto.)
+ * localStorage é apenas cache após confirmação no banco.
  */
 
 export const PERFIS_COLLECTION = "perfis";
@@ -274,6 +271,7 @@ export function obterNascimentoLocal(nome) {
 
 function montarPayload(nome, parsed, extras = {}, serverTimestamp) {
   const id = slug(nome);
+  const { criadoEm, ...restExtras } = extras || {};
   return {
     tipo: "PERFIL_NASCIMENTO",
     evento: "PERFIL_NASCIMENTO",
@@ -285,101 +283,128 @@ function montarPayload(nome, parsed, extras = {}, serverTimestamp) {
     diaNascimento: parsed.dia,
     mesNascimento: parsed.mes,
     anoNascimento: parsed.ano,
-    atualizadoEm: typeof serverTimestamp === "function" ? serverTimestamp() : Date.now(),
-    ...extras
+    // ISO string é mais compatível que FieldValue em alguns fluxos
+    atualizadoEm: new Date().toISOString(),
+    criadoEm:
+      criadoEm ||
+      (typeof serverTimestamp === "function" ? serverTimestamp() : new Date().toISOString()),
+    ...restExtras
   };
 }
 
 /**
- * Salva a data em localStorage + Firestore (acessos e perfis).
- * Nunca falha por completo se o localStorage funcionar.
+ * Salva a data de nascimento NO BANCO (obrigatório).
+ * Fonte da verdade: acessos/nascimento_{slug}
+ * localStorage só como cache depois do sucesso no Firestore.
  */
 export async function salvarDataNascimento(
   db,
-  { doc, setDoc, serverTimestamp },
+  { doc, setDoc, getDoc, serverTimestamp },
   nome,
   parsed,
   extras = {}
 ) {
   const id = slug(nome);
   if (!id || !parsed) throw new Error("Dados inválidos para salvar data de nascimento.");
-
-  const local = salvarNascimentoLocal(nome, parsed);
-  const payload = montarPayload(nome, parsed, extras, serverTimestamp);
-
-  const resultados = { local: true, acessos: false, perfis: false, erros: [] };
-
-  // 1) Coleção acessos (já usada no login — regras costumam permitir)
-  try {
-    await setDoc(doc(db, ACESSOS_COLLECTION, docIdNascimento(nome)), payload, { merge: true });
-    resultados.acessos = true;
-  } catch (err) {
-    console.warn("Falha ao salvar nascimento em acessos:", err);
-    resultados.erros.push(err);
+  if (!db || typeof setDoc !== "function" || typeof doc !== "function") {
+    throw new Error("Firestore indisponível para salvar a data de nascimento.");
   }
 
-  // 2) Coleção dedicada perfis (melhor esforço)
+  const payload = montarPayload(nome, parsed, extras, serverTimestamp);
+  const ref = doc(db, ACESSOS_COLLECTION, docIdNascimento(nome));
+
+  try {
+    await setDoc(ref, payload, { merge: true });
+  } catch (err) {
+    console.error("Falha ao gravar nascimento no Firestore (acessos):", err);
+    throw new Error("Não foi possível gravar a data de nascimento no banco. Tente novamente.");
+  }
+
+  // Confirma leitura no banco (fonte da verdade)
+  try {
+    if (typeof getDoc === "function") {
+      const snap = await getDoc(ref);
+      if (!snap.exists() || !temDataNascimento(snap.data())) {
+        throw new Error("Gravação no banco não confirmada.");
+      }
+    }
+  } catch (err) {
+    console.error("Falha ao confirmar nascimento no Firestore:", err);
+    throw new Error("Não foi possível confirmar a data de nascimento no banco. Tente novamente.");
+  }
+
+  // Cache local somente após sucesso no banco
+  salvarNascimentoLocal(nome, parsed);
+
+  // Melhor esforço na coleção dedicada (pode estar bloqueada pelas regras)
   try {
     await setDoc(doc(db, PERFIS_COLLECTION, id), payload, { merge: true });
-    resultados.perfis = true;
   } catch (err) {
-    console.warn("Falha ao salvar nascimento em perfis:", err);
-    resultados.erros.push(err);
+    console.warn("Coleção perfis indisponível (ignorado; banco em acessos ok):", err);
   }
 
-  if (!resultados.local && !resultados.acessos && !resultados.perfis) {
-    throw new Error("Não foi possível salvar a data de nascimento.");
-  }
-
-  return { ...payload, ...local, _persistencia: resultados };
+  return { ...payload, _fonte: "acessos" };
 }
 
-/** Lê o perfil: local → acessos → perfis. */
-export async function obterPerfil(db, { doc, getDoc }, nome) {
+/**
+ * Lê o perfil SEMPRE do banco (acessos). Cache local só depois da confirmação.
+ */
+export async function obterPerfil(db, { doc, getDoc, setDoc }, nome) {
   const id = slug(nome);
   if (!id) return null;
-
-  const local = obterNascimentoLocal(nome);
-  if (temDataNascimento(local)) {
-    // Tenta hidratar Firebase em background se só tiver local
-    return { id, ...local, _fonte: "local" };
+  if (!db || typeof getDoc !== "function" || typeof doc !== "function") {
+    throw new Error("Firestore indisponível para verificar a data de nascimento.");
   }
 
-  if (typeof getDoc === "function" && typeof doc === "function" && db) {
-    // acessos/nascimento_{slug}
-    try {
-      const snapAcessos = await getDoc(doc(db, ACESSOS_COLLECTION, docIdNascimento(nome)));
-      if (snapAcessos.exists()) {
-        const data = snapAcessos.data() || {};
-        if (temDataNascimento(data)) {
-          salvarNascimentoLocal(nome, parseDataNascimento(data.dataNascimento));
-          return { id: snapAcessos.id, ...data, _fonte: "acessos" };
-        }
+  // 1) Fonte da verdade: acessos/nascimento_{slug}
+  try {
+    const snapAcessos = await getDoc(doc(db, ACESSOS_COLLECTION, docIdNascimento(nome)));
+    if (snapAcessos.exists()) {
+      const data = snapAcessos.data() || {};
+      if (temDataNascimento(data)) {
+        salvarNascimentoLocal(nome, parseDataNascimento(data.dataNascimento));
+        return { id: snapAcessos.id, ...data, _fonte: "acessos" };
       }
-    } catch (err) {
-      console.warn("Falha ao ler nascimento em acessos:", err);
     }
+  } catch (err) {
+    console.error("Falha ao ler nascimento no banco (acessos):", err);
+    throw err;
+  }
 
-    // perfis/{slug}
-    try {
-      const snapPerfis = await getDoc(doc(db, PERFIS_COLLECTION, id));
-      if (snapPerfis.exists()) {
-        const data = snapPerfis.data() || {};
-        if (temDataNascimento(data)) {
-          salvarNascimentoLocal(nome, parseDataNascimento(data.dataNascimento));
-          return { id: snapPerfis.id, ...data, _fonte: "perfis" };
+  // 2) Fallback legado: perfis/{slug} (se regras permitirem)
+  try {
+    const snapPerfis = await getDoc(doc(db, PERFIS_COLLECTION, id));
+    if (snapPerfis.exists()) {
+      const data = snapPerfis.data() || {};
+      if (temDataNascimento(data)) {
+        const parsed = parseDataNascimento(data.dataNascimento);
+        if (parsed && typeof setDoc === "function") {
+          try {
+            await setDocSafeMigrate(db, { doc, setDoc }, nome, parsed, data);
+          } catch (_) { /* ignore migrate errors */ }
         }
+        salvarNascimentoLocal(nome, parseDataNascimento(data.dataNascimento));
+        return { id: snapPerfis.id, ...data, _fonte: "perfis" };
       }
-    } catch (err) {
-      console.warn("Falha ao ler nascimento em perfis:", err);
     }
+  } catch (err) {
+    console.warn("Falha ao ler coleção perfis (ok se bloqueada):", err);
   }
 
   return null;
 }
 
+async function setDocSafeMigrate(db, { doc, setDoc }, nome, parsed, extras = {}) {
+  if (typeof setDoc !== "function") return;
+  const payload = montarPayload(nome, parsed, {
+    perfil: extras.perfil || null,
+    migradoDe: "perfis"
+  });
+  await setDoc(doc(db, ACESSOS_COLLECTION, docIdNascimento(nome)), payload, { merge: true });
+}
+
 /**
- * Atalho usado no login: devolve ISO da data se existir (local ou Firestore).
+ * Atalho do login: só libera se existir NO BANCO.
  */
 export async function buscarDataNascimentoSalva(db, fs, nome) {
   const perfil = await obterPerfil(db, fs, nome);

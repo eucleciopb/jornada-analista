@@ -62,7 +62,7 @@
       salvarDataNascimento,
       marcarNascimentoNaSessao,
       buscarDataNascimentoSalva
-    } from "../js/aniversario.js?v=20260715a";
+    } from "../js/aniversario.js?v=20260715b";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
@@ -156,14 +156,13 @@
 
       try {
         await salvarDataNascimento(db, fs, user.nome, parsed, {
-          perfil: user.perfil || null,
-          criadoEm: serverTimestamp()
+          perfil: user.perfil || null
         });
-        setMsg("Data salva! Liberando o menu...", true);
+        setMsg("Salvo no banco! Liberando o menu...", true);
         liberarMenuComData(parsed.dataNascimento);
       } catch (err) {
         console.error(err);
-        setMsg("Não foi possível salvar. Tente novamente.");
+        setMsg(err?.message || "Não foi possível salvar no banco. Tente novamente.");
         btnSalvar.disabled = false;
       }
     });
