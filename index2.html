@@ -9,8 +9,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/bundle-login-admin.css?v=20260714c" />
-  <link rel="stylesheet" href="css/pages/cadastro-nascimento.css?v=20260714c" />
+  <link rel="stylesheet" href="css/bundle-login-admin.css?v=20260715a" />
+  <link rel="stylesheet" href="css/pages/cadastro-nascimento.css?v=20260715a" />
 </head>
 
 <body class="login-page theme-admin">
@@ -81,11 +81,10 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 import {
   parseDataNascimento,
-  obterPerfil,
   salvarDataNascimento,
-  temDataNascimento,
-  marcarNascimentoNaSessao
-} from "./js/aniversario.js?v=20260714b";
+  marcarNascimentoNaSessao,
+  buscarDataNascimentoSalva
+} from "./js/aniversario.js?v=20260715a";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
@@ -100,7 +99,7 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const fs = { doc, getDoc, setDoc, serverTimestamp };
 
-const MENU_URL = "html%20menus/menuadm.html?v=20260714b";
+const MENU_URL = "html%20menus/menuadm.html?v=20260715a";
 
 const btn = document.getElementById("btnEntrar");
 const select = document.getElementById("usuarioSelect");
@@ -186,37 +185,15 @@ formNascimento.addEventListener("submit", async (e) => {
       perfil: "admin",
       criadoEm: serverTimestamp()
     });
+    marcarNascimentoNaSessao(parsed.dataNascimento);
+    setMsgNasc("Data salva! Abrindo o menu...", true);
+    irParaMenu();
   }catch(err){
-    console.warn("Firestore falhou ao salvar nascimento; seguindo com sessão local.", err);
-    try{
-      localStorage.setItem(`perfil_nascimento_${usuarioAtual}`, JSON.stringify({
-        nome: usuarioAtual,
-        dataNascimento: parsed.dataNascimento,
-        dataNascimentoExibida: parsed.dataNascimentoExibida,
-        salvoLocalEm: Date.now()
-      }));
-    }catch(_){ /* ignore */ }
+    console.error(err);
+    setMsgNasc("Não foi possível salvar. Tente novamente.");
+    btnSalvarNasc.disabled = false;
   }
-
-  marcarNascimentoNaSessao(parsed.dataNascimento);
-  setMsgNasc("Data salva! Abrindo o menu...", true);
-  irParaMenu();
 });
-
-async function usuarioJaTemNascimento(nome){
-  try{
-    const perfil = await obterPerfil(db, fs, nome);
-    if(temDataNascimento(perfil)) return perfil.dataNascimento;
-  }catch(err){
-    console.warn(err);
-  }
-  try{
-    const raw = localStorage.getItem(`perfil_nascimento_${nome}`);
-    const local = raw ? JSON.parse(raw) : null;
-    if(temDataNascimento(local)) return local.dataNascimento;
-  }catch(_){ /* ignore */ }
-  return null;
-}
 
 async function login(){
   const usuario = select.value.trim();
@@ -257,7 +234,7 @@ async function login(){
   localStorage.setItem("usuarioLogado", usuario);
   localStorage.setItem("user_session", JSON.stringify(session));
 
-  const jaTem = await usuarioJaTemNascimento(usuario);
+  const jaTem = await buscarDataNascimentoSalva(db, fs, usuario);
   if(jaTem){
     marcarNascimentoNaSessao(jaTem);
     irParaMenu();

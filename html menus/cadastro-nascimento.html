@@ -59,11 +59,10 @@
       getSessionUser,
       destinoMenuPorPerfil,
       parseDataNascimento,
-      obterPerfil,
       salvarDataNascimento,
-      temDataNascimento,
-      marcarNascimentoNaSessao
-    } from "../js/aniversario.js";
+      marcarNascimentoNaSessao,
+      buscarDataNascimentoSalva
+    } from "../js/aniversario.js?v=20260715a";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
@@ -164,46 +163,16 @@
         liberarMenuComData(parsed.dataNascimento);
       } catch (err) {
         console.error(err);
-        // Mesmo se o Firestore falhar, libera neste navegador para não travar o usuário,
-        // e tenta de novo no próximo login.
-        marcarNascimentoNaSessao(parsed.dataNascimento);
-        try {
-          localStorage.setItem(
-            `perfil_nascimento_${user.nome}`,
-            JSON.stringify({
-              nome: user.nome,
-              dataNascimento: parsed.dataNascimento,
-              dataNascimentoExibida: parsed.dataNascimentoExibida,
-              salvoLocalEm: Date.now()
-            })
-          );
-        } catch (_) { /* ignore */ }
-        setMsg("Salvo localmente. Continuando...", true);
-        irParaMenu();
+        setMsg("Não foi possível salvar. Tente novamente.");
+        btnSalvar.disabled = false;
       }
     });
 
     try {
-      const perfil = await obterPerfil(db, fs, user.nome);
-      if (temDataNascimento(perfil)) {
-        liberarMenuComData(perfil.dataNascimento);
+      const iso = await buscarDataNascimentoSalva(db, fs, user.nome);
+      if (iso) {
+        liberarMenuComData(iso);
       } else {
-        // Fallback local (caso Firestore tenha falhado no save anterior)
-        try {
-          const rawLocal = localStorage.getItem(`perfil_nascimento_${user.nome}`);
-          const local = rawLocal ? JSON.parse(rawLocal) : null;
-          if (temDataNascimento(local)) {
-            // tenta sincronizar com Firestore em background
-            const parsed = parseDataNascimento(local.dataNascimento);
-            if (parsed) {
-              salvarDataNascimento(db, fs, user.nome, parsed, {
-                perfil: user.perfil || null
-              }).catch(() => {});
-              liberarMenuComData(parsed.dataNascimento);
-              return;
-            }
-          }
-        } catch (_) { /* ignore */ }
         input.focus();
       }
     } catch (err) {

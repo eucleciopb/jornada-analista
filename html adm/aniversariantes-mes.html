@@ -57,7 +57,7 @@
       nomeMes,
       listarTodosAniversariantes,
       agruparAniversariantesPorMes
-    } from "../js/aniversario.js?v=20260714e";
+    } from "../js/aniversario.js?v=20260715a";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
@@ -80,7 +80,10 @@
       !session.nome ||
       !ADMINS.includes(session.nome)
     ) {
-      localStorage.clear();
+      localStorage.removeItem("usuarioLogado");
+      localStorage.removeItem("user_session");
+      localStorage.removeItem("analistaLogado");
+      localStorage.removeItem("usuarioSelecionado");
       window.location.replace("../index2.html");
       throw new Error("Acesso restrito a ADM");
     }
