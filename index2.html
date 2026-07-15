@@ -9,8 +9,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/bundle-login-admin.css?v=20260715a" />
-  <link rel="stylesheet" href="css/pages/cadastro-nascimento.css?v=20260715a" />
+  <link rel="stylesheet" href="css/bundle-login-admin.css?v=20260715b" />
+  <link rel="stylesheet" href="css/pages/cadastro-nascimento.css?v=20260715b" />
 </head>
 
 <body class="login-page theme-admin">
@@ -84,7 +84,7 @@ import {
   salvarDataNascimento,
   marcarNascimentoNaSessao,
   buscarDataNascimentoSalva
-} from "./js/aniversario.js?v=20260715a";
+} from "./js/aniversario.js?v=20260715b";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
@@ -99,7 +99,7 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const fs = { doc, getDoc, setDoc, serverTimestamp };
 
-const MENU_URL = "html%20menus/menuadm.html?v=20260715a";
+const MENU_URL = "html%20menus/menuadm.html?v=20260715b";
 
 const btn = document.getElementById("btnEntrar");
 const select = document.getElementById("usuarioSelect");
@@ -178,19 +178,18 @@ formNascimento.addEventListener("submit", async (e) => {
   }
 
   btnSalvarNasc.disabled = true;
-  setMsgNasc("Salvando...", true);
+  setMsgNasc("Salvando no banco...", true);
 
   try{
     await salvarDataNascimento(db, fs, usuarioAtual, parsed, {
-      perfil: "admin",
-      criadoEm: serverTimestamp()
+      perfil: "admin"
     });
     marcarNascimentoNaSessao(parsed.dataNascimento);
-    setMsgNasc("Data salva! Abrindo o menu...", true);
+    setMsgNasc("Salvo no banco! Abrindo o menu...", true);
     irParaMenu();
   }catch(err){
     console.error(err);
-    setMsgNasc("Não foi possível salvar. Tente novamente.");
+    setMsgNasc(err?.message || "Não foi possível salvar no banco. Tente novamente.");
     btnSalvarNasc.disabled = false;
   }
 });
@@ -234,10 +233,18 @@ async function login(){
   localStorage.setItem("usuarioLogado", usuario);
   localStorage.setItem("user_session", JSON.stringify(session));
 
-  const jaTem = await buscarDataNascimentoSalva(db, fs, usuario);
-  if(jaTem){
-    marcarNascimentoNaSessao(jaTem);
-    irParaMenu();
+  try{
+    const jaTem = await buscarDataNascimentoSalva(db, fs, usuario);
+    if(jaTem){
+      marcarNascimentoNaSessao(jaTem);
+      irParaMenu();
+      return;
+    }
+  }catch(err){
+    console.error(err);
+    errorMsg.textContent = "Não foi possível verificar a data no banco. Tente novamente.";
+    errorMsg.style.display = "block";
+    btn.disabled = false;
     return;
   }
 

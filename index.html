@@ -9,8 +9,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/bundle-login-user.css?v=20260715a" />
-  <link rel="stylesheet" href="css/pages/cadastro-nascimento.css?v=20260715a" />
+  <link rel="stylesheet" href="css/bundle-login-user.css?v=20260715b" />
+  <link rel="stylesheet" href="css/pages/cadastro-nascimento.css?v=20260715b" />
 </head>
 
 <body class="login-page theme-user">
@@ -102,7 +102,7 @@
     salvarDataNascimento,
     marcarNascimentoNaSessao,
     buscarDataNascimentoSalva
-  } from "./js/aniversario.js?v=20260715a";
+  } from "./js/aniversario.js?v=20260715b";
 
   const firebaseConfig = {
     apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
@@ -117,7 +117,7 @@
   const db = getFirestore(app);
   const fs = { doc, getDoc, setDoc, serverTimestamp };
 
-  const MENU_URL = "html%20menus/menu.html?v=20260715a";
+  const MENU_URL = "html%20menus/menu.html?v=20260715b";
 
   const usuarioSelect = document.getElementById("usuario");
   const senhaInput = document.getElementById("senha");
@@ -220,19 +220,18 @@
     }
 
     btnSalvarNasc.disabled = true;
-    setMsgNasc("Salvando...", true);
+    setMsgNasc("Salvando no banco...", true);
 
     try{
       await salvarDataNascimento(db, fs, usuarioAtual, parsed, {
-        perfil: "analista",
-        criadoEm: serverTimestamp()
+        perfil: "analista"
       });
       marcarNascimentoNaSessao(parsed.dataNascimento);
-      setMsgNasc("Data salva! Abrindo o menu...", true);
+      setMsgNasc("Salvo no banco! Abrindo o menu...", true);
       irParaMenu();
     }catch(err){
       console.error(err);
-      setMsgNasc("Não foi possível salvar. Tente novamente.");
+      setMsgNasc(err?.message || "Não foi possível salvar no banco. Tente novamente.");
       btnSalvarNasc.disabled = false;
     }
   });
@@ -290,6 +289,7 @@
         console.warn("Log de acesso falhou:", logErr);
       }
 
+      setMsg("Verificando perfil no banco...", true);
       const jaTem = await buscarDataNascimentoSalva(db, fs, usuario);
       if(jaTem){
         marcarNascimentoNaSessao(jaTem);
@@ -298,7 +298,7 @@
         return;
       }
 
-      // Sem data → mostra formulário NA MESMA PÁGINA (não depende de redirect).
+      // Sem data no banco → mostra formulário
       setMsg("");
       mostrarFormNascimento(usuario);
       btnEntrar.disabled = false;
@@ -306,7 +306,7 @@
 
     }catch(e){
       console.error(e);
-      setMsg("Erro ao entrar. Verifique o Firebase.");
+      setMsg(e?.message || "Erro ao entrar. Verifique o Firebase.");
       btnEntrar.disabled = false;
       btnEntrar.style.opacity = "1";
     }
