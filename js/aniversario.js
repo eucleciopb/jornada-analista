@@ -1,9 +1,16 @@
 /**
- * Perfil / aniversário — helpers compartilhados (Firestore collection "perfis").
- * Document id = slug(nome). Campo canônico: dataNascimento (YYYY-MM-DD).
+ * Perfil / aniversário — helpers compartilhados.
+ *
+ * Persistência (em ordem de confiabilidade neste projeto):
+ * 1) localStorage (sempre)
+ * 2) Firestore acessos/nascimento_{slug}  ← mesma coleção do login (já libera escrita)
+ * 3) Firestore perfis/{slug}             ← coleção dedicada (melhor esforço)
+ *
+ * Campo canônico: dataNascimento (YYYY-MM-DD).
  */
 
 export const PERFIS_COLLECTION = "perfis";
+export const ACESSOS_COLLECTION = "acessos";
 
 /** Lista canônica de usuários do portal (para leitura individual no Firestore). */
 export const USUARIOS_CONHECIDOS = [
@@ -30,6 +37,14 @@ export function safeParse(raw) {
   } catch {
     return null;
   }
+}
+
+export function chaveLocalNascimento(nome) {
+  return `perfil_nascimento_${slug(nome)}`;
+}
+
+export function docIdNascimento(nome) {
+  return `nascimento_${slug(nome)}`;
 }
 
 export function getSession() {
@@ -208,39 +223,177 @@ export function mensagemAniversario(nome) {
   return `Feliz aniversário, ${primeiro}! Desejamos um mês especial para você.`;
 }
 
-export async function obterPerfil(db, { doc, getDoc }, nome) {
-  const id = slug(nome);
-  if (!id) return null;
-  const snap = await getDoc(doc(db, PERFIS_COLLECTION, id));
-  if (!snap.exists()) return null;
-  return { id: snap.id, ...snap.data() };
+export function temDataNascimento(perfil) {
+  if (!perfil) return false;
+  return Boolean(parseDataNascimento(perfil.dataNascimento || perfil.dataNascimentoExibida));
 }
 
-export async function salvarDataNascimento(db, { doc, setDoc, serverTimestamp }, nome, parsed, extras = {}) {
-  const id = slug(nome);
-  if (!id || !parsed) throw new Error("Dados inválidos para salvar data de nascimento.");
-
+/** Sempre salva no localStorage (sobrevive ao refresh / novo login no mesmo navegador). */
+export function salvarNascimentoLocal(nome, parsed) {
+  if (!nome || !parsed) return null;
   const payload = {
     nome: String(nome).trim(),
+    uidKey: slug(nome),
+    dataNascimento: parsed.dataNascimento,
+    dataNascimentoExibida: parsed.dataNascimentoExibida,
+    diaNascimento: parsed.dia,
+    mesNascimento: parsed.mes,
+    anoNascimento: parsed.ano,
+    salvoLocalEm: Date.now()
+  };
+
+  const chave = chaveLocalNascimento(nome);
+  localStorage.setItem(chave, JSON.stringify(payload));
+
+  // Compatibilidade com chave antiga pelo nome exibido
+  try {
+    localStorage.setItem(`perfil_nascimento_${String(nome).trim()}`, JSON.stringify(payload));
+  } catch (_) { /* ignore */ }
+
+  return payload;
+}
+
+export function obterNascimentoLocal(nome) {
+  if (!nome) return null;
+
+  const tentativas = [
+    chaveLocalNascimento(nome),
+    `perfil_nascimento_${String(nome).trim()}`
+  ];
+
+  for (const chave of tentativas) {
+    try {
+      const raw = localStorage.getItem(chave);
+      const data = raw ? JSON.parse(raw) : null;
+      if (temDataNascimento(data)) return data;
+    } catch (_) { /* ignore */ }
+  }
+
+  return null;
+}
+
+function montarPayload(nome, parsed, extras = {}, serverTimestamp) {
+  const id = slug(nome);
+  return {
+    tipo: "PERFIL_NASCIMENTO",
+    evento: "PERFIL_NASCIMENTO",
+    nome: String(nome).trim(),
+    usuario: String(nome).trim(),
     uidKey: id,
     dataNascimento: parsed.dataNascimento,
     dataNascimentoExibida: parsed.dataNascimentoExibida,
     diaNascimento: parsed.dia,
     mesNascimento: parsed.mes,
     anoNascimento: parsed.ano,
-    atualizadoEm: serverTimestamp(),
+    atualizadoEm: typeof serverTimestamp === "function" ? serverTimestamp() : Date.now(),
     ...extras
   };
-
-  await setDoc(doc(db, PERFIS_COLLECTION, id), payload, { merge: true });
-  return payload;
 }
 
-export async function listarTodosAniversariantes(
+/**
+ * Salva a data em localStorage + Firestore (acessos e perfis).
+ * Nunca falha por completo se o localStorage funcionar.
+ */
+export async function salvarDataNascimento(
+  db,
+  { doc, setDoc, serverTimestamp },
+  nome,
+  parsed,
+  extras = {}
+) {
+  const id = slug(nome);
+  if (!id || !parsed) throw new Error("Dados inválidos para salvar data de nascimento.");
+
+  const local = salvarNascimentoLocal(nome, parsed);
+  const payload = montarPayload(nome, parsed, extras, serverTimestamp);
+
+  const resultados = { local: true, acessos: false, perfis: false, erros: [] };
+
+  // 1) Coleção acessos (já usada no login — regras costumam permitir)
+  try {
+    await setDoc(doc(db, ACESSOS_COLLECTION, docIdNascimento(nome)), payload, { merge: true });
+    resultados.acessos = true;
+  } catch (err) {
+    console.warn("Falha ao salvar nascimento em acessos:", err);
+    resultados.erros.push(err);
+  }
+
+  // 2) Coleção dedicada perfis (melhor esforço)
+  try {
+    await setDoc(doc(db, PERFIS_COLLECTION, id), payload, { merge: true });
+    resultados.perfis = true;
+  } catch (err) {
+    console.warn("Falha ao salvar nascimento em perfis:", err);
+    resultados.erros.push(err);
+  }
+
+  if (!resultados.local && !resultados.acessos && !resultados.perfis) {
+    throw new Error("Não foi possível salvar a data de nascimento.");
+  }
+
+  return { ...payload, ...local, _persistencia: resultados };
+}
+
+/** Lê o perfil: local → acessos → perfis. */
+export async function obterPerfil(db, { doc, getDoc }, nome) {
+  const id = slug(nome);
+  if (!id) return null;
+
+  const local = obterNascimentoLocal(nome);
+  if (temDataNascimento(local)) {
+    // Tenta hidratar Firebase em background se só tiver local
+    return { id, ...local, _fonte: "local" };
+  }
+
+  if (typeof getDoc === "function" && typeof doc === "function" && db) {
+    // acessos/nascimento_{slug}
+    try {
+      const snapAcessos = await getDoc(doc(db, ACESSOS_COLLECTION, docIdNascimento(nome)));
+      if (snapAcessos.exists()) {
+        const data = snapAcessos.data() || {};
+        if (temDataNascimento(data)) {
+          salvarNascimentoLocal(nome, parseDataNascimento(data.dataNascimento));
+          return { id: snapAcessos.id, ...data, _fonte: "acessos" };
+        }
+      }
+    } catch (err) {
+      console.warn("Falha ao ler nascimento em acessos:", err);
+    }
+
+    // perfis/{slug}
+    try {
+      const snapPerfis = await getDoc(doc(db, PERFIS_COLLECTION, id));
+      if (snapPerfis.exists()) {
+        const data = snapPerfis.data() || {};
+        if (temDataNascimento(data)) {
+          salvarNascimentoLocal(nome, parseDataNascimento(data.dataNascimento));
+          return { id: snapPerfis.id, ...data, _fonte: "perfis" };
+        }
+      }
+    } catch (err) {
+      console.warn("Falha ao ler nascimento em perfis:", err);
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Atalho usado no login: devolve ISO da data se existir (local ou Firestore).
+ */
+export async function buscarDataNascimentoSalva(db, fs, nome) {
+  const perfil = await obterPerfil(db, fs, nome);
+  if (temDataNascimento(perfil)) return perfil.dataNascimento;
+  return null;
+}
+
+export async function listarAniversariantesDoMes(
   db,
   { collection, getDocs, doc, getDoc },
+  mes = new Date().getMonth() + 1,
   nomes = USUARIOS_CONHECIDOS
 ) {
+  const mesNum = Number(mes);
   const anoAtual = new Date().getFullYear();
   const porId = new Map();
 
@@ -248,11 +401,11 @@ export async function listarTodosAniversariantes(
     if (!data) return;
     const iso = data.dataNascimento || "";
     const partes = partesDataISO(iso);
-    if (!partes) return;
+    if (!partes || partes.mes !== mesNum) return;
 
     porId.set(id, {
       id,
-      nome: data.nome || id,
+      nome: data.nome || data.usuario || id,
       dia: partes.dia,
       mes: partes.mes,
       ano: partes.ano,
@@ -263,7 +416,7 @@ export async function listarTodosAniversariantes(
     });
   }
 
-  // 1) Tenta listar a coleção inteira (quando as regras permitem).
+  // 1) Coleção perfis (se regras permitirem list)
   if (typeof getDocs === "function" && typeof collection === "function") {
     try {
       const snap = await getDocs(collection(db, PERFIS_COLLECTION));
@@ -273,24 +426,31 @@ export async function listarTodosAniversariantes(
     }
   }
 
-  // 2) Fallback / complemento: getDoc por usuário conhecido (não exige regra de list).
+  // 2) Leitura individual: acessos + perfis por usuário conhecido
   if (typeof getDoc === "function" && typeof doc === "function") {
     const nomesUnicos = [...new Set((nomes || USUARIOS_CONHECIDOS).filter(Boolean))];
     await Promise.all(
       nomesUnicos.map(async (nome) => {
         const id = slug(nome);
         if (!id || porId.has(id)) return;
+
         try {
-          const snap = await getDoc(doc(db, PERFIS_COLLECTION, id));
-          if (snap.exists()) adicionarPerfil(snap.id, snap.data() || {});
-        } catch (err) {
-          console.warn("Falha ao ler perfil", nome, err);
-        }
+          const snapAcessos = await getDoc(doc(db, ACESSOS_COLLECTION, docIdNascimento(nome)));
+          if (snapAcessos.exists()) {
+            adicionarPerfil(id, snapAcessos.data() || {});
+            if (porId.has(id)) return;
+          }
+        } catch (_) { /* ignore */ }
+
+        try {
+          const snapPerfis = await getDoc(doc(db, PERFIS_COLLECTION, id));
+          if (snapPerfis.exists()) adicionarPerfil(id, snapPerfis.data() || {});
+        } catch (_) { /* ignore */ }
       })
     );
   }
 
-  // 3) Complemento local (mesmo navegador em que a pessoa salvou).
+  // 3) Complemento local
   try {
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
@@ -307,42 +467,9 @@ export async function listarTodosAniversariantes(
 
   const lista = [...porId.values()];
   lista.sort((a, b) => {
-    if (a.mes !== b.mes) return a.mes - b.mes;
     if (a.dia !== b.dia) return a.dia - b.dia;
     return String(a.nome).localeCompare(String(b.nome), "pt-BR");
   });
 
   return lista;
-}
-
-/** Agrupa [{mes, nomeMes, itens[]}] cobrindo 1–12 (meses vazios incluídos). */
-export function agruparAniversariantesPorMes(lista) {
-  const grupos = Array.from({ length: 12 }, (_, i) => ({
-    mes: i + 1,
-    nomeMes: nomeMes(i + 1),
-    itens: []
-  }));
-
-  for (const item of lista || []) {
-    const m = Number(item.mes);
-    if (m >= 1 && m <= 12) grupos[m - 1].itens.push(item);
-  }
-
-  return grupos;
-}
-
-export async function listarAniversariantesDoMes(
-  db,
-  api,
-  mes = new Date().getMonth() + 1,
-  nomes = USUARIOS_CONHECIDOS
-) {
-  const mesNum = Number(mes);
-  const todos = await listarTodosAniversariantes(db, api, nomes);
-  return todos.filter((item) => item.mes === mesNum);
-}
-
-export function temDataNascimento(perfil) {
-  if (!perfil) return false;
-  return Boolean(parseDataNascimento(perfil.dataNascimento || perfil.dataNascimentoExibida));
 }

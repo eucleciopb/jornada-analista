@@ -7,8 +7,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../css/bundle-portal-user.css" />
-  <link rel="stylesheet" href="../css/pages/cadastro-nascimento.css" />
+  <link rel="stylesheet" href="../css/bundle-portal-user.css?v=20260715a" />
+  <link rel="stylesheet" href="../css/pages/cadastro-nascimento.css?v=20260715a" />
 </head>
 
 body class="theme-user portal-page gate-pending">
@@ -271,16 +271,15 @@ body class="theme-user portal-page gate-pending">
       serverTimestamp
     } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
     import {
-      obterPerfil,
-      temDataNascimento,
       isAniversarioNoMes,
       mensagemAniversario,
       nomeMes,
       sessaoTemNascimentoOk,
       marcarNascimentoNaSessao,
       parseDataNascimento,
-      salvarDataNascimento
-    } from "../js/aniversario.js?v=20260714b";
+      salvarDataNascimento,
+      buscarDataNascimentoSalva
+    } from "../js/aniversario.js?v=20260715a";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
@@ -413,18 +412,7 @@ body class="theme-user portal-page gate-pending">
     }
 
     async function buscarNascimentoSalvo(nome){
-      try{
-        const perfil = await obterPerfil(db, fs, nome);
-        if(temDataNascimento(perfil)) return perfil.dataNascimento;
-      }catch(err){
-        console.warn("Falha ao consultar perfil:", err);
-      }
-      try{
-        const raw = localStorage.getItem(`perfil_nascimento_${nome}`);
-        const local = raw ? JSON.parse(raw) : null;
-        if(temDataNascimento(local)) return local.dataNascimento;
-      }catch(_){ /* ignore */ }
-      return null;
+      return buscarDataNascimentoSalva(db, fs, nome);
     }
 
     function mostrarGateNascimento(){
@@ -456,21 +444,14 @@ body class="theme-user portal-page gate-pending">
           perfil: "analista",
           criadoEm: serverTimestamp()
         });
+        liberarMenu(parsed.dataNascimento);
+        setBirthMsg("Pronto!", true);
+        await iniciarBannerAniversario(parsed.dataNascimento);
       }catch(err){
-        console.warn("Firestore falhou; salvando localmente.", err);
-        try{
-          localStorage.setItem(`perfil_nascimento_${user.nome}`, JSON.stringify({
-            nome: user.nome,
-            dataNascimento: parsed.dataNascimento,
-            dataNascimentoExibida: parsed.dataNascimentoExibida,
-            salvoLocalEm: Date.now()
-          }));
-        }catch(_){ /* ignore */ }
+        console.error(err);
+        setBirthMsg("Não foi possível salvar. Tente novamente.");
+        if(birthGateSave) birthGateSave.disabled = false;
       }
-
-      liberarMenu(parsed.dataNascimento);
-      setBirthMsg("Pronto!", true);
-      await iniciarBannerAniversario(parsed.dataNascimento);
     });
 
     async function iniciarBannerAniversario(iso){

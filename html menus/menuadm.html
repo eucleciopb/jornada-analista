@@ -10,8 +10,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../css/bundle-portal-admin.css?v=20260714d" />
-  <link rel="stylesheet" href="../css/pages/cadastro-nascimento.css?v=20260714d" />
+  <link rel="stylesheet" href="../css/bundle-portal-admin.css?v=20260715a" />
+  <link rel="stylesheet" href="../css/pages/cadastro-nascimento.css?v=20260715a" />
 </head>
 
 <body class="theme-admin portal-page gate-pending">
@@ -531,8 +531,6 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 import {
   safeParse,
-  obterPerfil,
-  temDataNascimento,
   isAniversarioNoMes,
   mensagemAniversario,
   nomeMes,
@@ -540,8 +538,9 @@ import {
   sessaoTemNascimentoOk,
   marcarNascimentoNaSessao,
   parseDataNascimento,
-  salvarDataNascimento
-} from "../js/aniversario.js?v=20260714e";
+  salvarDataNascimento,
+  buscarDataNascimentoSalva
+} from "../js/aniversario.js?v=20260715a";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
@@ -560,6 +559,27 @@ const fs = { doc, getDoc, setDoc, serverTimestamp };
    VALIDA SESSÃO
 ============================ */
 
+function limparSessaoPreservandoNascimento(){
+  const backup = {};
+  try{
+    for(let i = 0; i < localStorage.length; i++){
+      const key = localStorage.key(i);
+      if(key && key.startsWith("perfil_nascimento_")){
+        backup[key] = localStorage.getItem(key);
+      }
+    }
+  }catch(_){ /* ignore */ }
+
+  localStorage.removeItem("usuarioLogado");
+  localStorage.removeItem("user_session");
+  localStorage.removeItem("analistaLogado");
+  localStorage.removeItem("usuarioSelecionado");
+
+  try{
+    Object.entries(backup).forEach(([k, v]) => localStorage.setItem(k, v));
+  }catch(_){ /* ignore */ }
+}
+
 const session = safeParse(localStorage.getItem("user_session"));
 
 if(
@@ -567,7 +587,7 @@ if(
     session.perfil !== "admin" ||
     !session.nome
 ){
-    localStorage.clear();
+    limparSessaoPreservandoNascimento();
     window.location.replace("../index2.html");
     throw new Error("Sessão inválida");
 }
@@ -584,7 +604,7 @@ const ADMINS = [
 ];
 
 if(!ADMINS.includes(session.nome)){
-    localStorage.clear();
+    limparSessaoPreservandoNascimento();
     window.location.replace("../index2.html");
     throw new Error("Usuário sem permissão ADM");
 }
@@ -620,18 +640,7 @@ function mascararData(valor){
 }
 
 async function buscarNascimentoSalvo(nome){
-  try{
-    const perfil = await obterPerfil(db, fs, nome);
-    if(temDataNascimento(perfil)) return perfil.dataNascimento;
-  }catch(err){
-    console.warn(err);
-  }
-  try{
-    const raw = localStorage.getItem(`perfil_nascimento_${nome}`);
-    const local = raw ? JSON.parse(raw) : null;
-    if(temDataNascimento(local)) return local.dataNascimento;
-  }catch(_){ /* ignore */ }
-  return null;
+  return buscarDataNascimentoSalva(db, fs, nome);
 }
 
 function mostrarGateNascimento(){
@@ -662,20 +671,13 @@ birthGateForm?.addEventListener("submit", async (e) => {
       perfil: "admin",
       criadoEm: serverTimestamp()
     });
+    liberarMenu(parsed.dataNascimento);
+    setBirthMsg("Pronto!", true);
   }catch(err){
-    console.warn(err);
-    try{
-      localStorage.setItem(`perfil_nascimento_${session.nome}`, JSON.stringify({
-        nome: session.nome,
-        dataNascimento: parsed.dataNascimento,
-        dataNascimentoExibida: parsed.dataNascimentoExibida,
-        salvoLocalEm: Date.now()
-      }));
-    }catch(_){ /* ignore */ }
+    console.error(err);
+    setBirthMsg("Não foi possível salvar. Tente novamente.");
+    if(birthGateSave) birthGateSave.disabled = false;
   }
-
-  liberarMenu(parsed.dataNascimento);
-  setBirthMsg("Pronto!", true);
 });
 
 let dataConfirmada = null;
