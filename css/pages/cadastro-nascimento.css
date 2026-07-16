@@ -377,30 +377,33 @@ body.theme-admin.portal-page #aniversariantes .aniversariantes-panel {
   border-radius:999px;
   border:1px solid rgba(148,163,184,.35);
   background:rgba(255,255,255,.06);
-  color:inherit;
+  color:#e2e8f0;
   text-decoration:none;
   font-size:12px;
   font-weight:700;
 }
 .mes-nav-link small{
-  opacity:.75;
+  opacity:.85;
   font-weight:600;
+  color:#cbd5e1;
 }
 .mes-nav-link.is-atual,
 .mes-nav-link:hover{
-  border-color:rgba(217,27,46,.55);
-  background:rgba(217,27,46,.14);
+  border-color:rgba(248,113,113,.75);
+  background:rgba(217,27,46,.22);
+  color:#fff;
 }
 .mes-bloco{
   margin-bottom:18px;
-  padding:14px;
+  padding:16px;
   border-radius:16px;
-  border:1px solid rgba(148,163,184,.28);
-  background:rgba(255,255,255,.04);
+  border:1px solid rgba(148,163,184,.35);
+  background:#ffffff;
+  color:#0f172a;
 }
 .mes-bloco.is-atual{
-  border-color:rgba(217,27,46,.45);
-  background:rgba(217,27,46,.08);
+  border-color:rgba(217,27,46,.55);
+  box-shadow:0 0 0 2px rgba(217,27,46,.12);
 }
 .mes-head{
   display:flex;
@@ -408,7 +411,7 @@ body.theme-admin.portal-page #aniversariantes .aniversariantes-panel {
   align-items:center;
   gap:10px;
   flex-wrap:wrap;
-  margin-bottom:10px;
+  margin-bottom:12px;
 }
 .mes-head h4{
   margin:0;
@@ -416,10 +419,13 @@ body.theme-admin.portal-page #aniversariantes .aniversariantes-panel {
   display:flex;
   align-items:center;
   gap:8px;
+  color:#0f172a;
+  font-weight:800;
 }
 .mes-count{
   font-size:12px;
-  opacity:.8;
+  font-weight:700;
+  color:#475569;
 }
 .mes-badge-atual{
   display:inline-flex;
@@ -427,15 +433,71 @@ body.theme-admin.portal-page #aniversariantes .aniversariantes-panel {
   border-radius:999px;
   font-size:11px;
   font-weight:700;
-  background:rgba(217,27,46,.9);
+  background:#d91b2e;
   color:#fff;
 }
 .mes-empty{
-  font-size:13px;
-  opacity:.7;
-  padding:8px 0;
+  font-size:14px;
+  font-weight:600;
+  color:#475569;
+  padding:10px 4px;
 }
+
 .theme-admin .mes-bloco .aniversariantes-table,
-.theme-admin .mes-bloco table{
+.theme-admin .mes-bloco table,
+.mes-bloco .aniversariantes-table,
+.mes-bloco table{
+  width:100%;
   background:#fff;
+  color:#0f172a;
+  border-collapse:collapse;
+}
+
+.theme-admin .mes-bloco .aniversariantes-table th,
+.theme-admin .mes-bloco .aniversariantes-table td,
+.theme-admin .mes-bloco table th,
+.theme-admin .mes-bloco table td,
+.mes-bloco .aniversariantes-table th,
+.mes-bloco .aniversariantes-table td{
+  color:#0f172a !important;
+  border-bottom:1px solid #e2e8f0;
+  padding:12px 14px;
+  text-align:left;
+  background:#fff;
+}
+
+.theme-admin .mes-bloco .aniversariantes-table th,
+.mes-bloco .aniversariantes-table th{
+  background:#f1f5f9 !important;
+  color:#334155 !important;
+  font-size:12px;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+  font-weight:800;
+}
+
+.theme-admin .mes-bloco .aniversariantes-table td.dia-cell,
+.mes-bloco .aniversariantes-table td.dia-cell{
+  color:#1d4ed8 !important;
+  font-weight:800;
+}
+
+.theme-admin .aniversariantes-empty{
+  background:#ffffff;
+  border:1px dashed #94a3b8;
+  color:#334155;
+}
+.theme-admin .aniversariantes-empty strong{
+  color:#0f172a;
+}
+.theme-admin .aniversariantes-empty p{
+  color:#475569;
+}
+
+.theme-admin .hint,
+.theme-admin .card.wide .hint{
+  color:#cbd5e1;
+}
+.theme-admin .status-pill{
+  color:#e2e8f0;
 }
