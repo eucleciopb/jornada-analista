@@ -412,13 +412,15 @@ export async function buscarDataNascimentoSalva(db, fs, nome) {
   return null;
 }
 
-export async function listarAniversariantesDoMes(
+/**
+ * Carrega todos os perfis com data de nascimento a partir do banco.
+ * Fonte: acessos/nascimento_{slug} (+ perfis legado, se disponível).
+ */
+export async function listarTodosAniversariantes(
   db,
-  { collection, getDocs, doc, getDoc },
-  mes = new Date().getMonth() + 1,
+  { collection, getDocs, doc, getDoc, query, where },
   nomes = USUARIOS_CONHECIDOS
 ) {
-  const mesNum = Number(mes);
   const anoAtual = new Date().getFullYear();
   const porId = new Map();
 
@@ -426,7 +428,7 @@ export async function listarAniversariantesDoMes(
     if (!data) return;
     const iso = data.dataNascimento || "";
     const partes = partesDataISO(iso);
-    if (!partes || partes.mes !== mesNum) return;
+    if (!partes) return;
 
     porId.set(id, {
       id,
@@ -441,8 +443,27 @@ export async function listarAniversariantesDoMes(
     });
   }
 
-  // 1) Coleção perfis (se regras permitirem list)
+  // 1) Query por tipo/evento na coleção acessos (quando permitido)
   if (typeof getDocs === "function" && typeof collection === "function") {
+    const tentarQuery = async (campo, valor) => {
+      if (typeof query !== "function" || typeof where !== "function") return;
+      try {
+        const q = query(collection(db, ACESSOS_COLLECTION), where(campo, "==", valor));
+        const snap = await getDocs(q);
+        snap.forEach((item) => {
+          const data = item.data() || {};
+          const id = slug(data.nome || data.usuario || item.id.replace(/^nascimento_/, ""));
+          if (id) adicionarPerfil(id, data);
+        });
+      } catch (err) {
+        console.warn(`Query acessos por ${campo} falhou:`, err);
+      }
+    };
+
+    await tentarQuery("tipo", "PERFIL_NASCIMENTO");
+    await tentarQuery("evento", "PERFIL_NASCIMENTO");
+
+    // Coleção perfis (pode estar bloqueada)
     try {
       const snap = await getDocs(collection(db, PERFIS_COLLECTION));
       snap.forEach((item) => adicionarPerfil(item.id, item.data() || {}));
@@ -451,7 +472,7 @@ export async function listarAniversariantesDoMes(
     }
   }
 
-  // 2) Leitura individual: acessos + perfis por usuário conhecido
+  // 2) Leitura individual por usuário conhecido (não exige list/query)
   if (typeof getDoc === "function" && typeof doc === "function") {
     const nomesUnicos = [...new Set((nomes || USUARIOS_CONHECIDOS).filter(Boolean))];
     await Promise.all(
@@ -475,26 +496,46 @@ export async function listarAniversariantesDoMes(
     );
   }
 
-  // 3) Complemento local
-  try {
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (!key || !key.startsWith("perfil_nascimento_")) continue;
-      try {
-        const local = JSON.parse(localStorage.getItem(key) || "null");
-        if (!local) continue;
-        const id = slug(local.nome || key.replace("perfil_nascimento_", ""));
-        if (!id || porId.has(id)) continue;
-        adicionarPerfil(id, local);
-      } catch (_) { /* ignore */ }
-    }
-  } catch (_) { /* ignore */ }
-
   const lista = [...porId.values()];
   lista.sort((a, b) => {
+    if (a.mes !== b.mes) return a.mes - b.mes;
     if (a.dia !== b.dia) return a.dia - b.dia;
     return String(a.nome).localeCompare(String(b.nome), "pt-BR");
   });
 
   return lista;
+}
+
+export function agruparAniversariantesPorMes(lista = []) {
+  const grupos = Array.from({ length: 12 }, (_, i) => ({
+    mes: i + 1,
+    nomeMes: nomeMes(i + 1),
+    itens: []
+  }));
+
+  for (const item of lista || []) {
+    const mes = Number(item?.mes);
+    if (!mes || mes < 1 || mes > 12) continue;
+    grupos[mes - 1].itens.push(item);
+  }
+
+  for (const g of grupos) {
+    g.itens.sort((a, b) => {
+      if (a.dia !== b.dia) return a.dia - b.dia;
+      return String(a.nome).localeCompare(String(b.nome), "pt-BR");
+    });
+  }
+
+  return grupos;
+}
+
+export async function listarAniversariantesDoMes(
+  db,
+  fs,
+  mes = new Date().getMonth() + 1,
+  nomes = USUARIOS_CONHECIDOS
+) {
+  const todos = await listarTodosAniversariantes(db, fs, nomes);
+  const mesNum = Number(mes);
+  return todos.filter((item) => item.mes === mesNum);
 }
