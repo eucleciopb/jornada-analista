@@ -7,8 +7,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../css/bundle-admin.css?v=20260714e" />
-  <link rel="stylesheet" href="../css/pages/cadastro-nascimento.css?v=20260714e" />
+  <link rel="stylesheet" href="../css/bundle-admin.css?v=20260716a" />
+  <link rel="stylesheet" href="../css/pages/cadastro-nascimento.css?v=20260716a" />
 </head>
 <body class="theme-admin app-shell">
   <header class="topbar">
@@ -26,7 +26,7 @@
     <section>
       <h3>Lista completa classificada por mês</h3>
       <p class="hint">
-        Todo o time com data de nascimento cadastrada, agrupado de janeiro a dezembro
+        Todo o time com data de nascimento cadastrada no banco, agrupado de janeiro a dezembro
         e ordenado pelo dia. O mês atual fica em destaque. Visível apenas para administradores.
       </p>
     </section>
@@ -50,14 +50,16 @@
       collection,
       getDocs,
       doc,
-      getDoc
+      getDoc,
+      query,
+      where
     } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
     import {
       safeParse,
       nomeMes,
       listarTodosAniversariantes,
       agruparAniversariantesPorMes
-    } from "../js/aniversario.js?v=20260715b";
+    } from "../js/aniversario.js?v=20260716a";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
@@ -70,6 +72,7 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    const fs = { collection, getDocs, doc, getDoc, query, where };
 
     const ADMINS = ["Bruna", "Elaine", "Euclecio", "Pedro"];
     const session = safeParse(localStorage.getItem("user_session"));
@@ -97,7 +100,7 @@
     userInfo.textContent = `${session.nome} · Administrador`;
 
     document.getElementById("btnMenu").addEventListener("click", () => {
-      window.location.href = "../html menus/menuadm.html";
+      window.location.href = "../html%20menus/menuadm.html";
     });
 
     document.getElementById("btnLogout").addEventListener("click", () => {
@@ -183,13 +186,10 @@
     async function carregar() {
       setMsg("");
       statusLista.textContent = "Carregando...";
-      listaEl.innerHTML = `<div class="aniversariantes-empty">Buscando aniversariantes do time...</div>`;
+      listaEl.innerHTML = `<div class="aniversariantes-empty">Buscando aniversariantes no banco...</div>`;
 
       try {
-        const lista = await listarTodosAniversariantes(
-          db,
-          { collection, getDocs, doc, getDoc }
-        );
+        const lista = await listarTodosAniversariantes(db, fs);
         const grupos = agruparAniversariantesPorMes(lista);
         const comData = lista.length;
 
@@ -198,10 +198,10 @@
         if (!comData) {
           listaEl.innerHTML = `
             <div class="aniversariantes-empty">
-              <strong>Nenhuma data de nascimento cadastrada</strong>
+              <strong>Nenhuma data de nascimento no banco</strong>
               <p>
-                Assim que o time registrar a data no portal, a lista completa
-                aparece aqui classificada por mês.
+                Assim que o time registrar a data no login, a lista completa
+                aparece aqui classificada por mês (fonte: Firebase).
               </p>
             </div>`;
           return;
@@ -218,18 +218,17 @@
           ${grupos.map(renderMes).join("")}
         `;
 
-        // Rola até o mês atual
         requestAnimationFrame(() => {
           document.getElementById(`mes-${mesAtual}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
         });
       } catch (err) {
         console.error(err);
         statusLista.textContent = "Erro";
-        setMsg("Não foi possível carregar os aniversariantes.");
+        setMsg("Não foi possível carregar os aniversariantes do banco.");
         listaEl.innerHTML = `
           <div class="aniversariantes-empty">
             <strong>Falha ao carregar</strong>
-            <p>Verifique a conexão com o Firebase e tente novamente.</p>
+            <p>${escapeHtml(err?.message || "Verifique a conexão com o Firebase e tente novamente.")}</p>
           </div>`;
       }
     }
