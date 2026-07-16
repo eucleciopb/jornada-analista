@@ -7,8 +7,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../css/bundle-admin.css?v=20260716b" />
-  <link rel="stylesheet" href="../css/pages/cadastro-nascimento.css?v=20260716b" />
+  <link rel="stylesheet" href="../css/bundle-admin.css?v=20260716c" />
+  <link rel="stylesheet" href="../css/pages/cadastro-nascimento.css?v=20260716c" />
 </head>
 <body class="theme-admin app-shell">
   <header class="topbar">
@@ -27,7 +27,7 @@
       <h3>Lista completa classificada por mês</h3>
       <p class="hint">
         Todo o time com data de nascimento cadastrada no banco, agrupado de janeiro a dezembro
-        e ordenado pelo dia. O mês atual fica em destaque. Visível apenas para administradores.
+        e ordenado pelo dia. Use <b>Editar</b> para corrigir uma data. Visível apenas para administradores.
       </p>
     </section>
 
@@ -43,6 +43,30 @@
     <div id="listaAniversariantes" class="aniversariantes-panel"></div>
   </main>
 
+  <div id="editModal" class="edit-nasc-modal" hidden>
+    <div class="edit-nasc-card" role="dialog" aria-modal="true" aria-labelledby="editNascTitle">
+      <h3 id="editNascTitle">Editar data de nascimento</h3>
+      <p class="edit-nasc-user" id="editNascNome">—</p>
+
+      <label for="editNascInput">Data de nascimento</label>
+      <input
+        id="editNascInput"
+        type="text"
+        inputmode="numeric"
+        maxlength="10"
+        placeholder="DD/MM/AAAA"
+      />
+      <small class="edit-nasc-hint">Formato: dia/mês/ano (ex.: 15/03/1990)</small>
+
+      <p id="editNascMsg" class="edit-nasc-msg" role="status"></p>
+
+      <div class="edit-nasc-actions">
+        <button id="btnEditCancel" type="button" class="btn-edit-cancel">Cancelar</button>
+        <button id="btnEditSave" type="button" class="btn-edit-save">Salvar no banco</button>
+      </div>
+    </div>
+  </div>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
     import {
@@ -51,15 +75,17 @@
       getDocs,
       doc,
       getDoc,
+      setDoc,
       query,
       where
     } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
     import {
       safeParse,
-      nomeMes,
+      parseDataNascimento,
+      salvarDataNascimento,
       listarTodosAniversariantes,
       agruparAniversariantesPorMes
-    } from "../js/aniversario.js?v=20260716a";
+    } from "../js/aniversario.js?v=20260716c";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
@@ -72,7 +98,7 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-    const fs = { collection, getDocs, doc, getDoc, query, where };
+    const fs = { collection, getDocs, doc, getDoc, setDoc, query, where };
 
     const ADMINS = ["Bruna", "Elaine", "Euclecio", "Pedro"];
     const session = safeParse(localStorage.getItem("user_session"));
@@ -96,6 +122,16 @@
     const statusLista = document.getElementById("statusLista");
     const msg = document.getElementById("msg");
     const mesAtual = new Date().getMonth() + 1;
+
+    const editModal = document.getElementById("editModal");
+    const editNascNome = document.getElementById("editNascNome");
+    const editNascInput = document.getElementById("editNascInput");
+    const editNascMsg = document.getElementById("editNascMsg");
+    const btnEditCancel = document.getElementById("btnEditCancel");
+    const btnEditSave = document.getElementById("btnEditSave");
+
+    let editandoNome = "";
+    let listaCache = [];
 
     userInfo.textContent = `${session.nome} · Administrador`;
 
@@ -124,9 +160,90 @@
         .replaceAll("'", "&#039;");
     }
 
-    function setMsg(text) {
+    function setMsg(text, ok = false) {
       msg.textContent = text || "";
+      msg.style.color = ok ? "#22c55e" : "#ef4444";
     }
+
+    function setEditMsg(text, ok = false) {
+      editNascMsg.textContent = text || "";
+      editNascMsg.classList.toggle("ok", Boolean(ok));
+    }
+
+    function mascararData(valor) {
+      const digits = String(valor || "").replace(/\D/g, "").slice(0, 8);
+      if (digits.length <= 2) return digits;
+      if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+      return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+    }
+
+    function abrirEdicao(item) {
+      editandoNome = item.nome;
+      editNascNome.textContent = item.nome;
+      editNascInput.value = item.dataNascimentoExibida || "";
+      setEditMsg("");
+      btnEditSave.disabled = false;
+      editModal.hidden = false;
+      editNascInput.focus();
+      editNascInput.select();
+    }
+
+    function fecharEdicao() {
+      editModal.hidden = true;
+      editandoNome = "";
+      setEditMsg("");
+    }
+
+    btnEditCancel.addEventListener("click", fecharEdicao);
+
+    editModal.addEventListener("click", (e) => {
+      if (e.target === editModal) fecharEdicao();
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && !editModal.hidden) fecharEdicao();
+    });
+
+    editNascInput.addEventListener("input", () => {
+      editNascInput.value = mascararData(editNascInput.value);
+      setEditMsg("");
+    });
+
+    editNascInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        btnEditSave.click();
+      }
+    });
+
+    btnEditSave.addEventListener("click", async () => {
+      const parsed = parseDataNascimento(editNascInput.value);
+      if (!parsed) {
+        setEditMsg("Informe uma data válida no formato DD/MM/AAAA.");
+        editNascInput.focus();
+        return;
+      }
+      if (!editandoNome) return;
+
+      btnEditSave.disabled = true;
+      setEditMsg("Salvando no banco...", true);
+
+      try {
+        await salvarDataNascimento(db, fs, editandoNome, parsed, {
+          perfil: "editado-por-admin",
+          editadoPor: session.nome,
+          editadoEm: new Date().toISOString()
+        });
+        setEditMsg("Salvo!", true);
+        setMsg(`Data de ${editandoNome} atualizada no banco.`, true);
+        fecharEdicao();
+        await carregar({ preserveScroll: true });
+      } catch (err) {
+        console.error(err);
+        setEditMsg(err?.message || "Não foi possível salvar no banco.");
+        btnEditSave.disabled = false;
+      }
+    });
 
     function renderLinha(item, idx) {
       const idade =
@@ -140,6 +257,14 @@
           <td>${escapeHtml(item.nome)}</td>
           <td>${escapeHtml(item.dataNascimentoExibida || "—")}</td>
           <td>${escapeHtml(idade)}</td>
+          <td class="acoes-cell">
+            <button
+              type="button"
+              class="btn-editar-nasc"
+              data-nome="${escapeHtml(item.nome)}"
+              data-data="${escapeHtml(item.dataNascimentoExibida || "")}"
+            >Editar</button>
+          </td>
         </tr>`;
     }
 
@@ -166,6 +291,7 @@
                   <th>Nome</th>
                   <th>Nascimento</th>
                   <th>Idade que completa</th>
+                  <th>Ações</th>
                 </tr>
               </thead>
               <tbody>${rows}</tbody>
@@ -183,13 +309,31 @@
         </section>`;
     }
 
-    async function carregar() {
-      setMsg("");
+    function ligarBotoesEditar() {
+      listaEl.querySelectorAll(".btn-editar-nasc").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const nome = btn.getAttribute("data-nome") || "";
+          const item = listaCache.find((x) => x.nome === nome) || {
+            nome,
+            dataNascimentoExibida: btn.getAttribute("data-data") || ""
+          };
+          abrirEdicao(item);
+        });
+      });
+    }
+
+    async function carregar({ preserveScroll = false } = {}) {
+      const scrollY = preserveScroll ? window.scrollY : null;
+      setMsg(msg.textContent && preserveScroll ? msg.textContent : "");
+      if (!preserveScroll) setMsg("");
       statusLista.textContent = "Carregando...";
-      listaEl.innerHTML = `<div class="aniversariantes-empty">Buscando aniversariantes no banco...</div>`;
+      if (!preserveScroll) {
+        listaEl.innerHTML = `<div class="aniversariantes-empty">Buscando aniversariantes no banco...</div>`;
+      }
 
       try {
         const lista = await listarTodosAniversariantes(db, fs);
+        listaCache = lista;
         const grupos = agruparAniversariantesPorMes(lista);
         const comData = lista.length;
 
@@ -218,8 +362,14 @@
           ${grupos.map(renderMes).join("")}
         `;
 
+        ligarBotoesEditar();
+
         requestAnimationFrame(() => {
-          document.getElementById(`mes-${mesAtual}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+          if (preserveScroll && scrollY != null) {
+            window.scrollTo(0, scrollY);
+          } else {
+            document.getElementById(`mes-${mesAtual}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
         });
       } catch (err) {
         console.error(err);
