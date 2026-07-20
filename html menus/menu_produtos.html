@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <title>Resumo | Treinamentos de Produtos (Alex)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/bundle-portal-user.css?v=20260720h" />
+  <link rel="stylesheet" href="../css/pages/cadastro-nascimento.css?v=20260720h" />
+  <link rel="stylesheet" href="../css/pages/alex-portal.css?v=20260720h" />
+</head>
+<body class="theme-user portal-page gate-pending">
+  <!-- Alex e Euclecio: menu de treinamentos de produtos -->
+  <script>
+  (function () {
+    try {
+      var qs = new URLSearchParams(location.search);
+      var qsU = String(qs.get("u") || "").trim();
+      var raw = localStorage.getItem("user_session");
+      var s = raw ? JSON.parse(raw) : {};
+      var nome = String(s.nome || s.usuario || localStorage.getItem("usuarioLogado") || qsU || "").trim().toLowerCase();
+      var mat = String(s.matricula || "").trim().toUpperCase();
+      var uid = String(s.uidKey || "").trim().toLowerCase();
+      var isProdutos =
+        nome === "alex" || nome === "euclecio" ||
+        mat === "A70" || mat === "ALEX" || mat === "E72" || mat === "EUCLECIO" ||
+        uid === "alex" || uid === "euclecio" ||
+        qsU.toLowerCase() === "alex" || qsU.toLowerCase() === "euclecio";
+      if (isProdutos) {
+        var isAlex =
+          nome === "alex" || mat === "A70" || mat === "ALEX" || uid === "alex" ||
+          qsU.toLowerCase() === "alex";
+        s.nome = isAlex ? "Alex" : "Euclecio";
+        s.matricula = isAlex ? "A70" : "E72";
+        s.uidKey = isAlex ? "alex" : "euclecio";
+        s.perfil = "treinamento_produtos";
+        s.tipoUsuario = "treinamento_produtos";
+        localStorage.setItem("user_session", JSON.stringify(s));
+        localStorage.setItem("usuarioLogado", s.nome);
+        return;
+      }
+      s.perfil = "analista";
+      s.tipoUsuario = "analista";
+      localStorage.setItem("user_session", JSON.stringify(s));
+      if (s.nome) localStorage.setItem("usuarioLogado", s.nome);
+      location.replace("menu.html?v=20260720h");
+    } catch (e) {
+      location.replace("menu.html?v=20260720h");
+    }
+  })();
+  </script>
+
+  <div id="birthGateOverlay" class="birth-gate-overlay" aria-modal="true" role="dialog">
+    <div class="login-card nasc-card birth-gate-card">
+      <div class="logo-box">GP</div>
+      <h2>Complete seu perfil</h2>
+      <p class="hint">Informe sua data de nascimento para liberar o menu.</p>
+      <div class="nasc-user" id="birthGateUser">—</div>
+      <form id="birthGateForm" class="nasc-form" autocomplete="off" novalidate>
+        <div class="form-group">
+          <label for="birthGateInput">Data de nascimento</label>
+          <input id="birthGateInput" type="text" inputmode="numeric" maxlength="10" placeholder="DD/MM/AAAA" required />
+        </div>
+        <button id="birthGateSave" class="btn-primary" type="submit">Salvar e continuar</button>
+      </form>
+      <p id="birthGateMsg" class="msg" role="status"></p>
+    </div>
+  </div>
+
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <div class="portal-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-logo">GP</div>
+        <div>
+          <h2>Jornada</h2>
+          <small>Treinamentos de Produtos</small>
+        </div>
+      </div>
+
+      <div class="user-card">
+        <div class="avatar" id="userAvatar">E</div>
+        <div class="user-meta">
+          <small>Perfil produtos</small>
+          <strong id="sidebarUserName">Carregando...</strong>
+        </div>
+      </div>
+
+      <nav class="side-nav">
+        <a class="side-link active" href="menu_produtos.html"><span class="nav-ico">📊</span>Resumo</a>
+        <a class="side-link" href="../html usuarios/treinamentos.html"><span class="nav-ico">🎓</span>Treinamentos</a>
+        <a class="side-link" href="../html usuarios/criar-agenda.html"><span class="nav-ico">➕</span>Criar Agenda</a>
+        <a class="side-link" href="../html usuarios/agenda.html"><span class="nav-ico">📅</span>Agenda</a>
+        <a class="side-link" href="../html usuarios/biblioteca-treinamentos.html"><span class="nav-ico">📚</span>Biblioteca</a>
+        <a class="side-link" href="../html usuarios/links-uteis.html"><span class="nav-ico">🔗</span>Links Úteis</a>
+      </nav>
+
+      <div class="side-footer">
+        <button id="btnLogoutSide" class="logout-side" type="button">Sair do Sistema</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="top-header">
+        <button class="mobile-toggle" id="mobileToggle" type="button" aria-label="Abrir menu">☰</button>
+        <div class="hello">
+          <small>Resumo do mês</small>
+          <h1 id="welcomeText">Carregando...</h1>
+        </div>
+        <span class="header-date" id="headerDate"></span>
+        <div class="mobile-logo">GP</div>
+      </header>
+
+      <div class="content">
+        <div class="alex-hero" style="margin-bottom:14px;">
+          <h2 style="margin:0 0 6px;font-size:1.35rem;">Olá, <span id="heroName">Euclecio</span>!</h2>
+          <p style="margin:0;color:#64748b;">Resumo dos seus treinamentos realizados (sem meta de 3 CDs).</p>
+        </div>
+
+        <div class="alex-filters" style="grid-template-columns:repeat(3,minmax(0,1fr));">
+          <div class="field">
+            <label for="fMes">Mês</label>
+            <select id="fMes"></select>
+          </div>
+          <div class="field">
+            <label for="fAno">Ano</label>
+            <select id="fAno"></select>
+          </div>
+          <div class="alex-filters-actions">
+            <button type="button" class="btn-alex primary" id="btnAplicar">Atualizar</button>
+          </div>
+        </div>
+
+        <div id="statusLoad" class="alex-loading">Carregando treinamentos...</div>
+
+        <section id="resumoSection" hidden>
+          <div class="section-title" style="margin-bottom:12px;">
+            <div>
+              <h3 id="tituloPeriodo">Resumo do mês</h3>
+              <p>Totais com base nos lançamentos de <code>treinamentos_realizados</code>.</p>
+            </div>
+            <span id="statusResumo" class="status-pill">—</span>
+          </div>
+
+          <div class="alex-metrics" id="cardsResumo"></div>
+
+          <div class="section-title" style="margin:18px 0 12px;">
+            <div>
+              <h3>Treinamentos do período</h3>
+              <p>Lista dos registros já cadastrados no sistema.</p>
+            </div>
+            <a class="btn-alex primary" href="../html usuarios/treinamentos.html">Abrir cadastro</a>
+          </div>
+
+          <div class="alex-table-wrap">
+            <table class="alex-table" style="min-width:720px;">
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Treinamento</th>
+                  <th>CD</th>
+                  <th>Modalidade</th>
+                  <th>Público</th>
+                  <th>Pessoas</th>
+                  <th>Nota</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyTreinos"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <nav class="bottom-nav">
+        <a class="active" href="menu_produtos.html"><span>Resumo</span></a>
+        <a href="../html usuarios/treinamentos.html"><span>Treinos</span></a>
+        <a href="../html usuarios/agenda.html"><span>Agenda</span></a>
+        <button id="btnLogoutMobile" type="button"><span>Sair</span></button>
+      </nav>
+    </main>
+  </div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+  import {
+    getFirestore, collection, getDocs, query, where,
+    doc, getDoc, setDoc, serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+  import {
+    parseDataNascimento,
+    salvarDataNascimento,
+    marcarNascimentoNaSessao,
+    buscarDataNascimentoSalva
+  } from "../js/aniversario.js?v=20260720h";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
+    authDomain: "jornada-portal.firebaseapp.com",
+    projectId: "jornada-portal",
+    storageBucket: "jornada-portal.firebasestorage.app",
+    messagingSenderId: "669362296644",
+    appId: "1:669362296644:web:f590d9834a8e4e60012911"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const fs = { doc, getDoc, setDoc, serverTimestamp };
+
+  function safeParse(raw){ try { return JSON.parse(raw); } catch { return null; } }
+  function slug(s){
+    return String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+      .replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");
+  }
+  function escapeHtml(v){
+    return String(v ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;").replaceAll("'","&#039;");
+  }
+  function normalize(s){ return String(s || "").replace(/\s+/g," ").trim(); }
+  function toBR(iso){
+    if(!iso) return "—";
+    const [y,m,d] = String(iso).split("-");
+    return (y && m && d) ? `${d}/${m}/${y}` : String(iso);
+  }
+  function mesNome(mes){
+    return ["","Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"][mes] || "-";
+  }
+
+  function getUser(){
+    const s = safeParse(localStorage.getItem("user_session"));
+    if (s?.nome) return String(s.nome).trim();
+    return (localStorage.getItem("usuarioLogado") || "").trim();
+  }
+
+  const userNome = getUser();
+  if (!userNome) {
+    location.replace("../index.html");
+    throw new Error("Sem sessão");
+  }
+
+  welcomeText.textContent = userNome;
+  heroName.textContent = userNome;
+  sidebarUserName.textContent = userNome;
+  userAvatar.textContent = userNome.charAt(0).toUpperCase();
+  headerDate.textContent = new Date().toLocaleDateString("pt-BR", { weekday:"long", day:"numeric", month:"long" });
+
+  // Gate nascimento
+  const birthGateOverlay = document.getElementById("birthGateOverlay");
+  function liberarMenu(iso){
+    if (iso) marcarNascimentoNaSessao(iso);
+    birthGateOverlay?.classList.add("is-done");
+    document.body.classList.remove("gate-pending");
+  }
+  function mascararData(valor){
+    const digits = String(valor || "").replace(/\D/g, "").slice(0, 8);
+    if (digits.length <= 2) return digits;
+    if (digits.length <= 4) return `${digits.slice(0,2)}/${digits.slice(2)}`;
+    return `${digits.slice(0,2)}/${digits.slice(2,4)}/${digits.slice(4)}`;
+  }
+  birthGateUser.textContent = userNome;
+  birthGateInput?.addEventListener("input", () => {
+    birthGateInput.value = mascararData(birthGateInput.value);
+  });
+  birthGateForm?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const parsed = parseDataNascimento(birthGateInput.value);
+    if (!parsed) { birthGateMsg.textContent = "Informe uma data válida (DD/MM/AAAA)."; return; }
+    birthGateSave.disabled = true;
+    try {
+      await salvarDataNascimento(db, fs, userNome, parsed, { perfil: "treinamento_produtos" });
+      liberarMenu(parsed.dataNascimento);
+    } catch (err) {
+      birthGateMsg.textContent = err?.message || "Erro ao salvar.";
+      birthGateSave.disabled = false;
+    }
+  });
+  try {
+    const dn = await buscarDataNascimentoSalva(db, fs, userNome);
+    if (dn) liberarMenu(dn);
+    else {
+      birthGateOverlay?.classList.remove("is-done");
+      document.body.classList.add("gate-pending");
+    }
+  } catch {
+    document.body.classList.add("gate-pending");
+  }
+
+  // Sidebar mobile
+  const sidebar = document.getElementById("sidebar");
+  const sidebarOverlay = document.getElementById("sidebarOverlay");
+  function toggleSidebar(open){
+    sidebar?.classList.toggle("open", open);
+    sidebarOverlay?.classList.toggle("open", open);
+  }
+  mobileToggle?.addEventListener("click", () => toggleSidebar(!sidebar?.classList.contains("open")));
+  sidebarOverlay?.addEventListener("click", () => toggleSidebar(false));
+
+  function logout(){
+    localStorage.removeItem("user_session");
+    localStorage.removeItem("usuarioLogado");
+    location.href = "../index.html";
+  }
+  btnLogoutSide?.addEventListener("click", logout);
+  btnLogoutMobile?.addEventListener("click", logout);
+
+  // Filtros mês/ano
+  const agora = new Date();
+  const MESES = ["","Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+  fMes.innerHTML = MESES.slice(1).map((m,i) =>
+    `<option value="${i+1}" ${i+1===agora.getMonth()+1?"selected":""}>${m}</option>`
+  ).join("");
+  fAno.innerHTML = [agora.getFullYear(), agora.getFullYear()-1, agora.getFullYear()-2]
+    .map(a => `<option value="${a}" ${a===agora.getFullYear()?"selected":""}>${a}</option>`).join("");
+
+  let CACHE = [];
+
+  function filtrarMes(lista, ano, mes){
+    return (lista || []).filter(item => {
+      if (!item.data) return false;
+      const [y,m] = String(item.data).split("-").map(Number);
+      return y === ano && m === mes;
+    });
+  }
+
+  function resumo(lista){
+    const cds = new Set();
+    let pessoas = 0;
+    let presencial = 0;
+    let online = 0;
+    let vendedor = 0;
+    let gestor = 0;
+    let outros = 0;
+
+    lista.forEach(t => {
+      const cd = normalize(t.cd);
+      if (cd) cds.add(cd);
+      pessoas += Number(t.totalPessoas) || 0;
+      const tipo = normalize(t.tipoTreinamento).toLowerCase();
+      if (tipo === "presencial") presencial += 1;
+      else if (tipo === "online") online += 1;
+      const pub = normalize(t.publico).toLowerCase();
+      if (pub.includes("vendedor")) vendedor += 1;
+      else if (pub.includes("gestor") || pub.includes("supervisor") || pub.includes("gerente")) gestor += 1;
+      else outros += 1;
+    });
+
+    return {
+      total: lista.length,
+      cds: cds.size,
+      pessoas,
+      presencial,
+      online,
+      vendedor,
+      gestor,
+      outros
+    };
+  }
+
+  function render(lista, ano, mes){
+    statusLoad.hidden = true;
+    resumoSection.hidden = false;
+    tituloPeriodo.textContent = `Resumo — ${mesNome(mes)} / ${ano}`;
+
+    const r = resumo(lista);
+    statusResumo.textContent = r.total ? `${r.total} registro(s)` : "Sem lançamentos";
+    statusResumo.className = `status-pill ${r.total ? "ok" : "warn"}`;
+
+    cardsResumo.innerHTML = [
+      ["Treinamentos no mês", r.total, "Todos os lançamentos do período"],
+      ["CDs impactados", r.cds, "CDs únicos (sem meta de 3)"],
+      ["Pessoas treinadas", r.pessoas, "Soma de participantes"],
+      ["Presenciais", r.presencial, "Quantidade presencial"],
+      ["Online", r.online, "Quantidade online"],
+      ["Público vendedor", r.vendedor, "Registros com público vendedor"],
+      ["Público gestor", r.gestor, "Gestores / supervisores / gerentes"],
+      ["Outros públicos", r.outros, "Demais públicos"]
+    ].map(([t,v,tip]) => `
+      <div class="alex-metric" title="${escapeHtml(tip)}">
+        <span>${escapeHtml(t)}</span>
+        <strong>${v}</strong>
+      </div>
+    `).join("");
+
+    if (!lista.length) {
+      tbodyTreinos.innerHTML = `<tr><td colspan="7"><div class="alex-empty">Nenhum treinamento cadastrado neste mês.</div></td></tr>`;
+      return;
+    }
+
+    const ordenados = [...lista].sort((a,b) => String(b.data||"").localeCompare(String(a.data||"")));
+    tbodyTreinos.innerHTML = ordenados.map(t => `
+      <tr>
+        <td>${toBR(t.data)}</td>
+        <td>${escapeHtml(t.treinamento || "—")}</td>
+        <td>${escapeHtml(t.cd || "—")}</td>
+        <td>${escapeHtml(t.tipoTreinamento || "—")}</td>
+        <td>${escapeHtml(t.publico || "—")}</td>
+        <td>${t.totalPessoas ?? "—"}</td>
+        <td>${t.notaMedia ?? "—"}</td>
+      </tr>
+    `).join("");
+  }
+
+  async function carregar(){
+    statusLoad.hidden = false;
+    statusLoad.textContent = "Carregando treinamentos...";
+    resumoSection.hidden = true;
+    try {
+      const uidKey = slug(userNome);
+      const q = query(collection(db, "treinamentos_realizados"), where("uidKey", "==", uidKey));
+      const snap = await getDocs(q);
+      CACHE = [];
+      snap.forEach(d => CACHE.push({ id: d.id, ...d.data() }));
+      aplicar();
+    } catch (err) {
+      console.error(err);
+      statusLoad.textContent = "Não foi possível carregar os treinamentos. Tente novamente.";
+    }
+  }
+
+  function aplicar(){
+    const ano = Number(fAno.value);
+    const mes = Number(fMes.value);
+    render(filtrarMes(CACHE, ano, mes), ano, mes);
+  }
+
+  btnAplicar.addEventListener("click", aplicar);
+  fMes.addEventListener("change", aplicar);
+  fAno.addEventListener("change", aplicar);
+
+  await carregar();
+</script>
+</body>
+</html>

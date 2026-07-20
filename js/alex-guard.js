@@ -50,13 +50,13 @@ export function aplicarGuardPortal() {
   }
 
   const path = decodeURIComponent(window.location.pathname || "").toLowerCase();
-  if (!isProdutos && /menu_alex\.html/i.test(path)) {
-    window.location.replace(/html\s*menus/i.test(path) ? "menu.html?v=20260720g" : "html menus/menu.html?v=20260720g");
+  if (!isProdutos && /menu_(?:alex|produtos)\.html/i.test(path)) {
+    window.location.replace(/html\s*menus/i.test(path) ? "menu.html?v=20260720h" : "html menus/menu.html?v=20260720h");
     return null;
   }
 
-  if (isProdutos && /menu\.html$/i.test(path) && !/menu_alex\.html$/i.test(path)) {
-    window.location.replace("menu_alex.html?v=20260720g");
+  if (isProdutos && /(?:^|\/)menu\.html$/i.test(path)) {
+    window.location.replace("menu_produtos.html?v=20260720h");
     return null;
   }
 
@@ -73,10 +73,10 @@ export function aplicarGuardPortal() {
 
 function resolverMenuProdutos() {
   const path = decodeURIComponent(window.location.pathname || "");
-  if (/html\s*menus/i.test(path)) return "menu_alex.html?v=20260720g";
-  if (/html\s*usuarios\/alex/i.test(path)) return "../../html menus/menu_alex.html?v=20260720g";
-  if (/html\s*usuarios/i.test(path)) return "../html menus/menu_alex.html?v=20260720g";
-  if (/html\s*adm/i.test(path)) return "../html menus/menu_alex.html?v=20260720g";
+  if (/html\s*menus/i.test(path)) return "menu_produtos.html?v=20260720h";
+  if (/html\s*usuarios\/alex/i.test(path)) return "../../html menus/menu_produtos.html?v=20260720h";
+  if (/html\s*usuarios/i.test(path)) return "../html menus/menu_produtos.html?v=20260720h";
+  if (/html\s*adm/i.test(path)) return "../html menus/menu_produtos.html?v=20260720h";
   return destinoMenuPorPerfil(PERFIL_TREINAMENTO_PRODUTOS, { fromRoot: true, encoded: false });
 }
 

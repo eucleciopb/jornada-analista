@@ -160,7 +160,7 @@ export function destinoMenuPorPerfil(perfil, { fromRoot = false, encoded = true 
   const p = String(perfil || "").toLowerCase();
   let file = "menu.html";
   if (p === PERFIL_ADMIN) file = "menuadm.html";
-  if (p === PERFIL_TREINAMENTO_PRODUTOS || p === "alex_produtos") file = "menu_alex.html";
+  if (p === PERFIL_TREINAMENTO_PRODUTOS || p === "alex_produtos") file = "menu_produtos.html";
 
   if (fromRoot) {
     const folder = encoded ? "html%20menus" : "html menus";
@@ -271,7 +271,7 @@ export function protegerPagina({
       encoded: false
     });
     const prefix = pathEstaEmMenus() ? "" : pathEstaEmUsuariosAlex() ? "../../html menus/" : pathEstaEmUsuarios() ? "../html menus/" : "html menus/";
-    window.location.replace(`${prefix}${dest.split("/").pop()}?v=20260720g`);
+    window.location.replace(`${prefix}${dest.split("/").pop()}?v=20260720h`);
     return null;
   }
 
@@ -307,6 +307,7 @@ export function podeAcessar(recurso, user = obterUsuarioLogado()) {
 
   const regrasAlex = {
     menu_alex: true,
+    menu_produtos: true,
     visao_geral: true,
     cadastrar_treinamento: true,
     editar_proprios_treinamentos: true,

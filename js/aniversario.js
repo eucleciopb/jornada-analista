@@ -105,7 +105,7 @@ export function sessaoTemNascimentoOk() {
 export function destinoMenuPorPerfil(perfil) {
   const p = String(perfil || "").toLowerCase();
   if (p === "admin") return "menuadm.html";
-  if (p === "treinamento_produtos" || p === "alex_produtos") return "menu_alex.html";
+  if (p === "treinamento_produtos" || p === "alex_produtos") return "menu_produtos.html";
   return "menu.html";
 }
 

@@ -7,11 +7,12 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../css/bundle-portal-user.css?v=20260715b" />
-  <link rel="stylesheet" href="../css/pages/cadastro-nascimento.css?v=20260715b" />
+  <link rel="stylesheet" href="../css/bundle-portal-user.css?v=20260720h" />
+  <link rel="stylesheet" href="../css/pages/cadastro-nascimento.css?v=20260720h" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 </head>
 
-body class="theme-user portal-page gate-pending">
+<body class="theme-user portal-page gate-pending">
   <!-- Overlay obrigatório: fica até confirmar data de nascimento -->
   <div id="birthGateOverlay" class="birth-gate-overlay" aria-modal="true" role="dialog" aria-labelledby="birthGateTitle">
     <div class="login-card nasc-card birth-gate-card">
@@ -385,7 +386,7 @@ body class="theme-user portal-page gate-pending">
       throw new Error("Usuário não encontrado no localStorage.");
     }
 
-    // Menu exclusivo: Alex e Euclecio
+    // Menu exclusivo: Alex e Euclecio → menu_produtos (URL nova, sem cache antigo)
     try{
       const raw = localStorage.getItem("user_session");
       const sess = raw ? JSON.parse(raw) : null;
@@ -399,17 +400,19 @@ body class="theme-user portal-page gate-pending">
 
       if (isProdutos) {
         const isAlex = nome === "alex" || mat === "A70" || mat === "ALEX" || uid === "alex";
+        const nomeCanon = isAlex ? "Alex" : "Euclecio";
         try{
           localStorage.setItem("user_session", JSON.stringify({
             ...(sess || {}),
-            nome: user.nome,
+            nome: nomeCanon,
             matricula: isAlex ? "A70" : "E72",
             uidKey: isAlex ? "alex" : "euclecio",
             perfil: "treinamento_produtos",
             tipoUsuario: "treinamento_produtos"
           }));
+          localStorage.setItem("usuarioLogado", nomeCanon);
         }catch{}
-        window.location.replace("menu_alex.html?v=20260720g");
+        window.location.replace("menu_produtos.html?v=20260720h&u=" + encodeURIComponent(nomeCanon));
         throw new Error("Redirecionando para menu de treinamentos de produtos.");
       }
 
