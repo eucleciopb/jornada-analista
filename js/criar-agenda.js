@@ -78,7 +78,18 @@ let obsTargetTextarea = null;
    PATHS
 ========================= */
 const PATH_INDEX = "../index.html";
-const PATH_MENU  = "../html menus/menu.html";
+function resolveMenuPathAlex(){
+  try{
+    const s = JSON.parse(localStorage.getItem("user_session") || "null");
+    const perfil = String(s?.perfil || "").toLowerCase();
+    const mat = String(s?.matricula || "").toUpperCase();
+    if(perfil === "treinamento_produtos" || perfil === "alex_produtos" || mat === "A70"){
+      return "../html menus/menu_alex.html";
+    }
+  }catch(e){}
+  return "../html menus/menu.html";
+}
+const PATH_MENU  = resolveMenuPathAlex();
 
 /* =========================
    HELPERS

@@ -194,7 +194,18 @@
     const CATALOGO_FIELDS = ["nome","treinamento","titulo","name"];
 
     const PATH_INDEX = "../index.html";
-    const PATH_MENU  = "../html menus/menu.html";
+    function resolveMenuPath(){
+      try{
+        const s = JSON.parse(localStorage.getItem("user_session") || "null");
+        const perfil = String(s?.perfil || "").toLowerCase();
+        const mat = String(s?.matricula || "").toUpperCase();
+        if(perfil === "treinamento_produtos" || perfil === "alex_produtos" || mat === "A70"){
+          return "../html menus/menu_alex.html";
+        }
+      }catch{}
+      return "../html menus/menu.html";
+    }
+    const PATH_MENU  = resolveMenuPath();
 
     function safeParse(raw){ try { return JSON.parse(raw); } catch { return null; } }
     function slug(s) {
@@ -748,5 +759,6 @@
 
     busca.addEventListener("input", renderHist);
   </script>
+  <script type="module" src="../js/alex-guard.js?v=20260720a"></script>
 </body>
 </html>

@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Análise de Resultado | Produtos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../css/bundle-portal-user.css?v=20260720a" />
+  <link rel="stylesheet" href="../../css/pages/cadastro-nascimento.css?v=20260720a" />
+  <link rel="stylesheet" href="../../css/pages/alex-portal.css?v=20260720a" />
+</head>
+<body class="theme-user portal-page gate-pending alex-portal">
+
+  <div class="section-block">
+    <div class="section-title">
+      <div>
+        <h3>Análise de Resultado dos Treinamentos</h3>
+        <p>Compare cobertura e HL antes e depois do treinamento. Histórico preservado a cada salvamento.</p>
+      </div>
+      <span class="origem-tag manual" id="origemTag">Origem do dado: Manual</span>
+    </div>
+
+    <div class="alex-form-grid" style="background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:16px;margin-bottom:16px;">
+      <div class="full">
+        <label for="selTreino">Treinamento</label>
+        <select id="selTreino"><option value="">Carregando...</option></select>
+      </div>
+      <div>
+        <label for="marca">Marca</label>
+        <input id="marca" type="text" />
+      </div>
+      <div>
+        <label for="produto">Produto</label>
+        <input id="produto" type="text" />
+      </div>
+      <div class="full">
+        <label for="escopoCd">CDs da análise</label>
+        <select id="escopoCd">
+          <option value="todos">Todos os CDs do treinamento</option>
+          <option value="grupo">Grupo / seleção manual nas linhas</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="alex-form-grid" style="background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:16px;margin-bottom:16px;">
+      <div class="full"><strong>Período Inicial (antes do treinamento)</strong></div>
+      <div><label>Data inicial</label><input type="date" id="piIni" /></div>
+      <div><label>Data final</label><input type="date" id="piFim" /></div>
+      <div class="full"><strong>Período de Análise (depois do treinamento)</strong></div>
+      <div><label>Data inicial</label><input type="date" id="paIni" /></div>
+      <div><label>Data final</label><input type="date" id="paFim" /></div>
+      <div class="full" id="avisoPeriodo" style="color:#b45309;font-size:13px;"></div>
+    </div>
+
+    <div class="section-title" style="margin-bottom:10px;">
+      <div>
+        <h3>Linhas de análise</h3>
+        <p>Adicione comparativos por marca, produto ou CD.</p>
+      </div>
+      <button type="button" class="btn-alex primary" id="btnAddLinha">+ Adicionar análise</button>
+    </div>
+
+    <div class="alex-table-wrap" style="margin-bottom:16px;">
+      <table class="alex-table" id="tabelaLinhas">
+        <thead>
+          <tr>
+            <th>Marca</th><th>Produto</th><th>CD / grupo</th>
+            <th>Cob. Antes %</th><th>Cob. Depois %</th>
+            <th>HL Antes</th><th>HL Depois</th>
+            <th>Var. Cob.</th><th>Var. HL</th><th>Resultado</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="tbodyLinhas"></tbody>
+      </table>
+    </div>
+
+    <div id="cardsCd" class="alex-metrics" style="display:none;"></div>
+    <div class="alex-table-wrap" id="wrapCd" style="display:none;margin-bottom:16px;">
+      <table class="alex-table">
+        <thead>
+          <tr>
+            <th>CD</th><th>Cob. ini</th><th>Cob. fim</th><th>Var. cob.</th><th>Status cob.</th>
+            <th>HL ini</th><th>HL fim</th><th>Var. HL</th><th>Status HL</th><th>Resultado</th>
+          </tr>
+        </thead>
+        <tbody id="tbodyCd"></tbody>
+      </table>
+      <div style="padding:10px;display:flex;gap:8px;flex-wrap:wrap;">
+        <label>Ordenar:
+          <select id="ordCd">
+            <option value="nome">Nome do CD</option>
+            <option value="evolucao">Maior evolução</option>
+            <option value="queda">Maior queda</option>
+            <option value="cobertura">Maior cobertura</option>
+            <option value="hl">Maior HL</option>
+          </select>
+        </label>
+      </div>
+    </div>
+
+    <div class="alex-form-grid" style="background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:16px;">
+      <div class="full"><strong>Conclusão da análise</strong></div>
+      <div class="full"><label>Principais resultados</label><textarea id="cPrincipais"></textarea></div>
+      <div><label>Pontos positivos</label><textarea id="cPositivos"></textarea></div>
+      <div><label>Pontos de atenção</label><textarea id="cAtencao"></textarea></div>
+      <div class="full"><label>Próximas ações</label><textarea id="cAcoes"></textarea></div>
+      <div>
+        <label>Necessita novo treinamento?</label>
+        <select id="cNovo">
+          <option value="">Selecione...</option>
+          <option>Sim</option>
+          <option>Não</option>
+          <option>Avaliar posteriormente</option>
+        </select>
+      </div>
+      <div id="boxAgenda" hidden>
+        <label style="display:flex;gap:8px;align-items:center;margin-top:22px;">
+          <input type="checkbox" id="agendarReforco" /> Agendar novo treinamento
+        </label>
+      </div>
+      <div class="full"><label>Observação geral</label><textarea id="cObs"></textarea></div>
+      <div class="full" style="display:flex;justify-content:flex-end;gap:8px;">
+        <button type="button" class="btn-alex primary" id="btnSalvar">Salvar análise</button>
+      </div>
+      <p id="msg" class="full" style="margin:0;font-weight:600;"></p>
+    </div>
+  </div>
+
+<script type="module">
+  import { initAlexShell, escapeHtml } from "../../js/alex/shell.js?v=20260720a";
+  import {
+    listarTreinamentosCompleto,
+    salvarAnalise,
+    aplicarResumoAnaliseNoTreinamento,
+    consolidarLinhasAnalise,
+    registrarLog,
+    makeId,
+    montarResultadoLinha
+  } from "../../js/alex/dados.js?v=20260720a";
+  import {
+    validarPeriodosAnalise, formatPp, formatVariacaoHl, formatPct, formatHl,
+    classeStatus, STATUS, toBR
+  } from "../../js/alex/calculos.js?v=20260720a";
+  import { doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+  const ctx = await initAlexShell({ base: "alex", active: "analise", title: "Análise de Resultado" });
+  if (!ctx) throw new Error("Sessão inválida");
+  const { user, db } = ctx;
+
+  let TREINOS = await listarTreinamentosCompleto(db, user, { adminVeTodos: user.isAdmin });
+  const sel = document.getElementById("selTreino");
+  const preId = new URLSearchParams(location.search).get("treinamentoId");
+
+  sel.innerHTML = `<option value="">Selecione...</option>` + TREINOS.map(t =>
+    `<option value="${escapeHtml(t.id)}">${toBR(t.data)} — ${escapeHtml(t.nome || "Sem nome")} (${escapeHtml(t.marca||"-")})</option>`
+  ).join("");
+  if (preId) sel.value = preId;
+
+  let linhas = [];
+  let treinoAtual = null;
+
+  function setMsg(t, ok) {
+    const el = document.getElementById("msg");
+    el.textContent = t || "";
+    el.style.color = ok ? "#16a34a" : "#dc2626";
+  }
+
+  function sugerirPeriodos(data) {
+    if (!data) return;
+    const d = new Date(data + "T12:00:00");
+    const beforeEnd = new Date(d); beforeEnd.setDate(d.getDate() - 1);
+    const beforeStart = new Date(d); beforeStart.setDate(d.getDate() - 14);
+    const afterStart = new Date(d); afterStart.setDate(d.getDate() + 1);
+    const afterEnd = new Date(d); afterEnd.setDate(d.getDate() + 14);
+    const iso = (x) => `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,"0")}-${String(x.getDate()).padStart(2,"0")}`;
+    document.getElementById("piIni").value = iso(beforeStart);
+    document.getElementById("piFim").value = iso(beforeEnd);
+    document.getElementById("paIni").value = iso(afterStart);
+    document.getElementById("paFim").value = iso(afterEnd);
+  }
+
+  function carregarTreino() {
+    treinoAtual = TREINOS.find(t => t.id === sel.value) || null;
+    if (!treinoAtual) return;
+    document.getElementById("marca").value = treinoAtual.marca || "";
+    document.getElementById("produto").value = treinoAtual.produto || "";
+    sugerirPeriodos(treinoAtual.data);
+    if (!linhas.length) addLinha();
+    renderLinhas();
+  }
+
+  function addLinha(base = {}) {
+    linhas.push({
+      id: makeId(),
+      marca: base.marca || document.getElementById("marca").value,
+      produto: base.produto || document.getElementById("produto").value,
+      cd: base.cd || "Todos os CDs",
+      coberturaInicial: base.coberturaInicial ?? "",
+      coberturaFinal: base.coberturaFinal ?? "",
+      hlInicial: base.hlInicial ?? "",
+      hlFinal: base.hlFinal ?? ""
+    });
+    renderLinhas();
+  }
+
+  function calcLinha(l) {
+    return montarResultadoLinha({
+      coberturaInicial: l.coberturaInicial,
+      coberturaFinal: l.coberturaFinal,
+      hlInicial: l.hlInicial,
+      hlFinal: l.hlFinal
+    });
+  }
+
+  function renderLinhas() {
+    const tb = document.getElementById("tbodyLinhas");
+    if (!linhas.length) {
+      tb.innerHTML = `<tr><td colspan="11"><div class="alex-empty" style="border:0;">Nenhuma linha. Clique em + Adicionar análise.</div></td></tr>`;
+      return;
+    }
+    tb.innerHTML = linhas.map((l, idx) => {
+      const r = calcLinha(l);
+      return `<tr data-idx="${idx}">
+        <td><input data-f="marca" value="${escapeHtml(l.marca)}" style="width:100px" /></td>
+        <td><input data-f="produto" value="${escapeHtml(l.produto)}" style="width:110px" /></td>
+        <td><input data-f="cd" value="${escapeHtml(l.cd)}" style="width:120px" /></td>
+        <td><input data-f="coberturaInicial" type="number" step="0.1" value="${escapeHtml(l.coberturaInicial)}" style="width:80px" /></td>
+        <td><input data-f="coberturaFinal" type="number" step="0.1" value="${escapeHtml(l.coberturaFinal)}" style="width:80px" /></td>
+        <td><input data-f="hlInicial" type="number" step="0.1" value="${escapeHtml(l.hlInicial)}" style="width:80px" /></td>
+        <td><input data-f="hlFinal" type="number" step="0.1" value="${escapeHtml(l.hlFinal)}" style="width:80px" /></td>
+        <td>${formatPp(r.variacaoCobertura)}</td>
+        <td>${r.percentualVariacaoHlAplicavel === false && r.inicioVendaHl ? "Início de venda / N/A %" : formatVariacaoHl(r.variacaoHl)}</td>
+        <td><span class="status-pill ${classeStatus(r.resultadoGeral)}">${escapeHtml(r.resultadoGeral)}</span></td>
+        <td><button type="button" class="btn-alex danger" data-del="${idx}">Remover</button></td>
+      </tr>`;
+    }).join("");
+
+    // resultado por CD (linhas com CD específico)
+    const porCd = linhas.filter(l => l.cd && l.cd !== "Todos os CDs").map(l => {
+      const r = calcLinha(l);
+      return { cd: l.cd, ...r };
+    });
+    renderResultadoCd(porCd);
+  }
+
+  function renderResultadoCd(rows) {
+    const wrap = document.getElementById("wrapCd");
+    const cards = document.getElementById("cardsCd");
+    if (!rows.length) {
+      wrap.style.display = "none";
+      cards.style.display = "none";
+      return;
+    }
+    wrap.style.display = "";
+    cards.style.display = "grid";
+    const up = rows.filter(r => r.resultadoGeral === STATUS.MELHOROU).length;
+    const flat = rows.filter(r => r.resultadoGeral === STATUS.MANTEVE).length;
+    const down = rows.filter(r => r.resultadoGeral === STATUS.REGREDIU).length;
+    const none = rows.filter(r => r.resultadoGeral === STATUS.SEM_ANALISE).length;
+    cards.innerHTML = [
+      ["CDs que melhoraram", up],
+      ["CDs que mantiveram", flat],
+      ["CDs que regrediram", down],
+      ["CDs sem dados", none]
+    ].map(([t,v]) => `<div class="alex-metric"><span>${t}</span><strong>${v}</strong></div>`).join("");
+
+    const ord = document.getElementById("ordCd").value;
+    const sorted = [...rows].sort((a,b) => {
+      if (ord === "evolucao") return (b.variacaoCobertura||0) - (a.variacaoCobertura||0);
+      if (ord === "queda") return (a.variacaoCobertura||0) - (b.variacaoCobertura||0);
+      if (ord === "cobertura") return (b.coberturaFinal||0) - (a.coberturaFinal||0);
+      if (ord === "hl") return (b.hlFinal||0) - (a.hlFinal||0);
+      return String(a.cd).localeCompare(String(b.cd), "pt-BR");
+    });
+
+    document.getElementById("tbodyCd").innerHTML = sorted.map(r => `
+      <tr>
+        <td>${escapeHtml(r.cd)}</td>
+        <td>${formatPct(r.coberturaInicial)}</td>
+        <td>${formatPct(r.coberturaFinal)}</td>
+        <td>${formatPp(r.variacaoCobertura)}</td>
+        <td><span class="status-pill ${classeStatus(r.statusCobertura)}">${escapeHtml(r.statusCobertura)}</span></td>
+        <td>${formatHl(r.hlInicial)}</td>
+        <td>${formatHl(r.hlFinal)}</td>
+        <td>${formatVariacaoHl(r.variacaoHl)}</td>
+        <td><span class="status-pill ${classeStatus(r.statusHl)}">${escapeHtml(r.statusHl)}</span></td>
+        <td><span class="status-pill ${classeStatus(r.resultadoGeral)}">${escapeHtml(r.resultadoGeral)}</span></td>
+      </tr>
+    `).join("");
+  }
+
+  document.getElementById("tbodyLinhas").addEventListener("input", (e) => {
+    const tr = e.target.closest("tr[data-idx]");
+    if (!tr) return;
+    const idx = Number(tr.dataset.idx);
+    const f = e.target.dataset.f;
+    if (!f) return;
+    linhas[idx][f] = e.target.value;
+    // debounce leve via rAF
+    requestAnimationFrame(renderLinhas);
+  });
+  document.getElementById("tbodyLinhas").addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-del]");
+    if (!btn) return;
+    linhas.splice(Number(btn.dataset.del), 1);
+    renderLinhas();
+  });
+
+  document.getElementById("btnAddLinha").addEventListener("click", () => addLinha());
+  document.getElementById("ordCd").addEventListener("change", renderLinhas);
+  document.getElementById("selTreino").addEventListener("change", () => { linhas = []; carregarTreino(); });
+  document.getElementById("cNovo").addEventListener("change", () => {
+    document.getElementById("boxAgenda").hidden = document.getElementById("cNovo").value !== "Sim";
+  });
+
+  ["piIni","piFim","paIni","paFim"].forEach(id => {
+    document.getElementById(id).addEventListener("change", () => {
+      if (!treinoAtual) return;
+      const v = validarPeriodosAnalise(treinoAtual.data, {
+        dataInicial: piIni.value, dataFinal: piFim.value
+      }, {
+        dataInicial: paIni.value, dataFinal: paFim.value
+      });
+      document.getElementById("avisoPeriodo").textContent = [...v.erros, ...v.avisos].join(" ");
+    });
+  });
+
+  document.getElementById("btnSalvar").addEventListener("click", async () => {
+    if (!treinoAtual) { setMsg("Selecione um treinamento."); return; }
+
+    const periodoInicial = { dataInicial: piIni.value, dataFinal: piFim.value };
+    const periodoAnalise = { dataInicial: paIni.value, dataFinal: paFim.value };
+    const valid = validarPeriodosAnalise(treinoAtual.data, periodoInicial, periodoAnalise);
+    document.getElementById("avisoPeriodo").textContent = [...valid.erros, ...valid.avisos].join(" ");
+    if (!valid.ok) { setMsg(valid.erros[0] || "Períodos inválidos."); return; }
+    if (!linhas.length) { setMsg("Adicione ao menos uma linha de análise."); return; }
+
+    const linhasCalc = linhas.map(l => ({ ...l, ...calcLinha(l) }));
+    const consolidado = consolidarLinhasAnalise(linhas);
+    const resultadoPorCd = linhasCalc
+      .filter(l => l.cd && l.cd !== "Todos os CDs")
+      .map(l => ({
+        cdId: l.cd, cdNome: l.cd,
+        coberturaInicial: l.coberturaInicial, coberturaFinal: l.coberturaFinal,
+        variacaoCobertura: l.variacaoCobertura, statusCobertura: l.statusCobertura,
+        hlInicial: l.hlInicial, hlFinal: l.hlFinal,
+        variacaoHl: l.variacaoHl, statusHl: l.statusHl,
+        resultadoGeral: l.resultadoGeral
+      }));
+
+    const analise = {
+      id: makeId(),
+      treinamentoId: treinoAtual.id,
+      responsavelId: user.uidKey,
+      responsavelNome: user.nome,
+      marcaId: (document.getElementById("marca").value || "").toLowerCase(),
+      marcaNome: document.getElementById("marca").value,
+      produtoId: (document.getElementById("produto").value || "").toLowerCase(),
+      produtoNome: document.getElementById("produto").value,
+      cds: treinoAtual.cds || [],
+      periodoInicial,
+      periodoAnalise,
+      linhas: linhasCalc,
+      resultadoConsolidado: consolidado,
+      resultadoPorCd,
+      conclusao: {
+        principaisResultados: cPrincipais.value,
+        pontosPositivos: cPositivos.value,
+        pontosAtencao: cAtencao.value,
+        proximasAcoes: cAcoes.value,
+        necessitaNovoTreinamento: cNovo.value,
+        observacaoGeral: cObs.value
+      },
+      origemDados: "Manual",
+      criadoEm: new Date().toISOString(),
+      atualizadoEm: new Date().toISOString(),
+      criadoPor: user.nome
+    };
+
+    try {
+      document.getElementById("btnSalvar").disabled = true;
+      setMsg("Salvando análise...", true);
+      await salvarAnalise(db, analise);
+      await aplicarResumoAnaliseNoTreinamento(db, treinoAtual.id, consolidado, "Análise concluída");
+      await registrarLog(db, {
+        usuario: user.nome,
+        acao: "CRIACAO_ANALISE",
+        registroId: analise.id,
+        valorNovo: { treinamentoId: treinoAtual.id, resultado: consolidado?.resultadoGeral }
+      });
+
+      if (cNovo.value === "Sim" && document.getElementById("agendarReforco").checked) {
+        const d = new Date(); d.setDate(d.getDate() + 14);
+        const iso = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+        await setDoc(doc(db, "agenda_dias", `${user.uidKey}_${iso}`), {
+          uidKey: user.uidKey,
+          usuarioNome: user.nome,
+          data: iso,
+          yyyyMM: iso.slice(0,7),
+          cd: treinoAtual.cds?.[0]?.nome || "",
+          atividade: `Reforço de treinamento: ${treinoAtual.nome}`,
+          obs: "Gerado a partir da análise de resultado",
+          treinamentoId: treinoAtual.id,
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+      }
+
+      setMsg("Análise salva com sucesso. Histórico preservado.", true);
+      // atualiza cache local do treino
+      treinoAtual.resultadoGeral = consolidado?.resultadoGeral;
+      treinoAtual.coberturaAntes = consolidado?.coberturaInicial;
+      treinoAtual.coberturaDepois = consolidado?.coberturaFinal;
+      treinoAtual.hlAntes = consolidado?.hlInicial;
+      treinoAtual.hlDepois = consolidado?.hlFinal;
+      treinoAtual.statusAnalise = "Análise concluída";
+    } catch (err) {
+      console.error(err);
+      setMsg(err?.message || "Não foi possível salvar a análise.");
+    } finally {
+      document.getElementById("btnSalvar").disabled = false;
+    }
+  });
+
+  if (preId) carregarTreino();
+</script>
+</body>
+</html>

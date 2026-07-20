@@ -102,7 +102,13 @@
     salvarDataNascimento,
     marcarNascimentoNaSessao,
     buscarDataNascimentoSalva
-  } from "./js/aniversario.js?v=20260715b";
+  } from "./js/aniversario.js?v=20260720a";
+  import {
+    montarSessaoLogin,
+    salvarSessao,
+    destinoMenuPorPerfil,
+    PERFIL_TREINAMENTO_PRODUTOS
+  } from "./js/perfil-acesso.js?v=20260720a";
 
   const firebaseConfig = {
     apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
@@ -116,8 +122,6 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
   const fs = { doc, getDoc, setDoc, serverTimestamp };
-
-  const MENU_URL = "html%20menus/menu.html?v=20260715b";
 
   const usuarioSelect = document.getElementById("usuario");
   const senhaInput = document.getElementById("senha");
@@ -133,6 +137,7 @@
   const msgNasc = document.getElementById("msgNasc");
 
   let usuarioAtual = "";
+  let perfilAtual = "analista";
 
   const USUARIOS = {
     Alex: "A70",
@@ -180,7 +185,8 @@
   }
 
   function irParaMenu(){
-    window.location.replace(MENU_URL);
+    const dest = destinoMenuPorPerfil(perfilAtual, { fromRoot: true, encoded: true });
+    window.location.replace(`${dest}?v=20260720a`);
   }
 
   function mascararData(valor){
@@ -224,7 +230,7 @@
 
     try{
       await salvarDataNascimento(db, fs, usuarioAtual, parsed, {
-        perfil: "analista"
+        perfil: perfilAtual
       });
       marcarNascimentoNaSessao(parsed.dataNascimento);
       setMsgNasc("Salvo no banco! Abrindo o menu...", true);
@@ -268,20 +274,20 @@
     setMsg("Entrando...", true);
 
     try{
-      localStorage.setItem("user_session", JSON.stringify({
-        nome: usuario,
-        matricula: usuario,
-        perfil: "analista",
-        loginAt: Date.now(),
-        nascimentoOk: false
-      }));
-      localStorage.setItem("usuarioLogado", usuario);
+      const sessao = montarSessaoLogin(usuario);
+      perfilAtual = sessao.perfil;
+      salvarSessao(sessao);
 
       try{
         await addDoc(collection(db, "acessos"), {
           usuario,
+          matricula: sessao.matricula,
+          uidKey: sessao.uidKey,
+          perfil: sessao.perfil,
           origem: "index.html",
-          evento: "LOGIN_ANALISTA_COM_SENHA",
+          evento: sessao.perfil === PERFIL_TREINAMENTO_PRODUTOS
+            ? "LOGIN_TREINAMENTO_PRODUTOS"
+            : "LOGIN_ANALISTA_COM_SENHA",
           criadoEm: serverTimestamp(),
           userAgent: navigator.userAgent || null
         });
@@ -293,7 +299,12 @@
       const jaTem = await buscarDataNascimentoSalva(db, fs, usuario);
       if(jaTem){
         marcarNascimentoNaSessao(jaTem);
-        setMsg("Login ok! Abrindo o menu...", true);
+        setMsg(
+          sessao.perfil === PERFIL_TREINAMENTO_PRODUTOS
+            ? "Login ok! Abrindo o menu de treinamentos..."
+            : "Login ok! Abrindo o menu...",
+          true
+        );
         irParaMenu();
         return;
       }

@@ -103,9 +103,10 @@ export function sessaoTemNascimentoOk() {
 }
 
 export function destinoMenuPorPerfil(perfil) {
-  return String(perfil || "").toLowerCase() === "admin"
-    ? "menuadm.html"
-    : "menu.html";
+  const p = String(perfil || "").toLowerCase();
+  if (p === "admin") return "menuadm.html";
+  if (p === "treinamento_produtos" || p === "alex_produtos") return "menu_alex.html";
+  return "menu.html";
 }
 
 /** Caminhos com espaço no nome da pasta (GitHub Pages). */

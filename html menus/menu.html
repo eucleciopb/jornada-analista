@@ -385,6 +385,26 @@ body class="theme-user portal-page gate-pending">
       throw new Error("Usuário não encontrado no localStorage.");
     }
 
+    // Perfil treinamento_produtos → menu exclusivo (não vê dashboards SV)
+    try{
+      const raw = localStorage.getItem("user_session");
+      const sess = raw ? JSON.parse(raw) : null;
+      const perfil = String(sess?.perfil || "").toLowerCase();
+      const mat = String(sess?.matricula || "").toUpperCase();
+      const uid = String(sess?.uidKey || "").toLowerCase();
+      if(
+        perfil === "treinamento_produtos" ||
+        perfil === "alex_produtos" ||
+        mat === "A70" ||
+        uid === "alex"
+      ){
+        window.location.replace("menu_alex.html");
+        throw new Error("Redirecionando para menu Alex.");
+      }
+    }catch(e){
+      if(String(e?.message||"").includes("Redirecionando")) throw e;
+    }
+
     const birthGateOverlay = document.getElementById("birthGateOverlay");
     const birthGateUser = document.getElementById("birthGateUser");
     const birthGateForm = document.getElementById("birthGateForm");

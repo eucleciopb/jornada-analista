@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Meu Perfil | Produtos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../css/bundle-portal-user.css?v=20260720a" />
+  <link rel="stylesheet" href="../../css/pages/cadastro-nascimento.css?v=20260720a" />
+  <link rel="stylesheet" href="../../css/pages/alex-portal.css?v=20260720a" />
+</head>
+<body class="theme-user portal-page gate-pending alex-portal">
+
+  <div class="section-block">
+    <div class="section-title">
+      <div>
+        <h3>Meu Perfil</h3>
+        <p>Dados da sessão e identificação do perfil de acesso.</p>
+      </div>
+    </div>
+
+    <div class="alex-form-grid" style="background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:16px;max-width:640px;">
+      <div><label>Nome</label><input id="pNome" readonly /></div>
+      <div><label>Matrícula</label><input id="pMat" readonly /></div>
+      <div><label>UID Key</label><input id="pUid" readonly /></div>
+      <div><label>Perfil</label><input id="pPerfil" readonly /></div>
+      <div class="full"><label>Data de nascimento</label><input id="pNasc" readonly /></div>
+    </div>
+
+    <div id="senha" class="section-block" style="margin-top:24px;">
+      <div class="section-title">
+        <div>
+          <h3>Alterar Senha</h3>
+          <p>A senha do portal é gerenciada pela administração. Solicite alteração ao administrador.</p>
+        </div>
+      </div>
+      <div class="alex-empty" style="text-align:left;">
+        Para trocar a senha, entre em contato com o administrador do sistema (Bruna, Elaine, Euclecio ou Pedro).
+        O perfil <code>treinamento_produtos</code> não altera senhas de outros usuários nem configurações administrativas.
+      </div>
+    </div>
+  </div>
+
+<script type="module">
+  import { initAlexShell } from "../../js/alex/shell.js?v=20260720a";
+  import { toBR } from "../../js/alex/calculos.js?v=20260720a";
+
+  const ctx = await initAlexShell({ base: "alex", active: "perfil", title: "Meu Perfil" });
+  if (!ctx) throw new Error("Sessão inválida");
+  const { user } = ctx;
+
+  pNome.value = user.nome || "";
+  pMat.value = user.matricula || "";
+  pUid.value = user.uidKey || "";
+  pPerfil.value = user.perfil || "";
+  pNasc.value = user.dataNascimento ? toBR(user.dataNascimento) : (user.nascimentoOk ? "Confirmada" : "Não informada");
+</script>
+</body>
+</html>
