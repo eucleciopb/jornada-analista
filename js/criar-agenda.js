@@ -84,7 +84,7 @@ function resolveMenuPathAlex(){
     const perfil = String(s?.perfil || "").toLowerCase();
     const mat = String(s?.matricula || "").toUpperCase();
     if(["alex","euclecio"].includes(String(s?.nome||"").trim().toLowerCase())||["alex","euclecio"].includes(String(s?.uidKey||"").toLowerCase())||["A70","ALEX","E72","EUCLECIO"].includes(mat)){
-      return "../html menus/menu_alex.html";
+      return "../html menus/menu_produtos.html";
     }
   }catch(e){}
   return "../html menus/menu.html";

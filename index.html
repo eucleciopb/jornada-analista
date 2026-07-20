@@ -9,8 +9,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/bundle-login-user.css?v=20260715b" />
-  <link rel="stylesheet" href="css/pages/cadastro-nascimento.css?v=20260715b" />
+  <link rel="stylesheet" href="css/bundle-login-user.css?v=20260720h" />
+  <link rel="stylesheet" href="css/pages/cadastro-nascimento.css?v=20260720h" />
 </head>
 
 <body class="login-page theme-user">
@@ -102,13 +102,13 @@
     salvarDataNascimento,
     marcarNascimentoNaSessao,
     buscarDataNascimentoSalva
-  } from "./js/aniversario.js?v=20260720g";
+  } from "./js/aniversario.js?v=20260720h";
   import {
     montarSessaoLogin,
     salvarSessao,
     destinoMenuPorPerfil,
     PERFIL_TREINAMENTO_PRODUTOS
-  } from "./js/perfil-acesso.js?v=20260720g";
+  } from "./js/perfil-acesso.js?v=20260720h";
 
   const firebaseConfig = {
     apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
@@ -187,33 +187,36 @@
   function irParaMenu(){
     const nomeLogin = String(usuarioAtual || usuarioSelect.value || "").trim();
     const nomeKey = nomeLogin.toLowerCase();
+    const matLogin = String(USUARIOS[nomeLogin] || "").toUpperCase();
 
-    // Alex e Euclecio → menu de treinamentos de produtos (resumo)
-    if (nomeKey === "alex" || nomeKey === "euclecio") {
+    // Alex (A70) e Euclecio (E72) → menu_produtos (arquivo novo p/ furar cache)
+    if (
+      nomeKey === "alex" || nomeKey === "euclecio" ||
+      matLogin === "A70" || matLogin === "E72"
+    ) {
+      const isAlex = nomeKey === "alex" || matLogin === "A70";
+      const nomeCanon = isAlex ? "Alex" : "Euclecio";
       try {
         const raw = localStorage.getItem("user_session");
         const s = raw ? JSON.parse(raw) : {};
-        const isAlex = nomeKey === "alex";
         localStorage.setItem("user_session", JSON.stringify({
           ...s,
-          nome: isAlex ? "Alex" : "Euclecio",
+          nome: nomeCanon,
           matricula: isAlex ? "A70" : "E72",
           uidKey: isAlex ? "alex" : "euclecio",
           perfil: "treinamento_produtos",
           tipoUsuario: "treinamento_produtos"
         }));
-        localStorage.setItem("usuarioLogado", isAlex ? "Alex" : "Euclecio");
+        localStorage.setItem("usuarioLogado", nomeCanon);
       } catch {}
-      window.location.replace("html%20menus/menu_alex.html?v=20260720g");
+      window.location.replace(
+        "html%20menus/menu_produtos.html?v=20260720h&u=" + encodeURIComponent(nomeCanon)
+      );
       return;
     }
 
     const dest = destinoMenuPorPerfil(perfilAtual, { fromRoot: true, encoded: true });
-    if (String(dest).includes("menu_alex")) {
-      window.location.replace("html%20menus/menu.html?v=20260720g");
-      return;
-    }
-    window.location.replace(`${dest}?v=20260720g`);
+    window.location.replace(`${dest}?v=20260720h`);
   }
 
   function mascararData(valor){
@@ -301,6 +304,7 @@
     setMsg("Entrando...", true);
 
     try{
+      usuarioAtual = usuario;
       const sessao = montarSessaoLogin(usuario);
       perfilAtual = sessao.perfil;
       salvarSessao(sessao);

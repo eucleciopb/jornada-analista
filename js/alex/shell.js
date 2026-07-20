@@ -88,7 +88,7 @@ export async function initAlexShell(opts = {}) {
 function resolverPaths(base) {
   if (base === "menus") {
     return {
-      menu: "menu_alex.html",
+      menu: "menu_produtos.html",
       login: "../index.html",
       alex: "../html usuarios/alex/",
       usuarios: "../html usuarios/",
@@ -98,7 +98,7 @@ function resolverPaths(base) {
   }
   if (base === "usuarios") {
     return {
-      menu: "../html menus/menu_alex.html",
+      menu: "../html menus/menu_produtos.html",
       login: "../index.html",
       alex: "alex/",
       usuarios: "./",
@@ -108,7 +108,7 @@ function resolverPaths(base) {
   }
   // alex pages
   return {
-    menu: "../../html menus/menu_alex.html",
+    menu: "../../html menus/menu_produtos.html",
     login: "../../index.html",
     alex: "./",
     usuarios: "../",
@@ -374,10 +374,10 @@ export function patchMenuLinksForAlex() {
 
   const menuPath = (() => {
     const path = decodeURIComponent(window.location.pathname);
-    if (/html\s*usuarios\/alex/i.test(path)) return "../../html menus/menu_alex.html";
-    if (/html\s*usuarios/i.test(path)) return "../html menus/menu_alex.html";
-    if (/html\s*menus/i.test(path)) return "menu_alex.html";
-    return "html menus/menu_alex.html";
+    if (/html\s*usuarios\/alex/i.test(path)) return "../../html menus/menu_produtos.html";
+    if (/html\s*usuarios/i.test(path)) return "../html menus/menu_produtos.html";
+    if (/html\s*menus/i.test(path)) return "menu_produtos.html";
+    return "html menus/menu_produtos.html";
   })();
 
   document.querySelectorAll('a[href*="menu.html"], button#btnMenu').forEach((el) => {
@@ -385,7 +385,7 @@ export function patchMenuLinksForAlex() {
       const href = el.getAttribute("href") || "";
       if (href.includes("menuadm")) return;
       if (href.includes("menu_alex")) return;
-      el.setAttribute("href", href.replace(/menu\.html.*/, "menu_alex.html").replace(/html%20menus\/menu\.html.*/, "html%20menus/menu_alex.html"));
+      el.setAttribute("href", href.replace(/menu\.html.*/, "menu_produtos.html").replace(/html%20menus\/menu\.html.*/, "html%20menus/menu_produtos.html"));
       if (!el.getAttribute("href").includes("menu_alex")) el.setAttribute("href", menuPath);
     }
   });
