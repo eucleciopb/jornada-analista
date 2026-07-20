@@ -102,13 +102,13 @@
     salvarDataNascimento,
     marcarNascimentoNaSessao,
     buscarDataNascimentoSalva
-  } from "./js/aniversario.js?v=20260720d";
+  } from "./js/aniversario.js?v=20260720e";
   import {
     montarSessaoLogin,
     salvarSessao,
     destinoMenuPorPerfil,
     PERFIL_TREINAMENTO_PRODUTOS
-  } from "./js/perfil-acesso.js?v=20260720d";
+  } from "./js/perfil-acesso.js?v=20260720e";
 
   const firebaseConfig = {
     apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
@@ -185,14 +185,30 @@
   }
 
   function irParaMenu(){
-    // Somente Euclecio vai ao menu exclusivo de treinamentos de produtos
     const nomeLogin = String(usuarioAtual || usuarioSelect.value || "").trim();
-    const isEuclecio =
-      nomeLogin.toLowerCase() === "euclecio" ||
-      String(USUARIOS[nomeLogin] || "").toUpperCase() === "E72" ||
-      String(perfilAtual || "").toLowerCase() === "treinamento_produtos";
+    const nomeKey = nomeLogin.toLowerCase();
 
-    if (isEuclecio && nomeLogin.toLowerCase() === "euclecio") {
+    // Alex SEMPRE no menu normal (limpa perfil antigo se existir)
+    if (nomeKey === "alex") {
+      try {
+        const raw = localStorage.getItem("user_session");
+        const s = raw ? JSON.parse(raw) : {};
+        localStorage.setItem("user_session", JSON.stringify({
+          ...s,
+          nome: "Alex",
+          matricula: "A70",
+          uidKey: "alex",
+          perfil: "analista",
+          tipoUsuario: "analista"
+        }));
+        localStorage.setItem("usuarioLogado", "Alex");
+      } catch {}
+      window.location.replace("html%20menus/menu.html?v=20260720e");
+      return;
+    }
+
+    // Somente Euclecio → menu exclusivo
+    if (nomeKey === "euclecio") {
       try {
         const raw = localStorage.getItem("user_session");
         const s = raw ? JSON.parse(raw) : {};
@@ -206,16 +222,17 @@
         }));
         localStorage.setItem("usuarioLogado", "Euclecio");
       } catch {}
-      window.location.replace("html%20menus/menu_alex.html?v=20260720d");
+      window.location.replace("html%20menus/menu_alex.html?v=20260720e");
       return;
     }
 
-    // Demais usuários (incluindo Alex) → fluxo normal
-    const dest = destinoMenuPorPerfil(
-      nomeLogin.toLowerCase() === "alex" ? "analista" : perfilAtual,
-      { fromRoot: true, encoded: true }
-    );
-    window.location.replace(`${dest}?v=20260720d`);
+    const dest = destinoMenuPorPerfil(perfilAtual, { fromRoot: true, encoded: true });
+    // Nunca enviar não-Euclecio para menu_alex
+    if (String(dest).includes("menu_alex")) {
+      window.location.replace("html%20menus/menu.html?v=20260720e");
+      return;
+    }
+    window.location.replace(`${dest}?v=20260720e`);
   }
 
   function mascararData(valor){
