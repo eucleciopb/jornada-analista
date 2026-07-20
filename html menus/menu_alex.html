@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="../css/pages/alex-portal.css?v=20260720f" />
 </head>
 <body class="theme-user portal-page gate-pending">
-  <!-- Só Euclecio permanece aqui -->
+  <!-- Alex e Euclecio permanecem aqui; demais voltam ao menu normal -->
   <script>
   (function () {
     try {
@@ -22,22 +22,26 @@
       var nome = String(s.nome || s.usuario || localStorage.getItem("usuarioLogado") || "").trim().toLowerCase();
       var mat = String(s.matricula || "").trim().toUpperCase();
       var uid = String(s.uidKey || "").trim().toLowerCase();
-      var isEuclecio = nome === "euclecio" || mat === "E72" || mat === "EUCLECIO" || uid === "euclecio";
-      if (isEuclecio) {
-        s.nome = s.nome || "Euclecio";
-        s.matricula = "E72";
-        s.uidKey = "euclecio";
+      var isProdutos =
+        nome === "alex" || nome === "euclecio" ||
+        mat === "A70" || mat === "ALEX" || mat === "E72" || mat === "EUCLECIO" ||
+        uid === "alex" || uid === "euclecio";
+      if (isProdutos) {
+        var isAlex = nome === "alex" || mat === "A70" || mat === "ALEX" || uid === "alex";
+        s.nome = s.nome || (isAlex ? "Alex" : "Euclecio");
+        s.matricula = isAlex ? "A70" : "E72";
+        s.uidKey = isAlex ? "alex" : "euclecio";
         s.perfil = "treinamento_produtos";
         s.tipoUsuario = "treinamento_produtos";
         localStorage.setItem("user_session", JSON.stringify(s));
+        localStorage.setItem("usuarioLogado", s.nome);
         return;
       }
       s.perfil = "analista";
       s.tipoUsuario = "analista";
-      if (nome === "alex") { s.matricula = "A70"; s.uidKey = "alex"; s.nome = s.nome || "Alex"; }
       localStorage.setItem("user_session", JSON.stringify(s));
       if (s.nome) localStorage.setItem("usuarioLogado", s.nome);
-      location.replace("menu.html?v=20260720f");
+      location.replace("menu.html?v=20260720g");
     } catch (e) {}
   })();
   </script>
@@ -75,7 +79,7 @@
         <div class="avatar" id="userAvatar">E</div>
         <div class="user-meta">
           <small>Perfil produtos</small>
-          <strong id="sidebarUserName">Euclecio</strong>
+          <strong id="sidebarUserName">Carregando...</strong>
         </div>
       </div>
 
@@ -98,7 +102,7 @@
         <button class="mobile-toggle" id="mobileToggle" type="button" aria-label="Abrir menu">☰</button>
         <div class="hello">
           <small>Resumo do mês</small>
-          <h1 id="welcomeText">Euclecio</h1>
+          <h1 id="welcomeText">Carregando...</h1>
         </div>
         <span class="header-date" id="headerDate"></span>
         <div class="mobile-logo">GP</div>
