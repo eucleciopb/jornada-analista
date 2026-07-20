@@ -153,7 +153,7 @@
         const s = JSON.parse(localStorage.getItem("user_session") || "null");
         const perfil = String(s?.perfil || "").toLowerCase();
         const mat = String(s?.matricula || "").toUpperCase();
-        if((String(s?.nome||"").trim().toLowerCase()==="euclecio")||(String(s?.uidKey||"").toLowerCase()==="euclecio")||mat==="E72"||mat==="EUCLECIO"){
+        if(["alex","euclecio"].includes(String(s?.nome||"").trim().toLowerCase())||["alex","euclecio"].includes(String(s?.uidKey||"").toLowerCase())||["A70","ALEX","E72","EUCLECIO"].includes(mat)){
           return "../html menus/menu_alex.html";
         }
       }catch(e){}

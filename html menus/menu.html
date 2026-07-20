@@ -385,47 +385,44 @@ body class="theme-user portal-page gate-pending">
       throw new Error("Usuário não encontrado no localStorage.");
     }
 
-    // Menu exclusivo: SOMENTE Euclecio (não usar só o campo perfil — Alex antigo ainda tinha treinamento_produtos)
+    // Menu exclusivo: Alex e Euclecio
     try{
       const raw = localStorage.getItem("user_session");
       const sess = raw ? JSON.parse(raw) : null;
       const mat = String(sess?.matricula || "").toUpperCase();
       const uid = String(sess?.uidKey || "").toLowerCase();
       const nome = String(user.nome || sess?.nome || "").trim().toLowerCase();
-      const isEuclecio =
-        nome === "euclecio" ||
-        mat === "E72" ||
-        mat === "EUCLECIO" ||
-        uid === "euclecio";
+      const isProdutos =
+        nome === "alex" || nome === "euclecio" ||
+        mat === "A70" || mat === "ALEX" || mat === "E72" || mat === "EUCLECIO" ||
+        uid === "alex" || uid === "euclecio";
 
-      // Alex (ou qualquer outro) com perfil antigo errado → corrige e fica no menu normal
-      if (!isEuclecio) {
-        if (String(sess?.perfil || "").toLowerCase() === "treinamento_produtos" ||
-            String(sess?.perfil || "").toLowerCase() === "alex_produtos") {
-          try {
-            localStorage.setItem("user_session", JSON.stringify({
-              ...(sess || {}),
-              perfil: "analista",
-              tipoUsuario: "analista",
-              matricula: sess?.matricula === "A70" || nome === "alex" ? "A70" : (sess?.matricula || user.nome),
-              uidKey: nome === "alex" ? "alex" : (sess?.uidKey || nome)
-            }));
-          } catch {}
-        }
-      } else {
+      if (isProdutos) {
+        const isAlex = nome === "alex" || mat === "A70" || mat === "ALEX" || uid === "alex";
         try{
-          const next = {
+          localStorage.setItem("user_session", JSON.stringify({
             ...(sess || {}),
             nome: user.nome,
-            matricula: "E72",
-            uidKey: "euclecio",
+            matricula: isAlex ? "A70" : "E72",
+            uidKey: isAlex ? "alex" : "euclecio",
             perfil: "treinamento_produtos",
             tipoUsuario: "treinamento_produtos"
-          };
-          localStorage.setItem("user_session", JSON.stringify(next));
+          }));
         }catch{}
-        window.location.replace("menu_alex.html?v=20260720e");
+        window.location.replace("menu_alex.html?v=20260720g");
         throw new Error("Redirecionando para menu de treinamentos de produtos.");
+      }
+
+      // Outros com perfil antigo errado → corrige para analista
+      if (String(sess?.perfil || "").toLowerCase() === "treinamento_produtos" ||
+          String(sess?.perfil || "").toLowerCase() === "alex_produtos") {
+        try {
+          localStorage.setItem("user_session", JSON.stringify({
+            ...(sess || {}),
+            perfil: "analista",
+            tipoUsuario: "analista"
+          }));
+        } catch {}
       }
     }catch(e){
       if(String(e?.message||"").includes("Redirecionando")) throw e;

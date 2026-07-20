@@ -12,18 +12,49 @@ export const PERFIL_TREINAMENTO_PRODUTOS = "treinamento_produtos";
 
 /**
  * Mapa estável: matrícula → perfil.
- * Preferir matrícula/uidKey a nome, pois o nome pode mudar.
- * Menu exclusivo de treinamentos de produtos: somente Euclecio.
+ * Menu exclusivo de treinamentos de produtos: Alex e Euclecio.
  */
 export const PERFIL_POR_MATRICULA = {
-  E72: PERFIL_TREINAMENTO_PRODUTOS, // Euclecio (senha/matrícula oficial)
-  EUCLECIO: PERFIL_TREINAMENTO_PRODUTOS // sessão antiga gravava matricula = nome
+  A70: PERFIL_TREINAMENTO_PRODUTOS, // Alex
+  ALEX: PERFIL_TREINAMENTO_PRODUTOS,
+  E72: PERFIL_TREINAMENTO_PRODUTOS, // Euclecio
+  EUCLECIO: PERFIL_TREINAMENTO_PRODUTOS
 };
 
 /** uidKeys com perfil exclusivo (fallback) */
 export const PERFIL_POR_UIDKEY = {
+  alex: PERFIL_TREINAMENTO_PRODUTOS,
   euclecio: PERFIL_TREINAMENTO_PRODUTOS
 };
+
+/** Nomes canônicos do menu de produtos */
+export const NOMES_MENU_PRODUTOS = new Set(["alex", "euclecio"]);
+
+/** Identidade do menu de produtos (Alex ou Euclecio) */
+export function isIdentidadeMenuProdutos({ nome, matricula, uidKey } = {}) {
+  const mat = String(matricula || matriculaDoUsuario(nome) || "").trim().toUpperCase();
+  const key = String(uidKey || uidKeyDoUsuario(nome) || "").toLowerCase();
+  const nomeKey = slug(nome);
+  if (PERFIL_POR_MATRICULA[mat]) return true;
+  if (PERFIL_POR_UIDKEY[key]) return true;
+  if (NOMES_MENU_PRODUTOS.has(nomeKey)) return true;
+  return false;
+}
+
+/** Corrige sessão para o menu de produtos preservando a identidade do usuário */
+export function normalizarSessaoMenuProdutos(sessao, nomeUsuario) {
+  const nome = String(nomeUsuario || sessao?.nome || "").trim();
+  const nomeKey = slug(nome);
+  const isAlex = nomeKey === "alex";
+  return {
+    ...(sessao || {}),
+    nome: nome || (isAlex ? "Alex" : "Euclecio"),
+    matricula: isAlex ? "A70" : "E72",
+    uidKey: isAlex ? "alex" : "euclecio",
+    perfil: PERFIL_TREINAMENTO_PRODUTOS,
+    tipoUsuario: PERFIL_TREINAMENTO_PRODUTOS
+  };
+}
 
 /** Matrículas conhecidas (login analistas) */
 export const MATRICULA_POR_USUARIO = {
@@ -78,29 +109,25 @@ export function uidKeyDoUsuario(nome) {
 
 /**
  * Resolve o perfil de acesso a partir de sessão / identidade estável.
- * IDs estáveis (matrícula/uidKey) têm prioridade sobre perfil "analista" antigo.
- * Somente Euclecio recebe treinamento_produtos.
+ * IDs estáveis (matrícula/uidKey/nome) têm prioridade.
+ * Alex e Euclecio recebem treinamento_produtos.
  */
 export function resolverPerfil({ nome, matricula, perfil, uidKey } = {}) {
   const mat = String(matricula || matriculaDoUsuario(nome) || "").trim().toUpperCase();
   const key = String(uidKey || uidKeyDoUsuario(nome) || "").toLowerCase();
+  const nomeKey = slug(nome);
   const p = String(perfil || "").trim().toLowerCase();
 
   if (PERFIL_POR_MATRICULA[mat]) return PERFIL_POR_MATRICULA[mat];
   if (PERFIL_POR_UIDKEY[key]) return PERFIL_POR_UIDKEY[key];
+  if (NOMES_MENU_PRODUTOS.has(nomeKey)) return PERFIL_TREINAMENTO_PRODUTOS;
 
   if (p === "alex_produtos" || p === PERFIL_TREINAMENTO_PRODUTOS) {
-    // Só mantém se a identidade for Euclecio; Alex/outros voltam a analista
-    if (PERFIL_POR_MATRICULA[mat] || PERFIL_POR_UIDKEY[key]) return PERFIL_TREINAMENTO_PRODUTOS;
-    const nomeKey = slug(nome);
-    if (nomeKey === "euclecio") return PERFIL_TREINAMENTO_PRODUTOS;
+    // Sem identidade de produtos → analista
     return PERFIL_ANALISTA;
   }
   if (p === PERFIL_ADMIN) return PERFIL_ADMIN;
   if (p === PERFIL_ANALISTA) return PERFIL_ANALISTA;
-
-  const nomeKey = slug(nome);
-  if (nomeKey === "euclecio") return PERFIL_TREINAMENTO_PRODUTOS;
 
   return PERFIL_ANALISTA;
 }
@@ -232,17 +259,9 @@ export function protegerPagina({
     return null;
   }
 
-  // Garante perfil correto para Euclecio com sessão antiga
-  if (resolverPerfil(user) === PERFIL_TREINAMENTO_PRODUTOS && user.perfil !== PERFIL_TREINAMENTO_PRODUTOS) {
-    const s = getSession() || {};
-    localStorage.setItem("user_session", JSON.stringify({
-      ...s,
-      nome: user.nome,
-      matricula: "E72",
-      uidKey: "euclecio",
-      perfil: PERFIL_TREINAMENTO_PRODUTOS,
-      tipoUsuario: PERFIL_TREINAMENTO_PRODUTOS
-    }));
+  // Garante perfil correto para Alex/Euclecio com sessão antiga
+  if (isIdentidadeMenuProdutos(user) && user.perfil !== PERFIL_TREINAMENTO_PRODUTOS) {
+    localStorage.setItem("user_session", JSON.stringify(normalizarSessaoMenuProdutos(getSession() || {}, user.nome)));
     user = obterUsuarioLogado();
   }
 
@@ -252,7 +271,7 @@ export function protegerPagina({
       encoded: false
     });
     const prefix = pathEstaEmMenus() ? "" : pathEstaEmUsuariosAlex() ? "../../html menus/" : pathEstaEmUsuarios() ? "../html menus/" : "html menus/";
-    window.location.replace(`${prefix}${dest.split("/").pop()}?v=20260720d`);
+    window.location.replace(`${prefix}${dest.split("/").pop()}?v=20260720g`);
     return null;
   }
 
