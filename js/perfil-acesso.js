@@ -13,14 +13,16 @@ export const PERFIL_TREINAMENTO_PRODUTOS = "treinamento_produtos";
 /**
  * Mapa estável: matrícula → perfil.
  * Preferir matrícula/uidKey a nome, pois o nome pode mudar.
+ * Menu exclusivo de treinamentos de produtos: somente Euclecio.
  */
 export const PERFIL_POR_MATRICULA = {
-  A70: PERFIL_TREINAMENTO_PRODUTOS // Alex
+  E72: PERFIL_TREINAMENTO_PRODUTOS, // Euclecio (senha/matrícula oficial)
+  EUCLECIO: PERFIL_TREINAMENTO_PRODUTOS // sessão antiga gravava matricula = nome
 };
 
 /** uidKeys com perfil exclusivo (fallback) */
 export const PERFIL_POR_UIDKEY = {
-  alex: PERFIL_TREINAMENTO_PRODUTOS
+  euclecio: PERFIL_TREINAMENTO_PRODUTOS
 };
 
 /** Matrículas conhecidas (login analistas) */
@@ -76,25 +78,29 @@ export function uidKeyDoUsuario(nome) {
 
 /**
  * Resolve o perfil de acesso a partir de sessão / identidade estável.
- * Ordem: perfil na sessão → matrícula → uidKey → padrão analista.
+ * IDs estáveis (matrícula/uidKey) têm prioridade sobre perfil "analista" antigo.
+ * Somente Euclecio recebe treinamento_produtos.
  */
 export function resolverPerfil({ nome, matricula, perfil, uidKey } = {}) {
-  const p = String(perfil || "").trim().toLowerCase();
-  if (
-    p === PERFIL_TREINAMENTO_PRODUTOS ||
-    p === PERFIL_ADMIN ||
-    p === PERFIL_ANALISTA ||
-    p === "alex_produtos"
-  ) {
-    if (p === "alex_produtos") return PERFIL_TREINAMENTO_PRODUTOS;
-    return p;
-  }
-
   const mat = String(matricula || matriculaDoUsuario(nome) || "").trim().toUpperCase();
-  if (mat && PERFIL_POR_MATRICULA[mat]) return PERFIL_POR_MATRICULA[mat];
-
   const key = String(uidKey || uidKeyDoUsuario(nome) || "").toLowerCase();
-  if (key && PERFIL_POR_UIDKEY[key]) return PERFIL_POR_UIDKEY[key];
+  const p = String(perfil || "").trim().toLowerCase();
+
+  if (PERFIL_POR_MATRICULA[mat]) return PERFIL_POR_MATRICULA[mat];
+  if (PERFIL_POR_UIDKEY[key]) return PERFIL_POR_UIDKEY[key];
+
+  if (p === "alex_produtos" || p === PERFIL_TREINAMENTO_PRODUTOS) {
+    // Só mantém se a identidade for Euclecio; Alex/outros voltam a analista
+    if (PERFIL_POR_MATRICULA[mat] || PERFIL_POR_UIDKEY[key]) return PERFIL_TREINAMENTO_PRODUTOS;
+    const nomeKey = slug(nome);
+    if (nomeKey === "euclecio") return PERFIL_TREINAMENTO_PRODUTOS;
+    return PERFIL_ANALISTA;
+  }
+  if (p === PERFIL_ADMIN) return PERFIL_ADMIN;
+  if (p === PERFIL_ANALISTA) return PERFIL_ANALISTA;
+
+  const nomeKey = slug(nome);
+  if (nomeKey === "euclecio") return PERFIL_TREINAMENTO_PRODUTOS;
 
   return PERFIL_ANALISTA;
 }
@@ -209,8 +215,8 @@ export function rotaAtualEhExclusivaSV(pathname = window.location.pathname) {
 /**
  * Protege a página atual:
  * - sem sessão → login
- * - perfil treinamento_produtos em rota SV → menu Alex
- * - páginas Alex exigem perfil correspondente (ou admin)
+ * - perfil treinamento_produtos em rota SV → menu exclusivo
+ * - páginas do menu exclusivo exigem o perfil (ou admin)
  */
 export function protegerPagina({
   exigirPerfis = null,
@@ -218,12 +224,26 @@ export function protegerPagina({
   fromRoot = false,
   redirectLogin = true
 } = {}) {
-  const user = obterUsuarioLogado();
+  let user = obterUsuarioLogado();
   if (!user) {
     if (redirectLogin) {
       window.location.replace(caminhoLogin({ fromRoot }));
     }
     return null;
+  }
+
+  // Garante perfil correto para Euclecio com sessão antiga
+  if (resolverPerfil(user) === PERFIL_TREINAMENTO_PRODUTOS && user.perfil !== PERFIL_TREINAMENTO_PRODUTOS) {
+    const s = getSession() || {};
+    localStorage.setItem("user_session", JSON.stringify({
+      ...s,
+      nome: user.nome,
+      matricula: "E72",
+      uidKey: "euclecio",
+      perfil: PERFIL_TREINAMENTO_PRODUTOS,
+      tipoUsuario: PERFIL_TREINAMENTO_PRODUTOS
+    }));
+    user = obterUsuarioLogado();
   }
 
   if (bloquearSvParaAlex && user.isTreinamentoProdutos && rotaAtualEhExclusivaSV()) {
@@ -232,13 +252,13 @@ export function protegerPagina({
       encoded: false
     });
     const prefix = pathEstaEmMenus() ? "" : pathEstaEmUsuariosAlex() ? "../../html menus/" : pathEstaEmUsuarios() ? "../html menus/" : "html menus/";
-    window.location.replace(`${prefix}${dest.split("/").pop()}`);
+    window.location.replace(`${prefix}${dest.split("/").pop()}?v=20260720d`);
     return null;
   }
 
   if (Array.isArray(exigirPerfis) && exigirPerfis.length) {
-    const ok = exigirPerfis.map((x) => String(x).toLowerCase()).includes(user.perfil);
-    if (!ok && !user.isAdmin) {
+    const ok = exigirPerfis.map((x) => String(x).toLowerCase()).includes(String(user.perfil).toLowerCase());
+    if (!ok && !user.isAdmin && !user.isTreinamentoProdutos) {
       const dest = destinoMenuPorPerfil(user.perfil, { fromRoot: false, encoded: false });
       const prefix = pathEstaEmMenus() ? "" : pathEstaEmUsuariosAlex() ? "../../html menus/" : pathEstaEmUsuarios() ? "../html menus/" : "html menus/";
       window.location.replace(`${prefix}${dest}`);

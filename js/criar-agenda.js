@@ -83,7 +83,7 @@ function resolveMenuPathAlex(){
     const s = JSON.parse(localStorage.getItem("user_session") || "null");
     const perfil = String(s?.perfil || "").toLowerCase();
     const mat = String(s?.matricula || "").toUpperCase();
-    if(perfil === "treinamento_produtos" || perfil === "alex_produtos" || mat === "A70"){
+    if(perfil === "treinamento_produtos" || perfil === "alex_produtos" || mat === "E72" || mat === "EUCLECIO"){
       return "../html menus/menu_alex.html";
     }
   }catch(e){}

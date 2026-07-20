@@ -385,21 +385,36 @@ body class="theme-user portal-page gate-pending">
       throw new Error("Usuário não encontrado no localStorage.");
     }
 
-    // Perfil treinamento_produtos → menu exclusivo (não vê dashboards SV)
+    // Perfil treinamento_produtos → menu exclusivo (somente Euclecio)
     try{
       const raw = localStorage.getItem("user_session");
       const sess = raw ? JSON.parse(raw) : null;
       const perfil = String(sess?.perfil || "").toLowerCase();
       const mat = String(sess?.matricula || "").toUpperCase();
       const uid = String(sess?.uidKey || "").toLowerCase();
+      const nome = String(user.nome || sess?.nome || "").trim().toLowerCase();
       if(
         perfil === "treinamento_produtos" ||
         perfil === "alex_produtos" ||
-        mat === "A70" ||
-        uid === "alex"
+        mat === "E72" ||
+        mat === "EUCLECIO" ||
+        uid === "euclecio" ||
+        nome === "euclecio"
       ){
-        window.location.replace("menu_alex.html");
-        throw new Error("Redirecionando para menu Alex.");
+        // Corrige sessão e vai ao menu exclusivo
+        try{
+          const next = {
+            ...(sess || {}),
+            nome: user.nome,
+            matricula: "E72",
+            uidKey: "euclecio",
+            perfil: "treinamento_produtos",
+            tipoUsuario: "treinamento_produtos"
+          };
+          localStorage.setItem("user_session", JSON.stringify(next));
+        }catch{}
+        window.location.replace("menu_alex.html?v=20260720d");
+        throw new Error("Redirecionando para menu de treinamentos de produtos.");
       }
     }catch(e){
       if(String(e?.message||"").includes("Redirecionando")) throw e;

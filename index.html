@@ -102,13 +102,13 @@
     salvarDataNascimento,
     marcarNascimentoNaSessao,
     buscarDataNascimentoSalva
-  } from "./js/aniversario.js?v=20260720a";
+  } from "./js/aniversario.js?v=20260720d";
   import {
     montarSessaoLogin,
     salvarSessao,
     destinoMenuPorPerfil,
     PERFIL_TREINAMENTO_PRODUTOS
-  } from "./js/perfil-acesso.js?v=20260720a";
+  } from "./js/perfil-acesso.js?v=20260720d";
 
   const firebaseConfig = {
     apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
@@ -185,8 +185,37 @@
   }
 
   function irParaMenu(){
-    const dest = destinoMenuPorPerfil(perfilAtual, { fromRoot: true, encoded: true });
-    window.location.replace(`${dest}?v=20260720a`);
+    // Somente Euclecio vai ao menu exclusivo de treinamentos de produtos
+    const nomeLogin = String(usuarioAtual || usuarioSelect.value || "").trim();
+    const isEuclecio =
+      nomeLogin.toLowerCase() === "euclecio" ||
+      String(USUARIOS[nomeLogin] || "").toUpperCase() === "E72" ||
+      String(perfilAtual || "").toLowerCase() === "treinamento_produtos";
+
+    if (isEuclecio && nomeLogin.toLowerCase() === "euclecio") {
+      try {
+        const raw = localStorage.getItem("user_session");
+        const s = raw ? JSON.parse(raw) : {};
+        localStorage.setItem("user_session", JSON.stringify({
+          ...s,
+          nome: "Euclecio",
+          matricula: "E72",
+          uidKey: "euclecio",
+          perfil: "treinamento_produtos",
+          tipoUsuario: "treinamento_produtos"
+        }));
+        localStorage.setItem("usuarioLogado", "Euclecio");
+      } catch {}
+      window.location.replace("html%20menus/menu_alex.html?v=20260720d");
+      return;
+    }
+
+    // Demais usuários (incluindo Alex) → fluxo normal
+    const dest = destinoMenuPorPerfil(
+      nomeLogin.toLowerCase() === "alex" ? "analista" : perfilAtual,
+      { fromRoot: true, encoded: true }
+    );
+    window.location.replace(`${dest}?v=20260720d`);
   }
 
   function mascararData(valor){
