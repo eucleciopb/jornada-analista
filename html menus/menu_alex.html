@@ -4,16 +4,16 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <title>Visão Geral | Treinamentos de Produtos</title>
+  <title>Resumo | Treinamentos de Produtos</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../css/bundle-portal-user.css?v=20260720a" />
-  <link rel="stylesheet" href="../css/pages/cadastro-nascimento.css?v=20260720a" />
-  <link rel="stylesheet" href="../css/pages/alex-portal.css?v=20260720a" />
+  <link rel="stylesheet" href="../css/bundle-portal-user.css?v=20260720f" />
+  <link rel="stylesheet" href="../css/pages/cadastro-nascimento.css?v=20260720f" />
+  <link rel="stylesheet" href="../css/pages/alex-portal.css?v=20260720f" />
 </head>
-<body class="theme-user portal-page gate-pending alex-portal">
-  <!-- Só Euclecio permanece aqui; Alex e demais voltam ao menu normal -->
+<body class="theme-user portal-page gate-pending">
+  <!-- Só Euclecio permanece aqui -->
   <script>
   (function () {
     try {
@@ -32,304 +32,394 @@
         localStorage.setItem("user_session", JSON.stringify(s));
         return;
       }
-      // Alex ou outro usuário neste menu por engano
       s.perfil = "analista";
       s.tipoUsuario = "analista";
-      if (nome === "alex") {
-        s.matricula = "A70";
-        s.uidKey = "alex";
-        s.nome = s.nome || "Alex";
-      }
+      if (nome === "alex") { s.matricula = "A70"; s.uidKey = "alex"; s.nome = s.nome || "Alex"; }
       localStorage.setItem("user_session", JSON.stringify(s));
       if (s.nome) localStorage.setItem("usuarioLogado", s.nome);
-      location.replace("menu.html?v=20260720e");
+      location.replace("menu.html?v=20260720f");
     } catch (e) {}
   })();
   </script>
 
-  <div class="alex-page">
-    <div class="alex-hero">
-      <h2>Olá, <span id="heroName">Euclecio</span>!</h2>
-      <p>Acompanhe seus treinamentos de produtos e o impacto nos resultados de vendas.</p>
-    </div>
-
-    <div class="alex-filters" id="filtrosGlobais">
-      <div class="field">
-        <label for="fMes">Mês</label>
-        <select id="fMes"></select>
-      </div>
-      <div class="field">
-        <label for="fAno">Ano</label>
-        <select id="fAno"></select>
-      </div>
-      <div class="field alex-filter-extra">
-        <label for="fDataIni">Período de</label>
-        <input id="fDataIni" type="date" />
-      </div>
-      <div class="field alex-filter-extra">
-        <label for="fDataFim">até</label>
-        <input id="fDataFim" type="date" />
-      </div>
-      <div class="field">
-        <label for="fMarca">Marca</label>
-        <select id="fMarca"><option value="">Todas</option></select>
-      </div>
-      <div class="field">
-        <label for="fProduto">Produto</label>
-        <select id="fProduto"><option value="">Todos</option></select>
-      </div>
-      <div class="field alex-filter-extra">
-        <label for="fCd">CD</label>
-        <input id="fCd" type="text" placeholder="Buscar CD" list="cdDatalist" />
-        <datalist id="cdDatalist"></datalist>
-      </div>
-      <div class="field">
-        <label for="fModalidade">Modalidade</label>
-        <select id="fModalidade">
-          <option value="Todos">Todos</option>
-          <option value="Presencial">Presencial</option>
-          <option value="Online">Online</option>
-        </select>
-      </div>
-      <div class="field alex-filter-extra">
-        <label for="fPublico">Público</label>
-        <select id="fPublico"><option value="">Todos</option></select>
-      </div>
-      <div class="field">
-        <label for="fStatus">Status da análise</label>
-        <select id="fStatus">
-          <option value="Todos">Todos</option>
-          <option>Melhorou</option>
-          <option>Manteve</option>
-          <option>Regrediu</option>
-          <option>Sem análise</option>
-        </select>
-      </div>
-      <div class="alex-filters-actions">
-        <button type="button" class="btn-alex" id="btnToggleFiltros">Mais filtros</button>
-        <button type="button" class="btn-alex primary" id="btnAplicar">Aplicar</button>
-      </div>
-    </div>
-
-    <div id="loadingState" class="alex-loading">Carregando treinamentos...</div>
-    <div id="emptyState" class="alex-empty" hidden>Nenhum treinamento encontrado para o período selecionado.</div>
-
-    <div id="dashboardBody" hidden>
-      <div class="alex-metrics" id="metricsCards"></div>
-
-      <div class="alex-charts">
-        <div class="alex-chart-card">
-          <h3>Treinamentos por mês</h3>
-          <p>Quantidade realizada em cada mês</p>
-          <div class="bar-chart" id="chartMes"></div>
+  <div id="birthGateOverlay" class="birth-gate-overlay" aria-modal="true" role="dialog">
+    <div class="login-card nasc-card birth-gate-card">
+      <div class="logo-box">GP</div>
+      <h2>Complete seu perfil</h2>
+      <p class="hint">Informe sua data de nascimento para liberar o menu.</p>
+      <div class="nasc-user" id="birthGateUser">—</div>
+      <form id="birthGateForm" class="nasc-form" autocomplete="off" novalidate>
+        <div class="form-group">
+          <label for="birthGateInput">Data de nascimento</label>
+          <input id="birthGateInput" type="text" inputmode="numeric" maxlength="10" placeholder="DD/MM/AAAA" required />
         </div>
-        <div class="alex-chart-card">
-          <h3>Treinamentos por marca</h3>
-          <p>Volume por marca trabalhada</p>
-          <div class="bar-chart" id="chartMarca"></div>
-        </div>
-        <div class="alex-chart-card">
-          <h3>Treinamentos por produto</h3>
-          <p>Produtos com mais treinamentos</p>
-          <div class="bar-chart" id="chartProduto"></div>
-        </div>
-        <div class="alex-chart-card">
-          <h3>CDs mais impactados</h3>
-          <p>Ranking de participação</p>
-          <div class="bar-chart" id="chartCds"></div>
-        </div>
-        <div class="alex-chart-card">
-          <h3>Presencial versus Online</h3>
-          <p>Divisão por modalidade</p>
-          <div class="compare-bars" id="chartModalidade"></div>
-        </div>
-        <div class="alex-chart-card">
-          <h3>Resultado dos treinamentos</h3>
-          <p>Classificação das análises</p>
-          <div class="bar-chart" id="chartResultado"></div>
-        </div>
-        <div class="alex-chart-card">
-          <h3>Evolução de cobertura</h3>
-          <p>Média antes e depois</p>
-          <div class="compare-bars" id="chartCobertura"></div>
-        </div>
-        <div class="alex-chart-card">
-          <h3>Evolução de HL</h3>
-          <p>Média antes e depois</p>
-          <div class="compare-bars" id="chartHl"></div>
-        </div>
-      </div>
+        <button id="birthGateSave" class="btn-primary" type="submit">Salvar e continuar</button>
+      </form>
+      <p id="birthGateMsg" class="msg" role="status"></p>
     </div>
   </div>
 
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <div class="portal-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-logo">GP</div>
+        <div>
+          <h2>Jornada</h2>
+          <small>Treinamentos de Produtos</small>
+        </div>
+      </div>
+
+      <div class="user-card">
+        <div class="avatar" id="userAvatar">E</div>
+        <div class="user-meta">
+          <small>Perfil produtos</small>
+          <strong id="sidebarUserName">Euclecio</strong>
+        </div>
+      </div>
+
+      <nav class="side-nav">
+        <a class="side-link active" href="menu_alex.html"><span class="nav-ico">📊</span>Resumo</a>
+        <a class="side-link" href="../html usuarios/treinamentos.html"><span class="nav-ico">🎓</span>Treinamentos</a>
+        <a class="side-link" href="../html usuarios/criar-agenda.html"><span class="nav-ico">➕</span>Criar Agenda</a>
+        <a class="side-link" href="../html usuarios/agenda.html"><span class="nav-ico">📅</span>Agenda</a>
+        <a class="side-link" href="../html usuarios/biblioteca-treinamentos.html"><span class="nav-ico">📚</span>Biblioteca</a>
+        <a class="side-link" href="../html usuarios/links-uteis.html"><span class="nav-ico">🔗</span>Links Úteis</a>
+      </nav>
+
+      <div class="side-footer">
+        <button id="btnLogoutSide" class="logout-side" type="button">Sair do Sistema</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="top-header">
+        <button class="mobile-toggle" id="mobileToggle" type="button" aria-label="Abrir menu">☰</button>
+        <div class="hello">
+          <small>Resumo do mês</small>
+          <h1 id="welcomeText">Euclecio</h1>
+        </div>
+        <span class="header-date" id="headerDate"></span>
+        <div class="mobile-logo">GP</div>
+      </header>
+
+      <div class="content">
+        <div class="alex-hero" style="margin-bottom:14px;">
+          <h2 style="margin:0 0 6px;font-size:1.35rem;">Olá, <span id="heroName">Euclecio</span>!</h2>
+          <p style="margin:0;color:#64748b;">Resumo dos seus treinamentos realizados (sem meta de 3 CDs).</p>
+        </div>
+
+        <div class="alex-filters" style="grid-template-columns:repeat(3,minmax(0,1fr));">
+          <div class="field">
+            <label for="fMes">Mês</label>
+            <select id="fMes"></select>
+          </div>
+          <div class="field">
+            <label for="fAno">Ano</label>
+            <select id="fAno"></select>
+          </div>
+          <div class="alex-filters-actions">
+            <button type="button" class="btn-alex primary" id="btnAplicar">Atualizar</button>
+          </div>
+        </div>
+
+        <div id="statusLoad" class="alex-loading">Carregando treinamentos...</div>
+
+        <section id="resumoSection" hidden>
+          <div class="section-title" style="margin-bottom:12px;">
+            <div>
+              <h3 id="tituloPeriodo">Resumo do mês</h3>
+              <p>Totais com base nos lançamentos de <code>treinamentos_realizados</code>.</p>
+            </div>
+            <span id="statusResumo" class="status-pill">—</span>
+          </div>
+
+          <div class="alex-metrics" id="cardsResumo"></div>
+
+          <div class="section-title" style="margin:18px 0 12px;">
+            <div>
+              <h3>Treinamentos do período</h3>
+              <p>Lista dos registros já cadastrados no sistema.</p>
+            </div>
+            <a class="btn-alex primary" href="../html usuarios/treinamentos.html">Abrir cadastro</a>
+          </div>
+
+          <div class="alex-table-wrap">
+            <table class="alex-table" style="min-width:720px;">
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Treinamento</th>
+                  <th>CD</th>
+                  <th>Modalidade</th>
+                  <th>Público</th>
+                  <th>Pessoas</th>
+                  <th>Nota</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyTreinos"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <nav class="bottom-nav">
+        <a class="active" href="menu_alex.html"><span>Resumo</span></a>
+        <a href="../html usuarios/treinamentos.html"><span>Treinos</span></a>
+        <a href="../html usuarios/agenda.html"><span>Agenda</span></a>
+        <button id="btnLogoutMobile" type="button"><span>Sair</span></button>
+      </nav>
+    </main>
+  </div>
+
 <script type="module">
-  import { initAlexShell, escapeHtml } from "../js/alex/shell.js?v=20260720a";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
   import {
-    listarTreinamentosCompleto,
-    filtrarTreinamentos,
-    agregarMetricas,
-    seriesPorMes,
-    seriesPorCampo,
-    rankingCds,
-    mediaCoberturaHl,
-    PUBLICOS,
-    MARCAS_PADRAO
-  } from "../js/alex/dados.js?v=20260720a";
-  import { formatPct, formatHl, STATUS } from "../js/alex/calculos.js?v=20260720a";
+    getFirestore, collection, getDocs, query, where,
+    doc, getDoc, setDoc, serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+  import {
+    parseDataNascimento,
+    salvarDataNascimento,
+    marcarNascimentoNaSessao,
+    buscarDataNascimentoSalva
+  } from "../js/aniversario.js?v=20260720f";
 
-  const ctx = await initAlexShell({ base: "menus", active: "visao", title: "Visão Geral" });
-  if (!ctx) throw new Error("Sessão inválida");
+  const firebaseConfig = {
+    apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
+    authDomain: "jornada-portal.firebaseapp.com",
+    projectId: "jornada-portal",
+    storageBucket: "jornada-portal.firebasestorage.app",
+    messagingSenderId: "669362296644",
+    appId: "1:669362296644:web:f590d9834a8e4e60012911"
+  };
 
-  const { user, db } = ctx;
-  document.getElementById("heroName").textContent = user.nome;
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const fs = { doc, getDoc, setDoc, serverTimestamp };
 
-  const MESES = ["", "Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
-  const agora = new Date();
-  const fMes = document.getElementById("fMes");
-  const fAno = document.getElementById("fAno");
-  const fPublico = document.getElementById("fPublico");
-  const fMarca = document.getElementById("fMarca");
+  function safeParse(raw){ try { return JSON.parse(raw); } catch { return null; } }
+  function slug(s){
+    return String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+      .replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");
+  }
+  function escapeHtml(v){
+    return String(v ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;").replaceAll("'","&#039;");
+  }
+  function normalize(s){ return String(s || "").replace(/\s+/g," ").trim(); }
+  function toBR(iso){
+    if(!iso) return "—";
+    const [y,m,d] = String(iso).split("-");
+    return (y && m && d) ? `${d}/${m}/${y}` : String(iso);
+  }
+  function mesNome(mes){
+    return ["","Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"][mes] || "-";
+  }
 
-  fMes.innerHTML = `<option value="">Todos</option>` + MESES.slice(1).map((m,i) =>
-    `<option value="${String(i+1).padStart(2,"0")}" ${i+1===agora.getMonth()+1?"selected":""}>${m}</option>`
-  ).join("");
+  function getUser(){
+    const s = safeParse(localStorage.getItem("user_session"));
+    if (s?.nome) return String(s.nome).trim();
+    return (localStorage.getItem("usuarioLogado") || "").trim();
+  }
 
-  const anos = [agora.getFullYear(), agora.getFullYear()-1, agora.getFullYear()-2];
-  fAno.innerHTML = `<option value="">Todos</option>` + anos.map(a =>
-    `<option value="${a}" ${a===agora.getFullYear()?"selected":""}>${a}</option>`
-  ).join("");
+  const userNome = getUser();
+  if (!userNome) {
+    location.replace("../index.html");
+    throw new Error("Sem sessão");
+  }
 
-  fPublico.innerHTML += PUBLICOS.map(p => `<option value="${p}">${p}</option>`).join("");
-  fMarca.innerHTML += MARCAS_PADRAO.map(m => `<option value="${m}">${m}</option>`).join("");
+  welcomeText.textContent = userNome;
+  heroName.textContent = userNome;
+  sidebarUserName.textContent = userNome;
+  userAvatar.textContent = userNome.charAt(0).toUpperCase();
+  headerDate.textContent = new Date().toLocaleDateString("pt-BR", { weekday:"long", day:"numeric", month:"long" });
 
-  let ALL = [];
-  const filtrosEl = document.getElementById("filtrosGlobais");
-  document.getElementById("btnToggleFiltros").addEventListener("click", () => {
-    filtrosEl.classList.toggle("collapsed");
+  // Gate nascimento
+  const birthGateOverlay = document.getElementById("birthGateOverlay");
+  function liberarMenu(iso){
+    if (iso) marcarNascimentoNaSessao(iso);
+    birthGateOverlay?.classList.add("is-done");
+    document.body.classList.remove("gate-pending");
+  }
+  function mascararData(valor){
+    const digits = String(valor || "").replace(/\D/g, "").slice(0, 8);
+    if (digits.length <= 2) return digits;
+    if (digits.length <= 4) return `${digits.slice(0,2)}/${digits.slice(2)}`;
+    return `${digits.slice(0,2)}/${digits.slice(2,4)}/${digits.slice(4)}`;
+  }
+  birthGateUser.textContent = userNome;
+  birthGateInput?.addEventListener("input", () => {
+    birthGateInput.value = mascararData(birthGateInput.value);
   });
-  filtrosEl.classList.add("collapsed");
+  birthGateForm?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const parsed = parseDataNascimento(birthGateInput.value);
+    if (!parsed) { birthGateMsg.textContent = "Informe uma data válida (DD/MM/AAAA)."; return; }
+    birthGateSave.disabled = true;
+    try {
+      await salvarDataNascimento(db, fs, userNome, parsed, { perfil: "treinamento_produtos" });
+      liberarMenu(parsed.dataNascimento);
+    } catch (err) {
+      birthGateMsg.textContent = err?.message || "Erro ao salvar.";
+      birthGateSave.disabled = false;
+    }
+  });
+  try {
+    const dn = await buscarDataNascimentoSalva(db, fs, userNome);
+    if (dn) liberarMenu(dn);
+    else {
+      birthGateOverlay?.classList.remove("is-done");
+      document.body.classList.add("gate-pending");
+    }
+  } catch {
+    document.body.classList.add("gate-pending");
+  }
 
-  function lerFiltros() {
+  // Sidebar mobile
+  const sidebar = document.getElementById("sidebar");
+  const sidebarOverlay = document.getElementById("sidebarOverlay");
+  function toggleSidebar(open){
+    sidebar?.classList.toggle("open", open);
+    sidebarOverlay?.classList.toggle("open", open);
+  }
+  mobileToggle?.addEventListener("click", () => toggleSidebar(!sidebar?.classList.contains("open")));
+  sidebarOverlay?.addEventListener("click", () => toggleSidebar(false));
+
+  function logout(){
+    localStorage.removeItem("user_session");
+    localStorage.removeItem("usuarioLogado");
+    location.href = "../index.html";
+  }
+  btnLogoutSide?.addEventListener("click", logout);
+  btnLogoutMobile?.addEventListener("click", logout);
+
+  // Filtros mês/ano
+  const agora = new Date();
+  const MESES = ["","Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+  fMes.innerHTML = MESES.slice(1).map((m,i) =>
+    `<option value="${i+1}" ${i+1===agora.getMonth()+1?"selected":""}>${m}</option>`
+  ).join("");
+  fAno.innerHTML = [agora.getFullYear(), agora.getFullYear()-1, agora.getFullYear()-2]
+    .map(a => `<option value="${a}" ${a===agora.getFullYear()?"selected":""}>${a}</option>`).join("");
+
+  let CACHE = [];
+
+  function filtrarMes(lista, ano, mes){
+    return (lista || []).filter(item => {
+      if (!item.data) return false;
+      const [y,m] = String(item.data).split("-").map(Number);
+      return y === ano && m === mes;
+    });
+  }
+
+  function resumo(lista){
+    const cds = new Set();
+    let pessoas = 0;
+    let presencial = 0;
+    let online = 0;
+    let vendedor = 0;
+    let gestor = 0;
+    let outros = 0;
+
+    lista.forEach(t => {
+      const cd = normalize(t.cd);
+      if (cd) cds.add(cd);
+      pessoas += Number(t.totalPessoas) || 0;
+      const tipo = normalize(t.tipoTreinamento).toLowerCase();
+      if (tipo === "presencial") presencial += 1;
+      else if (tipo === "online") online += 1;
+      const pub = normalize(t.publico).toLowerCase();
+      if (pub.includes("vendedor")) vendedor += 1;
+      else if (pub.includes("gestor") || pub.includes("supervisor") || pub.includes("gerente")) gestor += 1;
+      else outros += 1;
+    });
+
     return {
-      mes: fMes.value,
-      ano: fAno.value,
-      dataInicial: document.getElementById("fDataIni").value,
-      dataFinal: document.getElementById("fDataFim").value,
-      marca: fMarca.value,
-      produto: document.getElementById("fProduto").value,
-      cd: document.getElementById("fCd").value,
-      modalidade: document.getElementById("fModalidade").value,
-      publico: fPublico.value,
-      statusAnalise: document.getElementById("fStatus").value
+      total: lista.length,
+      cds: cds.size,
+      pessoas,
+      presencial,
+      online,
+      vendedor,
+      gestor,
+      outros
     };
   }
 
-  function renderBars(el, series) {
-    if (!series.length) {
-      el.innerHTML = `<div class="alex-empty" style="padding:12px;border:0;">Sem dados</div>`;
-      return;
-    }
-    const max = Math.max(...series.map(s => s.value), 1);
-    el.innerHTML = series.map(s => `
-      <div class="bar-row" title="${escapeHtml(s.label)}: ${s.value}">
-        <span class="bar-label">${escapeHtml(s.label)}</span>
-        <div class="bar-track"><div class="bar-fill" style="width:${(s.value/max)*100}%"></div></div>
-        <span class="bar-val">${s.value}</span>
+  function render(lista, ano, mes){
+    statusLoad.hidden = true;
+    resumoSection.hidden = false;
+    tituloPeriodo.textContent = `Resumo — ${mesNome(mes)} / ${ano}`;
+
+    const r = resumo(lista);
+    statusResumo.textContent = r.total ? `${r.total} registro(s)` : "Sem lançamentos";
+    statusResumo.className = `status-pill ${r.total ? "ok" : "warn"}`;
+
+    cardsResumo.innerHTML = [
+      ["Treinamentos no mês", r.total, "Todos os lançamentos do período"],
+      ["CDs impactados", r.cds, "CDs únicos (sem meta de 3)"],
+      ["Pessoas treinadas", r.pessoas, "Soma de participantes"],
+      ["Presenciais", r.presencial, "Quantidade presencial"],
+      ["Online", r.online, "Quantidade online"],
+      ["Público vendedor", r.vendedor, "Registros com público vendedor"],
+      ["Público gestor", r.gestor, "Gestores / supervisores / gerentes"],
+      ["Outros públicos", r.outros, "Demais públicos"]
+    ].map(([t,v,tip]) => `
+      <div class="alex-metric" title="${escapeHtml(tip)}">
+        <span>${escapeHtml(t)}</span>
+        <strong>${v}</strong>
       </div>
     `).join("");
-  }
-
-  function renderDashboard(lista) {
-    const loading = document.getElementById("loadingState");
-    const empty = document.getElementById("emptyState");
-    const body = document.getElementById("dashboardBody");
-    loading.hidden = true;
 
     if (!lista.length) {
-      empty.hidden = false;
-      body.hidden = true;
+      tbodyTreinos.innerHTML = `<tr><td colspan="7"><div class="alex-empty">Nenhum treinamento cadastrado neste mês.</div></td></tr>`;
       return;
     }
-    empty.hidden = true;
-    body.hidden = false;
 
-    const m = agregarMetricas(lista);
-    document.getElementById("metricsCards").innerHTML = [
-      { t: "Treinamentos Realizados", v: m.total, tip: "Total no período" },
-      { t: "CDs Impactados", v: m.cdsImpactados, tip: "CDs únicos (sem duplicar)" },
-      { t: "Pessoas Treinadas", v: m.pessoasTreinadas, tip: "Soma de participantes" },
-      { t: "Marcas Trabalhadas", v: m.marcas },
-      { t: "Produtos Trabalhados", v: m.produtos },
-      { t: "Treinamentos Presenciais", v: m.presencial, e: formatPct(m.pctPresencial) },
-      { t: "Treinamentos Online", v: m.online, e: formatPct(m.pctOnline) },
-      { t: "Treinamentos com Melhora", v: m.melhorou, e: formatPct(m.pctMelhorou) },
-      { t: "Treinamentos que Mantiveram", v: m.manteve, e: formatPct(m.pctManteve) },
-      { t: "Treinamentos com Queda", v: m.regrediu, e: formatPct(m.pctRegrediu) }
-    ].map(c => `
-      <div class="alex-metric" title="${escapeHtml(c.tip || c.t)}">
-        <span>${escapeHtml(c.t)}</span>
-        <strong>${c.v}</strong>
-        ${c.e ? `<em>${escapeHtml(c.e)}</em>` : ""}
-      </div>
+    const ordenados = [...lista].sort((a,b) => String(b.data||"").localeCompare(String(a.data||"")));
+    tbodyTreinos.innerHTML = ordenados.map(t => `
+      <tr>
+        <td>${toBR(t.data)}</td>
+        <td>${escapeHtml(t.treinamento || "—")}</td>
+        <td>${escapeHtml(t.cd || "—")}</td>
+        <td>${escapeHtml(t.tipoTreinamento || "—")}</td>
+        <td>${escapeHtml(t.publico || "—")}</td>
+        <td>${t.totalPessoas ?? "—"}</td>
+        <td>${t.notaMedia ?? "—"}</td>
+      </tr>
     `).join("");
-
-    renderBars(document.getElementById("chartMes"), seriesPorMes(lista));
-    renderBars(document.getElementById("chartMarca"), seriesPorCampo(lista, "marca"));
-    renderBars(document.getElementById("chartProduto"), seriesPorCampo(lista, "produto"));
-    renderBars(document.getElementById("chartCds"), rankingCds(lista));
-
-    document.getElementById("chartModalidade").innerHTML = `
-      <div class="cmp"><span>Presencial</span><strong>${m.presencial}</strong><em>${formatPct(m.pctPresencial)}</em></div>
-      <div class="cmp"><span>Online</span><strong>${m.online}</strong><em>${formatPct(m.pctOnline)}</em></div>
-    `;
-
-    renderBars(document.getElementById("chartResultado"), [
-      { label: STATUS.MELHOROU, value: m.melhorou },
-      { label: STATUS.MANTEVE, value: m.manteve },
-      { label: STATUS.REGREDIU, value: m.regrediu },
-      { label: STATUS.MISTO, value: m.misto },
-      { label: STATUS.SEM_ANALISE, value: m.semAnalise }
-    ]);
-
-    const med = mediaCoberturaHl(lista);
-    document.getElementById("chartCobertura").innerHTML = med.nCob
-      ? `<div class="cmp"><span>Antes</span><strong>${formatPct(med.coberturaAntes)}</strong></div>
-         <div class="cmp"><span>Depois</span><strong>${formatPct(med.coberturaDepois)}</strong></div>`
-      : `<div class="alex-empty" style="grid-column:1/-1;border:0;padding:12px;">Sem análises de cobertura</div>`;
-
-    document.getElementById("chartHl").innerHTML = med.nHl
-      ? `<div class="cmp"><span>Antes</span><strong>${formatHl(med.hlAntes)}</strong></div>
-         <div class="cmp"><span>Depois</span><strong>${formatHl(med.hlDepois)}</strong></div>`
-      : `<div class="alex-empty" style="grid-column:1/-1;border:0;padding:12px;">Sem análises de HL</div>`;
-
-    // popular produtos a partir dos dados
-    const produtos = Array.from(new Set(lista.map(t => t.produto).filter(Boolean))).sort();
-    const fProduto = document.getElementById("fProduto");
-    const cur = fProduto.value;
-    fProduto.innerHTML = `<option value="">Todos</option>` + produtos.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join("");
-    fProduto.value = cur;
-
-    const cds = Array.from(new Set(lista.flatMap(t => (t.cds||[]).map(c => c.nome || c)).filter(Boolean)));
-    document.getElementById("cdDatalist").innerHTML = cds.map(c => `<option value="${escapeHtml(c)}"></option>`).join("");
   }
 
-  function aplicar() {
-    renderDashboard(filtrarTreinamentos(ALL, lerFiltros()));
+  async function carregar(){
+    statusLoad.hidden = false;
+    statusLoad.textContent = "Carregando treinamentos...";
+    resumoSection.hidden = true;
+    try {
+      const uidKey = slug(userNome);
+      const q = query(collection(db, "treinamentos_realizados"), where("uidKey", "==", uidKey));
+      const snap = await getDocs(q);
+      CACHE = [];
+      snap.forEach(d => CACHE.push({ id: d.id, ...d.data() }));
+      aplicar();
+    } catch (err) {
+      console.error(err);
+      statusLoad.textContent = "Não foi possível carregar os treinamentos. Tente novamente.";
+    }
   }
 
-  document.getElementById("btnAplicar").addEventListener("click", aplicar);
-  ["fMes","fAno","fModalidade","fStatus","fMarca","fPublico"].forEach(id => {
-    document.getElementById(id).addEventListener("change", aplicar);
-  });
-
-  try {
-    ALL = await listarTreinamentosCompleto(db, user, { adminVeTodos: false });
-    aplicar();
-  } catch (err) {
-    console.error(err);
-    document.getElementById("loadingState").textContent =
-      "Não foi possível carregar os dados. Tente novamente.";
+  function aplicar(){
+    const ano = Number(fAno.value);
+    const mes = Number(fMes.value);
+    render(filtrarMes(CACHE, ano, mes), ano, mes);
   }
+
+  btnAplicar.addEventListener("click", aplicar);
+  fMes.addEventListener("change", aplicar);
+  fAno.addEventListener("change", aplicar);
+
+  await carregar();
 </script>
 </body>
 </html>
