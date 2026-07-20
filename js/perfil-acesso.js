@@ -15,11 +15,17 @@ export const PERFIL_TREINAMENTO_PRODUTOS = "treinamento_produtos";
  * Preferir matrícula/uidKey a nome, pois o nome pode mudar.
  */
 export const PERFIL_POR_MATRICULA = {
-  A70: PERFIL_TREINAMENTO_PRODUTOS // Alex
+  A70: PERFIL_TREINAMENTO_PRODUTOS, // Alex (senha/matrícula oficial)
+  ALEX: PERFIL_TREINAMENTO_PRODUTOS // sessão antiga gravava matricula = nome
 };
 
 /** uidKeys com perfil exclusivo (fallback) */
 export const PERFIL_POR_UIDKEY = {
+  alex: PERFIL_TREINAMENTO_PRODUTOS
+};
+
+/** Nomes canônicos (fallback; não é a única regra) */
+export const PERFIL_POR_NOME = {
   alex: PERFIL_TREINAMENTO_PRODUTOS
 };
 
@@ -76,27 +82,29 @@ export function uidKeyDoUsuario(nome) {
 
 /**
  * Resolve o perfil de acesso a partir de sessão / identidade estável.
- * Ordem: perfil na sessão → matrícula → uidKey → padrão analista.
+ * IDs estáveis (matrícula/uidKey/nome) têm prioridade sobre perfil "analista" antigo.
  */
 export function resolverPerfil({ nome, matricula, perfil, uidKey } = {}) {
-  const p = String(perfil || "").trim().toLowerCase();
-  if (
-    p === PERFIL_TREINAMENTO_PRODUTOS ||
-    p === PERFIL_ADMIN ||
-    p === PERFIL_ANALISTA ||
-    p === "alex_produtos"
-  ) {
-    if (p === "alex_produtos") return PERFIL_TREINAMENTO_PRODUTOS;
-    return p;
-  }
-
   const mat = String(matricula || matriculaDoUsuario(nome) || "").trim().toUpperCase();
-  if (mat && PERFIL_POR_MATRICULA[mat]) return PERFIL_POR_MATRICULA[mat];
-
   const key = String(uidKey || uidKeyDoUsuario(nome) || "").toLowerCase();
-  if (key && PERFIL_POR_UIDKEY[key]) return PERFIL_POR_UIDKEY[key];
+  const nomeKey = slug(nome);
+  const p = String(perfil || "").trim().toLowerCase();
+
+  // Identidade estável primeiro (corrige sessão antiga com perfil=analista)
+  if (PERFIL_POR_MATRICULA[mat]) return PERFIL_POR_MATRICULA[mat];
+  if (PERFIL_POR_UIDKEY[key]) return PERFIL_POR_UIDKEY[key];
+  if (PERFIL_POR_NOME[nomeKey]) return PERFIL_POR_NOME[nomeKey];
+
+  if (p === "alex_produtos" || p === PERFIL_TREINAMENTO_PRODUTOS) return PERFIL_TREINAMENTO_PRODUTOS;
+  if (p === PERFIL_ADMIN) return PERFIL_ADMIN;
+  if (p === PERFIL_ANALISTA) return PERFIL_ANALISTA;
 
   return PERFIL_ANALISTA;
+}
+
+/** Detecta Alex mesmo com sessão antiga */
+export function isIdentidadeAlex({ nome, matricula, perfil, uidKey } = {}) {
+  return resolverPerfil({ nome, matricula, perfil, uidKey }) === PERFIL_TREINAMENTO_PRODUTOS;
 }
 
 export function perfilDaSessao() {
@@ -209,8 +217,8 @@ export function rotaAtualEhExclusivaSV(pathname = window.location.pathname) {
 /**
  * Protege a página atual:
  * - sem sessão → login
- * - perfil treinamento_produtos em rota SV → menu Alex
- * - páginas Alex exigem perfil correspondente (ou admin)
+ * - identidade Alex em rota SV → menu Alex
+ * - páginas Alex: se for Alex com sessão antiga, corrige perfil (não joga de volta ao menu.html)
  */
 export function protegerPagina({
   exigirPerfis = null,
@@ -218,7 +226,7 @@ export function protegerPagina({
   fromRoot = false,
   redirectLogin = true
 } = {}) {
-  const user = obterUsuarioLogado();
+  let user = obterUsuarioLogado();
   if (!user) {
     if (redirectLogin) {
       window.location.replace(caminhoLogin({ fromRoot }));
@@ -226,19 +234,35 @@ export function protegerPagina({
     return null;
   }
 
-  if (bloquearSvParaAlex && user.isTreinamentoProdutos && rotaAtualEhExclusivaSV()) {
+  // Corrige sessão antiga do Alex (perfil ainda "analista")
+  if (isIdentidadeAlex(user) && user.perfil !== PERFIL_TREINAMENTO_PRODUTOS) {
+    const s = getSession() || {};
+    const next = {
+      ...s,
+      nome: user.nome,
+      matricula: "A70",
+      uidKey: "alex",
+      perfil: PERFIL_TREINAMENTO_PRODUTOS,
+      tipoUsuario: PERFIL_TREINAMENTO_PRODUTOS
+    };
+    localStorage.setItem("user_session", JSON.stringify(next));
+    user = obterUsuarioLogado();
+  }
+
+  if (bloquearSvParaAlex && user?.isTreinamentoProdutos && rotaAtualEhExclusivaSV()) {
     const dest = destinoMenuPorPerfil(PERFIL_TREINAMENTO_PRODUTOS, {
       fromRoot: pathEstaEmMenus(),
       encoded: false
     });
     const prefix = pathEstaEmMenus() ? "" : pathEstaEmUsuariosAlex() ? "../../html menus/" : pathEstaEmUsuarios() ? "../html menus/" : "html menus/";
-    window.location.replace(`${prefix}${dest.split("/").pop()}`);
+    window.location.replace(`${prefix}${dest.split("/").pop()}?v=20260720c`);
     return null;
   }
 
   if (Array.isArray(exigirPerfis) && exigirPerfis.length) {
-    const ok = exigirPerfis.map((x) => String(x).toLowerCase()).includes(user.perfil);
-    if (!ok && !user.isAdmin) {
+    const ok = exigirPerfis.map((x) => String(x).toLowerCase()).includes(String(user.perfil).toLowerCase());
+    // Alex nunca é expulso do próprio menu por causa de sessão antiga
+    if (!ok && !user.isAdmin && !user.isTreinamentoProdutos) {
       const dest = destinoMenuPorPerfil(user.perfil, { fromRoot: false, encoded: false });
       const prefix = pathEstaEmMenus() ? "" : pathEstaEmUsuariosAlex() ? "../../html menus/" : pathEstaEmUsuarios() ? "../html menus/" : "html menus/";
       window.location.replace(`${prefix}${dest}`);

@@ -102,13 +102,13 @@
     salvarDataNascimento,
     marcarNascimentoNaSessao,
     buscarDataNascimentoSalva
-  } from "./js/aniversario.js?v=20260720a";
+  } from "./js/aniversario.js?v=20260720c";
   import {
     montarSessaoLogin,
     salvarSessao,
     destinoMenuPorPerfil,
     PERFIL_TREINAMENTO_PRODUTOS
-  } from "./js/perfil-acesso.js?v=20260720a";
+  } from "./js/perfil-acesso.js?v=20260720c";
 
   const firebaseConfig = {
     apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
@@ -185,8 +185,35 @@
   }
 
   function irParaMenu(){
+    // Regra dura: Alex SEMPRE vai para menu_alex (não depende só do módulo de perfil)
+    const nomeLogin = String(usuarioAtual || usuarioSelect.value || "").trim();
+    const senhaMat = String(USUARIOS[nomeLogin] || "").toUpperCase();
+    const isAlex =
+      nomeLogin.toLowerCase() === "alex" ||
+      senhaMat === "A70" ||
+      String(perfilAtual || "").toLowerCase() === "treinamento_produtos" ||
+      String(perfilAtual || "").toLowerCase() === "alex_produtos";
+
+    if (isAlex) {
+      try {
+        const raw = localStorage.getItem("user_session");
+        const s = raw ? JSON.parse(raw) : {};
+        localStorage.setItem("user_session", JSON.stringify({
+          ...s,
+          nome: nomeLogin || s.nome || "Alex",
+          matricula: "A70",
+          uidKey: "alex",
+          perfil: "treinamento_produtos",
+          tipoUsuario: "treinamento_produtos"
+        }));
+        localStorage.setItem("usuarioLogado", nomeLogin || "Alex");
+      } catch {}
+      window.location.replace("html%20menus/menu_alex.html?v=20260720c");
+      return;
+    }
+
     const dest = destinoMenuPorPerfil(perfilAtual, { fromRoot: true, encoded: true });
-    window.location.replace(`${dest}?v=20260720a`);
+    window.location.replace(`${dest}?v=20260720c`);
   }
 
   function mascararData(valor){

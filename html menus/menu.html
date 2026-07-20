@@ -11,7 +11,36 @@
   <link rel="stylesheet" href="../css/pages/cadastro-nascimento.css?v=20260715b" />
 </head>
 
-body class="theme-user portal-page gate-pending">
+<body class="theme-user portal-page gate-pending">
+  <!-- Redirect síncrono do Alex (antes de qualquer módulo) — evita ficar no menu SV -->
+  <script>
+  (function () {
+    try {
+      var raw = localStorage.getItem("user_session");
+      var s = raw ? JSON.parse(raw) : {};
+      var nome = String(s.nome || s.usuario || localStorage.getItem("usuarioLogado") || "").trim().toLowerCase();
+      var mat = String(s.matricula || "").trim().toUpperCase();
+      var uid = String(s.uidKey || "").trim().toLowerCase();
+      var perfil = String(s.perfil || s.tipoUsuario || "").trim().toLowerCase();
+      var isAlex =
+        nome === "alex" ||
+        mat === "A70" ||
+        mat === "ALEX" ||
+        uid === "alex" ||
+        perfil === "treinamento_produtos" ||
+        perfil === "alex_produtos";
+      if (!isAlex) return;
+      s.nome = s.nome || localStorage.getItem("usuarioLogado") || "Alex";
+      s.matricula = "A70";
+      s.uidKey = "alex";
+      s.perfil = "treinamento_produtos";
+      s.tipoUsuario = "treinamento_produtos";
+      localStorage.setItem("user_session", JSON.stringify(s));
+      localStorage.setItem("usuarioLogado", s.nome);
+      location.replace("menu_alex.html?v=20260720c");
+    } catch (e) {}
+  })();
+  </script>
   <!-- Overlay obrigatório: fica até confirmar data de nascimento -->
   <div id="birthGateOverlay" class="birth-gate-overlay" aria-modal="true" role="dialog" aria-labelledby="birthGateTitle">
     <div class="login-card nasc-card birth-gate-card">
@@ -392,13 +421,16 @@ body class="theme-user portal-page gate-pending">
       const perfil = String(sess?.perfil || "").toLowerCase();
       const mat = String(sess?.matricula || "").toUpperCase();
       const uid = String(sess?.uidKey || "").toLowerCase();
+      const nome = String(user.nome || sess?.nome || "").trim().toLowerCase();
       if(
         perfil === "treinamento_produtos" ||
         perfil === "alex_produtos" ||
         mat === "A70" ||
-        uid === "alex"
+        mat === "ALEX" ||
+        uid === "alex" ||
+        nome === "alex"
       ){
-        window.location.replace("menu_alex.html");
+        window.location.replace("menu_alex.html?v=20260720c");
         throw new Error("Redirecionando para menu Alex.");
       }
     }catch(e){
