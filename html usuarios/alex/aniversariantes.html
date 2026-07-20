@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Aniversariantes | Produtos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../css/bundle-portal-user.css?v=20260720a" />
+  <link rel="stylesheet" href="../../css/pages/cadastro-nascimento.css?v=20260720a" />
+  <link rel="stylesheet" href="../../css/pages/alex-portal.css?v=20260720a" />
+</head>
+<body class="theme-user portal-page gate-pending alex-portal">
+
+  <div class="section-block">
+    <div class="section-title">
+      <div>
+        <h3>Aniversariantes</h3>
+        <p>Aniversariantes do mês e próximos aniversários (mesma base do portal).</p>
+      </div>
+      <a class="btn-alex" href="../../html%20adm/aniversariantes-mes.html" id="linkAdm" hidden>Versão completa ADM</a>
+    </div>
+
+    <div class="alex-metrics" id="resumo">
+      <div class="alex-metric"><span>Aniversariantes do mês</span><strong id="qtdMes">0</strong></div>
+      <div class="alex-metric"><span>Próximos 30 dias</span><strong id="qtdProx">0</strong></div>
+    </div>
+
+    <div class="section-title"><div><h3>Do mês atual</h3></div></div>
+    <div id="listaMes" class="destaques-grid"></div>
+
+    <div class="section-title" style="margin-top:18px;"><div><h3>Próximos aniversariantes</h3></div></div>
+    <div id="listaProx" class="destaques-grid"></div>
+  </div>
+
+<script type="module">
+  import { initAlexShell, escapeHtml } from "../../js/alex/shell.js?v=20260720a";
+  import {
+    listarTodosAniversariantes,
+    isAniversarioNoMes,
+    mensagemAniversario,
+    nomeMes
+  } from "../../js/aniversario.js?v=20260720a";
+  import { doc, getDoc, setDoc, serverTimestamp, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+  const ctx = await initAlexShell({ base: "alex", active: "aniversariantes", title: "Aniversariantes" });
+  if (!ctx) throw new Error("Sessão inválida");
+  const { user, db } = ctx;
+  if (user.isAdmin) document.getElementById("linkAdm").hidden = false;
+
+  const fs = { doc, getDoc, setDoc, serverTimestamp, collection, getDocs, query, where };
+
+  function diasAteAniv(item) {
+    const hoje = new Date();
+    const ano = hoje.getFullYear();
+    let next = new Date(ano, item.mes - 1, item.dia);
+    const hoje0 = new Date(ano, hoje.getMonth(), hoje.getDate());
+    if (next < hoje0) next = new Date(ano + 1, item.mes - 1, item.dia);
+    return Math.round((next - hoje0) / 86400000);
+  }
+
+  try {
+    const perfis = await listarTodosAniversariantes(db, fs);
+    const doMes = (perfis || []).filter(p => isAniversarioNoMes(p.dataNascimento));
+    const proximos = (perfis || [])
+      .map(p => ({ ...p, dias: diasAteAniv(p) }))
+      .filter(p => p.dias >= 0 && p.dias <= 30)
+      .sort((a,b) => a.dias - b.dias);
+
+    qtdMes.textContent = String(doMes.length);
+    qtdProx.textContent = String(proximos.length);
+
+    listaMes.innerHTML = doMes.length ? doMes.map(p => `
+      <div class="destaque-card">
+        <small>${escapeHtml(nomeMes(p.mes))}</small>
+        <strong>${escapeHtml(p.nome || "—")}</strong>
+        <div style="margin-top:6px;font-size:13px;color:#64748b;">${escapeHtml(mensagemAniversario(p.nome || ""))}</div>
+      </div>
+    `).join("") : `<div class="alex-empty">Nenhum aniversariante neste mês.</div>`;
+
+    listaProx.innerHTML = proximos.length ? proximos.map(p => `
+      <div class="destaque-card">
+        <small>${p.dias === 0 ? "Hoje" : `Em ${p.dias} dia(s)`}</small>
+        <strong>${escapeHtml(p.nome || "—")}</strong>
+        <div style="margin-top:6px;font-size:13px;color:#64748b;">${escapeHtml(p.dataNascimentoExibida || p.dataNascimento || "")}</div>
+      </div>
+    `).join("") : `<div class="alex-empty">Nenhum aniversário nos próximos 30 dias.</div>`;
+  } catch (err) {
+    console.error(err);
+    listaMes.innerHTML = `<div class="alex-empty">Não foi possível carregar aniversariantes.</div>`;
+  }
+</script>
+</body>
+</html>

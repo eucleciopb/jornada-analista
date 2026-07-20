@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <title>Visão Geral | Treinamentos de Produtos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/bundle-portal-user.css?v=20260720a" />
+  <link rel="stylesheet" href="../css/pages/cadastro-nascimento.css?v=20260720a" />
+  <link rel="stylesheet" href="../css/pages/alex-portal.css?v=20260720a" />
+</head>
+<body class="theme-user portal-page gate-pending alex-portal">
+
+  <div class="alex-page">
+    <div class="alex-hero">
+      <h2>Olá, <span id="heroName">Alex</span>!</h2>
+      <p>Acompanhe seus treinamentos de produtos e o impacto nos resultados de vendas.</p>
+    </div>
+
+    <div class="alex-filters" id="filtrosGlobais">
+      <div class="field">
+        <label for="fMes">Mês</label>
+        <select id="fMes"></select>
+      </div>
+      <div class="field">
+        <label for="fAno">Ano</label>
+        <select id="fAno"></select>
+      </div>
+      <div class="field alex-filter-extra">
+        <label for="fDataIni">Período de</label>
+        <input id="fDataIni" type="date" />
+      </div>
+      <div class="field alex-filter-extra">
+        <label for="fDataFim">até</label>
+        <input id="fDataFim" type="date" />
+      </div>
+      <div class="field">
+        <label for="fMarca">Marca</label>
+        <select id="fMarca"><option value="">Todas</option></select>
+      </div>
+      <div class="field">
+        <label for="fProduto">Produto</label>
+        <select id="fProduto"><option value="">Todos</option></select>
+      </div>
+      <div class="field alex-filter-extra">
+        <label for="fCd">CD</label>
+        <input id="fCd" type="text" placeholder="Buscar CD" list="cdDatalist" />
+        <datalist id="cdDatalist"></datalist>
+      </div>
+      <div class="field">
+        <label for="fModalidade">Modalidade</label>
+        <select id="fModalidade">
+          <option value="Todos">Todos</option>
+          <option value="Presencial">Presencial</option>
+          <option value="Online">Online</option>
+        </select>
+      </div>
+      <div class="field alex-filter-extra">
+        <label for="fPublico">Público</label>
+        <select id="fPublico"><option value="">Todos</option></select>
+      </div>
+      <div class="field">
+        <label for="fStatus">Status da análise</label>
+        <select id="fStatus">
+          <option value="Todos">Todos</option>
+          <option>Melhorou</option>
+          <option>Manteve</option>
+          <option>Regrediu</option>
+          <option>Sem análise</option>
+        </select>
+      </div>
+      <div class="alex-filters-actions">
+        <button type="button" class="btn-alex" id="btnToggleFiltros">Mais filtros</button>
+        <button type="button" class="btn-alex primary" id="btnAplicar">Aplicar</button>
+      </div>
+    </div>
+
+    <div id="loadingState" class="alex-loading">Carregando treinamentos...</div>
+    <div id="emptyState" class="alex-empty" hidden>Nenhum treinamento encontrado para o período selecionado.</div>
+
+    <div id="dashboardBody" hidden>
+      <div class="alex-metrics" id="metricsCards"></div>
+
+      <div class="alex-charts">
+        <div class="alex-chart-card">
+          <h3>Treinamentos por mês</h3>
+          <p>Quantidade realizada em cada mês</p>
+          <div class="bar-chart" id="chartMes"></div>
+        </div>
+        <div class="alex-chart-card">
+          <h3>Treinamentos por marca</h3>
+          <p>Volume por marca trabalhada</p>
+          <div class="bar-chart" id="chartMarca"></div>
+        </div>
+        <div class="alex-chart-card">
+          <h3>Treinamentos por produto</h3>
+          <p>Produtos com mais treinamentos</p>
+          <div class="bar-chart" id="chartProduto"></div>
+        </div>
+        <div class="alex-chart-card">
+          <h3>CDs mais impactados</h3>
+          <p>Ranking de participação</p>
+          <div class="bar-chart" id="chartCds"></div>
+        </div>
+        <div class="alex-chart-card">
+          <h3>Presencial versus Online</h3>
+          <p>Divisão por modalidade</p>
+          <div class="compare-bars" id="chartModalidade"></div>
+        </div>
+        <div class="alex-chart-card">
+          <h3>Resultado dos treinamentos</h3>
+          <p>Classificação das análises</p>
+          <div class="bar-chart" id="chartResultado"></div>
+        </div>
+        <div class="alex-chart-card">
+          <h3>Evolução de cobertura</h3>
+          <p>Média antes e depois</p>
+          <div class="compare-bars" id="chartCobertura"></div>
+        </div>
+        <div class="alex-chart-card">
+          <h3>Evolução de HL</h3>
+          <p>Média antes e depois</p>
+          <div class="compare-bars" id="chartHl"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script type="module">
+  import { initAlexShell, escapeHtml } from "../js/alex/shell.js?v=20260720a";
+  import {
+    listarTreinamentosCompleto,
+    filtrarTreinamentos,
+    agregarMetricas,
+    seriesPorMes,
+    seriesPorCampo,
+    rankingCds,
+    mediaCoberturaHl,
+    PUBLICOS,
+    MARCAS_PADRAO
+  } from "../js/alex/dados.js?v=20260720a";
+  import { formatPct, formatHl, STATUS } from "../js/alex/calculos.js?v=20260720a";
+
+  const ctx = await initAlexShell({ base: "menus", active: "visao", title: "Visão Geral" });
+  if (!ctx) throw new Error("Sessão inválida");
+
+  const { user, db } = ctx;
+  document.getElementById("heroName").textContent = user.nome;
+
+  const MESES = ["", "Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+  const agora = new Date();
+  const fMes = document.getElementById("fMes");
+  const fAno = document.getElementById("fAno");
+  const fPublico = document.getElementById("fPublico");
+  const fMarca = document.getElementById("fMarca");
+
+  fMes.innerHTML = `<option value="">Todos</option>` + MESES.slice(1).map((m,i) =>
+    `<option value="${String(i+1).padStart(2,"0")}" ${i+1===agora.getMonth()+1?"selected":""}>${m}</option>`
+  ).join("");
+
+  const anos = [agora.getFullYear(), agora.getFullYear()-1, agora.getFullYear()-2];
+  fAno.innerHTML = `<option value="">Todos</option>` + anos.map(a =>
+    `<option value="${a}" ${a===agora.getFullYear()?"selected":""}>${a}</option>`
+  ).join("");
+
+  fPublico.innerHTML += PUBLICOS.map(p => `<option value="${p}">${p}</option>`).join("");
+  fMarca.innerHTML += MARCAS_PADRAO.map(m => `<option value="${m}">${m}</option>`).join("");
+
+  let ALL = [];
+  const filtrosEl = document.getElementById("filtrosGlobais");
+  document.getElementById("btnToggleFiltros").addEventListener("click", () => {
+    filtrosEl.classList.toggle("collapsed");
+  });
+  filtrosEl.classList.add("collapsed");
+
+  function lerFiltros() {
+    return {
+      mes: fMes.value,
+      ano: fAno.value,
+      dataInicial: document.getElementById("fDataIni").value,
+      dataFinal: document.getElementById("fDataFim").value,
+      marca: fMarca.value,
+      produto: document.getElementById("fProduto").value,
+      cd: document.getElementById("fCd").value,
+      modalidade: document.getElementById("fModalidade").value,
+      publico: fPublico.value,
+      statusAnalise: document.getElementById("fStatus").value
+    };
+  }
+
+  function renderBars(el, series) {
+    if (!series.length) {
+      el.innerHTML = `<div class="alex-empty" style="padding:12px;border:0;">Sem dados</div>`;
+      return;
+    }
+    const max = Math.max(...series.map(s => s.value), 1);
+    el.innerHTML = series.map(s => `
+      <div class="bar-row" title="${escapeHtml(s.label)}: ${s.value}">
+        <span class="bar-label">${escapeHtml(s.label)}</span>
+        <div class="bar-track"><div class="bar-fill" style="width:${(s.value/max)*100}%"></div></div>
+        <span class="bar-val">${s.value}</span>
+      </div>
+    `).join("");
+  }
+
+  function renderDashboard(lista) {
+    const loading = document.getElementById("loadingState");
+    const empty = document.getElementById("emptyState");
+    const body = document.getElementById("dashboardBody");
+    loading.hidden = true;
+
+    if (!lista.length) {
+      empty.hidden = false;
+      body.hidden = true;
+      return;
+    }
+    empty.hidden = true;
+    body.hidden = false;
+
+    const m = agregarMetricas(lista);
+    document.getElementById("metricsCards").innerHTML = [
+      { t: "Treinamentos Realizados", v: m.total, tip: "Total no período" },
+      { t: "CDs Impactados", v: m.cdsImpactados, tip: "CDs únicos (sem duplicar)" },
+      { t: "Pessoas Treinadas", v: m.pessoasTreinadas, tip: "Soma de participantes" },
+      { t: "Marcas Trabalhadas", v: m.marcas },
+      { t: "Produtos Trabalhados", v: m.produtos },
+      { t: "Treinamentos Presenciais", v: m.presencial, e: formatPct(m.pctPresencial) },
+      { t: "Treinamentos Online", v: m.online, e: formatPct(m.pctOnline) },
+      { t: "Treinamentos com Melhora", v: m.melhorou, e: formatPct(m.pctMelhorou) },
+      { t: "Treinamentos que Mantiveram", v: m.manteve, e: formatPct(m.pctManteve) },
+      { t: "Treinamentos com Queda", v: m.regrediu, e: formatPct(m.pctRegrediu) }
+    ].map(c => `
+      <div class="alex-metric" title="${escapeHtml(c.tip || c.t)}">
+        <span>${escapeHtml(c.t)}</span>
+        <strong>${c.v}</strong>
+        ${c.e ? `<em>${escapeHtml(c.e)}</em>` : ""}
+      </div>
+    `).join("");
+
+    renderBars(document.getElementById("chartMes"), seriesPorMes(lista));
+    renderBars(document.getElementById("chartMarca"), seriesPorCampo(lista, "marca"));
+    renderBars(document.getElementById("chartProduto"), seriesPorCampo(lista, "produto"));
+    renderBars(document.getElementById("chartCds"), rankingCds(lista));
+
+    document.getElementById("chartModalidade").innerHTML = `
+      <div class="cmp"><span>Presencial</span><strong>${m.presencial}</strong><em>${formatPct(m.pctPresencial)}</em></div>
+      <div class="cmp"><span>Online</span><strong>${m.online}</strong><em>${formatPct(m.pctOnline)}</em></div>
+    `;
+
+    renderBars(document.getElementById("chartResultado"), [
+      { label: STATUS.MELHOROU, value: m.melhorou },
+      { label: STATUS.MANTEVE, value: m.manteve },
+      { label: STATUS.REGREDIU, value: m.regrediu },
+      { label: STATUS.MISTO, value: m.misto },
+      { label: STATUS.SEM_ANALISE, value: m.semAnalise }
+    ]);
+
+    const med = mediaCoberturaHl(lista);
+    document.getElementById("chartCobertura").innerHTML = med.nCob
+      ? `<div class="cmp"><span>Antes</span><strong>${formatPct(med.coberturaAntes)}</strong></div>
+         <div class="cmp"><span>Depois</span><strong>${formatPct(med.coberturaDepois)}</strong></div>`
+      : `<div class="alex-empty" style="grid-column:1/-1;border:0;padding:12px;">Sem análises de cobertura</div>`;
+
+    document.getElementById("chartHl").innerHTML = med.nHl
+      ? `<div class="cmp"><span>Antes</span><strong>${formatHl(med.hlAntes)}</strong></div>
+         <div class="cmp"><span>Depois</span><strong>${formatHl(med.hlDepois)}</strong></div>`
+      : `<div class="alex-empty" style="grid-column:1/-1;border:0;padding:12px;">Sem análises de HL</div>`;
+
+    // popular produtos a partir dos dados
+    const produtos = Array.from(new Set(lista.map(t => t.produto).filter(Boolean))).sort();
+    const fProduto = document.getElementById("fProduto");
+    const cur = fProduto.value;
+    fProduto.innerHTML = `<option value="">Todos</option>` + produtos.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join("");
+    fProduto.value = cur;
+
+    const cds = Array.from(new Set(lista.flatMap(t => (t.cds||[]).map(c => c.nome || c)).filter(Boolean)));
+    document.getElementById("cdDatalist").innerHTML = cds.map(c => `<option value="${escapeHtml(c)}"></option>`).join("");
+  }
+
+  function aplicar() {
+    renderDashboard(filtrarTreinamentos(ALL, lerFiltros()));
+  }
+
+  document.getElementById("btnAplicar").addEventListener("click", aplicar);
+  ["fMes","fAno","fModalidade","fStatus","fMarca","fPublico"].forEach(id => {
+    document.getElementById(id).addEventListener("change", aplicar);
+  });
+
+  try {
+    ALL = await listarTreinamentosCompleto(db, user, { adminVeTodos: false });
+    aplicar();
+  } catch (err) {
+    console.error(err);
+    document.getElementById("loadingState").textContent =
+      "Não foi possível carregar os dados. Tente novamente.";
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Treinamentos Realizados | Produtos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../css/bundle-portal-user.css?v=20260720a" />
+  <link rel="stylesheet" href="../../css/pages/cadastro-nascimento.css?v=20260720a" />
+  <link rel="stylesheet" href="../../css/pages/alex-portal.css?v=20260720a" />
+</head>
+<body class="theme-user portal-page gate-pending alex-portal">
+
+  <div class="section-block">
+    <div class="section-title">
+      <div>
+        <h3>Treinamentos Realizados</h3>
+        <p id="subTitulo">Registros do responsável pelos treinamentos de produtos.</p>
+      </div>
+      <a class="btn-alex primary" href="./cadastrar-treinamento.html">Novo</a>
+    </div>
+
+    <div class="alex-filters" id="filtros">
+      <div class="field"><label>Data inicial</label><input type="date" id="fIni" /></div>
+      <div class="field"><label>Data final</label><input type="date" id="fFim" /></div>
+      <div class="field"><label>Mês</label><select id="fMes"><option value="">Todos</option></select></div>
+      <div class="field"><label>Ano</label><select id="fAno"><option value="">Todos</option></select></div>
+      <div class="field"><label>Marca</label><input id="fMarca" type="text" /></div>
+      <div class="field"><label>Produto</label><input id="fProduto" type="text" /></div>
+      <div class="field"><label>CD</label><input id="fCd" type="text" /></div>
+      <div class="field"><label>Modalidade</label>
+        <select id="fModalidade"><option value="Todos">Todos</option><option>Presencial</option><option>Online</option></select>
+      </div>
+      <div class="field"><label>Público</label><input id="fPublico" type="text" /></div>
+      <div class="field"><label>Status</label>
+        <select id="fStatus">
+          <option value="Todos">Todos</option>
+          <option>Melhorou</option><option>Manteve</option><option>Regrediu</option><option>Sem análise</option>
+        </select>
+      </div>
+      <div class="field"><label>Nome</label><input id="fNome" type="text" placeholder="Buscar treinamento" /></div>
+      <div class="alex-filters-actions">
+        <button type="button" class="btn-alex primary" id="btnFiltrar">Filtrar</button>
+      </div>
+    </div>
+
+    <div id="loading" class="alex-loading">Carregando...</div>
+    <div class="alex-table-wrap" id="wrap" hidden>
+      <table class="alex-table">
+        <thead>
+          <tr>
+            <th>Data</th><th>Treinamento</th><th>Marca</th><th>Produto</th><th>Modalidade</th><th>Público</th>
+            <th>Qtd CDs</th><th>Pessoas</th>
+            <th>Cob. antes</th><th>Cob. depois</th><th>Var. cob.</th>
+            <th>HL antes</th><th>HL depois</th><th>Var. HL</th>
+            <th>Resultado</th><th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="alex-modal-backdrop" id="modal">
+    <div class="alex-modal" id="modalBody"></div>
+  </div>
+
+<script type="module">
+  import { initAlexShell, escapeHtml } from "../../js/alex/shell.js?v=20260720a";
+  import {
+    listarTreinamentosCompleto,
+    filtrarTreinamentos,
+    excluirTreinamento,
+    salvarTreinamento,
+    novoTreinamentoPayload,
+    listarAnalisesPorTreinamento,
+    registrarLog
+  } from "../../js/alex/dados.js?v=20260720a";
+  import {
+    toBR, formatPct, formatPp, formatHl, formatVariacaoHl, classeStatus, STATUS, variacaoCoberturaPp, variacaoHl
+  } from "../../js/alex/calculos.js?v=20260720a";
+  import { podeVerTodosTreinamentos } from "../../js/perfil-acesso.js?v=20260720a";
+
+  const ctx = await initAlexShell({ base: "alex", active: "realizados", title: "Treinamentos Realizados" });
+  if (!ctx) throw new Error("Sessão inválida");
+  const { user, db } = ctx;
+  const adminTodos = podeVerTodosTreinamentos(user);
+  if (adminTodos) document.getElementById("subTitulo").textContent = "Visão administrativa: todos os registros.";
+
+  const MESES = ["","Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+  const agora = new Date();
+  document.getElementById("fMes").innerHTML += MESES.slice(1).map((m,i)=>`<option value="${String(i+1).padStart(2,"0")}">${m}</option>`).join("");
+  document.getElementById("fAno").innerHTML += [agora.getFullYear(), agora.getFullYear()-1].map(a=>`<option value="${a}">${a}</option>`).join("");
+
+  let ALL = [];
+
+  function celAnalise(v, fmt) {
+    if (v === null || v === undefined || v === "") return `<span class="status-pill st-none">${STATUS.AGUARDANDO}</span>`;
+    return escapeHtml(fmt(v));
+  }
+
+  function render(lista) {
+    const tbody = document.getElementById("tbody");
+    document.getElementById("loading").hidden = true;
+    document.getElementById("wrap").hidden = false;
+
+    if (!lista.length) {
+      tbody.innerHTML = `<tr><td colspan="16"><div class="alex-empty">Nenhum treinamento encontrado para o período selecionado.</div></td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = lista.map(t => {
+      const varCob = (t.coberturaAntes != null && t.coberturaDepois != null)
+        ? variacaoCoberturaPp(t.coberturaDepois, t.coberturaAntes) : null;
+      const varHlAbs = (t.hlAntes != null && t.hlDepois != null)
+        ? variacaoHl(t.hlDepois, t.hlAntes) : null;
+      const resultado = t.resultadoGeral || STATUS.SEM_ANALISE;
+      const legado = String(t.id || "").startsWith("legacy_");
+      return `<tr>
+        <td>${toBR(t.data)}</td>
+        <td>${escapeHtml(t.nome || "—")}</td>
+        <td>${escapeHtml(t.marca || "—")}</td>
+        <td>${escapeHtml(t.produto || "—")}</td>
+        <td>${escapeHtml(t.modalidade || "—")}</td>
+        <td>${escapeHtml(t.publico || "—")}</td>
+        <td>${t.quantidadeCds ?? (t.cds||[]).length}</td>
+        <td>${t.quantidadePessoas ?? "—"}</td>
+        <td>${celAnalise(t.coberturaAntes, formatPct)}</td>
+        <td>${celAnalise(t.coberturaDepois, formatPct)}</td>
+        <td>${celAnalise(varCob, formatPp)}</td>
+        <td>${celAnalise(t.hlAntes, formatHl)}</td>
+        <td>${celAnalise(t.hlDepois, formatHl)}</td>
+        <td>${celAnalise(varHlAbs, formatVariacaoHl)}</td>
+        <td><span class="status-pill ${classeStatus(resultado)}">${escapeHtml(resultado === STATUS.SEM_ANALISE ? STATUS.AGUARDANDO : resultado)}</span></td>
+        <td>
+          <div class="alex-actions">
+            <button type="button" data-act="ver" data-id="${escapeHtml(t.id)}">Visualizar</button>
+            ${legado ? "" : `<button type="button" data-act="edit" data-id="${escapeHtml(t.id)}">Editar</button>`}
+            ${legado ? "" : `<button type="button" class="danger" data-act="del" data-id="${escapeHtml(t.id)}">Excluir</button>`}
+            <button type="button" data-act="dup" data-id="${escapeHtml(t.id)}">Duplicar</button>
+            <button type="button" data-act="analisar" data-id="${escapeHtml(t.id)}">Analisar vendas</button>
+            <button type="button" data-act="cds" data-id="${escapeHtml(t.id)}">Ver CDs</button>
+            <button type="button" data-act="anexos" data-id="${escapeHtml(t.id)}">Ver anexos</button>
+            <button type="button" data-act="resultado" data-id="${escapeHtml(t.id)}">Ver resultado</button>
+          </div>
+        </td>
+      </tr>`;
+    }).join("");
+  }
+
+  function filtros() {
+    return {
+      dataInicial: fIni.value, dataFinal: fFim.value,
+      mes: fMes.value, ano: fAno.value,
+      marca: fMarca.value, produto: fProduto.value, cd: fCd.value,
+      modalidade: fModalidade.value, publico: fPublico.value,
+      statusAnalise: fStatus.value, nome: fNome.value
+    };
+  }
+
+  const modal = document.getElementById("modal");
+  const modalBody = document.getElementById("modalBody");
+
+  function openModal(html) {
+    modalBody.innerHTML = html + `<div class="alex-modal-actions"><button type="button" class="btn-alex" id="btnCloseModal">Fechar</button></div>`;
+    modal.classList.add("open");
+    document.getElementById("btnCloseModal").onclick = () => modal.classList.remove("open");
+  }
+
+  async function detalhe(t) {
+    let historico = [];
+    if (!String(t.id).startsWith("legacy_")) {
+      try { historico = await listarAnalisesPorTreinamento(db, t.id); } catch {}
+    }
+    openModal(`
+      <h3>${escapeHtml(t.nome || "Treinamento")}</h3>
+      <p style="color:#64748b;margin-top:0;">${toBR(t.data)} · ${escapeHtml(t.modalidade || "—")} · ${escapeHtml(t.publico || "—")}</p>
+      <div class="alex-form-grid">
+        <div><label>Marca</label><div>${escapeHtml(t.marca || "—")}</div></div>
+        <div><label>Produto</label><div>${escapeHtml(t.produto || "—")}</div></div>
+        <div><label>Responsável</label><div>${escapeHtml(t.responsavelNome || "—")}</div></div>
+        <div><label>Pessoas</label><div>${t.quantidadePessoas ?? "—"}</div></div>
+        <div class="full"><label>CDs participantes</label><div>${(t.cds||[]).map(c=>escapeHtml(c.nome||c)).join(", ") || "—"}</div></div>
+        <div class="full"><label>Observações</label><div>${escapeHtml(t.observacoes || "—")}</div></div>
+        <div class="full"><label>Anexos</label><div>${(t.anexos||[]).map(a=>escapeHtml(a.nome||a)).join("; ") || escapeHtml(t.materialApresentado || "—")}</div></div>
+        <div><label>Cobertura</label><div>${t.coberturaAntes!=null?formatPct(t.coberturaAntes)+" → "+formatPct(t.coberturaDepois):STATUS.AGUARDANDO}</div></div>
+        <div><label>HL</label><div>${t.hlAntes!=null?formatHl(t.hlAntes)+" → "+formatHl(t.hlDepois):STATUS.AGUARDANDO}</div></div>
+        <div class="full"><label>Resultado consolidado</label><div><span class="status-pill ${classeStatus(t.resultadoGeral)}">${escapeHtml(t.resultadoGeral || STATUS.AGUARDANDO)}</span></div></div>
+      </div>
+      <h4 style="margin-top:18px;">Histórico de análises</h4>
+      ${historico.length ? `<ul>${historico.map(h => `<li>${toBR(String(h.criadoEm||"").slice(0,10))} — ${escapeHtml(h.responsavelNome||"")} — ${escapeHtml(h.resultadoConsolidado?.resultadoGeral || "—")} <small>(${escapeHtml(h.origemDados||"")})</small></li>`).join("")}</ul>`
+        : `<div class="alex-empty" style="padding:12px;">Este treinamento ainda não possui análise de vendas.</div>`}
+    `);
+  }
+
+  document.getElementById("tbody").addEventListener("click", async (e) => {
+    const btn = e.target.closest("button[data-act]");
+    if (!btn) return;
+    const t = ALL.find(x => x.id === btn.dataset.id);
+    if (!t) return;
+    const act = btn.dataset.act;
+
+    if (act === "ver" || act === "resultado") return detalhe(t);
+    if (act === "cds") return openModal(`<h3>CDs — ${escapeHtml(t.nome)}</h3><ul>${(t.cds||[]).map(c=>`<li>${escapeHtml(c.nome||c)}</li>`).join("") || "<li>Nenhum</li>"}</ul>`);
+    if (act === "anexos") return openModal(`<h3>Anexos</h3><p>${(t.anexos||[]).map(a=>escapeHtml(a.nome||a)).join("<br>") || escapeHtml(t.materialApresentado || "Nenhum anexo cadastrado.")}</p>`);
+    if (act === "edit") {
+      if (String(t.id).startsWith("legacy_")) return alert("Registro legado: cadastre novamente no novo formulário para editar.");
+      location.href = `./cadastrar-treinamento.html?id=${encodeURIComponent(t.id)}`;
+      return;
+    }
+    if (act === "analisar") {
+      location.href = `./analise-resultado.html?treinamentoId=${encodeURIComponent(t.id)}`;
+      return;
+    }
+    if (act === "del") {
+      if (String(t.id).startsWith("legacy_")) return alert("Registro legado não pode ser excluído por esta tela.");
+      if (!confirm(`Excluir o treinamento "${t.nome}"? Esta ação não pode ser desfeita.`)) return;
+      await excluirTreinamento(db, t.id);
+      await registrarLog(db, { usuario: user.nome, acao: "EXCLUSAO_TREINAMENTO", registroId: t.id, valorAnterior: { nome: t.nome } });
+      ALL = ALL.filter(x => x.id !== t.id);
+      render(filtrarTreinamentos(ALL, filtros()));
+      return;
+    }
+    if (act === "dup") {
+      if (String(t.id).startsWith("legacy_")) {
+        location.href = "./cadastrar-treinamento.html";
+        return;
+      }
+      const copy = novoTreinamentoPayload(user, {
+        ...t,
+        id: undefined,
+        nome: `${t.nome} (cópia)`,
+        statusAnalise: STATUS.AGUARDANDO,
+        resultadoGeral: STATUS.SEM_ANALISE,
+        coberturaAntes: null, coberturaDepois: null, hlAntes: null, hlDepois: null
+      });
+      const saved = await salvarTreinamento(db, copy);
+      await registrarLog(db, { usuario: user.nome, acao: "DUPLICACAO_TREINAMENTO", registroId: saved.id });
+      ALL.unshift(saved);
+      render(filtrarTreinamentos(ALL, filtros()));
+    }
+  });
+
+  document.getElementById("btnFiltrar").addEventListener("click", () => render(filtrarTreinamentos(ALL, filtros())));
+
+  try {
+    ALL = await listarTreinamentosCompleto(db, user, { adminVeTodos: adminTodos });
+    render(filtrarTreinamentos(ALL, filtros()));
+  } catch (err) {
+    console.error(err);
+    document.getElementById("loading").textContent = "Não foi possível carregar os treinamentos.";
+  }
+</script>
+</body>
+</html>
