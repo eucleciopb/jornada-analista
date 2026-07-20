@@ -91,8 +91,8 @@ export function novoTreinamentoPayload(user, dados = {}) {
     modalidade: dados.modalidade || dados.tipoTreinamento || "",
     publico: dados.publico || "",
     quantidadePessoas: Number(dados.quantidadePessoas ?? dados.totalPessoas) || 0,
-    responsavelId: dados.responsavelId || user?.uidKey || slug(user?.nome || "alex"),
-    responsavelNome: dados.responsavelNome || user?.nome || "Alex",
+    responsavelId: dados.responsavelId || user?.uidKey || slug(user?.nome || "euclecio"),
+    responsavelNome: dados.responsavelNome || user?.nome || "Euclecio",
     cds,
     quantidadeCds: cds.length,
     observacoes: normalize(dados.observacoes || dados.obs || ""),
@@ -152,7 +152,7 @@ export async function listarTreinamentos(db, { uidKey = null, todos = false } = 
  * Compatibilidade: também carrega treinamentos_realizados do Alex
  * e normaliza para o formato de produtos (sem apagar legados).
  */
-export async function listarTreinamentosLegacyAlex(db, uidKey = "alex") {
+export async function listarTreinamentosLegacyAlex(db, uidKey = "euclecio") {
   try {
     const q = query(collection(db, COL_TREINAMENTOS_LEGACY), where("uidKey", "==", uidKey));
     const snap = await getDocs(q);
@@ -214,7 +214,7 @@ export async function listarTreinamentosCompleto(db, user, { adminVeTodos = fals
     uidKey: user?.uidKey,
     todos
   });
-  const legacy = await listarTreinamentosLegacyAlex(db, user?.uidKey || "alex");
+  const legacy = await listarTreinamentosLegacyAlex(db, user?.uidKey || "euclecio");
 
   // Evita duplicar se já migrado (mesmo nome+data)
   const keys = new Set(próprios.map((t) => `${t.data}|${t.nome}|${t.modalidade}`));

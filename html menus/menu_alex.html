@@ -13,10 +13,43 @@
   <link rel="stylesheet" href="../css/pages/alex-portal.css?v=20260720a" />
 </head>
 <body class="theme-user portal-page gate-pending alex-portal">
+  <!-- Só Euclecio permanece aqui; Alex e demais voltam ao menu normal -->
+  <script>
+  (function () {
+    try {
+      var raw = localStorage.getItem("user_session");
+      var s = raw ? JSON.parse(raw) : {};
+      var nome = String(s.nome || s.usuario || localStorage.getItem("usuarioLogado") || "").trim().toLowerCase();
+      var mat = String(s.matricula || "").trim().toUpperCase();
+      var uid = String(s.uidKey || "").trim().toLowerCase();
+      var isEuclecio = nome === "euclecio" || mat === "E72" || mat === "EUCLECIO" || uid === "euclecio";
+      if (isEuclecio) {
+        s.nome = s.nome || "Euclecio";
+        s.matricula = "E72";
+        s.uidKey = "euclecio";
+        s.perfil = "treinamento_produtos";
+        s.tipoUsuario = "treinamento_produtos";
+        localStorage.setItem("user_session", JSON.stringify(s));
+        return;
+      }
+      // Alex ou outro usuário neste menu por engano
+      s.perfil = "analista";
+      s.tipoUsuario = "analista";
+      if (nome === "alex") {
+        s.matricula = "A70";
+        s.uidKey = "alex";
+        s.nome = s.nome || "Alex";
+      }
+      localStorage.setItem("user_session", JSON.stringify(s));
+      if (s.nome) localStorage.setItem("usuarioLogado", s.nome);
+      location.replace("menu.html?v=20260720e");
+    } catch (e) {}
+  })();
+  </script>
 
   <div class="alex-page">
     <div class="alex-hero">
-      <h2>Olá, <span id="heroName">Alex</span>!</h2>
+      <h2>Olá, <span id="heroName">Euclecio</span>!</h2>
       <p>Acompanhe seus treinamentos de produtos e o impacto nos resultados de vendas.</p>
     </div>
 
