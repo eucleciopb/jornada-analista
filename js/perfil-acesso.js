@@ -15,11 +15,17 @@ export const PERFIL_TREINAMENTO_PRODUTOS = "treinamento_produtos";
  * Preferir matrícula/uidKey a nome, pois o nome pode mudar.
  */
 export const PERFIL_POR_MATRICULA = {
-  A70: PERFIL_TREINAMENTO_PRODUTOS // Alex
+  A70: PERFIL_TREINAMENTO_PRODUTOS, // Alex (senha/matrícula oficial)
+  ALEX: PERFIL_TREINAMENTO_PRODUTOS // sessão antiga gravava matricula = nome
 };
 
 /** uidKeys com perfil exclusivo (fallback) */
 export const PERFIL_POR_UIDKEY = {
+  alex: PERFIL_TREINAMENTO_PRODUTOS
+};
+
+/** Nomes canônicos com perfil exclusivo (fallback adicional; não é a regra principal) */
+export const PERFIL_POR_NOME = {
   alex: PERFIL_TREINAMENTO_PRODUTOS
 };
 
@@ -76,7 +82,7 @@ export function uidKeyDoUsuario(nome) {
 
 /**
  * Resolve o perfil de acesso a partir de sessão / identidade estável.
- * Ordem: perfil na sessão → matrícula → uidKey → padrão analista.
+ * Ordem: perfil na sessão → matrícula → uidKey → nome canônico → padrão analista.
  */
 export function resolverPerfil({ nome, matricula, perfil, uidKey } = {}) {
   const p = String(perfil || "").trim().toLowerCase();
@@ -87,6 +93,19 @@ export function resolverPerfil({ nome, matricula, perfil, uidKey } = {}) {
     p === "alex_produtos"
   ) {
     if (p === "alex_produtos") return PERFIL_TREINAMENTO_PRODUTOS;
+    // Sessões antigas do Alex vinham com perfil "analista" — corrigir pelos IDs estáveis
+    if (p === PERFIL_ANALISTA) {
+      const mat = String(matricula || matriculaDoUsuario(nome) || "").trim().toUpperCase();
+      const key = String(uidKey || uidKeyDoUsuario(nome) || "").toLowerCase();
+      const nomeKey = slug(nome);
+      if (
+        PERFIL_POR_MATRICULA[mat] === PERFIL_TREINAMENTO_PRODUTOS ||
+        PERFIL_POR_UIDKEY[key] === PERFIL_TREINAMENTO_PRODUTOS ||
+        PERFIL_POR_NOME[nomeKey] === PERFIL_TREINAMENTO_PRODUTOS
+      ) {
+        return PERFIL_TREINAMENTO_PRODUTOS;
+      }
+    }
     return p;
   }
 
@@ -95,6 +114,9 @@ export function resolverPerfil({ nome, matricula, perfil, uidKey } = {}) {
 
   const key = String(uidKey || uidKeyDoUsuario(nome) || "").toLowerCase();
   if (key && PERFIL_POR_UIDKEY[key]) return PERFIL_POR_UIDKEY[key];
+
+  const nomeKey = slug(nome);
+  if (nomeKey && PERFIL_POR_NOME[nomeKey]) return PERFIL_POR_NOME[nomeKey];
 
   return PERFIL_ANALISTA;
 }

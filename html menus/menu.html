@@ -385,25 +385,42 @@ body class="theme-user portal-page gate-pending">
       throw new Error("Usuário não encontrado no localStorage.");
     }
 
-    // Perfil treinamento_produtos → menu exclusivo (não vê dashboards SV)
-    try{
+    // Redireciona Alex IMEDIATAMENTE (antes de carregar dashboards SV)
+    // Cobre sessão nova (perfil/matrícula) e sessão antiga (matricula = "Alex")
+    (function redirecionarAlexSeNecessario(){
       const raw = localStorage.getItem("user_session");
-      const sess = raw ? JSON.parse(raw) : null;
+      let sess = null;
+      try { sess = raw ? JSON.parse(raw) : null; } catch {}
+      const nome = String(user.nome || sess?.nome || "").trim().toLowerCase();
       const perfil = String(sess?.perfil || "").toLowerCase();
       const mat = String(sess?.matricula || "").toUpperCase();
       const uid = String(sess?.uidKey || "").toLowerCase();
-      if(
+      const isAlex =
         perfil === "treinamento_produtos" ||
         perfil === "alex_produtos" ||
         mat === "A70" ||
-        uid === "alex"
-      ){
-        window.location.replace("menu_alex.html");
-        throw new Error("Redirecionando para menu Alex.");
-      }
-    }catch(e){
-      if(String(e?.message||"").includes("Redirecionando")) throw e;
-    }
+        mat === "ALEX" ||
+        uid === "alex" ||
+        nome === "alex";
+      if(!isAlex) return;
+
+      // Corrige sessão antiga para o perfil certo
+      try{
+        const next = {
+          ...(sess || {}),
+          nome: user.nome,
+          matricula: "A70",
+          uidKey: "alex",
+          perfil: "treinamento_produtos",
+          tipoUsuario: "treinamento_produtos"
+        };
+        localStorage.setItem("user_session", JSON.stringify(next));
+        localStorage.setItem("usuarioLogado", user.nome);
+      }catch{}
+
+      window.location.replace("menu_alex.html?v=20260720b");
+      throw new Error("Redirecionando para menu Alex.");
+    })();
 
     const birthGateOverlay = document.getElementById("birthGateOverlay");
     const birthGateUser = document.getElementById("birthGateUser");

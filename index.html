@@ -185,8 +185,22 @@
   }
 
   function irParaMenu(){
-    const dest = destinoMenuPorPerfil(perfilAtual, { fromRoot: true, encoded: true });
-    window.location.replace(`${dest}?v=20260720a`);
+    // Fallback explícito: Alex nunca vai para o menu dos analistas
+    const sess = (() => { try { return JSON.parse(localStorage.getItem("user_session") || "null"); } catch { return null; } })();
+    const nome = String(sess?.nome || usuarioAtual || usuarioSelect.value || "").trim();
+    const mat = String(sess?.matricula || USUARIOS[nome] || "").trim().toUpperCase();
+    const perfil = String(perfilAtual || sess?.perfil || "").toLowerCase();
+    const isAlex =
+      perfil === "treinamento_produtos" ||
+      perfil === "alex_produtos" ||
+      mat === "A70" ||
+      mat === "ALEX" ||
+      nome.toLowerCase() === "alex";
+
+    const dest = isAlex
+      ? "html%20menus/menu_alex.html"
+      : destinoMenuPorPerfil(perfilAtual, { fromRoot: true, encoded: true });
+    window.location.replace(`${dest}?v=20260720b`);
   }
 
   function mascararData(valor){
