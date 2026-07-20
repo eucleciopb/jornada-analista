@@ -118,21 +118,14 @@ function resolverPaths(base) {
 }
 
 function navItems(paths) {
+  // Menu simplificado: resumo + recursos já existentes do portal
   return [
-    { id: "visao", label: "Visão Geral", href: paths.menu, group: "Início" },
-    { id: "cadastrar", label: "Cadastrar Treinamento", href: `${paths.alex}cadastrar-treinamento.html`, group: "Treinamentos" },
-    { id: "realizados", label: "Treinamentos Realizados", href: `${paths.alex}treinamentos-realizados.html`, group: "Treinamentos" },
-    { id: "analise", label: "Análise de Resultado", href: `${paths.alex}analise-resultado.html`, group: "Treinamentos" },
-    { id: "fechamento", label: "Fechamento Mensal", href: `${paths.alex}fechamento-mensal.html`, group: "Treinamentos" },
-    { id: "agenda", label: "Agenda", href: `${paths.usuarios}agenda.html`, group: "Organização" },
+    { id: "visao", label: "Resumo", href: paths.menu, group: "Início" },
+    { id: "treinamentos", label: "Treinamentos", href: `${paths.usuarios}treinamentos.html`, group: "Treinamentos" },
     { id: "criar-agenda", label: "Criar Agenda", href: `${paths.usuarios}criar-agenda.html`, group: "Organização" },
-    { id: "calendario", label: "Calendário", href: `${paths.usuarios}agenda.html`, group: "Organização" },
-    { id: "aniversariantes", label: "Aniversariantes", href: paths.aniversariantes, group: "Organização" },
-    { id: "materiais", label: "Materiais e Anexos", href: `${paths.alex}materiais.html`, group: "Organização" },
+    { id: "agenda", label: "Agenda", href: `${paths.usuarios}agenda.html`, group: "Organização" },
     { id: "biblioteca", label: "Biblioteca", href: `${paths.usuarios}biblioteca-treinamentos.html`, group: "Organização" },
-    { id: "links", label: "Links Úteis", href: `${paths.usuarios}links-uteis.html`, group: "Organização" },
-    { id: "perfil", label: "Meu Perfil", href: `${paths.alex}perfil.html`, group: "Usuário" },
-    { id: "senha", label: "Alterar Senha", href: `${paths.alex}perfil.html#senha`, group: "Usuário" }
+    { id: "links", label: "Links Úteis", href: `${paths.usuarios}links-uteis.html`, group: "Organização" }
   ];
 }
 
@@ -219,9 +212,8 @@ function injetarShellHtml(paths, activeId, user, title) {
       </header>
       <div class="content" id="alexContentHost"></div>
       <nav class="bottom-nav" id="bottomNav">
-        <a href="${paths.menu}" class="${activeId === "visao" ? "active" : ""}"><span>Início</span></a>
-        <a href="${paths.alex}treinamentos-realizados.html" class="${activeId === "realizados" ? "active" : ""}"><span>Treinos</span></a>
-        <a href="${paths.alex}analise-resultado.html" class="${activeId === "analise" ? "active" : ""}"><span>Análise</span></a>
+        <a href="${paths.menu}" class="${activeId === "visao" ? "active" : ""}"><span>Resumo</span></a>
+        <a href="${paths.usuarios}treinamentos.html" class="${activeId === "treinamentos" ? "active" : ""}"><span>Treinos</span></a>
         <a href="${paths.usuarios}agenda.html"><span>Agenda</span></a>
         <button id="btnLogoutMobile" type="button"><span>Sair</span></button>
       </nav>
