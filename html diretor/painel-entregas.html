@@ -823,6 +823,7 @@
   btnCancelModal.onclick = closeModal;
   btnSaveModal.onclick = () => { saveEntrega(); };
   btnNova.onclick = () => openModalNew();
+  document.getElementById("btnAddResp").onclick = () => { incluirResponsavel(); };
   btnReload.onclick = loadData;
 
   [periodoPicker, gestorFiltro, respFiltro, statusFiltro].forEach(el => {
