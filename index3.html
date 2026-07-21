@@ -7,10 +7,11 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <title>Login Diretoria | Jornada</title>
+  <meta name="version" content="20260721e" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/bundle-login-admin.css?v=20260721a" />
+  <link rel="stylesheet" href="css/bundle-login-admin.css?v=20260721e" />
 </head>
 
 <body class="login-page theme-admin">
@@ -38,9 +39,19 @@
 
 <script>
   const MENU_URL = "html%20menus/menudiretor.html?v=20260721b";
+  const LOGIN_VERSION = "20260721e";
   const USUARIOS = {
     Molina: "102030"
   };
+  // força atualizar se abriu versão antiga em cache
+  if (localStorage.getItem("index3_login_version") !== LOGIN_VERSION) {
+    localStorage.setItem("index3_login_version", LOGIN_VERSION);
+    const u = new URL(location.href);
+    if (u.searchParams.get("v") !== LOGIN_VERSION) {
+      u.searchParams.set("v", LOGIN_VERSION);
+      location.replace(u.toString());
+    }
+  }
 
   const btn = document.getElementById("btnEntrar");
   const select = document.getElementById("usuarioSelect");
