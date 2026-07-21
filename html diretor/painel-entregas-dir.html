@@ -44,10 +44,6 @@
     </div>
 
     <div class="filters" style="max-width:240px">
-      <div>
-        <label for="periodoPicker">Período</label>
-        <input id="periodoPicker" class="field" type="month" />
-      </div>
     </div>
 
     <div class="msg" id="msg"></div>
@@ -155,7 +151,6 @@
     window.location.href = PATH_INDEX;
   };
 
-  const periodoPicker = document.getElementById("periodoPicker");
   const hubGrid = document.getElementById("hubGrid");
   const msg = document.getElementById("msg");
   const modalBackdrop = document.getElementById("modalBackdrop");
@@ -178,7 +173,8 @@
 
   function pad2(n) { return String(n).padStart(2, "0"); }
   function currentPeriodo() {
-    return periodoPicker.value || `${new Date().getFullYear()}-${pad2(new Date().getMonth() + 1)}`;
+    const d = new Date();
+    return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}`;
   }
   function todayISO() {
     const d = new Date();
@@ -242,7 +238,7 @@
   }
 
   function cardHtml(bloco, stats) {
-    const href = `./painel-entregas.html?grupo=${encodeURIComponent(bloco.key)}&periodo=${encodeURIComponent(currentPeriodo())}`;
+    const href = `./painel-entregas.html?grupo=${encodeURIComponent(bloco.key)}`;
     let pillClass = "pill";
     let pillText = "Sem itens";
     let barClass = "progress-bar warn";
@@ -283,8 +279,7 @@
   }
 
   function renderHub() {
-    const periodo = currentPeriodo();
-    const doPeriodo = ENTREGAS.filter(e => String(e.periodo || "") === periodo);
+    const doPeriodo = ENTREGAS;
     const blocos = allBlocos();
 
     if (!blocos.length) {
@@ -416,10 +411,6 @@
   modalBackdrop.addEventListener("click", (e) => {
     if (e.target === modalBackdrop) closeModal();
   });
-  periodoPicker.addEventListener("change", renderHub);
-
-  const now = new Date();
-  periodoPicker.value = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}`;
   loadData();
 </script>
 </body>
