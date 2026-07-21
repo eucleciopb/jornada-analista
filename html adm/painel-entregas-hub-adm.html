@@ -38,10 +38,6 @@
     </div>
 
     <div class="filters" style="max-width:240px">
-      <div>
-        <label for="periodoPicker">Período</label>
-        <input id="periodoPicker" class="field" type="month" />
-      </div>
     </div>
 
     <div class="msg" id="msg"></div>
@@ -162,7 +158,6 @@
     window.location.href = PATH_INDEX;
   };
 
-  const periodoPicker = document.getElementById("periodoPicker");
   const msg = document.getElementById("msg");
 
   function setMsg(text, type = "info") {
@@ -176,7 +171,8 @@
     return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
   }
   function currentPeriodo() {
-    return periodoPicker.value || `${new Date().getFullYear()}-${pad2(new Date().getMonth() + 1)}`;
+    const d = new Date();
+    return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}`;
   }
 
   /** Entregas antigas sem grupo → Pedro Férias */
@@ -237,10 +233,7 @@
     setMsg("Carregando…");
     try {
       const snap = await getDocs(query(collection(db, COLLECTION), where("tipo", "==", TIPO)));
-      const periodo = currentPeriodo();
-      const all = snap.docs
-        .map(d => ({ id: d.id, ...d.data() }))
-        .filter(e => String(e.periodo || "") === periodo);
+      const all = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
       const pedro = all.filter(e => resolveGrupo(e) === "pedro_ferias");
       const diarias = all.filter(e => resolveGrupo(e) === "demandas_diarias");
@@ -256,21 +249,14 @@
     }
   }
 
-  function syncCardLinks(periodo) {
-    document.getElementById("cardPedro").href = `./painel-entregas-adm.html?grupo=pedro_ferias&periodo=${periodo}`;
-    document.getElementById("cardDiarias").href = `./painel-entregas-adm.html?grupo=demandas_diarias&periodo=${periodo}`;
-    document.getElementById("cardDiretoria").href = `./painel-entregas-adm.html?grupo=rps_diretoria&periodo=${periodo}`;
+  function syncCardLinks() {
+    document.getElementById("cardPedro").href = `./painel-entregas-adm.html?grupo=pedro_ferias`;
+    document.getElementById("cardDiarias").href = `./painel-entregas-adm.html?grupo=demandas_diarias`;
+    document.getElementById("cardDiretoria").href = `./painel-entregas-adm.html?grupo=rps_diretoria`;
   }
 
   document.getElementById("btnReload").onclick = loadData;
-  periodoPicker.addEventListener("change", () => {
-    syncCardLinks(currentPeriodo());
-    loadData();
-  });
-
-  const now = new Date();
-  periodoPicker.value = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}`;
-  syncCardLinks(currentPeriodo());
+  syncCardLinks();
   loadData();
 </script>
 </body>

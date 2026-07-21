@@ -47,10 +47,6 @@
     <div class="grupo-tabs" id="grupoTabs"></div>
 
     <div class="filters">
-      <div>
-        <label for="periodoPicker">Período</label>
-        <input id="periodoPicker" class="field" type="month" />
-      </div>
       <div id="gestorFiltroWrap">
         <label for="gestorFiltro">Gestor Ausente</label>
         <input id="gestorFiltro" class="field" type="text" placeholder="Ex: Pedro" />
@@ -80,7 +76,7 @@
     <div class="overall-progress">
       <div class="overall-head">
         <div>
-          <div class="hint">Atingimento geral do período</div>
+          <div class="hint">Atingimento geral</div>
           <strong id="percGeral">0%</strong>
         </div>
         <span id="pillGeral" class="pill pill-warn">Carregando...</span>
@@ -293,7 +289,6 @@
     window.location.href = PATH_INDEX;
   };
 
-  const periodoPicker = document.getElementById("periodoPicker");
   const gestorFiltro = document.getElementById("gestorFiltro");
   const gestorFiltroWrap = document.getElementById("gestorFiltroWrap");
   const respFiltro = document.getElementById("respFiltro");
@@ -382,7 +377,6 @@
     CURRENT_GRUPO = grupo;
     const url = new URL(window.location.href);
     url.searchParams.set("grupo", grupo);
-    if (periodoPicker.value) url.searchParams.set("periodo", periodoPicker.value);
     history.replaceState(null, "", url.toString());
     applyGrupoUI();
     renderMain();
@@ -422,7 +416,8 @@
   }
 
   function currentPeriodo() {
-    return periodoPicker.value || `${new Date().getFullYear()}-${pad2(new Date().getMonth() + 1)}`;
+    const d = new Date();
+    return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}`;
   }
 
   function deriveStatus(e) {
@@ -524,7 +519,6 @@
   }
 
   function filteredEntregas() {
-    const periodo = currentPeriodo();
     const gestor = (gestorFiltro.value || "").toLowerCase().trim();
     const resp = (respFiltro.value || "").trim();
     const status = (statusFiltro.value || "").trim();
@@ -533,7 +527,6 @@
     return ALL_ENTREGAS
       .map(e => ({ ...e, statusEfetivo: deriveStatus(e), grupoResolvido: resolveGrupo(e) }))
       .filter(e => e.grupoResolvido === CURRENT_GRUPO)
-      .filter(e => String(e.periodo || "") === periodo)
       .filter(e => !gestor || String(e.gestorAusente || "").toLowerCase().includes(gestor))
       .filter(e => !resp || String(e.responsavel || "") === resp)
       .filter(e => !status || e.statusEfetivo === status)
@@ -686,10 +679,7 @@
       await loadResponsaveis();
       await loadBlocos();
       const snap = await getDocs(query(collection(db, COLLECTION), where("tipo", "==", TIPO)));
-      const periodo = currentPeriodo();
-      ALL_ENTREGAS = snap.docs
-        .map(d => ({ id: d.id, ...d.data() }))
-        .filter(e => String(e.periodo || "") === periodo);
+      ALL_ENTREGAS = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       setMsg("");
       applyGrupoUI();
       renderMain();
@@ -826,7 +816,7 @@
   document.getElementById("btnAddResp").onclick = () => { incluirResponsavel(); };
   btnReload.onclick = loadData;
 
-  [periodoPicker, gestorFiltro, respFiltro, statusFiltro].forEach(el => {
+  [gestorFiltro, respFiltro, statusFiltro].forEach(el => {
     el.addEventListener("change", loadData);
   });
   searchBox.addEventListener("input", renderMain);
@@ -835,9 +825,6 @@
     if (e.target === modalBackdrop) closeModal();
   });
 
-  const now = new Date();
-  const periodoParam = params.get("periodo");
-  periodoPicker.value = periodoParam || `${now.getFullYear()}-${pad2(now.getMonth() + 1)}`;
   populateSelects();
   rebuildGrupoTabs();
   applyGrupoUI();
