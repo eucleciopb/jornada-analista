@@ -44,6 +44,7 @@
     <div class="grupo-tabs" id="grupoTabs">
       <button type="button" class="grupo-tab" data-grupo="pedro_ferias">Demandas do Pedro — Férias</button>
       <button type="button" class="grupo-tab" data-grupo="demandas_diarias">Demandas Diárias</button>
+      <button type="button" class="grupo-tab" data-grupo="rps_diretoria">RPS Diretoria</button>
     </div>
 
     <div class="filters">
@@ -186,6 +187,7 @@
           <select id="mGrupo" class="field">
             <option value="pedro_ferias">Demandas do Pedro — Férias</option>
             <option value="demandas_diarias">Demandas Diárias</option>
+            <option value="rps_diretoria">RPS Diretoria</option>
           </select>
         </div>
         <div>
@@ -251,18 +253,25 @@
       titulo: "Demandas Diárias",
       hint: "Rotina do dia a dia — separada da cobertura de férias.",
       gestorDefault: ""
+    },
+    rps_diretoria: {
+      titulo: "RPS Diretoria",
+      hint: "Demandas e acompanhamentos da RPS Diretoria.",
+      gestorDefault: ""
     }
   };
 
+  const GRUPOS_VALIDOS = ["pedro_ferias", "demandas_diarias", "rps_diretoria"];
+
   function resolveGrupo(e) {
     const g = String(e?.grupo || "").trim();
-    if (g === "demandas_diarias") return "demandas_diarias";
+    if (GRUPOS_VALIDOS.includes(g)) return g;
     return "pedro_ferias";
   }
 
   const params = new URLSearchParams(window.location.search);
   let CURRENT_GRUPO = params.get("grupo") || "";
-  if (CURRENT_GRUPO !== "pedro_ferias" && CURRENT_GRUPO !== "demandas_diarias") {
+  if (!GRUPOS_VALIDOS.includes(CURRENT_GRUPO)) {
     window.location.href = PATH_HUB;
   }
 
@@ -646,7 +655,7 @@
     const progresso = Math.min(100, Math.max(0, Number(mProgresso.value) || 0));
     const id = editingId || `entrega_${makeId()}`;
     const periodo = currentPeriodo();
-    const grupo = (mGrupo.value === "demandas_diarias") ? "demandas_diarias" : "pedro_ferias";
+    const grupo = GRUPOS_VALIDOS.includes(mGrupo.value) ? mGrupo.value : CURRENT_GRUPO;
 
     const payload = {
       tipo: TIPO,
