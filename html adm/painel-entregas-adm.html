@@ -144,7 +144,7 @@
       </div>
       <button class="modal-close" id="mClose" type="button">Fechar</button>
     </div>
-    <div class="modal-body">
+    <form id="formEntrega" class="modal-body" autocomplete="off">
       <div class="form-grid">
         <div class="full">
           <label for="mTitulo">Título da entrega *</label>
@@ -198,11 +198,11 @@
           <div id="mMsg" class="msg" style="margin:0;min-height:18px"></div>
         </div>
       </div>
-    </div>
-    <div class="modal-actions">
-      <button class="btn-mini" id="btnCancelModal" type="button">Cancelar</button>
-      <button class="btn-mini danger" id="btnSaveModal" type="button">Salvar</button>
-    </div>
+      <div class="modal-actions">
+        <button class="btn-mini" id="btnCancelModal" type="button">Cancelar</button>
+        <button class="btn-mini danger" id="btnSaveModal" type="button">Salvar</button>
+      </div>
+    </form>
   </div>
 </div>
 
@@ -586,11 +586,20 @@
     }
   }
 
+
+  let modalOpen = false;
+
+  function isModalOpen() {
+    return modalOpen || modalBackdrop.classList.contains("open");
+  }
+
   function openModal() {
     setModalMsg("");
+    modalOpen = true;
     modalBackdrop.classList.add("open");
   }
   function closeModal() {
+    modalOpen = false;
     modalBackdrop.classList.remove("open");
     editingId = null;
     preselectResp = "";
@@ -703,19 +712,45 @@
     }
   }
 
-  mClose.onclick = closeModal;
-  btnCancelModal.onclick = closeModal;
-  btnSaveModal.onclick = () => { saveEntrega(); };
-  btnNova.onclick = () => openModalNew();
+
+  const formEntrega = document.getElementById("formEntrega");
+  formEntrega.addEventListener("submit", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    saveEntrega();
+  });
+
+  // Enter em input não pode “sumir” com a tela / fechar o modal
+  formEntrega.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter") return;
+    const tag = (e.target && e.target.tagName || "").toLowerCase();
+    if (tag === "textarea") return;
+    e.preventDefault();
+    e.stopPropagation();
+  });
+
+  mClose.onclick = (e) => { e.preventDefault(); closeModal(); };
+  btnCancelModal.onclick = (e) => { e.preventDefault(); closeModal(); };
+  btnSaveModal.onclick = (e) => { e.preventDefault(); saveEntrega(); };
+  btnNova.onclick = (e) => { e.preventDefault(); openModalNew(); };
   btnReload.onclick = loadData;
 
   [gestorFiltro, respFiltro, statusFiltro].forEach(el => {
-    el.addEventListener("change", loadData);
+    el.addEventListener("change", () => {
+      if (isModalOpen()) return;
+      loadData();
+    });
   });
-  searchBox.addEventListener("input", renderMain);
+  searchBox.addEventListener("input", () => {
+    if (isModalOpen()) return;
+    renderMain();
+  });
 
   modalBackdrop.addEventListener("click", (e) => {
-    if (e.target === modalBackdrop) closeModal();
+    if (e.target !== modalBackdrop) return;
+    const dirty = (mTitulo.value || mDescricao.value || mObs.value || "").trim();
+    if (dirty && !confirm("Fechar e descartar o que foi preenchido?")) return;
+    closeModal();
   });
 
   populateSelects();
