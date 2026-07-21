@@ -1,0 +1,228 @@
+/* Termo de Ciência — overlay de aceite + página admin */
+
+.termo-gate-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100010;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background:
+    radial-gradient(800px 400px at 80% 10%, rgba(37, 99, 235, 0.14), transparent 60%),
+    rgba(15, 23, 42, 0.78);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.termo-gate-overlay[hidden],
+.termo-gate-overlay.is-done {
+  display: none !important;
+}
+
+.termo-gate-card {
+  width: min(520px, 100%);
+  max-height: min(90vh, 720px);
+  overflow: auto;
+  margin: 0;
+  padding: 28px 22px;
+  border-radius: 22px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 18px 50px rgba(15, 23, 42, 0.22);
+  color: #0f172a;
+  text-align: left;
+}
+
+.termo-gate-card .logo-box {
+  margin: 0 auto 14px;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #fff;
+  font-weight: 800;
+}
+
+.theme-admin .termo-gate-card .logo-box {
+  background: linear-gradient(135deg, #d91b2e, #b91c1c);
+}
+
+.termo-gate-card h2 {
+  margin: 0 0 8px;
+  font-size: 22px;
+  text-align: center;
+}
+
+.termo-gate-card > .hint {
+  margin: 0 0 14px;
+  color: #64748b;
+  font-size: 13px;
+  text-align: center;
+}
+
+.termo-gate-user {
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(37, 99, 235, 0.1);
+  color: #0f172a;
+  font-weight: 700;
+  font-size: 15px;
+  text-align: center;
+}
+
+.termo-gate-titulo {
+  margin: 0 0 10px;
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.termo-gate-texto {
+  margin: 0 0 20px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #334155;
+  font-size: 14px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  max-height: 280px;
+  overflow: auto;
+}
+
+.termo-gate-actions {
+  display: grid;
+  gap: 10px;
+}
+
+.termo-gate-actions .btn-primary,
+.termo-gate-actions .btn-secondary {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 0;
+  font-size: 14px;
+}
+
+.termo-gate-actions .btn-primary {
+  background: #2563eb;
+  color: #fff;
+}
+
+.theme-admin .termo-gate-actions .btn-primary {
+  background: #d91b2e;
+}
+
+.termo-gate-actions .btn-secondary {
+  background: #fff;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+}
+
+.termo-gate-actions button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.termo-gate-msg {
+  margin: 12px 0 0;
+  min-height: 1.2em;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: #ef4444;
+}
+
+.termo-gate-msg.ok {
+  color: #16a34a;
+}
+
+body.termo-pending .portal-shell,
+body.termo-pending .portal,
+body.termo-pending .bottom-nav,
+body.termo-pending .mobile-toggle {
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+/* Admin page extras */
+.termo-status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.termo-status-pill.ativo {
+  background: rgba(34, 197, 94, 0.18);
+  color: #4ade80;
+}
+
+.termo-status-pill.inativo {
+  background: rgba(148, 163, 184, 0.2);
+  color: #cbd5e1;
+}
+
+.termo-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 12px 0;
+}
+
+.termo-tab {
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(255, 255, 255, 0.06);
+  color: #e2e8f0;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.termo-tab.is-active {
+  border-color: rgba(248, 113, 113, 0.75);
+  background: rgba(217, 27, 46, 0.22);
+  color: #fff;
+}
+
+.termo-texto-preview {
+  white-space: pre-wrap;
+  max-height: 120px;
+  overflow: auto;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #cbd5e1;
+}
+
+.btn-reenviar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 12px;
+  border-radius: 10px;
+  border: 1px solid #fbbf24;
+  background: rgba(251, 191, 36, 0.15);
+  color: #fbbf24;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.btn-reenviar:hover {
+  background: rgba(251, 191, 36, 0.28);
+}
+
+.btn-reenviar:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}

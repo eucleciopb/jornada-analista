@@ -101,8 +101,9 @@
     parseDataNascimento,
     salvarDataNascimento,
     marcarNascimentoNaSessao,
-    buscarDataNascimentoSalva
-  } from "./js/aniversario.js?v=20260720g";
+    buscarDataNascimentoSalva,
+    obterNascimentoRapido
+  } from "./js/aniversario.js?v=20260721a";
   import {
     montarSessaoLogin,
     salvarSessao,
@@ -322,7 +323,22 @@
         console.warn("Log de acesso falhou:", logErr);
       }
 
-      setMsg("Verificando perfil no banco...", true);
+      setMsg("Verificando perfil...", true);
+      const rapido = obterNascimentoRapido(usuario);
+      if (rapido) {
+        marcarNascimentoNaSessao(rapido);
+        setMsg(
+          sessao.perfil === PERFIL_TREINAMENTO_PRODUTOS
+            ? "Login ok! Abrindo o menu de treinamentos..."
+            : "Login ok! Abrindo o menu...",
+          true
+        );
+        // Confirma no banco em background (não bloqueia entrada)
+        buscarDataNascimentoSalva(db, fs, usuario).catch(() => {});
+        irParaMenu();
+        return;
+      }
+
       const jaTem = await buscarDataNascimentoSalva(db, fs, usuario);
       if(jaTem){
         marcarNascimentoNaSessao(jaTem);

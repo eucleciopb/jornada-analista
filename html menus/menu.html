@@ -8,12 +8,13 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/bundle-portal-user.css?v=20260715b" />
-  <link rel="stylesheet" href="../css/pages/cadastro-nascimento.css?v=20260715b" />
+  <link rel="stylesheet" href="../css/pages/cadastro-nascimento.css?v=20260721a" />
+  <link rel="stylesheet" href="../css/pages/termo-ciencia.css?v=20260721a" />
 </head>
 
-body class="theme-user portal-page gate-pending">
-  <!-- Overlay obrigatório: fica até confirmar data de nascimento -->
-  <div id="birthGateOverlay" class="birth-gate-overlay" aria-modal="true" role="dialog" aria-labelledby="birthGateTitle">
+<body class="theme-user portal-page">
+  <!-- Overlay só aparece se a data realmente faltar (sem tela de espera) -->
+  <div id="birthGateOverlay" class="birth-gate-overlay is-done" hidden aria-modal="true" role="dialog" aria-labelledby="birthGateTitle">
     <div class="login-card nasc-card birth-gate-card">
       <div class="logo-box">GP</div>
       <h2 id="birthGateTitle">Complete seu perfil</h2>
@@ -273,13 +274,9 @@ body class="theme-user portal-page gate-pending">
     import {
       isAniversarioNoMes,
       mensagemAniversario,
-      nomeMes,
-      sessaoTemNascimentoOk,
-      marcarNascimentoNaSessao,
-      parseDataNascimento,
-      salvarDataNascimento,
-      buscarDataNascimentoSalva
-    } from "../js/aniversario.js?v=20260715b";
+      nomeMes
+    } from "../js/aniversario.js?v=20260721a";
+    import { aplicarGatesPortal } from "../js/portal-gates.js?v=20260721a";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
@@ -292,7 +289,7 @@ body class="theme-user portal-page gate-pending">
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-    const fs = { doc, getDoc, setDoc, serverTimestamp };
+    const fs = { collection, getDocs, query, where, doc, getDoc, setDoc, serverTimestamp };
 
     const welcomeText = document.getElementById("welcomeText");
     const btnLogoutSide = document.getElementById("btnLogoutSide");
@@ -361,19 +358,19 @@ body class="theme-user portal-page gate-pending">
 
       if(rawSession){
         const s = safeParse(rawSession);
-        if(s?.nome) return { nome: String(s.nome).trim() };
-        if(s?.usuario) return { nome: String(s.usuario).trim() };
-        if(s?.name) return { nome: String(s.name).trim() };
+        if(s?.nome) return { nome: String(s.nome).trim(), perfil: String(s.perfil || "analista") };
+        if(s?.usuario) return { nome: String(s.usuario).trim(), perfil: String(s.perfil || "analista") };
+        if(s?.name) return { nome: String(s.name).trim(), perfil: String(s.perfil || "analista") };
       }
 
       const usuarioLogado = (localStorage.getItem("usuarioLogado") || "").trim();
-      if(usuarioLogado) return { nome: usuarioLogado };
+      if(usuarioLogado) return { nome: usuarioLogado, perfil: "analista" };
 
       const analistaLogado = (localStorage.getItem("analistaLogado") || "").trim();
-      if(analistaLogado) return { nome: analistaLogado };
+      if(analistaLogado) return { nome: analistaLogado, perfil: "analista" };
 
       const usuarioSelecionado = (localStorage.getItem("usuarioSelecionado") || "").trim();
-      if(usuarioSelecionado) return { nome: usuarioSelecionado };
+      if(usuarioSelecionado) return { nome: usuarioSelecionado, perfil: "analista" };
 
       return null;
     }
@@ -428,74 +425,6 @@ body class="theme-user portal-page gate-pending">
       if(String(e?.message||"").includes("Redirecionando")) throw e;
     }
 
-    const birthGateOverlay = document.getElementById("birthGateOverlay");
-    const birthGateUser = document.getElementById("birthGateUser");
-    const birthGateForm = document.getElementById("birthGateForm");
-    const birthGateInput = document.getElementById("birthGateInput");
-    const birthGateSave = document.getElementById("birthGateSave");
-    const birthGateMsg = document.getElementById("birthGateMsg");
-
-    function setBirthMsg(text, ok = false){
-      if(!birthGateMsg) return;
-      birthGateMsg.textContent = text || "";
-      birthGateMsg.classList.toggle("ok", Boolean(ok));
-    }
-
-    function liberarMenu(iso){
-      if(iso) marcarNascimentoNaSessao(iso);
-      birthGateOverlay?.classList.add("is-done");
-      document.body.classList.remove("gate-pending");
-    }
-
-    function mascararData(valor){
-      const digits = String(valor || "").replace(/\D/g, "").slice(0, 8);
-      if(digits.length <= 2) return digits;
-      if(digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
-      return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
-    }
-
-    async function buscarNascimentoSalvo(nome){
-      return buscarDataNascimentoSalva(db, fs, nome);
-    }
-
-    function mostrarGateNascimento(){
-      if(birthGateUser) birthGateUser.textContent = user.nome;
-      birthGateOverlay?.classList.remove("is-done");
-      document.body.classList.add("gate-pending");
-      birthGateInput?.focus();
-    }
-
-    birthGateInput?.addEventListener("input", () => {
-      birthGateInput.value = mascararData(birthGateInput.value);
-      setBirthMsg("");
-    });
-
-    birthGateForm?.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const parsed = parseDataNascimento(birthGateInput?.value);
-      if(!parsed){
-        setBirthMsg("Informe uma data válida no formato DD/MM/AAAA.");
-        birthGateInput?.focus();
-        return;
-      }
-
-      if(birthGateSave) birthGateSave.disabled = true;
-      setBirthMsg("Salvando...", true);
-
-      try{
-        await salvarDataNascimento(db, fs, user.nome, parsed, {
-          perfil: "analista"
-        });
-        liberarMenu(parsed.dataNascimento);
-        setBirthMsg("Salvo no banco!", true);
-        await iniciarBannerAniversario(parsed.dataNascimento);
-      }catch(err){
-        console.error(err);
-        setBirthMsg(err?.message || "Não foi possível salvar no banco. Tente novamente.");
-        if(birthGateSave) birthGateSave.disabled = false;
-      }
-    });
-
     async function iniciarBannerAniversario(iso){
       try{
         if(iso && isAniversarioNoMes(iso)){
@@ -512,21 +441,20 @@ body class="theme-user portal-page gate-pending">
       }
     }
 
-    // Sempre valida no banco (não libera só com cache do navegador).
-    let dataConfirmada = null;
-    try{
-      dataConfirmada = await buscarDataNascimentoSalva(db, fs, user.nome);
-      if(dataConfirmada){
-        liberarMenu(dataConfirmada);
-        await iniciarBannerAniversario(dataConfirmada);
-      }else{
-        mostrarGateNascimento();
-      }
-    }catch(err){
-      console.error(err);
-      mostrarGateNascimento();
-      setBirthMsg("Não foi possível verificar no banco. Informe a data novamente.");
-    }
+    const dataConfirmada = await aplicarGatesPortal({
+      db,
+      fs,
+      nome: user.nome,
+      perfil: user.perfil || "analista",
+      overlay: document.getElementById("birthGateOverlay"),
+      userEl: document.getElementById("birthGateUser"),
+      formEl: document.getElementById("birthGateForm"),
+      inputEl: document.getElementById("birthGateInput"),
+      saveBtn: document.getElementById("birthGateSave"),
+      msgEl: document.getElementById("birthGateMsg"),
+      onLiberado: (iso) => { if (iso) iniciarBannerAniversario(iso); }
+    });
+    if (dataConfirmada) await iniciarBannerAniversario(dataConfirmada);
 
     welcomeText.textContent = user.nome;
 

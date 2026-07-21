@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Termo de Ciência | Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/bundle-admin.css" />
+  <link rel="stylesheet" href="../css/pages/termo-ciencia.css?v=20260721a" />
+</head>
+
+<body class="theme-admin app-shell">
+
+<header class="topbar">
+  <div>
+    <h2>Termo de Ciência</h2>
+    <div id="userInfo" class="hint" style="color:#d1d5db;margin-top:4px;"></div>
+  </div>
+
+  <div class="top-actions">
+    <button id="btnMenu" class="btn-secondary" type="button">Voltar ao Menu</button>
+    <button id="btnLogout" class="btn-secondary" type="button">Sair</button>
+  </div>
+</header>
+
+<main class="card wide">
+
+  <section class="row-between">
+    <div>
+      <h3 id="formTitle">Novo Termo de Ciência</h3>
+      <p class="hint">
+        Cadastre o termo. Ao ativar, os usuários serão cobrados no próximo login
+        a confirmar ciência ou indicar que precisam de treinamento.
+      </p>
+    </div>
+  </section>
+
+  <hr class="sep" />
+
+  <section class="form-grid">
+    <div style="grid-column:1/-1;">
+      <label for="titulo">Título</label>
+      <input id="titulo" type="text" maxlength="160" placeholder="Ex: Novo processo de apuração — ciência obrigatória" />
+    </div>
+
+    <div style="grid-column:1/-1;">
+      <label for="texto">Texto do termo</label>
+      <textarea id="texto" rows="8" maxlength="8000" placeholder="Descreva o que o usuário precisa estar ciente..."></textarea>
+    </div>
+
+    <div class="page-actions" style="grid-column:1/-1; justify-content:flex-end; gap:10px; flex-wrap:wrap;">
+      <button id="btnCancelar" class="btn-secondary" type="button" style="display:none;">Cancelar</button>
+      <button id="btnSalvarRascunho" class="btn-secondary" type="button">Salvar rascunho</button>
+      <button id="btnSalvarAtivar" class="btn-primary" type="button">Salvar e ativar</button>
+    </div>
+  </section>
+
+  <p id="msg" class="msg"></p>
+
+  <hr class="sep" />
+
+  <section class="row-between">
+    <div>
+      <h3>Termos cadastrados</h3>
+      <p class="hint">Apenas um termo fica ativo por vez. Quem ainda não respondeu ao ativo verá a cobrança ao entrar.</p>
+    </div>
+  </section>
+
+  <div class="table-wrap" style="margin-top:12px;">
+    <table class="table table-sticky">
+      <thead>
+        <tr>
+          <th style="width:90px;">Status</th>
+          <th>Título</th>
+          <th>Texto</th>
+          <th style="width:140px;">Criado por</th>
+          <th style="width:200px;">Ações</th>
+        </tr>
+      </thead>
+      <tbody id="tbodyTermos">
+        <tr><td colspan="5" style="opacity:.8;">Carregando…</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <hr class="sep" />
+
+  <section class="row-between">
+    <div>
+      <h3>Respostas do termo ativo</h3>
+      <p class="hint" id="termoAtivoLabel">Nenhum termo ativo no momento.</p>
+    </div>
+  </section>
+
+  <div class="termo-tabs" role="tablist">
+    <button type="button" class="termo-tab is-active" data-tab="ciente" id="tabCiente">Cientes (0)</button>
+    <button type="button" class="termo-tab" data-tab="treino" id="tabTreino">Precisam de treinamento (0)</button>
+  </div>
+
+  <div class="table-wrap" style="margin-top:8px;">
+    <table class="table table-sticky">
+      <thead>
+        <tr>
+          <th>Usuário</th>
+          <th style="width:160px;">Perfil</th>
+          <th style="width:180px;">Respondido em</th>
+          <th style="width:160px;">Ação</th>
+        </tr>
+      </thead>
+      <tbody id="tbodyRespostas">
+        <tr><td colspan="4" style="opacity:.8;">Selecione ou ative um termo.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</main>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+  import {
+    getFirestore,
+    collection,
+    getDocs,
+    query,
+    where,
+    doc,
+    setDoc,
+    getDoc,
+    serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+  import {
+    listarTermos,
+    salvarTermo,
+    listarRespostasDoTermo,
+    marcarReenvio,
+    STATUS_CIENTE,
+    STATUS_PRECISA_TREINAMENTO
+  } from "../js/termo-ciencia.js?v=20260721a";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
+    authDomain: "jornada-portal.firebaseapp.com",
+    projectId: "jornada-portal",
+    storageBucket: "jornada-portal.firebasestorage.app",
+    messagingSenderId: "669362296644",
+    appId: "1:669362296644:web:f590d9834a8e4e60012911"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const fs = { collection, getDocs, query, where, doc, setDoc, getDoc, serverTimestamp };
+
+  const PATH_INDEX = "../index2.html";
+  const PATH_MENU = "../html%20menus/menuadm.html";
+
+  function safeParse(raw) {
+    try { return JSON.parse(raw); } catch { return null; }
+  }
+
+  function getCurrentUserName() {
+    const s = safeParse(localStorage.getItem("user_session"));
+    if (s?.nome) return String(s.nome).trim();
+    return (localStorage.getItem("usuarioLogado") || "").trim();
+  }
+
+  const session = safeParse(localStorage.getItem("user_session"));
+  const usuario = getCurrentUserName();
+  if (!usuario || session?.perfil !== "admin") {
+    window.location.href = PATH_INDEX;
+  }
+
+  document.getElementById("userInfo").textContent = `Admin: ${usuario}`;
+  document.getElementById("btnMenu").addEventListener("click", () => {
+    window.location.href = PATH_MENU;
+  });
+  document.getElementById("btnLogout").addEventListener("click", () => {
+    localStorage.removeItem("usuarioLogado");
+    localStorage.removeItem("user_session");
+    localStorage.removeItem("analistaLogado");
+    localStorage.removeItem("usuarioSelecionado");
+    window.location.replace(PATH_INDEX);
+  });
+
+  const formTitle = document.getElementById("formTitle");
+  const tituloInput = document.getElementById("titulo");
+  const textoInput = document.getElementById("texto");
+  const btnSalvarRascunho = document.getElementById("btnSalvarRascunho");
+  const btnSalvarAtivar = document.getElementById("btnSalvarAtivar");
+  const btnCancelar = document.getElementById("btnCancelar");
+  const tbodyTermos = document.getElementById("tbodyTermos");
+  const tbodyRespostas = document.getElementById("tbodyRespostas");
+  const termoAtivoLabel = document.getElementById("termoAtivoLabel");
+  const tabCiente = document.getElementById("tabCiente");
+  const tabTreino = document.getElementById("tabTreino");
+  const msg = document.getElementById("msg");
+
+  let editId = null;
+  let CACHE_TERMOS = [];
+  let CACHE_RESPOSTAS = [];
+  let tabAtual = "ciente";
+  let termoAtivoId = null;
+
+  function setMsg(text, type = "info") {
+    msg.textContent = text || "";
+    msg.style.color = type === "success" ? "#4ade80" : (type === "error" ? "#f87171" : "#d1d5db");
+  }
+
+  function normalize(s) {
+    return (s || "").replace(/\s+/g, " ").trim();
+  }
+
+  function escapeHtml(s) {
+    return String(s ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function formatDate(iso) {
+    if (!iso) return "—";
+    try {
+      return new Date(iso).toLocaleString("pt-BR");
+    } catch {
+      return String(iso);
+    }
+  }
+
+  function resetForm() {
+    editId = null;
+    formTitle.textContent = "Novo Termo de Ciência";
+    btnCancelar.style.display = "none";
+    tituloInput.value = "";
+    textoInput.value = "";
+    tituloInput.focus();
+  }
+
+  async function loadTermos() {
+    CACHE_TERMOS = await listarTermos(db, fs);
+    const ativo = CACHE_TERMOS.find((t) => t.ativo);
+    termoAtivoId = ativo?.id || null;
+
+    if (!CACHE_TERMOS.length) {
+      tbodyTermos.innerHTML = `<tr><td colspan="5" style="opacity:.8;">Nenhum termo cadastrado ainda.</td></tr>`;
+    } else {
+      tbodyTermos.innerHTML = CACHE_TERMOS.map((t) => {
+        const pill = t.ativo
+          ? `<span class="termo-status-pill ativo">Ativo</span>`
+          : `<span class="termo-status-pill inativo">Inativo</span>`;
+        return `<tr>
+          <td>${pill}</td>
+          <td><strong>${escapeHtml(t.titulo || "—")}</strong></td>
+          <td><div class="termo-texto-preview">${escapeHtml(t.texto || "")}</div></td>
+          <td>${escapeHtml(t.criadoPor || "—")}</td>
+          <td>
+            <button type="button" class="btn-secondary" data-edit="${escapeHtml(t.id)}" style="padding:7px 10px;font-size:12px;">Editar</button>
+            ${t.ativo ? "" : `<button type="button" class="btn-primary" data-ativar="${escapeHtml(t.id)}" style="padding:7px 10px;font-size:12px;margin-left:6px;">Ativar</button>`}
+          </td>
+        </tr>`;
+      }).join("");
+    }
+
+    if (ativo) {
+      termoAtivoLabel.textContent = `Termo ativo: ${ativo.titulo || ativo.id}`;
+      await loadRespostas(ativo.id);
+    } else {
+      termoAtivoLabel.textContent = "Nenhum termo ativo no momento.";
+      CACHE_RESPOSTAS = [];
+      renderRespostas();
+    }
+  }
+
+  async function loadRespostas(termoId) {
+    CACHE_RESPOSTAS = await listarRespostasDoTermo(db, fs, termoId);
+    renderRespostas();
+  }
+
+  function renderRespostas() {
+    const cientes = CACHE_RESPOSTAS.filter((r) => r.status === STATUS_CIENTE);
+    const treinos = CACHE_RESPOSTAS.filter((r) => r.status === STATUS_PRECISA_TREINAMENTO);
+    tabCiente.textContent = `Cientes (${cientes.length})`;
+    tabTreino.textContent = `Precisam de treinamento (${treinos.length})`;
+
+    const lista = tabAtual === "treino" ? treinos : cientes;
+    if (!termoAtivoId) {
+      tbodyRespostas.innerHTML = `<tr><td colspan="4" style="opacity:.8;">Nenhum termo ativo.</td></tr>`;
+      return;
+    }
+    if (!lista.length) {
+      tbodyRespostas.innerHTML = `<tr><td colspan="4" style="opacity:.8;">Nenhuma resposta nesta lista ainda.</td></tr>`;
+      return;
+    }
+
+    tbodyRespostas.innerHTML = lista.map((r) => {
+      const acao = tabAtual === "treino"
+        ? `<button type="button" class="btn-reenviar" data-reenviar="${escapeHtml(r.id)}">Reenviar</button>`
+        : `<span style="opacity:.7;font-size:12px;">—</span>`;
+      return `<tr>
+        <td><strong>${escapeHtml(r.nome || "—")}</strong></td>
+        <td>${escapeHtml(r.perfil || "—")}</td>
+        <td>${escapeHtml(formatDate(r.respondidoEm))}</td>
+        <td>${acao}</td>
+      </tr>`;
+    }).join("");
+  }
+
+  async function salvar(ativar) {
+    const titulo = normalize(tituloInput.value);
+    const texto = String(textoInput.value || "").trim();
+    if (!titulo) {
+      setMsg("Informe o título do termo.", "error");
+      tituloInput.focus();
+      return;
+    }
+    if (!texto) {
+      setMsg("Informe o texto do termo.", "error");
+      textoInput.focus();
+      return;
+    }
+
+    btnSalvarRascunho.disabled = true;
+    btnSalvarAtivar.disabled = true;
+    setMsg(ativar ? "Salvando e ativando..." : "Salvando rascunho...");
+
+    try {
+      await salvarTermo(db, fs, {
+        id: editId,
+        titulo,
+        texto,
+        ativo: Boolean(ativar),
+        criadoPor: usuario
+      });
+      setMsg(ativar ? "Termo salvo e ativado!" : "Rascunho salvo.", "success");
+      resetForm();
+      await loadTermos();
+    } catch (err) {
+      console.error(err);
+      setMsg(err?.message || "Erro ao salvar termo.", "error");
+    } finally {
+      btnSalvarRascunho.disabled = false;
+      btnSalvarAtivar.disabled = false;
+    }
+  }
+
+  btnSalvarRascunho.addEventListener("click", () => salvar(false));
+  btnSalvarAtivar.addEventListener("click", () => salvar(true));
+  btnCancelar.addEventListener("click", resetForm);
+
+  tabCiente.addEventListener("click", () => {
+    tabAtual = "ciente";
+    tabCiente.classList.add("is-active");
+    tabTreino.classList.remove("is-active");
+    renderRespostas();
+  });
+  tabTreino.addEventListener("click", () => {
+    tabAtual = "treino";
+    tabTreino.classList.add("is-active");
+    tabCiente.classList.remove("is-active");
+    renderRespostas();
+  });
+
+  tbodyTermos.addEventListener("click", async (e) => {
+    const editBtn = e.target.closest("[data-edit]");
+    const ativarBtn = e.target.closest("[data-ativar]");
+
+    if (editBtn) {
+      const id = editBtn.getAttribute("data-edit");
+      const item = CACHE_TERMOS.find((t) => t.id === id);
+      if (!item) return;
+      editId = item.id;
+      formTitle.textContent = "Editar Termo de Ciência";
+      tituloInput.value = item.titulo || "";
+      textoInput.value = item.texto || "";
+      btnCancelar.style.display = "";
+      tituloInput.focus();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
+    if (ativarBtn) {
+      const id = ativarBtn.getAttribute("data-ativar");
+      const item = CACHE_TERMOS.find((t) => t.id === id);
+      if (!item) return;
+      ativarBtn.disabled = true;
+      setMsg("Ativando termo...");
+      try {
+        await salvarTermo(db, fs, {
+          id: item.id,
+          titulo: item.titulo,
+          texto: item.texto,
+          ativo: true,
+          criadoPor: item.criadoPor || usuario
+        });
+        setMsg("Termo ativado. Usuários pendentes serão cobrados no próximo acesso.", "success");
+        await loadTermos();
+      } catch (err) {
+        console.error(err);
+        setMsg(err?.message || "Erro ao ativar.", "error");
+        ativarBtn.disabled = false;
+      }
+    }
+  });
+
+  tbodyRespostas.addEventListener("click", async (e) => {
+    const btn = e.target.closest("[data-reenviar]");
+    if (!btn) return;
+    const id = btn.getAttribute("data-reenviar");
+    if (!id) return;
+    if (!confirm("Reenviar o termo para este usuário? Ele precisará assinar novamente no próximo login.")) {
+      return;
+    }
+    btn.disabled = true;
+    try {
+      await marcarReenvio(db, fs, id);
+      setMsg("Termo reenviado. O usuário verá a cobrança no próximo acesso.", "success");
+      if (termoAtivoId) await loadRespostas(termoAtivoId);
+    } catch (err) {
+      console.error(err);
+      setMsg(err?.message || "Erro ao reenviar.", "error");
+      btn.disabled = false;
+    }
+  });
+
+  resetForm();
+  loadTermos().catch((err) => {
+    console.error(err);
+    setMsg("Erro ao carregar termos.", "error");
+  });
+</script>
+</body>
+</html>

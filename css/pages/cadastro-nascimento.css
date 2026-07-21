@@ -6,7 +6,7 @@
   display: none !important;
 }
 
-/* Overlay bloqueante de data de nascimento (menus) */
+/* Overlay bloqueante de data de nascimento (menus) — oculto por padrão */
 .birth-gate-overlay {
   position: fixed;
   inset: 0;
@@ -21,7 +21,8 @@
   -webkit-backdrop-filter: blur(6px);
 }
 
-.birth-gate-overlay.is-done {
+.birth-gate-overlay.is-done,
+.birth-gate-overlay[hidden] {
   display: none !important;
 }
 

@@ -5,6 +5,10 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 import {
   getFirestore,
+  collection,
+  getDocs,
+  query,
+  where,
   doc,
   getDoc,
   setDoc,
@@ -12,14 +16,12 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 import {
-  parseDataNascimento,
-  salvarDataNascimento,
-  marcarNascimentoNaSessao,
-  buscarDataNascimentoSalva,
   isAniversarioNoMes,
   mensagemAniversario,
   nomeMes
-} from "../aniversario.js?v=20260720a";
+} from "../aniversario.js?v=20260721a";
+
+import { aplicarGatesPortal } from "../portal-gates.js?v=20260721a";
 
 import {
   obterUsuarioLogado,
@@ -80,9 +82,27 @@ export async function initAlexShell(opts = {}) {
   const paths = resolverPaths(base);
   injetarShellHtml(paths, opts.active || "visao", user, opts.title);
   bindShellEvents(paths);
-  await aplicarGateNascimento(user);
 
-  return { user, db: getDb(), paths };
+  const db = getDb();
+  const fs = { collection, getDocs, query, where, doc, getDoc, setDoc, serverTimestamp };
+  const iso = await aplicarGatesPortal({
+    db,
+    fs,
+    nome: user.nome,
+    perfil: user.perfil || PERFIL_TREINAMENTO_PRODUTOS,
+    overlay: document.getElementById("birthGateOverlay"),
+    userEl: document.getElementById("birthGateUser"),
+    formEl: document.getElementById("birthGateForm"),
+    inputEl: document.getElementById("birthGateInput"),
+    saveBtn: document.getElementById("birthGateSave"),
+    msgEl: document.getElementById("birthGateMsg"),
+    onLiberado: (data) => {
+      if (data) mostrarBannerAniversario(user.nome, data);
+    }
+  });
+  if (iso) mostrarBannerAniversario(user.nome, iso);
+
+  return { user, db, paths };
 }
 
 function resolverPaths(base) {
@@ -149,7 +169,7 @@ function injetarShellHtml(paths, activeId, user, title) {
   });
 
   const overlay = `
-  <div id="birthGateOverlay" class="birth-gate-overlay" aria-modal="true" role="dialog">
+  <div id="birthGateOverlay" class="birth-gate-overlay is-done" hidden aria-modal="true" role="dialog">
     <div class="login-card nasc-card birth-gate-card">
       <div class="logo-box">GP</div>
       <h2>Complete seu perfil</h2>
@@ -228,8 +248,20 @@ function injetarShellHtml(paths, activeId, user, title) {
   });
 
   document.body.classList.add("theme-user", "portal-page", "alex-portal");
-  if (!document.body.classList.contains("gate-pending")) {
-    document.body.classList.add("gate-pending");
+  document.body.classList.remove("gate-pending");
+
+  // CSS do termo (se a página ainda não carregou)
+  if (!document.querySelector('link[href*="termo-ciencia.css"]')) {
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = `${paths.cssRoot}css/pages/termo-ciencia.css?v=20260721a`;
+    document.head.appendChild(link);
+  }
+  if (!document.querySelector('link[href*="cadastro-nascimento.css"]')) {
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = `${paths.cssRoot}css/pages/cadastro-nascimento.css?v=20260721a`;
+    document.head.appendChild(link);
   }
 
   const headerDate = document.getElementById("headerDate");
@@ -262,80 +294,6 @@ function bindShellEvents(paths) {
 
   document.getElementById("btnLogoutSide")?.addEventListener("click", logout);
   document.getElementById("btnLogoutMobile")?.addEventListener("click", logout);
-}
-
-async function aplicarGateNascimento(user) {
-  const db = getDb();
-  const fs = { doc, getDoc, setDoc, serverTimestamp };
-  const birthGateOverlay = document.getElementById("birthGateOverlay");
-  const birthGateUser = document.getElementById("birthGateUser");
-  const birthGateForm = document.getElementById("birthGateForm");
-  const birthGateInput = document.getElementById("birthGateInput");
-  const birthGateSave = document.getElementById("birthGateSave");
-  const birthGateMsg = document.getElementById("birthGateMsg");
-
-  function setBirthMsg(text, ok = false) {
-    if (!birthGateMsg) return;
-    birthGateMsg.textContent = text || "";
-    birthGateMsg.classList.toggle("ok", Boolean(ok));
-  }
-
-  function liberarMenu(iso) {
-    if (iso) marcarNascimentoNaSessao(iso);
-    birthGateOverlay?.classList.add("is-done");
-    document.body.classList.remove("gate-pending");
-  }
-
-  function mascararData(valor) {
-    const digits = String(valor || "").replace(/\D/g, "").slice(0, 8);
-    if (digits.length <= 2) return digits;
-    if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
-    return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
-  }
-
-  birthGateInput?.addEventListener("input", () => {
-    birthGateInput.value = mascararData(birthGateInput.value);
-    setBirthMsg("");
-  });
-
-  birthGateForm?.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const parsed = parseDataNascimento(birthGateInput?.value);
-    if (!parsed) {
-      setBirthMsg("Informe uma data válida no formato DD/MM/AAAA.");
-      return;
-    }
-    if (birthGateSave) birthGateSave.disabled = true;
-    setBirthMsg("Salvando...", true);
-    try {
-      await salvarDataNascimento(db, fs, user.nome, parsed, {
-        perfil: PERFIL_TREINAMENTO_PRODUTOS
-      });
-      liberarMenu(parsed.dataNascimento);
-      setBirthMsg("Salvo!", true);
-      mostrarBannerAniversario(user.nome, parsed.dataNascimento);
-    } catch (err) {
-      console.error(err);
-      setBirthMsg(err?.message || "Não foi possível salvar.");
-      if (birthGateSave) birthGateSave.disabled = false;
-    }
-  });
-
-  try {
-    const dataConfirmada = await buscarDataNascimentoSalva(db, fs, user.nome);
-    if (dataConfirmada) {
-      liberarMenu(dataConfirmada);
-      mostrarBannerAniversario(user.nome, dataConfirmada);
-    } else {
-      if (birthGateUser) birthGateUser.textContent = user.nome;
-      birthGateOverlay?.classList.remove("is-done");
-      document.body.classList.add("gate-pending");
-    }
-  } catch (err) {
-    console.error(err);
-    if (birthGateUser) birthGateUser.textContent = user.nome;
-    setBirthMsg("Não foi possível verificar no banco.");
-  }
 }
 
 function mostrarBannerAniversario(nome, iso) {
