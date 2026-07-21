@@ -9,10 +9,11 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/bundle-portal-user.css?v=20260720f" />
-  <link rel="stylesheet" href="../css/pages/cadastro-nascimento.css?v=20260720f" />
+  <link rel="stylesheet" href="../css/pages/cadastro-nascimento.css?v=20260721a" />
+  <link rel="stylesheet" href="../css/pages/termo-ciencia.css?v=20260721a" />
   <link rel="stylesheet" href="../css/pages/alex-portal.css?v=20260720f" />
 </head>
-<body class="theme-user portal-page gate-pending">
+<body class="theme-user portal-page">
   <!-- Alex e Euclecio permanecem aqui; demais voltam ao menu normal -->
   <script>
   (function () {
@@ -46,7 +47,7 @@
   })();
   </script>
 
-  <div id="birthGateOverlay" class="birth-gate-overlay" aria-modal="true" role="dialog">
+  <div id="birthGateOverlay" class="birth-gate-overlay is-done" hidden aria-modal="true" role="dialog">
     <div class="login-card nasc-card birth-gate-card">
       <div class="logo-box">GP</div>
       <h2>Complete seu perfil</h2>
@@ -183,12 +184,7 @@
     getFirestore, collection, getDocs, query, where,
     doc, getDoc, setDoc, serverTimestamp
   } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
-  import {
-    parseDataNascimento,
-    salvarDataNascimento,
-    marcarNascimentoNaSessao,
-    buscarDataNascimentoSalva
-  } from "../js/aniversario.js?v=20260720f";
+  import { aplicarGatesPortal } from "../js/portal-gates.js?v=20260721a";
 
   const firebaseConfig = {
     apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
@@ -201,7 +197,7 @@
 
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
-  const fs = { doc, getDoc, setDoc, serverTimestamp };
+  const fs = { collection, getDocs, query, where, doc, getDoc, setDoc, serverTimestamp };
 
   function safeParse(raw){ try { return JSON.parse(raw); } catch { return null; } }
   function slug(s){
@@ -240,46 +236,18 @@
   userAvatar.textContent = userNome.charAt(0).toUpperCase();
   headerDate.textContent = new Date().toLocaleDateString("pt-BR", { weekday:"long", day:"numeric", month:"long" });
 
-  // Gate nascimento
-  const birthGateOverlay = document.getElementById("birthGateOverlay");
-  function liberarMenu(iso){
-    if (iso) marcarNascimentoNaSessao(iso);
-    birthGateOverlay?.classList.add("is-done");
-    document.body.classList.remove("gate-pending");
-  }
-  function mascararData(valor){
-    const digits = String(valor || "").replace(/\D/g, "").slice(0, 8);
-    if (digits.length <= 2) return digits;
-    if (digits.length <= 4) return `${digits.slice(0,2)}/${digits.slice(2)}`;
-    return `${digits.slice(0,2)}/${digits.slice(2,4)}/${digits.slice(4)}`;
-  }
-  birthGateUser.textContent = userNome;
-  birthGateInput?.addEventListener("input", () => {
-    birthGateInput.value = mascararData(birthGateInput.value);
+  await aplicarGatesPortal({
+    db,
+    fs,
+    nome: userNome,
+    perfil: "treinamento_produtos",
+    overlay: document.getElementById("birthGateOverlay"),
+    userEl: document.getElementById("birthGateUser"),
+    formEl: document.getElementById("birthGateForm"),
+    inputEl: document.getElementById("birthGateInput"),
+    saveBtn: document.getElementById("birthGateSave"),
+    msgEl: document.getElementById("birthGateMsg")
   });
-  birthGateForm?.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const parsed = parseDataNascimento(birthGateInput.value);
-    if (!parsed) { birthGateMsg.textContent = "Informe uma data válida (DD/MM/AAAA)."; return; }
-    birthGateSave.disabled = true;
-    try {
-      await salvarDataNascimento(db, fs, userNome, parsed, { perfil: "treinamento_produtos" });
-      liberarMenu(parsed.dataNascimento);
-    } catch (err) {
-      birthGateMsg.textContent = err?.message || "Erro ao salvar.";
-      birthGateSave.disabled = false;
-    }
-  });
-  try {
-    const dn = await buscarDataNascimentoSalva(db, fs, userNome);
-    if (dn) liberarMenu(dn);
-    else {
-      birthGateOverlay?.classList.remove("is-done");
-      document.body.classList.add("gate-pending");
-    }
-  } catch {
-    document.body.classList.add("gate-pending");
-  }
 
   // Sidebar mobile
   const sidebar = document.getElementById("sidebar");

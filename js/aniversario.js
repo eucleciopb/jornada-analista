@@ -102,6 +102,20 @@ export function sessaoTemNascimentoOk() {
   return false;
 }
 
+/**
+ * Resolução rápida (sessão ou cache local) — evita mostrar o formulário
+ * enquanto a confirmação no Firestore ainda não voltou.
+ */
+export function obterNascimentoRapido(nome) {
+  if (sessaoTemNascimentoOk()) {
+    const s = getSession();
+    return s?.dataNascimento || null;
+  }
+  const local = obterNascimentoLocal(nome);
+  if (temDataNascimento(local)) return local.dataNascimento;
+  return null;
+}
+
 export function destinoMenuPorPerfil(perfil) {
   const p = String(perfil || "").toLowerCase();
   if (p === "admin") return "menuadm.html";

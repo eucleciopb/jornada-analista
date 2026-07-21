@@ -83,8 +83,9 @@ import {
   parseDataNascimento,
   salvarDataNascimento,
   marcarNascimentoNaSessao,
-  buscarDataNascimentoSalva
-} from "./js/aniversario.js?v=20260715b";
+  buscarDataNascimentoSalva,
+  obterNascimentoRapido
+} from "./js/aniversario.js?v=20260721a";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
@@ -234,6 +235,14 @@ async function login(){
   localStorage.setItem("user_session", JSON.stringify(session));
 
   try{
+    const rapido = obterNascimentoRapido(usuario);
+    if(rapido){
+      marcarNascimentoNaSessao(rapido);
+      buscarDataNascimentoSalva(db, fs, usuario).catch(() => {});
+      irParaMenu();
+      return;
+    }
+
     const jaTem = await buscarDataNascimentoSalva(db, fs, usuario);
     if(jaTem){
       marcarNascimentoNaSessao(jaTem);
