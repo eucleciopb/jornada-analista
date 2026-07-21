@@ -32,7 +32,7 @@
     <div class="row-between">
       <div>
         <h3 style="margin:0 0 6px">Escolha o grupo de demandas</h3>
-        <div class="hint">As entregas ficam separadas para não misturar cobertura de férias com a rotina diária.</div>
+        <div class="hint">As entregas ficam em blocos separados: Pedro Férias, Demandas Diárias e RPS Diretoria.</div>
       </div>
       <button class="btn btn-ghost" id="btnReload" type="button">Atualizar</button>
     </div>
@@ -73,6 +73,20 @@
           <span class="pill" id="pillDiarias">Carregando...</span>
         </div>
         <div class="progress-bar" id="barDiarias"><span style="width:0%"></span></div>
+      </a>
+
+      <a class="hub-card diretoria" id="cardDiretoria" href="./painel-entregas-adm.html?grupo=rps_diretoria">
+        <div class="hub-ico">🏢</div>
+        <h3>RPS Diretoria</h3>
+        <p>Demandas e acompanhamentos da RPS Diretoria — bloco separado dos demais.</p>
+        <div class="hub-meta">
+          <div>
+            <div class="hub-pct" id="pctDiretoria">0%</div>
+            <div class="hub-stats" id="statsDiretoria">0 entregas</div>
+          </div>
+          <span class="pill" id="pillDiretoria">Carregando...</span>
+        </div>
+        <div class="progress-bar" id="barDiretoria"><span style="width:0%"></span></div>
       </a>
     </div>
   </section>
@@ -117,6 +131,12 @@
       stats: document.getElementById("statsDiarias"),
       pill: document.getElementById("pillDiarias"),
       bar: document.getElementById("barDiarias")
+    },
+    rps_diretoria: {
+      pct: document.getElementById("pctDiretoria"),
+      stats: document.getElementById("statsDiretoria"),
+      pill: document.getElementById("pillDiretoria"),
+      bar: document.getElementById("barDiretoria")
     }
   };
 
@@ -163,6 +183,7 @@
   function resolveGrupo(e) {
     const g = String(e.grupo || "").trim();
     if (g === "demandas_diarias") return "demandas_diarias";
+    if (g === "rps_diretoria") return "rps_diretoria";
     return "pedro_ferias";
   }
 
@@ -223,9 +244,11 @@
 
       const pedro = all.filter(e => resolveGrupo(e) === "pedro_ferias");
       const diarias = all.filter(e => resolveGrupo(e) === "demandas_diarias");
+      const diretoria = all.filter(e => resolveGrupo(e) === "rps_diretoria");
 
       paintGrupo("pedro_ferias", pedro);
       paintGrupo("demandas_diarias", diarias);
+      paintGrupo("rps_diretoria", diretoria);
       setMsg("");
     } catch (err) {
       console.error(err);
@@ -233,19 +256,21 @@
     }
   }
 
+  function syncCardLinks(periodo) {
+    document.getElementById("cardPedro").href = `./painel-entregas-adm.html?grupo=pedro_ferias&periodo=${periodo}`;
+    document.getElementById("cardDiarias").href = `./painel-entregas-adm.html?grupo=demandas_diarias&periodo=${periodo}`;
+    document.getElementById("cardDiretoria").href = `./painel-entregas-adm.html?grupo=rps_diretoria&periodo=${periodo}`;
+  }
+
   document.getElementById("btnReload").onclick = loadData;
   periodoPicker.addEventListener("change", () => {
-    const p = currentPeriodo();
-    document.getElementById("cardPedro").href = `./painel-entregas-adm.html?grupo=pedro_ferias&periodo=${p}`;
-    document.getElementById("cardDiarias").href = `./painel-entregas-adm.html?grupo=demandas_diarias&periodo=${p}`;
+    syncCardLinks(currentPeriodo());
     loadData();
   });
 
   const now = new Date();
   periodoPicker.value = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}`;
-  const p0 = currentPeriodo();
-  document.getElementById("cardPedro").href = `./painel-entregas-adm.html?grupo=pedro_ferias&periodo=${p0}`;
-  document.getElementById("cardDiarias").href = `./painel-entregas-adm.html?grupo=demandas_diarias&periodo=${p0}`;
+  syncCardLinks(currentPeriodo());
   loadData();
 </script>
 </body>

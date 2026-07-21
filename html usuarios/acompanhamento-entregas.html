@@ -49,6 +49,7 @@
     <div class="grupo-tabs" id="grupoTabs">
       <button type="button" class="grupo-tab active" data-grupo="pedro_ferias">Pedro — Férias</button>
       <button type="button" class="grupo-tab" data-grupo="demandas_diarias">Demandas Diárias</button>
+      <button type="button" class="grupo-tab" data-grupo="rps_diretoria">RPS Diretoria</button>
     </div>
 
     <div class="overall-card">
@@ -147,12 +148,18 @@ const PATH_MENU = resolveMenuPathAlex() ? "../html menus/menu_alex.html" : "../h
     demandas_diarias: {
       titulo: "Demandas Diárias",
       hint: "Rotina do dia a dia atribuída a você."
+    },
+    rps_diretoria: {
+      titulo: "RPS Diretoria",
+      hint: "Demandas da RPS Diretoria atribuídas a você."
     }
   };
 
+  const GRUPOS_VALIDOS = ["pedro_ferias", "demandas_diarias", "rps_diretoria"];
+
   function resolveGrupo(e) {
     const g = String(e?.grupo || "").trim();
-    if (g === "demandas_diarias") return "demandas_diarias";
+    if (GRUPOS_VALIDOS.includes(g)) return g;
     return "pedro_ferias";
   }
 
