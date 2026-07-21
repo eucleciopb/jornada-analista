@@ -17,7 +17,7 @@
 <header class="topbar">
   <div class="topbar-inner">
     <div>
-      <h2>Painel de Entregas</h2>
+      <h2>Painel de Entregas — Diretoria</h2>
       <div id="userInfo" class="hint"></div>
     </div>
     <div style="display:flex;gap:10px;flex-wrap:wrap">
@@ -31,8 +31,8 @@
   <section class="card">
     <div class="row-between">
       <div>
-        <h3 style="margin:0 0 6px">Blocos de demandas</h3>
-        <div class="hint">Crie um bloco e abra para lançar as entregas. Cada bloco fica separado com seu próprio %.</div>
+        <h3 style="margin:0 0 6px">Seu painel de entregas</h3>
+        <div class="hint">Painel exclusivo da diretoria. Crie blocos novos e abra para lançar entregas — separado do painel do time admin.</div>
       </div>
       <div style="display:flex;gap:10px;flex-wrap:wrap">
         <button class="btn btn-primary" id="btnNovoBloco" type="button">+ Criar bloco</button>
@@ -112,14 +112,9 @@
   const PATH_INDEX = "../index3.html";
   const PATH_MENU = "../html%20menus/menudiretor.html";
   const COLLECTION = "apuracoes_treinamentos";
-  const TIPO_ENTREGA = "entrega_gestor";
-  const TIPO_BLOCO = "entrega_bloco";
-
-  const BLOCOS_FIXOS = [
-    { key: "pedro_ferias", titulo: "Demandas do Pedro — Férias", descricao: "Cobertura enquanto o Pedro está de férias.", ico: "🏖️", cls: "" },
-    { key: "demandas_diarias", titulo: "Demandas Diárias", descricao: "Rotina do dia a dia.", ico: "📅", cls: "diarias" },
-    { key: "rps_diretoria", titulo: "RPS Diretoria", descricao: "Demandas da RPS Diretoria.", ico: "🏢", cls: "diretoria" }
-  ];
+  const TIPO_ENTREGA = "entrega_diretor";
+  const TIPO_BLOCO = "entrega_bloco_diretor";
+  const ESCOPO = "diretor";
 
   function safeParse(raw) { try { return JSON.parse(raw); } catch { return null; } }
   function getSession() {
@@ -196,9 +191,7 @@
   }
 
   function resolveGrupo(e) {
-    const g = String(e.grupo || "").trim();
-    if (g) return g;
-    return "pedro_ferias";
+    return String(e.grupo || "").trim();
   }
 
   function deriveStatus(e) {
@@ -222,7 +215,7 @@
   }
 
   function allBlocos() {
-    const custom = CUSTOM_BLOCOS.map(b => ({
+    return CUSTOM_BLOCOS.map(b => ({
       key: b.blocoKey,
       titulo: b.titulo,
       descricao: b.descricao || "Bloco criado pela diretoria.",
@@ -230,8 +223,6 @@
       cls: "custom",
       custom: true
     }));
-    const fixedKeys = new Set(BLOCOS_FIXOS.map(b => b.key));
-    return [...BLOCOS_FIXOS, ...custom.filter(b => !fixedKeys.has(b.key))];
   }
 
   function cardHtml(bloco, stats) {
@@ -278,7 +269,11 @@
     const blocos = allBlocos();
 
     if (!blocos.length) {
-      hubGrid.innerHTML = `<div class="hint">Nenhum bloco ainda. Clique em "+ Criar bloco".</div>`;
+      hubGrid.innerHTML = `
+        <div class="aniversariantes-empty" style="grid-column:1/-1;padding:28px;text-align:center;opacity:.85">
+          <strong style="display:block;margin-bottom:6px;font-size:16px">Painel novo — ainda sem blocos</strong>
+          <p style="margin:0">Clique em <b>+ Criar bloco</b> para começar a lançar demandas da diretoria.</p>
+        </div>`;
       return;
     }
 
@@ -330,13 +325,14 @@
     const existentes = new Set(allBlocos().map(b => b.key));
     if (existentes.has(key)) key = `${key}_${makeId().slice(0, 8)}`;
 
-    const id = `bloco_${key}`;
+    const id = `bloco_dir_${key}`;
     btnSaveModal.disabled = true;
     setModalMsg("Salvando…");
 
     try {
       await setDoc(doc(db, COLLECTION, id), {
         tipo: TIPO_BLOCO,
+        escopo: ESCOPO,
         blocoKey: key,
         titulo,
         descricao: (mDescricao.value || "").trim(),
