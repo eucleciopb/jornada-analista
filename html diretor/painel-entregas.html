@@ -157,9 +157,12 @@
           <label for="mDescricao">Descrição</label>
           <textarea id="mDescricao" class="field" rows="3" placeholder="Detalhes do que precisa ser entregue..."></textarea>
         </div>
-        <div>
+        <div class="full">
           <label for="mResponsavel">Responsável *</label>
-          <select id="mResponsavel" class="field"></select>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <select id="mResponsavel" class="field" style="flex:1;min-width:180px"></select>
+            <button type="button" class="btn-mini" id="btnAddResp" style="white-space:nowrap">+ Incluir responsável</button>
+          </div>
         </div>
         <div>
           <label for="mPrazo">Prazo</label>
@@ -253,11 +256,9 @@
     window.location.href = PATH_HUB;
   }
 
-  const TEAM = [
-    "Alex", "Andre", "Bruna", "Daniel", "Elaine", "Emerson", "Euclecio",
-    "Felipe", "Joice", "Maiello", "Marcio", "Michel", "Muller", "Pedro",
-    "Robert", "Rodrigo", "Rosilene", "Tenório", "Victor"
-  ].sort((a, b) => a.localeCompare(b, "pt-BR"));
+  const TEAM_BASE = ["Paulo", "Ze", "Pedro", "Molina", "Wesley", "Euclecio", "Buco"];
+  const TIPO_RESP = "entrega_resp_diretor";
+  let TEAM = [...TEAM_BASE];
 
   function safeParse(raw) { try { return JSON.parse(raw); } catch { return null; } }
   function getCurrentUserName() {
@@ -463,9 +464,63 @@
   }
 
   function populateSelects() {
-    const opts = TEAM.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join("");
+    const nomes = [...new Set(TEAM.filter(Boolean))]
+      .sort((a, b) => a.localeCompare(b, "pt-BR"));
+    const opts = nomes.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join("");
     mResponsavel.innerHTML = `<option value="">Selecione...</option>${opts}`;
     respFiltro.innerHTML = `<option value="">Todos</option>${opts}`;
+  }
+
+  async function loadResponsaveis() {
+    TEAM = [...TEAM_BASE];
+    try {
+      const snap = await getDocs(query(collection(db, COLLECTION), where("tipo", "==", TIPO_RESP)));
+      snap.forEach(d => {
+        const nome = String((d.data() || {}).nome || "").trim();
+        if (nome) TEAM.push(nome);
+      });
+    } catch (err) {
+      console.warn("Falha ao carregar responsáveis extras", err);
+    }
+    populateSelects();
+  }
+
+  async function incluirResponsavel() {
+    const nome = (prompt("Nome do novo responsável:") || "").trim();
+    if (!nome) return;
+    if (TEAM.some(t => t.toLowerCase() === nome.toLowerCase())) {
+      setModalMsg("Esse responsável já está na lista.", "error");
+      mResponsavel.value = TEAM.find(t => t.toLowerCase() === nome.toLowerCase()) || nome;
+      return;
+    }
+
+    const id = `resp_dir_${slugify(nome)}`;
+    try {
+      await setDoc(doc(db, COLLECTION, id), {
+        tipo: TIPO_RESP,
+        escopo: ESCOPO,
+        nome,
+        createdBy: admin,
+        createdAt: serverTimestamp()
+      }, { merge: true });
+      TEAM.push(nome);
+      populateSelects();
+      mResponsavel.value = nome;
+      setModalMsg("Responsável incluído.", "success");
+    } catch (err) {
+      console.error(err);
+      setModalMsg(err?.message || "Erro ao incluir responsável.", "error");
+    }
+  }
+
+  function slugify(s) {
+    return String(s || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_|_$/g, "")
+      .slice(0, 40) || `r_${Date.now()}`;
   }
 
   function filteredEntregas() {
@@ -628,6 +683,7 @@
   async function loadData() {
     setMsg("Carregando entregas…");
     try {
+      await loadResponsaveis();
       await loadBlocos();
       const snap = await getDocs(query(collection(db, COLLECTION), where("tipo", "==", TIPO)));
       const periodo = currentPeriodo();

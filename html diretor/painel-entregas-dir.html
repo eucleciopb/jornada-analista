@@ -97,6 +97,8 @@
     where,
     doc,
     setDoc,
+    deleteDoc,
+    writeBatch,
     serverTimestamp
   } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
@@ -261,19 +263,22 @@
     }
 
     return `
-      <a class="hub-card ${escapeHtml(bloco.cls || "")}" href="${href}">
-        <div class="hub-ico">${bloco.ico || "📦"}</div>
-        <h3>${escapeHtml(bloco.titulo)}</h3>
-        <p>${escapeHtml(bloco.descricao || "")}</p>
-        <div class="hub-meta">
-          <div>
-            <div class="hub-pct">${stats.avgPct}%</div>
-            <div class="hub-stats">${stats.total} entrega(s) · ${stats.done} concluída(s)</div>
+      <div class="hub-card ${escapeHtml(bloco.cls || "")}" style="position:relative">
+        <button type="button" class="btn-mini danger btn-del-bloco" data-del-bloco="${escapeHtml(bloco.key)}" title="Excluir bloco" style="position:absolute;top:12px;right:12px;z-index:2">Excluir</button>
+        <a href="${href}" style="display:block;text-decoration:none;color:inherit">
+          <div class="hub-ico">${bloco.ico || "📦"}</div>
+          <h3>${escapeHtml(bloco.titulo)}</h3>
+          <p>${escapeHtml(bloco.descricao || "")}</p>
+          <div class="hub-meta">
+            <div>
+              <div class="hub-pct">${stats.avgPct}%</div>
+              <div class="hub-stats">${stats.total} entrega(s) · ${stats.done} concluída(s)</div>
+            </div>
+            <span class="${pillClass}">${pillText}</span>
           </div>
-          <span class="${pillClass}">${pillText}</span>
-        </div>
-        <div class="${barClass}"><span style="width:${stats.avgPct}%"></span></div>
-      </a>
+          <div class="${barClass}"><span style="width:${stats.avgPct}%"></span></div>
+        </a>
+      </div>
     `;
   }
 
@@ -295,6 +300,39 @@
       const list = doPeriodo.filter(e => resolveGrupo(e) === b.key);
       return cardHtml(b, computeStats(list));
     }).join("");
+
+    hubGrid.querySelectorAll("[data-del-bloco]").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        excluirBloco(btn.dataset.delBloco);
+      });
+    });
+  }
+
+  async function excluirBloco(blocoKey) {
+    const bloco = CUSTOM_BLOCOS.find(b => b.blocoKey === blocoKey);
+    if (!bloco) return;
+    const qtd = ENTREGAS.filter(e => resolveGrupo(e) === blocoKey).length;
+    const msgConfirm = qtd
+      ? `Excluir o bloco "${bloco.titulo}" e as ${qtd} entrega(s) dele?`
+      : `Excluir o bloco "${bloco.titulo}"?`;
+    if (!confirm(msgConfirm)) return;
+
+    setMsg("Excluindo bloco…");
+    try {
+      const batch = writeBatch(db);
+      if (bloco.id) batch.delete(doc(db, COLLECTION, bloco.id));
+      ENTREGAS.filter(e => resolveGrupo(e) === blocoKey).forEach(e => {
+        if (e.id) batch.delete(doc(db, COLLECTION, e.id));
+      });
+      await batch.commit();
+      setMsg("Bloco excluído.", "success");
+      await loadData();
+    } catch (err) {
+      console.error(err);
+      setMsg(err?.message || "Erro ao excluir bloco.", "error");
+    }
   }
 
   async function loadData() {
