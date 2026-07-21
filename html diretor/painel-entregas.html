@@ -3,13 +3,16 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Painel de Entregas | Admin</title>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>Painel de Entregas — Diretoria</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../css/bundle-admin.css" />
-  <link rel="stylesheet" href="../css/pages/admin-painel-entregas.css" />
-  <link rel="stylesheet" href="../css/pages/admin-painel-entregas-hub.css" />
+  <link rel="stylesheet" href="../css/bundle-admin.css?v=20260721b" />
+  <link rel="stylesheet" href="../css/pages/admin-painel-entregas.css?v=20260721b" />
+  <link rel="stylesheet" href="../css/pages/admin-painel-entregas-hub.css?v=20260721b" />
 </head>
 
 <body class="theme-admin app-shell page-entregas">
@@ -41,11 +44,7 @@
       </div>
     </div>
 
-    <div class="grupo-tabs" id="grupoTabs">
-      <button type="button" class="grupo-tab" data-grupo="pedro_ferias">Demandas do Pedro — Férias</button>
-      <button type="button" class="grupo-tab" data-grupo="demandas_diarias">Demandas Diárias</button>
-      <button type="button" class="grupo-tab" data-grupo="rps_diretoria">RPS Diretoria</button>
-    </div>
+    <div class="grupo-tabs" id="grupoTabs"></div>
 
     <div class="filters">
       <div id="gestorFiltroWrap">
@@ -154,9 +153,12 @@
           <label for="mDescricao">Descrição</label>
           <textarea id="mDescricao" class="field" rows="3" placeholder="Detalhes do que precisa ser entregue..."></textarea>
         </div>
-        <div>
+        <div class="full">
           <label for="mResponsavel">Responsável *</label>
-          <select id="mResponsavel" class="field"></select>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <select id="mResponsavel" class="field" style="flex:1;min-width:180px"></select>
+            <button type="button" class="btn-mini" id="btnAddResp" style="white-space:nowrap">+ Incluir responsável</button>
+          </div>
         </div>
         <div>
           <label for="mPrazo">Prazo</label>
@@ -180,11 +182,7 @@
         </div>
         <div>
           <label for="mGrupo">Grupo</label>
-          <select id="mGrupo" class="field">
-            <option value="pedro_ferias">Demandas do Pedro — Férias</option>
-            <option value="demandas_diarias">Demandas Diárias</option>
-            <option value="rps_diretoria">RPS Diretoria</option>
-          </select>
+          <select id="mGrupo" class="field"></select>
         </div>
         <div>
           <label for="mCategoria">Categoria</label>
@@ -232,50 +230,31 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  const PATH_INDEX = "../index2.html";
-  const PATH_MENUADM = "../html%20menus/menuadm.html";
-  const PATH_HUB = "./painel-entregas-hub-adm.html";
+  const PATH_INDEX = "../index3.html";
+  const PATH_MENU = "../html%20menus/menudiretor.html";
+  const PATH_HUB = "./painel-entregas-dir.html";
   // Usa a mesma coleção liberada nas Rules (padrão do portal)
   const COLLECTION = "apuracoes_treinamentos";
-  const TIPO = "entrega_gestor";
+  const TIPO = "entrega_diretor";
+  const TIPO_BLOCO = "entrega_bloco_diretor";
+  const ESCOPO = "diretor";
 
-  const GRUPO_META = {
-    pedro_ferias: {
-      titulo: "Demandas do Pedro — Férias",
-      hint: "Cobertura das entregas enquanto o Pedro está de férias. O que já foi lançado fica neste grupo.",
-      gestorDefault: "Pedro"
-    },
-    demandas_diarias: {
-      titulo: "Demandas Diárias",
-      hint: "Rotina do dia a dia — separada da cobertura de férias.",
-      gestorDefault: ""
-    },
-    rps_diretoria: {
-      titulo: "RPS Diretoria",
-      hint: "Demandas e acompanhamentos da RPS Diretoria.",
-      gestorDefault: ""
-    }
-  };
-
-  const GRUPOS_VALIDOS = ["pedro_ferias", "demandas_diarias", "rps_diretoria"];
+  const GRUPO_META = {};
+  let GRUPOS_VALIDOS = [];
 
   function resolveGrupo(e) {
-    const g = String(e?.grupo || "").trim();
-    if (GRUPOS_VALIDOS.includes(g)) return g;
-    return "pedro_ferias";
+    return String(e?.grupo || "").trim();
   }
 
   const params = new URLSearchParams(window.location.search);
   let CURRENT_GRUPO = params.get("grupo") || "";
-  if (!GRUPOS_VALIDOS.includes(CURRENT_GRUPO)) {
+  if (!CURRENT_GRUPO) {
     window.location.href = PATH_HUB;
   }
 
-  const TEAM = [
-    "Alex", "Andre", "Bruna", "Daniel", "Elaine", "Emerson", "Euclecio",
-    "Felipe", "Joice", "Maiello", "Marcio", "Michel", "Muller", "Pedro",
-    "Robert", "Rodrigo", "Rosilene", "Tenório", "Victor"
-  ].sort((a, b) => a.localeCompare(b, "pt-BR"));
+  const TEAM_BASE = ["Paulo", "Ze", "Pedro", "Molina", "Wesley", "Euclecio", "Buco"];
+  const TIPO_RESP = "entrega_resp_diretor";
+  let TEAM = [...TEAM_BASE];
 
   function safeParse(raw) { try { return JSON.parse(raw); } catch { return null; } }
   function getCurrentUserName() {
@@ -287,12 +266,22 @@
     return (localStorage.getItem("usuarioLogado") || "").trim();
   }
 
-  const admin = getCurrentUserName();
-  if (!admin) window.location.href = PATH_INDEX;
-  document.getElementById("userInfo").textContent = `Admin: ${admin}`;
+  function getSession() {
+    const s = safeParse(localStorage.getItem("user_session"));
+    if (s?.nome && s.perfil === "diretor") return s;
+    return null;
+  }
+
+  const session = getSession();
+  if (!session) {
+    localStorage.clear();
+    window.location.href = PATH_INDEX;
+  }
+  const admin = session.nome;
+  document.getElementById("userInfo").textContent = `Diretor: ${admin}`;
 
   document.getElementById("btnHub").onclick = () => window.location.href = PATH_HUB;
-  document.getElementById("btnMenu").onclick = () => window.location.href = PATH_MENUADM;
+  document.getElementById("btnMenu").onclick = () => window.location.href = PATH_MENU;
   document.getElementById("btnLogout").onclick = () => {
     localStorage.removeItem("user_session");
     localStorage.removeItem("usuarioLogado");
@@ -344,17 +333,44 @@
   let editingId = null;
   let preselectResp = "";
 
+  function metaOf(grupo) {
+    if (GRUPO_META[grupo]) return GRUPO_META[grupo];
+    return {
+      titulo: grupo || "Bloco",
+      hint: "Bloco de demandas da diretoria.",
+      gestorDefault: ""
+    };
+  }
+
+  function rebuildGrupoTabs() {
+    grupoTabs.innerHTML = GRUPOS_VALIDOS.map(key => {
+      const titulo = metaOf(key).titulo;
+      const active = key === CURRENT_GRUPO ? " active" : "";
+      return `<button type="button" class="grupo-tab${active}" data-grupo="${escapeHtml(key)}">${escapeHtml(titulo)}</button>`;
+    }).join("");
+
+    grupoTabs.querySelectorAll(".grupo-tab").forEach(btn => {
+      btn.addEventListener("click", () => setGrupo(btn.dataset.grupo));
+    });
+
+    mGrupo.innerHTML = GRUPOS_VALIDOS.map(key =>
+      `<option value="${escapeHtml(key)}">${escapeHtml(metaOf(key).titulo)}</option>`
+    ).join("");
+    mGrupo.value = CURRENT_GRUPO;
+  }
+
   function applyGrupoUI() {
-    const meta = GRUPO_META[CURRENT_GRUPO] || GRUPO_META.pedro_ferias;
+    const meta = metaOf(CURRENT_GRUPO);
     grupoTitulo.textContent = meta.titulo;
     grupoHint.textContent = meta.hint;
     pageTitle.textContent = meta.titulo;
     const tableTitle = document.getElementById("tableTitle");
     if (tableTitle) tableTitle.textContent = `Entregas — ${meta.titulo}`;
-    gestorFiltroWrap.style.display = CURRENT_GRUPO === "pedro_ferias" ? "" : "none";
+    gestorFiltroWrap.style.display = "none";
     grupoTabs.querySelectorAll(".grupo-tab").forEach(btn => {
       btn.classList.toggle("active", btn.dataset.grupo === CURRENT_GRUPO);
     });
+    if (mGrupo && !isModalOpen()) mGrupo.value = CURRENT_GRUPO;
   }
 
   function setGrupo(grupo) {
@@ -365,10 +381,6 @@
     applyGrupoUI();
     renderMain();
   }
-
-  grupoTabs.querySelectorAll(".grupo-tab").forEach(btn => {
-    btn.addEventListener("click", () => setGrupo(btn.dataset.grupo));
-  });
 
   function setMsg(text, type = "info") {
     msg.textContent = text || "";
@@ -447,9 +459,65 @@
   }
 
   function populateSelects() {
-    const opts = TEAM.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join("");
+    const nomes = [...new Set(TEAM.filter(Boolean))]
+      .sort((a, b) => a.localeCompare(b, "pt-BR"));
+    const opts = nomes.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join("");
+    const keepResp = isModalOpen() ? (mResponsavel.value || "") : "";
     mResponsavel.innerHTML = `<option value="">Selecione...</option>${opts}`;
     respFiltro.innerHTML = `<option value="">Todos</option>${opts}`;
+    if (keepResp) mResponsavel.value = keepResp;
+  }
+
+  async function loadResponsaveis() {
+    TEAM = [...TEAM_BASE];
+    try {
+      const snap = await getDocs(query(collection(db, COLLECTION), where("tipo", "==", TIPO_RESP)));
+      snap.forEach(d => {
+        const nome = String((d.data() || {}).nome || "").trim();
+        if (nome) TEAM.push(nome);
+      });
+    } catch (err) {
+      console.warn("Falha ao carregar responsáveis extras", err);
+    }
+    populateSelects();
+  }
+
+  async function incluirResponsavel() {
+    const nome = (prompt("Nome do novo responsável:") || "").trim();
+    if (!nome) return;
+    if (TEAM.some(t => t.toLowerCase() === nome.toLowerCase())) {
+      setModalMsg("Esse responsável já está na lista.", "error");
+      mResponsavel.value = TEAM.find(t => t.toLowerCase() === nome.toLowerCase()) || nome;
+      return;
+    }
+
+    const id = `resp_dir_${slugify(nome)}`;
+    try {
+      await setDoc(doc(db, COLLECTION, id), {
+        tipo: TIPO_RESP,
+        escopo: ESCOPO,
+        nome,
+        createdBy: admin,
+        createdAt: serverTimestamp()
+      }, { merge: true });
+      TEAM.push(nome);
+      populateSelects();
+      mResponsavel.value = nome;
+      setModalMsg("Responsável incluído.", "success");
+    } catch (err) {
+      console.error(err);
+      setModalMsg(err?.message || "Erro ao incluir responsável.", "error");
+    }
+  }
+
+  function slugify(s) {
+    return String(s || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_|_$/g, "")
+      .slice(0, 40) || `r_${Date.now()}`;
   }
 
   function filteredEntregas() {
@@ -570,13 +638,53 @@
     renderTable(list);
   }
 
+  async function loadBlocos() {
+    // limpa meta anterior (painel exclusivo do diretor)
+    Object.keys(GRUPO_META).forEach(k => delete GRUPO_META[k]);
+
+    try {
+      const snap = await getDocs(query(collection(db, COLLECTION), where("tipo", "==", TIPO_BLOCO)));
+      snap.forEach(d => {
+        const data = d.data() || {};
+        const key = String(data.blocoKey || "").trim();
+        if (!key) return;
+        GRUPO_META[key] = {
+          titulo: data.titulo || key,
+          hint: data.descricao || "Bloco criado pela diretoria.",
+          gestorDefault: ""
+        };
+      });
+    } catch (err) {
+      console.warn("Falha ao carregar blocos da diretoria", err);
+    }
+
+    GRUPOS_VALIDOS = Object.keys(GRUPO_META);
+
+    if (!GRUPOS_VALIDOS.length) {
+      if (!isModalOpen()) window.location.href = PATH_HUB;
+      return;
+    }
+
+    if (CURRENT_GRUPO && !GRUPO_META[CURRENT_GRUPO]) {
+      // bloco inválido — só redireciona se não estiver editando
+      if (!isModalOpen()) window.location.href = PATH_HUB;
+      return;
+    }
+
+    if (!CURRENT_GRUPO) CURRENT_GRUPO = GRUPOS_VALIDOS[0];
+    // Não remonta selects do modal enquanto ele está aberto (evita apagar o que digitou)
+    if (!isModalOpen()) rebuildGrupoTabs();
+  }
+
   async function loadData() {
     setMsg("Carregando entregas…");
     try {
-      // Query só por tipo (evita índice composto). Filtra período no cliente.
+      await loadResponsaveis();
+      await loadBlocos();
       const snap = await getDocs(query(collection(db, COLLECTION), where("tipo", "==", TIPO)));
       ALL_ENTREGAS = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       setMsg("");
+      applyGrupoUI();
       renderMain();
     } catch (err) {
       console.error(err);
@@ -613,7 +721,7 @@
     mPrioridade.value = "media";
     mProgresso.value = "0";
     mGrupo.value = CURRENT_GRUPO;
-    const meta = GRUPO_META[CURRENT_GRUPO] || GRUPO_META.pedro_ferias;
+    const meta = metaOf(CURRENT_GRUPO);
     mGestor.value = gestorFiltro.value || meta.gestorDefault || "";
     mCategoria.value = "";
     mObs.value = "";
@@ -622,7 +730,7 @@
   function openModalNew(resp = "") {
     editingId = null;
     preselectResp = resp || "";
-    mTitle.textContent = `Nova Entrega — ${GRUPO_META[CURRENT_GRUPO]?.titulo || ""}`;
+    mTitle.textContent = `Nova Entrega — ${metaOf(CURRENT_GRUPO).titulo || ""}`;
     clearModal();
     openModal();
   }
@@ -654,10 +762,11 @@
     const progresso = Math.min(100, Math.max(0, Number(mProgresso.value) || 0));
     const id = editingId || `entrega_${makeId()}`;
     const periodo = currentPeriodo();
-    const grupo = GRUPOS_VALIDOS.includes(mGrupo.value) ? mGrupo.value : CURRENT_GRUPO;
+    const grupo = (mGrupo.value || CURRENT_GRUPO || "").trim() || CURRENT_GRUPO;
 
     const payload = {
       tipo: TIPO,
+      escopo: ESCOPO,
       grupo,
       titulo,
       descricao: (mDescricao.value || "").trim(),
@@ -733,6 +842,7 @@
   btnCancelModal.onclick = (e) => { e.preventDefault(); closeModal(); };
   btnSaveModal.onclick = (e) => { e.preventDefault(); saveEntrega(); };
   btnNova.onclick = (e) => { e.preventDefault(); openModalNew(); };
+  document.getElementById("btnAddResp").onclick = (e) => { e.preventDefault(); incluirResponsavel(); };
   btnReload.onclick = loadData;
 
   [gestorFiltro, respFiltro, statusFiltro].forEach(el => {
@@ -754,6 +864,7 @@
   });
 
   populateSelects();
+  rebuildGrupoTabs();
   applyGrupoUI();
   loadData();
 </script>

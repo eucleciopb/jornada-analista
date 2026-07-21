@@ -218,6 +218,7 @@ const PATH_MENUADM = "../html%20menus/menuadm.html";
   };
 
   const RPS_COLLECTION = "rps_atividades";
+  const RPS_AREA = "geral";
   const ADM_USERS = ["Bruna","Elaine","Euclecio","Pedro"];
 
   const STATUS_OPTS = [
@@ -317,8 +318,14 @@ const PATH_MENUADM = "../html%20menus/menuadm.html";
     return {
       ...a,
       responsaveis: arr.filter(Boolean),
-      prazo: (a.prazo || "").toString().slice(0,10) // ISO yyyy-mm-dd
+      prazo: (a.prazo || "").toString().slice(0,10), // ISO yyyy-mm-dd
+      area: (a.area || "").toString().trim() || "geral"
     };
+  }
+
+  function isAreaGeral(a){
+    const area = String(a.area || "geral").trim();
+    return area !== "gestores";
   }
 
   function getSelectedWeekKeys(){
@@ -369,6 +376,7 @@ const PATH_MENUADM = "../html%20menus/menuadm.html";
     const q = (searchBox.value || "").toLowerCase().trim();
 
     let base = (ALL_ACTS || []).map(normalizeAct)
+      .filter(a => isAreaGeral(a))
       .filter(a => selected.has(String(a.weekKey || "").trim()));
 
     if(q){
@@ -392,7 +400,7 @@ const PATH_MENUADM = "../html%20menus/menuadm.html";
     const snap = await getDocs(query(collection(db, RPS_COLLECTION), where("ano","==",year)));
     const arr = [];
     snap.forEach(d => arr.push({ id:d.id, ...d.data() }));
-    ALL_ACTS = arr.map(normalizeAct);
+    ALL_ACTS = arr.map(normalizeAct).filter(isAreaGeral);
     setMsg("");
   }
 
@@ -705,6 +713,7 @@ const PATH_MENUADM = "../html%20menus/menuadm.html";
         semanaMes: meta.semanaMes,
         inicio: meta.inicio,
         fim: meta.fim,
+        area: RPS_AREA,
 
         atividade,
         prazo: prazo || meta.fim, // default

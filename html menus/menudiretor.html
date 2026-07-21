@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>Menu Diretoria | Jornada Comercial</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/bundle-portal-admin.css" />
+</head>
+<body class="theme-admin portal-page">
+
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<div class="portal">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="logo">GP</div>
+      <div class="brand-text">
+        <h2>Diretoria</h2>
+        <small>Jornada Comercial</small>
+      </div>
+    </div>
+
+    <div class="user-card">
+      <div class="avatar" id="userAvatar">?</div>
+      <div id="userInfo">Carregando usuário...</div>
+    </div>
+
+    <nav class="side-nav">
+      <a href="#entregas">Entregas</a>
+    </nav>
+
+    <button id="btnSair" class="logout">Sair da conta</button>
+  </aside>
+
+  <main class="main">
+    <header class="top-bar">
+      <div>
+        <h1>Menu Diretoria</h1>
+        <p>Acompanhe e lance demandas pelos blocos de entregas.</p>
+      </div>
+      <span class="top-badge">Diretor</span>
+    </header>
+
+    <div class="content">
+      <section class="section" id="entregas">
+        <div class="section-header">
+          <h2>Entregas</h2>
+          <span>Painel</span>
+        </div>
+
+        <div class="grid">
+          <a class="card" href="../html%20diretor/painel-entregas-dir.html?v=20260721b">
+            <div class="icon green">📦</div>
+            <div class="card-body">
+              <h3>Painel de Entregas</h3>
+              <p>Painel exclusivo da diretoria: crie blocos novos e lance demandas com % de acompanhamento.</p>
+            </div>
+          </a>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<script>
+  function safeParse(raw) { try { return JSON.parse(raw); } catch { return null; } }
+
+  const session = safeParse(localStorage.getItem("user_session"));
+  const nome = session?.nome || (localStorage.getItem("usuarioLogado") || "").trim();
+
+  if (!session || session.perfil !== "diretor" || !nome) {
+    localStorage.clear();
+    window.location.replace("../index3.html");
+  } else {
+    document.getElementById("userInfo").textContent = `${nome} · Diretor`;
+    document.getElementById("userAvatar").textContent = nome.charAt(0).toUpperCase();
+  }
+
+  document.getElementById("btnSair").addEventListener("click", () => {
+    localStorage.removeItem("user_session");
+    localStorage.removeItem("usuarioLogado");
+    localStorage.removeItem("usuarioKey");
+    window.location.href = "../index3.html";
+  });
+</script>
+</body>
+</html>
