@@ -1,0 +1,798 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Painel de Entregas | Diretoria</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/bundle-admin.css" />
+  <link rel="stylesheet" href="../css/pages/admin-painel-entregas.css" />
+  <link rel="stylesheet" href="../css/pages/admin-painel-entregas-hub.css" />
+</head>
+
+<body class="theme-admin app-shell page-entregas">
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div>
+      <h2 id="pageTitle">Painel de Entregas</h2>
+      <div id="userInfo" class="hint"></div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-ghost" id="btnHub" type="button">← Grupos</button>
+      <button class="btn btn-ghost" id="btnMenu" type="button">Voltar ao Menu</button>
+      <button class="btn btn-ghost" id="btnLogout" type="button">Sair</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="card">
+    <div class="row-between">
+      <div>
+        <h3 style="margin:0 0 6px" id="grupoTitulo">Demandas</h3>
+        <div class="hint" id="grupoHint">Acompanhe as entregas do grupo selecionado.</div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-primary" id="btnNova" type="button">+ Nova Entrega</button>
+        <button class="btn btn-ghost" id="btnReload" type="button">Atualizar</button>
+      </div>
+    </div>
+
+    <div class="grupo-tabs" id="grupoTabs"></div>
+
+    <div class="filters">
+      <div>
+        <label for="periodoPicker">Período</label>
+        <input id="periodoPicker" class="field" type="month" />
+      </div>
+      <div id="gestorFiltroWrap">
+        <label for="gestorFiltro">Gestor Ausente</label>
+        <input id="gestorFiltro" class="field" type="text" placeholder="Ex: Pedro" />
+      </div>
+      <div>
+        <label for="respFiltro">Responsável</label>
+        <select id="respFiltro" class="field">
+          <option value="">Todos</option>
+        </select>
+      </div>
+      <div>
+        <label for="statusFiltro">Status</label>
+        <select id="statusFiltro" class="field">
+          <option value="">Todos</option>
+          <option value="pendente">Pendente</option>
+          <option value="em_andamento">Em andamento</option>
+          <option value="concluida">Concluída</option>
+          <option value="atrasada">Atrasada</option>
+        </select>
+      </div>
+      <div style="max-width:320px">
+        <label for="searchBox">Buscar</label>
+        <input id="searchBox" class="field" type="text" placeholder="Título, descrição, responsável..." />
+      </div>
+    </div>
+
+    <div class="overall-progress">
+      <div class="overall-head">
+        <div>
+          <div class="hint">Atingimento geral do período</div>
+          <strong id="percGeral">0%</strong>
+        </div>
+        <span id="pillGeral" class="pill pill-warn">Carregando...</span>
+      </div>
+      <div id="barGeral" class="progress-bar warn"><span style="width:0%"></span></div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi">
+        <div class="k-label">Total de entregas</div>
+        <div class="k-val" id="kpiTotal">0</div>
+      </div>
+      <div class="kpi highlight">
+        <div class="k-label">Concluídas</div>
+        <div class="k-val" id="kpiDone">0</div>
+      </div>
+      <div class="kpi">
+        <div class="k-label">Em andamento</div>
+        <div class="k-val" id="kpiProgress">0</div>
+      </div>
+      <div class="kpi">
+        <div class="k-label">Pendentes</div>
+        <div class="k-val" id="kpiPending">0</div>
+      </div>
+      <div class="kpi">
+        <div class="k-label">Atrasadas</div>
+        <div class="k-val" id="kpiLate">0</div>
+      </div>
+    </div>
+
+    <div class="msg" id="msg"></div>
+  </section>
+
+  <section class="card">
+    <h3 style="margin:0 0 6px" id="tableTitle">Entregas do grupo</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:28%">Entrega</th>
+            <th style="width:14%">Responsável</th>
+            <th style="width:12%">Prazo</th>
+            <th style="width:14%">Progresso</th>
+            <th style="width:10%">Prioridade</th>
+            <th style="width:12%">Status</th>
+            <th style="width:10%">Ações</th>
+          </tr>
+        </thead>
+        <tbody id="tbodyMain">
+          <tr><td colspan="7" style="opacity:.8">Carregando…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<!-- Modal criar/editar -->
+<div id="modalBackdrop" class="modal-backdrop" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <h3 id="mTitle">Nova Entrega</h3>
+        <div class="sub" id="mSub">Preencha os dados e demande para o time</div>
+      </div>
+      <button class="modal-close" id="mClose" type="button">Fechar</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="full">
+          <label for="mTitulo">Título da entrega *</label>
+          <input id="mTitulo" class="field" type="text" placeholder="Ex: Relatório semanal de KPIs" />
+        </div>
+        <div class="full">
+          <label for="mDescricao">Descrição</label>
+          <textarea id="mDescricao" class="field" rows="3" placeholder="Detalhes do que precisa ser entregue..."></textarea>
+        </div>
+        <div>
+          <label for="mResponsavel">Responsável *</label>
+          <select id="mResponsavel" class="field"></select>
+        </div>
+        <div>
+          <label for="mPrazo">Prazo</label>
+          <input id="mPrazo" class="field" type="date" />
+        </div>
+        <div>
+          <label for="mPrioridade">Prioridade</label>
+          <select id="mPrioridade" class="field">
+            <option value="alta">Alta</option>
+            <option value="media" selected>Média</option>
+            <option value="baixa">Baixa</option>
+          </select>
+        </div>
+        <div>
+          <label for="mProgresso">Progresso (%)</label>
+          <input id="mProgresso" class="field" type="number" min="0" max="100" value="0" />
+        </div>
+        <div>
+          <label for="mGestor">Gestor ausente</label>
+          <input id="mGestor" class="field" type="text" placeholder="Nome do gestor de férias" />
+        </div>
+        <div>
+          <label for="mGrupo">Grupo</label>
+          <select id="mGrupo" class="field"></select>
+        </div>
+        <div>
+          <label for="mCategoria">Categoria</label>
+          <input id="mCategoria" class="field" type="text" placeholder="Ex: Relatório, KPI, Rotina" />
+        </div>
+        <div class="full">
+          <label for="mObs">Observações</label>
+          <textarea id="mObs" class="field" rows="2" placeholder="Notas internas..."></textarea>
+        </div>
+        <div class="full">
+          <div id="mMsg" class="msg" style="margin:0;min-height:18px"></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-mini" id="btnCancelModal" type="button">Cancelar</button>
+      <button class="btn-mini danger" id="btnSaveModal" type="button">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+  import {
+    getFirestore,
+    collection,
+    getDocs,
+    query,
+    where,
+    doc,
+    setDoc,
+    deleteDoc,
+    serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
+    authDomain: "jornada-portal.firebaseapp.com",
+    projectId: "jornada-portal",
+    storageBucket: "jornada-portal.firebasestorage.app",
+    messagingSenderId: "669362296644",
+    appId: "1:669362296644:web:f590d9834a8e4e60012911"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  const PATH_INDEX = "../index3.html";
+  const PATH_MENU = "../html%20menus/menudiretor.html";
+  const PATH_HUB = "./painel-entregas-hub.html";
+  // Usa a mesma coleção liberada nas Rules (padrão do portal)
+  const COLLECTION = "apuracoes_treinamentos";
+  const TIPO = "entrega_gestor";
+
+  const TIPO_BLOCO = "entrega_bloco";
+
+  const GRUPO_META = {
+    pedro_ferias: {
+      titulo: "Demandas do Pedro — Férias",
+      hint: "Cobertura das entregas enquanto o Pedro está de férias.",
+      gestorDefault: "Pedro"
+    },
+    demandas_diarias: {
+      titulo: "Demandas Diárias",
+      hint: "Rotina do dia a dia.",
+      gestorDefault: ""
+    },
+    rps_diretoria: {
+      titulo: "RPS Diretoria",
+      hint: "Demandas e acompanhamentos da RPS Diretoria.",
+      gestorDefault: ""
+    }
+  };
+
+  let GRUPOS_VALIDOS = Object.keys(GRUPO_META);
+
+  function resolveGrupo(e) {
+    const g = String(e?.grupo || "").trim();
+    if (g) return g;
+    return "pedro_ferias";
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  let CURRENT_GRUPO = params.get("grupo") || "";
+  if (!CURRENT_GRUPO) {
+    window.location.href = PATH_HUB;
+  }
+
+  const TEAM = [
+    "Alex", "Andre", "Bruna", "Daniel", "Elaine", "Emerson", "Euclecio",
+    "Felipe", "Joice", "Maiello", "Marcio", "Michel", "Muller", "Pedro",
+    "Robert", "Rodrigo", "Rosilene", "Tenório", "Victor"
+  ].sort((a, b) => a.localeCompare(b, "pt-BR"));
+
+  function safeParse(raw) { try { return JSON.parse(raw); } catch { return null; } }
+  function getCurrentUserName() {
+    const raw = localStorage.getItem("user_session");
+    if (raw) {
+      const s = safeParse(raw);
+      if (s?.nome) return String(s.nome).trim();
+    }
+    return (localStorage.getItem("usuarioLogado") || "").trim();
+  }
+
+  function getSession() {
+    const s = safeParse(localStorage.getItem("user_session"));
+    if (s?.nome && s.perfil === "diretor") return s;
+    return null;
+  }
+
+  const session = getSession();
+  if (!session) {
+    localStorage.clear();
+    window.location.href = PATH_INDEX;
+  }
+  const admin = session.nome;
+  document.getElementById("userInfo").textContent = `Diretor: ${admin}`;
+
+  document.getElementById("btnHub").onclick = () => window.location.href = PATH_HUB;
+  document.getElementById("btnMenu").onclick = () => window.location.href = PATH_MENU;
+  document.getElementById("btnLogout").onclick = () => {
+    localStorage.removeItem("user_session");
+    localStorage.removeItem("usuarioLogado");
+    localStorage.removeItem("usuarioKey");
+    window.location.href = PATH_INDEX;
+  };
+
+  const periodoPicker = document.getElementById("periodoPicker");
+  const gestorFiltro = document.getElementById("gestorFiltro");
+  const gestorFiltroWrap = document.getElementById("gestorFiltroWrap");
+  const respFiltro = document.getElementById("respFiltro");
+  const statusFiltro = document.getElementById("statusFiltro");
+  const searchBox = document.getElementById("searchBox");
+  const btnReload = document.getElementById("btnReload");
+  const btnNova = document.getElementById("btnNova");
+  const msg = document.getElementById("msg");
+  const tbodyMain = document.getElementById("tbodyMain");
+  const grupoTabs = document.getElementById("grupoTabs");
+  const grupoTitulo = document.getElementById("grupoTitulo");
+  const grupoHint = document.getElementById("grupoHint");
+  const pageTitle = document.getElementById("pageTitle");
+
+  const percGeral = document.getElementById("percGeral");
+  const pillGeral = document.getElementById("pillGeral");
+  const barGeral = document.getElementById("barGeral");
+  const kpiTotal = document.getElementById("kpiTotal");
+  const kpiDone = document.getElementById("kpiDone");
+  const kpiProgress = document.getElementById("kpiProgress");
+  const kpiPending = document.getElementById("kpiPending");
+  const kpiLate = document.getElementById("kpiLate");
+
+  const modalBackdrop = document.getElementById("modalBackdrop");
+  const mClose = document.getElementById("mClose");
+  const btnCancelModal = document.getElementById("btnCancelModal");
+  const btnSaveModal = document.getElementById("btnSaveModal");
+  const mTitle = document.getElementById("mTitle");
+  const mTitulo = document.getElementById("mTitulo");
+  const mDescricao = document.getElementById("mDescricao");
+  const mResponsavel = document.getElementById("mResponsavel");
+  const mPrazo = document.getElementById("mPrazo");
+  const mPrioridade = document.getElementById("mPrioridade");
+  const mProgresso = document.getElementById("mProgresso");
+  const mGestor = document.getElementById("mGestor");
+  const mGrupo = document.getElementById("mGrupo");
+  const mCategoria = document.getElementById("mCategoria");
+  const mObs = document.getElementById("mObs");
+  const mMsg = document.getElementById("mMsg");
+
+  let ALL_ENTREGAS = [];
+  let editingId = null;
+  let preselectResp = "";
+
+  function metaOf(grupo) {
+    if (GRUPO_META[grupo]) return GRUPO_META[grupo];
+    return {
+      titulo: grupo,
+      hint: "Bloco de demandas da diretoria.",
+      gestorDefault: ""
+    };
+  }
+
+  function rebuildGrupoTabs() {
+    grupoTabs.innerHTML = GRUPOS_VALIDOS.map(key => {
+      const titulo = metaOf(key).titulo;
+      const active = key === CURRENT_GRUPO ? " active" : "";
+      return `<button type="button" class="grupo-tab${active}" data-grupo="${escapeHtml(key)}">${escapeHtml(titulo)}</button>`;
+    }).join("");
+
+    grupoTabs.querySelectorAll(".grupo-tab").forEach(btn => {
+      btn.addEventListener("click", () => setGrupo(btn.dataset.grupo));
+    });
+
+    mGrupo.innerHTML = GRUPOS_VALIDOS.map(key =>
+      `<option value="${escapeHtml(key)}">${escapeHtml(metaOf(key).titulo)}</option>`
+    ).join("");
+    mGrupo.value = CURRENT_GRUPO;
+  }
+
+  function applyGrupoUI() {
+    const meta = metaOf(CURRENT_GRUPO);
+    grupoTitulo.textContent = meta.titulo;
+    grupoHint.textContent = meta.hint;
+    pageTitle.textContent = meta.titulo;
+    const tableTitle = document.getElementById("tableTitle");
+    if (tableTitle) tableTitle.textContent = `Entregas — ${meta.titulo}`;
+    gestorFiltroWrap.style.display = CURRENT_GRUPO === "pedro_ferias" ? "" : "none";
+    grupoTabs.querySelectorAll(".grupo-tab").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.grupo === CURRENT_GRUPO);
+    });
+    if (mGrupo) mGrupo.value = CURRENT_GRUPO;
+  }
+
+  function setGrupo(grupo) {
+    CURRENT_GRUPO = grupo;
+    const url = new URL(window.location.href);
+    url.searchParams.set("grupo", grupo);
+    if (periodoPicker.value) url.searchParams.set("periodo", periodoPicker.value);
+    history.replaceState(null, "", url.toString());
+    applyGrupoUI();
+    renderMain();
+  }
+
+  function setMsg(text, type = "info") {
+    msg.textContent = text || "";
+    msg.style.color = type === "success" ? "#22c55e" : (type === "error" ? "#ef4444" : "#d1d5db");
+  }
+
+  function setModalMsg(text, type = "info") {
+    mMsg.textContent = text || "";
+    mMsg.style.color = type === "success" ? "#22c55e" : (type === "error" ? "#ef4444" : "#d1d5db");
+  }
+
+  function pad2(n) { return String(n).padStart(2, "0"); }
+  function todayISO() {
+    const d = new Date();
+    return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+  }
+  function toBR(iso) {
+    if (!iso) return "-";
+    const [y, m, d] = String(iso).split("-");
+    return `${d}/${m}/${y}`;
+  }
+  function escapeHtml(s) {
+    return (s || "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+  function makeId() {
+    if (globalThis.crypto?.randomUUID) return crypto.randomUUID();
+    return `${Date.now()}_${Math.random().toString(16).slice(2)}`;
+  }
+
+  function currentPeriodo() {
+    return periodoPicker.value || `${new Date().getFullYear()}-${pad2(new Date().getMonth() + 1)}`;
+  }
+
+  function deriveStatus(e) {
+    const prog = Number(e.progresso) || 0;
+    if (prog >= 100) return "concluida";
+    const prazo = String(e.prazo || "").slice(0, 10);
+    if (prazo && todayISO() > prazo) return "atrasada";
+    if (prog > 0) return "em_andamento";
+    return "pendente";
+  }
+
+  function statusLabel(st) {
+    const map = {
+      pendente: "Pendente",
+      em_andamento: "Em andamento",
+      concluida: "Concluída",
+      atrasada: "Atrasada"
+    };
+    return map[st] || st;
+  }
+
+  function statusPill(st) {
+    if (st === "concluida") return `<span class="pill pill-ok">${statusLabel(st)}</span>`;
+    if (st === "atrasada") return `<span class="pill pill-bad">${statusLabel(st)}</span>`;
+    if (st === "em_andamento") return `<span class="pill pill-info">${statusLabel(st)}</span>`;
+    return `<span class="pill pill-warn">${statusLabel(st)}</span>`;
+  }
+
+  function prioridadePill(p) {
+    if (p === "alta") return `<span class="pill pill-bad">Alta</span>`;
+    if (p === "baixa") return `<span class="pill pill-muted" style="opacity:.8">Baixa</span>`;
+    return `<span class="pill pill-warn">Média</span>`;
+  }
+
+  function progressBarClass(pct) {
+    if (pct >= 100) return "progress-bar";
+    if (pct >= 50) return "progress-bar warn";
+    return "progress-bar bad";
+  }
+
+  function populateSelects() {
+    const opts = TEAM.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join("");
+    mResponsavel.innerHTML = `<option value="">Selecione...</option>${opts}`;
+    respFiltro.innerHTML = `<option value="">Todos</option>${opts}`;
+  }
+
+  function filteredEntregas() {
+    const periodo = currentPeriodo();
+    const gestor = (gestorFiltro.value || "").toLowerCase().trim();
+    const resp = (respFiltro.value || "").trim();
+    const status = (statusFiltro.value || "").trim();
+    const q = (searchBox.value || "").toLowerCase().trim();
+
+    return ALL_ENTREGAS
+      .map(e => ({ ...e, statusEfetivo: deriveStatus(e), grupoResolvido: resolveGrupo(e) }))
+      .filter(e => e.grupoResolvido === CURRENT_GRUPO)
+      .filter(e => String(e.periodo || "") === periodo)
+      .filter(e => !gestor || String(e.gestorAusente || "").toLowerCase().includes(gestor))
+      .filter(e => !resp || String(e.responsavel || "") === resp)
+      .filter(e => !status || e.statusEfetivo === status)
+      .filter(e => {
+        if (!q) return true;
+        const blob = [
+          e.titulo, e.descricao, e.responsavel, e.categoria,
+          e.gestorAusente, e.observacoes
+        ].join(" ").toLowerCase();
+        return blob.includes(q);
+      });
+  }
+
+  function computeStats(list) {
+    const total = list.length;
+    const done = list.filter(e => e.statusEfetivo === "concluida").length;
+    const progress = list.filter(e => e.statusEfetivo === "em_andamento").length;
+    const pending = list.filter(e => e.statusEfetivo === "pendente").length;
+    const late = list.filter(e => e.statusEfetivo === "atrasada").length;
+    const avgPct = total > 0
+      ? Math.round(list.reduce((s, e) => s + (Number(e.progresso) || 0), 0) / total)
+      : 0;
+    return { total, done, progress, pending, late, avgPct };
+  }
+
+  function renderKPIs(list) {
+    const stats = computeStats(list);
+    kpiTotal.textContent = stats.total;
+    kpiDone.textContent = stats.done;
+    kpiProgress.textContent = stats.progress;
+    kpiPending.textContent = stats.pending;
+    kpiLate.textContent = stats.late;
+
+    percGeral.textContent = `${stats.avgPct}%`;
+    barGeral.className = progressBarClass(stats.avgPct);
+    barGeral.querySelector("span").style.width = `${stats.avgPct}%`;
+
+    if (stats.total === 0) {
+      pillGeral.className = "pill";
+      pillGeral.textContent = "Sem entregas";
+    } else if (stats.avgPct >= 100) {
+      pillGeral.className = "pill pill-ok";
+      pillGeral.textContent = "Tudo entregue";
+    } else if (stats.late > 0) {
+      pillGeral.className = "pill pill-bad";
+      pillGeral.textContent = `${stats.late} atrasada(s)`;
+    } else if (stats.avgPct >= 70) {
+      pillGeral.className = "pill pill-info";
+      pillGeral.textContent = "No caminho";
+    } else {
+      pillGeral.className = "pill pill-warn";
+      pillGeral.textContent = "Atenção necessária";
+    }
+  }
+
+  function renderTable(list) {
+    if (list.length === 0) {
+      tbodyMain.innerHTML = `<tr><td colspan="7" style="opacity:.8">Nenhuma entrega neste filtro. Clique em "+ Nova Entrega".</td></tr>`;
+      return;
+    }
+
+    list.sort((a, b) => {
+      const order = { atrasada: 0, pendente: 1, em_andamento: 2, concluida: 3 };
+      const oa = order[a.statusEfetivo] ?? 9;
+      const ob = order[b.statusEfetivo] ?? 9;
+      if (oa !== ob) return oa - ob;
+      return String(a.titulo || "").localeCompare(String(b.titulo || ""), "pt-BR");
+    });
+
+    tbodyMain.innerHTML = list.map(e => {
+      const pct = Number(e.progresso) || 0;
+      const rowClass = e.statusEfetivo === "atrasada" ? "row-late" : (e.statusEfetivo === "concluida" ? "row-done" : "");
+      return `
+        <tr class="${rowClass}" data-id="${escapeHtml(e.id)}">
+          <td>
+            <strong>${escapeHtml(e.titulo)}</strong>
+            ${e.categoria ? `<div class="hint">${escapeHtml(e.categoria)}</div>` : ""}
+            ${e.descricao ? `<div class="hint" style="margin-top:2px">${escapeHtml(e.descricao).slice(0, 80)}${e.descricao.length > 80 ? "…" : ""}</div>` : ""}
+          </td>
+          <td>${escapeHtml(e.responsavel || "-")}</td>
+          <td>${toBR(e.prazo)}</td>
+          <td class="cell-progress">
+            <div class="pct">${pct}%</div>
+            <div class="${progressBarClass(pct)}"><span style="width:${pct}%"></span></div>
+          </td>
+          <td>${prioridadePill(e.prioridade)}</td>
+          <td>${statusPill(e.statusEfetivo)}</td>
+          <td>
+            <button class="btn-icon" data-edit="${escapeHtml(e.id)}" title="Editar">✏️</button>
+            <button class="btn-icon" data-del="${escapeHtml(e.id)}" title="Excluir">🗑️</button>
+          </td>
+        </tr>
+      `;
+    }).join("");
+
+    tbodyMain.querySelectorAll("[data-edit]").forEach(btn => {
+      btn.addEventListener("click", () => openModalEdit(btn.dataset.edit));
+    });
+    tbodyMain.querySelectorAll("[data-del]").forEach(btn => {
+      btn.addEventListener("click", () => deleteEntrega(btn.dataset.del));
+    });
+  }
+
+  function renderMain() {
+    const list = filteredEntregas();
+    renderKPIs(list);
+    renderTable(list);
+  }
+
+  async function loadBlocos() {
+    try {
+      const snap = await getDocs(query(collection(db, COLLECTION), where("tipo", "==", TIPO_BLOCO)));
+      snap.forEach(d => {
+        const data = d.data() || {};
+        const key = String(data.blocoKey || "").trim();
+        if (!key) return;
+        GRUPO_META[key] = {
+          titulo: data.titulo || key,
+          hint: data.descricao || "Bloco criado pela diretoria.",
+          gestorDefault: ""
+        };
+      });
+    } catch (err) {
+      console.warn("Falha ao carregar blocos customizados", err);
+    }
+
+    // Inclui grupo atual mesmo se ainda não listado
+    if (CURRENT_GRUPO && !GRUPO_META[CURRENT_GRUPO]) {
+      GRUPO_META[CURRENT_GRUPO] = {
+        titulo: CURRENT_GRUPO,
+        hint: "Bloco de demandas.",
+        gestorDefault: ""
+      };
+    }
+
+    GRUPOS_VALIDOS = Object.keys(GRUPO_META);
+    rebuildGrupoTabs();
+  }
+
+  async function loadData() {
+    setMsg("Carregando entregas…");
+    try {
+      await loadBlocos();
+      const snap = await getDocs(query(collection(db, COLLECTION), where("tipo", "==", TIPO)));
+      const periodo = currentPeriodo();
+      ALL_ENTREGAS = snap.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .filter(e => String(e.periodo || "") === periodo);
+      setMsg("");
+      applyGrupoUI();
+      renderMain();
+    } catch (err) {
+      console.error(err);
+      setMsg("Erro ao carregar. Verifique conexão e Rules do Firestore.", "error");
+      ALL_ENTREGAS = [];
+      renderMain();
+    }
+  }
+
+  function openModal() {
+    setModalMsg("");
+    modalBackdrop.classList.add("open");
+  }
+  function closeModal() {
+    modalBackdrop.classList.remove("open");
+    editingId = null;
+    preselectResp = "";
+  }
+
+  function clearModal() {
+    mTitulo.value = "";
+    mDescricao.value = "";
+    mResponsavel.value = preselectResp || "";
+    mPrazo.value = "";
+    mPrioridade.value = "media";
+    mProgresso.value = "0";
+    mGrupo.value = CURRENT_GRUPO;
+    const meta = metaOf(CURRENT_GRUPO);
+    mGestor.value = gestorFiltro.value || meta.gestorDefault || "";
+    mCategoria.value = "";
+    mObs.value = "";
+  }
+
+  function openModalNew(resp = "") {
+    editingId = null;
+    preselectResp = resp || "";
+    mTitle.textContent = `Nova Entrega — ${metaOf(CURRENT_GRUPO).titulo || ""}`;
+    clearModal();
+    openModal();
+  }
+
+  function openModalEdit(id) {
+    const e = ALL_ENTREGAS.find(x => x.id === id);
+    if (!e) return;
+    editingId = id;
+    mTitle.textContent = "Editar Entrega";
+    mTitulo.value = e.titulo || "";
+    mDescricao.value = e.descricao || "";
+    mResponsavel.value = e.responsavel || "";
+    mPrazo.value = String(e.prazo || "").slice(0, 10);
+    mPrioridade.value = e.prioridade || "media";
+    mProgresso.value = String(Number(e.progresso) || 0);
+    mGestor.value = e.gestorAusente || "";
+    mGrupo.value = resolveGrupo(e);
+    mCategoria.value = e.categoria || "";
+    mObs.value = e.observacoes || "";
+    openModal();
+  }
+
+  async function saveEntrega() {
+    const titulo = (mTitulo.value || "").trim();
+    const responsavel = (mResponsavel.value || "").trim();
+    if (!titulo) { setModalMsg("Informe o título da entrega.", "error"); return; }
+    if (!responsavel) { setModalMsg("Selecione o responsável.", "error"); return; }
+
+    const progresso = Math.min(100, Math.max(0, Number(mProgresso.value) || 0));
+    const id = editingId || `entrega_${makeId()}`;
+    const periodo = currentPeriodo();
+    const grupo = (mGrupo.value || CURRENT_GRUPO || "").trim() || CURRENT_GRUPO;
+
+    const payload = {
+      tipo: TIPO,
+      grupo,
+      titulo,
+      descricao: (mDescricao.value || "").trim(),
+      responsavel,
+      prazo: (mPrazo.value || "").trim(),
+      prioridade: mPrioridade.value || "media",
+      progresso,
+      gestorAusente: (mGestor.value || "").trim(),
+      categoria: (mCategoria.value || "").trim(),
+      observacoes: (mObs.value || "").trim(),
+      periodo,
+      updatedAt: serverTimestamp(),
+      updatedBy: admin
+    };
+
+    if (!editingId) {
+      payload.createdAt = serverTimestamp();
+      payload.createdBy = admin;
+    }
+
+    btnSaveModal.disabled = true;
+    setModalMsg("Salvando…");
+    try {
+      await setDoc(doc(db, COLLECTION, id), payload, { merge: true });
+      setModalMsg("");
+      setMsg("Salvo com sucesso!", "success");
+      closeModal();
+      if (grupo !== CURRENT_GRUPO) setGrupo(grupo);
+      await loadData();
+    } catch (err) {
+      console.error(err);
+      const code = err?.code || "";
+      const detail = code === "permission-denied"
+        ? "Sem permissão no Firestore. A escrita foi bloqueada pelas Rules."
+        : (err?.message || "Erro ao salvar.");
+      setModalMsg(detail, "error");
+    } finally {
+      btnSaveModal.disabled = false;
+    }
+  }
+
+  async function deleteEntrega(id) {
+    if (!confirm("Excluir esta entrega?")) return;
+    setMsg("Excluindo…");
+    try {
+      await deleteDoc(doc(db, COLLECTION, id));
+      setMsg("Excluída.", "success");
+      await loadData();
+    } catch (err) {
+      console.error(err);
+      setMsg(err?.message || "Erro ao excluir.", "error");
+    }
+  }
+
+  mClose.onclick = closeModal;
+  btnCancelModal.onclick = closeModal;
+  btnSaveModal.onclick = () => { saveEntrega(); };
+  btnNova.onclick = () => openModalNew();
+  btnReload.onclick = loadData;
+
+  [periodoPicker, gestorFiltro, respFiltro, statusFiltro].forEach(el => {
+    el.addEventListener("change", loadData);
+  });
+  searchBox.addEventListener("input", renderMain);
+
+  modalBackdrop.addEventListener("click", (e) => {
+    if (e.target === modalBackdrop) closeModal();
+  });
+
+  const now = new Date();
+  const periodoParam = params.get("periodo");
+  periodoPicker.value = periodoParam || `${now.getFullYear()}-${pad2(now.getMonth() + 1)}`;
+  populateSelects();
+  rebuildGrupoTabs();
+  applyGrupoUI();
+  loadData();
+</script>
+</body>
+</html>

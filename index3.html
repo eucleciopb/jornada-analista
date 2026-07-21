@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <title>Login Diretoria | Jornada</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/bundle-login-admin.css?v=20260721a" />
+</head>
+
+<body class="login-page theme-admin">
+
+<div class="card" id="loginView">
+  <div class="logo">GP</div>
+  <h2>Login Diretoria</h2>
+  <small>Acesso do diretor ao painel de entregas</small>
+  <hr>
+
+  <label>Usuário</label>
+  <select id="usuarioSelect">
+    <option value="">Selecione...</option>
+    <option value="Molina">Molina</option>
+  </select>
+
+  <label>Senha</label>
+  <input type="password" id="senha" placeholder="Digite a senha" />
+
+  <button id="btnEntrar">Entrar</button>
+  <div class="error" id="errorMsg"></div>
+
+  <div class="info">Grupo Petrópolis • Jornada Comercial</div>
+</div>
+
+<script>
+  const MENU_URL = "html%20menus/menudiretor.html";
+  const USUARIOS = {
+    Molina: "M9L1DR26"
+  };
+
+  const btn = document.getElementById("btnEntrar");
+  const select = document.getElementById("usuarioSelect");
+  const senha = document.getElementById("senha");
+  const errorMsg = document.getElementById("errorMsg");
+
+  function setError(text) {
+    errorMsg.textContent = text || "";
+    errorMsg.style.display = text ? "block" : "none";
+  }
+
+  function login() {
+    const usuario = (select.value || "").trim();
+    const pass = (senha.value || "").trim();
+    setError("");
+
+    if (!usuario) {
+      setError("Selecione o usuário.");
+      return;
+    }
+    if (!USUARIOS[usuario]) {
+      setError("Usuário não autorizado.");
+      return;
+    }
+    if (!pass) {
+      setError("Digite a senha.");
+      return;
+    }
+    if (USUARIOS[usuario] !== pass) {
+      setError("Senha incorreta.");
+      senha.focus();
+      return;
+    }
+
+    localStorage.setItem("usuarioLogado", usuario);
+    localStorage.setItem("user_session", JSON.stringify({
+      nome: usuario,
+      perfil: "diretor",
+      loginAt: Date.now()
+    }));
+
+    window.location.replace(MENU_URL);
+  }
+
+  btn.addEventListener("click", login);
+  senha.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") login();
+  });
+  select.addEventListener("change", () => {
+    senha.value = "";
+    setError("");
+    senha.focus();
+  });
+</script>
+</body>
+</html>
