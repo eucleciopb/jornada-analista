@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>RPS | Admin (Semanal)</title>
+  <title>RPS Área Gestores | Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -16,7 +16,7 @@
 <header class="topbar">
   <div class="topbar-inner">
     <div>
-      <h2>RPS — Admin (por Responsável)</h2>
+      <h2>RPS — Área Gestores</h2>
       <div id="userInfo" class="hint"></div>
     </div>
     <div style="display:flex;gap:10px;flex-wrap:wrap">
@@ -30,8 +30,8 @@
   <section class="card">
     <div class="row-between">
       <div>
-        <h3 style="margin:0 0 6px">Visão Semanal (ADM)</h3>
-        <div class="hint">Linhas por responsável (Bruna, Elaine, Euclecio, Pedro). Clique para abrir e lançar/editar atividades.</div>
+        <h3 style="margin:0 0 6px">Visão Semanal — Área Gestores</h3>
+        <div class="hint">RPS da Área Gestores (separado do RPS geral). Linhas por responsável. Clique para lançar/editar atividades.</div>
       </div>
       <button class="btn btn-primary" id="btnReload" type="button">Atualizar</button>
     </div>
@@ -110,7 +110,7 @@
   <div class="modal">
     <div class="modal-header">
       <div>
-        <h3 id="mTitle">RPS — Lançamentos</h3>
+        <h3 id="mTitle">RPS Área Gestores — Lançamentos</h3>
         <div class="sub" id="mSub"></div>
       </div>
       <button class="modal-close" id="mClose" type="button">Fechar</button>
@@ -218,7 +218,7 @@ const PATH_MENUADM = "../html%20menus/menuadm.html";
   };
 
   const RPS_COLLECTION = "rps_atividades";
-  const RPS_AREA = "geral";
+  const RPS_AREA = "gestores";
   const ADM_USERS = ["Bruna","Elaine","Euclecio","Pedro"];
 
   const STATUS_OPTS = [
@@ -318,14 +318,13 @@ const PATH_MENUADM = "../html%20menus/menuadm.html";
     return {
       ...a,
       responsaveis: arr.filter(Boolean),
-      prazo: (a.prazo || "").toString().slice(0,10), // ISO yyyy-mm-dd
+      prazo: (a.prazo || "").toString().slice(0,10),
       area: (a.area || "").toString().trim() || "geral"
     };
   }
 
-  function isAreaGeral(a){
-    const area = String(a.area || "geral").trim();
-    return area !== "gestores";
+  function isAreaGestores(a){
+    return String(a.area || "").trim() === RPS_AREA;
   }
 
   function getSelectedWeekKeys(){
@@ -376,7 +375,7 @@ const PATH_MENUADM = "../html%20menus/menuadm.html";
     const q = (searchBox.value || "").toLowerCase().trim();
 
     let base = (ALL_ACTS || []).map(normalizeAct)
-      .filter(a => isAreaGeral(a))
+      .filter(a => isAreaGestores(a))
       .filter(a => selected.has(String(a.weekKey || "").trim()));
 
     if(q){
@@ -396,11 +395,11 @@ const PATH_MENUADM = "../html%20menus/menuadm.html";
   }
 
   async function loadYearData(year){
-    setMsg("Carregando RPS do Firebase…");
+    setMsg("Carregando RPS Área Gestores…");
     const snap = await getDocs(query(collection(db, RPS_COLLECTION), where("ano","==",year)));
     const arr = [];
     snap.forEach(d => arr.push({ id:d.id, ...d.data() }));
-    ALL_ACTS = arr.map(normalizeAct).filter(isAreaGeral);
+    ALL_ACTS = arr.map(normalizeAct).filter(isAreaGestores);
     setMsg("");
   }
 
@@ -578,7 +577,7 @@ const PATH_MENUADM = "../html%20menus/menuadm.html";
       ? "Todas as semanas"
       : (getWeekMeta(weekFilter.value)?.label || weekFilter.value);
 
-    mTitle.textContent = `RPS — Lançamentos`;
+    mTitle.textContent = `RPS Área Gestores — Lançamentos`;
     mSub.textContent = `Responsável: ${resp} • Semana: ${wk}`;
 
     mStatusFilter.value = "pendentes";
