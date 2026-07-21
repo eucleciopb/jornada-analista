@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Painel de Entregas | Diretoria</title>
+  <title>Painel de Entregas — Diretoria</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -233,34 +233,15 @@
   const PATH_HUB = "./painel-entregas-hub.html";
   // Usa a mesma coleção liberada nas Rules (padrão do portal)
   const COLLECTION = "apuracoes_treinamentos";
-  const TIPO = "entrega_gestor";
+  const TIPO = "entrega_diretor";
+  const TIPO_BLOCO = "entrega_bloco_diretor";
+  const ESCOPO = "diretor";
 
-  const TIPO_BLOCO = "entrega_bloco";
-
-  const GRUPO_META = {
-    pedro_ferias: {
-      titulo: "Demandas do Pedro — Férias",
-      hint: "Cobertura das entregas enquanto o Pedro está de férias.",
-      gestorDefault: "Pedro"
-    },
-    demandas_diarias: {
-      titulo: "Demandas Diárias",
-      hint: "Rotina do dia a dia.",
-      gestorDefault: ""
-    },
-    rps_diretoria: {
-      titulo: "RPS Diretoria",
-      hint: "Demandas e acompanhamentos da RPS Diretoria.",
-      gestorDefault: ""
-    }
-  };
-
-  let GRUPOS_VALIDOS = Object.keys(GRUPO_META);
+  const GRUPO_META = {};
+  let GRUPOS_VALIDOS = [];
 
   function resolveGrupo(e) {
-    const g = String(e?.grupo || "").trim();
-    if (g) return g;
-    return "pedro_ferias";
+    return String(e?.grupo || "").trim();
   }
 
   const params = new URLSearchParams(window.location.search);
@@ -356,7 +337,7 @@
   function metaOf(grupo) {
     if (GRUPO_META[grupo]) return GRUPO_META[grupo];
     return {
-      titulo: grupo,
+      titulo: grupo || "Bloco",
       hint: "Bloco de demandas da diretoria.",
       gestorDefault: ""
     };
@@ -386,7 +367,7 @@
     pageTitle.textContent = meta.titulo;
     const tableTitle = document.getElementById("tableTitle");
     if (tableTitle) tableTitle.textContent = `Entregas — ${meta.titulo}`;
-    gestorFiltroWrap.style.display = CURRENT_GRUPO === "pedro_ferias" ? "" : "none";
+    gestorFiltroWrap.style.display = "none";
     grupoTabs.querySelectorAll(".grupo-tab").forEach(btn => {
       btn.classList.toggle("active", btn.dataset.grupo === CURRENT_GRUPO);
     });
@@ -605,6 +586,9 @@
   }
 
   async function loadBlocos() {
+    // limpa meta anterior (painel exclusivo do diretor)
+    Object.keys(GRUPO_META).forEach(k => delete GRUPO_META[k]);
+
     try {
       const snap = await getDocs(query(collection(db, COLLECTION), where("tipo", "==", TIPO_BLOCO)));
       snap.forEach(d => {
@@ -618,19 +602,23 @@
         };
       });
     } catch (err) {
-      console.warn("Falha ao carregar blocos customizados", err);
-    }
-
-    // Inclui grupo atual mesmo se ainda não listado
-    if (CURRENT_GRUPO && !GRUPO_META[CURRENT_GRUPO]) {
-      GRUPO_META[CURRENT_GRUPO] = {
-        titulo: CURRENT_GRUPO,
-        hint: "Bloco de demandas.",
-        gestorDefault: ""
-      };
+      console.warn("Falha ao carregar blocos da diretoria", err);
     }
 
     GRUPOS_VALIDOS = Object.keys(GRUPO_META);
+
+    if (!GRUPOS_VALIDOS.length) {
+      window.location.href = PATH_HUB;
+      return;
+    }
+
+    if (CURRENT_GRUPO && !GRUPO_META[CURRENT_GRUPO]) {
+      // bloco inválido para este painel
+      window.location.href = PATH_HUB;
+      return;
+    }
+
+    if (!CURRENT_GRUPO) CURRENT_GRUPO = GRUPOS_VALIDOS[0];
     rebuildGrupoTabs();
   }
 
@@ -717,6 +705,7 @@
 
     const payload = {
       tipo: TIPO,
+      escopo: ESCOPO,
       grupo,
       titulo,
       descricao: (mDescricao.value || "").trim(),
