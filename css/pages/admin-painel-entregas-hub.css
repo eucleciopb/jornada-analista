@@ -62,3 +62,21 @@
 @media(max-width:720px){
   .hub-grid{grid-template-columns:1fr}
 }
+
+
+/* Lista rápida pendentes / hoje */
+.quick-list{margin-top:18px}
+.quick-list-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.quick-list-head h3{margin:0;font-size:16px}
+.quick-filters{display:flex;gap:8px;flex-wrap:wrap}
+.quick-filters .field{min-width:140px;width:auto}
+.quick-table-wrap{overflow:auto;border:1px solid var(--border,rgba(255,255,255,.1));border-radius:14px}
+.quick-table{width:100%;border-collapse:collapse;font-size:13px}
+.quick-table th,.quick-table td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.08);text-align:left;vertical-align:middle}
+.quick-table th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted,#9ca3af);font-weight:700}
+.quick-table tr:hover td{background:rgba(255,255,255,.03)}
+.quick-table .row-late td{background:rgba(239,68,68,.06)}
+.quick-actions{display:flex;gap:6px;flex-wrap:wrap}
+.quick-empty{padding:18px;text-align:center;opacity:.75;font-size:13px}
+.quick-prog{display:flex;align-items:center;gap:8px;min-width:120px}
+.quick-prog input[type="number"]{width:64px;padding:6px 8px;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:rgba(0,0,0,.2);color:inherit;font-weight:700;text-align:center}

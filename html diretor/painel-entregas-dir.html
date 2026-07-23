@@ -10,9 +10,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../css/bundle-admin.css?v=20260721b" />
-  <link rel="stylesheet" href="../css/pages/admin-painel-entregas.css?v=20260721b" />
-  <link rel="stylesheet" href="../css/pages/admin-painel-entregas-hub.css?v=20260721b" />
+  <link rel="stylesheet" href="../css/bundle-admin.css?v=20260723q" />
+  <link rel="stylesheet" href="../css/pages/admin-painel-entregas.css?v=20260723q" />
+  <link rel="stylesheet" href="../css/pages/admin-painel-entregas-hub.css?v=20260723q" />
 </head>
 
 <body class="theme-admin app-shell page-entregas">
@@ -48,8 +48,85 @@
 
     <div class="msg" id="msg"></div>
     <div class="hub-grid" id="hubGrid"></div>
+
+    <div class="quick-list" id="quickListSection">
+      <div class="quick-list-head">
+        <div>
+          <h3>Pendentes e do dia</h3>
+          <div class="hint">Edite o progresso ou finalize sem precisar entrar no bloco.</div>
+        </div>
+        <div class="quick-filters">
+          <select id="quickFiltro" class="field">
+            <option value="pendentes_hoje" selected>Pendentes + prazo hoje</option>
+            <option value="pendentes">Só pendentes</option>
+            <option value="hoje">Só prazo hoje</option>
+            <option value="atrasadas">Só atrasadas</option>
+          </select>
+        </div>
+      </div>
+      <div class="quick-table-wrap">
+        <table class="quick-table">
+          <thead>
+            <tr>
+              <th>Entrega</th>
+              <th>Bloco</th>
+              <th>Responsável</th>
+              <th>Prazo</th>
+              <th>Progresso</th>
+              <th>Status</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="quickTbody">
+            <tr><td colspan="7" class="quick-empty">Carregando…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
   </section>
 </main>
+
+<!-- Modal edição rápida -->
+<div id="quickEditBackdrop" class="modal-backdrop" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <h3>Editar entrega</h3>
+        <div class="sub">Ajuste rápido sem entrar no bloco</div>
+      </div>
+      <button class="modal-close" id="qeClose" type="button">Fechar</button>
+    </div>
+    <form id="formQuickEdit" class="modal-body" autocomplete="off">
+      <div class="form-grid">
+        <div class="full">
+          <label for="qeTitulo">Título *</label>
+          <input id="qeTitulo" class="field" type="text" />
+        </div>
+        <div>
+          <label for="qeResponsavel">Responsável</label>
+          <input id="qeResponsavel" class="field" type="text" />
+        </div>
+        <div>
+          <label for="qePrazo">Prazo</label>
+          <input id="qePrazo" class="field" type="date" />
+        </div>
+        <div>
+          <label for="qeProgresso">Progresso (%)</label>
+          <input id="qeProgresso" class="field" type="number" min="0" max="100" />
+        </div>
+        <div class="full">
+          <label for="qeObs">Observações</label>
+          <textarea id="qeObs" class="field" rows="2"></textarea>
+        </div>
+        <div class="full"><div id="qeMsg" class="msg" style="margin:0;min-height:18px"></div></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-mini" id="qeCancel" type="button">Cancelar</button>
+        <button class="btn-mini danger" id="qeSave" type="button">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
 
 <!-- Modal criar bloco -->
 <div id="modalBackdrop" class="modal-backdrop" role="dialog" aria-modal="true">
@@ -122,8 +199,8 @@
   if (localStorage.getItem("diretor_painel_version") !== APP_VERSION) {
     localStorage.setItem("diretor_painel_version", APP_VERSION);
     const u = new URL(window.location.href);
-    if (u.searchParams.get("v") !== "20260721b") {
-      u.searchParams.set("v", "20260721b");
+    if (u.searchParams.get("v") !== "20260723q") {
+      u.searchParams.set("v", "20260723q");
       window.location.replace(u.toString());
     }
   }
@@ -330,6 +407,194 @@
     }
   }
 
+
+  function blocoTitulo(key) {
+    const b = CUSTOM_BLOCOS.find(x => x.blocoKey === key);
+    return b?.titulo || key || "—";
+  }
+
+  function toBR(iso) {
+    if (!iso) return "—";
+    const [y, m, d] = String(iso).split("-");
+    return `${d}/${m}/${y}`;
+  }
+
+  function statusLabel(st) {
+    return ({ pendente: "Pendente", em_andamento: "Em andamento", concluida: "Concluída", atrasada: "Atrasada" })[st] || st;
+  }
+
+  function statusPill(st) {
+    if (st === "concluida") return `<span class="pill pill-ok">${statusLabel(st)}</span>`;
+    if (st === "atrasada") return `<span class="pill pill-bad">${statusLabel(st)}</span>`;
+    if (st === "em_andamento") return `<span class="pill pill-info">${statusLabel(st)}</span>`;
+    return `<span class="pill pill-warn">${statusLabel(st)}</span>`;
+  }
+
+  function quickListItems() {
+    const modo = (document.getElementById("quickFiltro")?.value || "pendentes_hoje");
+    const hoje = todayISO();
+    return ENTREGAS
+      .map(e => ({ ...e, statusEfetivo: deriveStatus(e) }))
+      .filter(e => {
+        const st = e.statusEfetivo;
+        const prazo = String(e.prazo || "").slice(0, 10);
+        const pendente = st !== "concluida";
+        const hojePrazo = prazo === hoje;
+        if (modo === "pendentes") return pendente;
+        if (modo === "hoje") return hojePrazo;
+        if (modo === "atrasadas") return st === "atrasada";
+        // pendentes_hoje
+        return pendente || hojePrazo;
+      })
+      .sort((a, b) => {
+        const order = { atrasada: 0, pendente: 1, em_andamento: 2, concluida: 3 };
+        const oa = order[a.statusEfetivo] ?? 9;
+        const ob = order[b.statusEfetivo] ?? 9;
+        if (oa !== ob) return oa - ob;
+        return String(a.prazo || "").localeCompare(String(b.prazo || ""));
+      });
+  }
+
+  function renderQuickList() {
+    const tbody = document.getElementById("quickTbody");
+    if (!tbody) return;
+    const list = quickListItems();
+    if (!list.length) {
+      tbody.innerHTML = `<tr><td colspan="7" class="quick-empty">Nenhuma entrega pendente ou com prazo hoje.</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = list.map(e => {
+      const pct = Number(e.progresso) || 0;
+      const rowClass = e.statusEfetivo === "atrasada" ? "row-late" : "";
+      return `
+        <tr class="${rowClass}" data-qid="${escapeHtml(e.id)}">
+          <td><strong>${escapeHtml(e.titulo || "—")}</strong></td>
+          <td>${escapeHtml(blocoTitulo(resolveGrupo(e)))}</td>
+          <td>${escapeHtml(e.responsavel || "—")}</td>
+          <td>${toBR(e.prazo)}</td>
+          <td>
+            <div class="quick-prog">
+              <input type="number" min="0" max="100" value="${pct}" data-qprog="${escapeHtml(e.id)}" />
+              <span>%</span>
+            </div>
+          </td>
+          <td>${statusPill(e.statusEfetivo)}</td>
+          <td>
+            <div class="quick-actions">
+              <button type="button" class="btn-mini" data-qsave="${escapeHtml(e.id)}">Salvar %</button>
+              <button type="button" class="btn-mini" data-qdone="${escapeHtml(e.id)}" style="background:rgba(34,197,94,.9);border-color:transparent">Finalizar</button>
+              <button type="button" class="btn-mini" data-qedit="${escapeHtml(e.id)}">Editar</button>
+            </div>
+          </td>
+        </tr>`;
+    }).join("");
+
+    tbody.querySelectorAll("[data-qsave]").forEach(btn => {
+      btn.addEventListener("click", () => salvarProgressoRapido(btn.dataset.qsave));
+    });
+    tbody.querySelectorAll("[data-qdone]").forEach(btn => {
+      btn.addEventListener("click", () => finalizarEntrega(btn.dataset.qdone));
+    });
+    tbody.querySelectorAll("[data-qedit]").forEach(btn => {
+      btn.addEventListener("click", () => openQuickEdit(btn.dataset.qedit));
+    });
+  }
+
+  async function patchEntrega(id, patch) {
+    await setDoc(doc(db, COLLECTION, id), {
+      ...patch,
+      updatedAt: serverTimestamp(),
+      updatedBy: diretor
+    }, { merge: true });
+    const e = ENTREGAS.find(x => x.id === id);
+    if (e) Object.assign(e, patch);
+  }
+
+  async function salvarProgressoRapido(id) {
+    const input = document.querySelector(`[data-qprog="${id}"]`);
+    const progresso = Math.min(100, Math.max(0, Number(input?.value) || 0));
+    setMsg("Salvando…");
+    try {
+      await patchEntrega(id, { progresso });
+      setMsg("Progresso atualizado!", "success");
+      renderHub();
+      renderQuickList();
+    } catch (err) {
+      console.error(err);
+      setMsg(err?.message || "Erro ao salvar.", "error");
+    }
+  }
+
+  async function finalizarEntrega(id) {
+    setMsg("Finalizando…");
+    try {
+      await patchEntrega(id, { progresso: 100 });
+      setMsg("Entrega finalizada!", "success");
+      renderHub();
+      renderQuickList();
+    } catch (err) {
+      console.error(err);
+      setMsg(err?.message || "Erro ao finalizar.", "error");
+    }
+  }
+
+  let quickEditId = null;
+  const qeBackdrop = document.getElementById("quickEditBackdrop");
+  const qeTitulo = document.getElementById("qeTitulo");
+  const qeResponsavel = document.getElementById("qeResponsavel");
+  const qePrazo = document.getElementById("qePrazo");
+  const qeProgresso = document.getElementById("qeProgresso");
+  const qeObs = document.getElementById("qeObs");
+  const qeMsg = document.getElementById("qeMsg");
+
+  function setQeMsg(text, type = "info") {
+    qeMsg.textContent = text || "";
+    qeMsg.style.color = type === "success" ? "#22c55e" : (type === "error" ? "#ef4444" : "#d1d5db");
+  }
+
+  function openQuickEdit(id) {
+    const e = ENTREGAS.find(x => x.id === id);
+    if (!e) return;
+    quickEditId = id;
+    qeTitulo.value = e.titulo || "";
+    qeResponsavel.value = e.responsavel || "";
+    qePrazo.value = String(e.prazo || "").slice(0, 10);
+    qeProgresso.value = String(Number(e.progresso) || 0);
+    qeObs.value = e.observacoes || "";
+    setQeMsg("");
+    qeBackdrop.classList.add("open");
+  }
+
+  function closeQuickEdit() {
+    qeBackdrop.classList.remove("open");
+    quickEditId = null;
+  }
+
+  async function saveQuickEdit() {
+    if (!quickEditId) return;
+    const titulo = (qeTitulo.value || "").trim();
+    if (!titulo) { setQeMsg("Informe o título.", "error"); return; }
+    const progresso = Math.min(100, Math.max(0, Number(qeProgresso.value) || 0));
+    setQeMsg("Salvando…");
+    try {
+      await patchEntrega(quickEditId, {
+        titulo,
+        responsavel: (qeResponsavel.value || "").trim(),
+        prazo: (qePrazo.value || "").trim(),
+        progresso,
+        observacoes: (qeObs.value || "").trim()
+      });
+      setQeMsg("");
+      setMsg("Entrega atualizada!", "success");
+      closeQuickEdit();
+      renderHub();
+      renderQuickList();
+    } catch (err) {
+      console.error(err);
+      setQeMsg(err?.message || "Erro ao salvar.", "error");
+    }
+  }
+
   async function loadData() {
     setMsg("Carregando…");
     try {
@@ -344,6 +609,7 @@
         .sort((a, b) => String(a.titulo).localeCompare(String(b.titulo), "pt-BR"));
       setMsg("");
       renderHub();
+      renderQuickList();
     } catch (err) {
       console.error(err);
       setMsg("Erro ao carregar. Verifique a conexão com o Firebase.", "error");
@@ -410,6 +676,17 @@
   btnSaveModal.onclick = salvarBloco;
   modalBackdrop.addEventListener("click", (e) => {
     if (e.target === modalBackdrop) closeModal();
+  });
+  document.getElementById("quickFiltro").addEventListener("change", renderQuickList);
+  document.getElementById("qeClose").onclick = closeQuickEdit;
+  document.getElementById("qeCancel").onclick = closeQuickEdit;
+  document.getElementById("qeSave").onclick = saveQuickEdit;
+  document.getElementById("formQuickEdit").addEventListener("submit", (e) => {
+    e.preventDefault();
+    saveQuickEdit();
+  });
+  qeBackdrop.addEventListener("click", (e) => {
+    if (e.target === qeBackdrop) closeQuickEdit();
   });
   loadData();
 </script>
