@@ -64,8 +64,13 @@
 }
 
 
-/* Lista rápida pendentes / hoje */
-.quick-list{margin-top:18px}
+.quick-list{
+  margin-top:22px;
+  padding:16px;
+  border:1px solid var(--border,rgba(255,255,255,.12));
+  border-radius:16px;
+  background:rgba(255,255,255,.03);
+}
 .quick-list-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:10px}
 .quick-list-head h3{margin:0;font-size:16px}
 .quick-filters{display:flex;gap:8px;flex-wrap:wrap}

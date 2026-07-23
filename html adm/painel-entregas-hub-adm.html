@@ -3,6 +3,9 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <title>Demandas | Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -191,9 +194,19 @@
   const db = getFirestore(app);
 
   const PATH_INDEX = "../index2.html";
-  const PATH_MENUADM = "../html%20menus/menuadm.html";
+  const PATH_MENUADM = "../html%20menus/menuadm.html?v=20260723q";
   const COLLECTION = "apuracoes_treinamentos";
   const TIPO = "entrega_gestor";
+  const APP_VERSION = "admin-hub-quicklist-v1";
+
+  if (localStorage.getItem("admin_hub_version") !== APP_VERSION) {
+    localStorage.setItem("admin_hub_version", APP_VERSION);
+    const u = new URL(window.location.href);
+    if (u.searchParams.get("v") !== "20260723q") {
+      u.searchParams.set("v", "20260723q");
+      window.location.replace(u.toString());
+    }
+  }
 
   const GRUPO_TITULO = {
     pedro_ferias: "Pedro — Férias",
