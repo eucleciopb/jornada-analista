@@ -523,10 +523,13 @@
     }
 
     list.sort((a, b) => {
-      const order = { atrasada: 0, pendente: 1, em_andamento: 2, concluida: 3 };
-      const oa = order[a.statusEfetivo] ?? 9;
-      const ob = order[b.statusEfetivo] ?? 9;
-      if (oa !== ob) return oa - ob;
+      // Pendentes (inclui atrasada/em andamento) primeiro, depois concluídas — ambos por prazo
+      const ga = a.statusEfetivo === "concluida" ? 1 : 0;
+      const gb = b.statusEfetivo === "concluida" ? 1 : 0;
+      if (ga !== gb) return ga - gb;
+      const pa = String(a.prazo || "").slice(0, 10) || "9999-99-99";
+      const pb = String(b.prazo || "").slice(0, 10) || "9999-99-99";
+      if (pa !== pb) return pa.localeCompare(pb);
       return String(a.titulo || "").localeCompare(String(b.titulo || ""), "pt-BR");
     });
 
