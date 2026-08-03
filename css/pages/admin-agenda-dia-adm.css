@@ -185,8 +185,94 @@ body.page-agenda-dia .pill-muted {
   border: 1px solid #e2e8f0 !important;
 }
 
+/* Célula do analista + botão Ocultar */
+body.page-agenda-dia .analista-cell {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+body.page-agenda-dia .analista-nome {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+body.page-agenda-dia .btn-ocultar,
+body.page-agenda-dia .btn-mostrar {
+  flex-shrink: 0;
+  padding: 5px 10px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  line-height: 1.2;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+body.page-agenda-dia .btn-ocultar {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+}
+
+body.page-agenda-dia .btn-ocultar:hover {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+
+body.page-agenda-dia .btn-mostrar {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+}
+
+body.page-agenda-dia .btn-mostrar:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+}
+
+/* Painel de ocultos */
+body.page-agenda-dia .hidden-panel {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
+}
+
+body.page-agenda-dia .hidden-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+body.page-agenda-dia .hidden-user-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px 6px 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+}
+
+body.page-agenda-dia .hidden-user-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+}
+
 @media (max-width: 720px) {
   .agenda-dia-kpis {
     grid-template-columns: 1fr;
+  }
+
+  body.page-agenda-dia .analista-cell {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }

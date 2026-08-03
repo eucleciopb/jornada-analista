@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/bundle-admin.css" />
-  <link rel="stylesheet" href="../css/pages/admin-agenda-dia-adm.css?v=3" />
+  <link rel="stylesheet" href="../css/pages/admin-agenda-dia-adm.css?v=4" />
 </head>
 
 <body class="theme-user app-shell page-agenda-dia">
@@ -53,7 +53,7 @@
       <table class="table table-sticky">
         <thead>
           <tr>
-            <th style="width:160px;">Analista</th>
+            <th style="width:220px;">Analista</th>
             <th style="width:140px;">Status</th>
             <th style="width:220px;">CD / Local</th>
             <th>Atividade</th>
@@ -64,6 +64,14 @@
         </tbody>
       </table>
     </div>
+
+    <section class="hidden-panel" id="hiddenPanel" hidden>
+      <div class="section-head">
+        <h3>Analistas ocultos</h3>
+        <span class="hint">Não entram nos totais desta tela</span>
+      </div>
+      <ul class="hidden-list" id="hiddenList"></ul>
+    </section>
   </main>
 
   <script type="module" src="../js/agenda-dia-adm.js"></script>
