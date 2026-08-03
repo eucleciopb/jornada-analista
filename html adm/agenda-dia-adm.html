@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/bundle-admin.css" />
-  <link rel="stylesheet" href="../css/pages/admin-agenda-dia-adm.css?v=4" />
+  <link rel="stylesheet" href="../css/pages/admin-agenda-dia-adm.css?v=5" />
 </head>
 
 <body class="theme-user app-shell page-agenda-dia">
@@ -65,15 +65,30 @@
       </table>
     </div>
 
-    <section class="hidden-panel" id="hiddenPanel" hidden>
+    <section class="hidden-panel" id="hiddenPanel">
       <div class="section-head">
         <h3>Analistas ocultos</h3>
-        <span class="hint">Não entram nos totais desta tela</span>
+        <span class="hint">Ícone do olho ativa de novo na lista acima</span>
       </div>
-      <ul class="hidden-list" id="hiddenList"></ul>
+
+      <p class="cell-empty hidden-empty" id="hiddenEmpty" hidden>Nenhum analista oculto.</p>
+
+      <div class="table-wrap table-wrap-ocultos">
+        <table class="table table-sticky table-ocultos">
+          <thead>
+            <tr>
+              <th style="width:220px;">Analista</th>
+              <th style="width:140px;">Status</th>
+              <th style="width:220px;">CD / Local</th>
+              <th>Atividade</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyOcultos"></tbody>
+        </table>
+      </div>
     </section>
   </main>
 
-  <script type="module" src="../js/agenda-dia-adm.js"></script>
+  <script type="module" src="../js/agenda-dia-adm.js?v=5"></script>
 </body>
 </html>

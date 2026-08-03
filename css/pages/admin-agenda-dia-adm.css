@@ -185,7 +185,7 @@ body.page-agenda-dia .pill-muted {
   border: 1px solid #e2e8f0 !important;
 }
 
-/* Célula do analista + botão Ocultar */
+/* Célula do analista + ícone */
 body.page-agenda-dia .analista-cell {
   display: flex;
   align-items: center;
@@ -199,80 +199,82 @@ body.page-agenda-dia .analista-nome {
   color: #0f172a;
 }
 
-body.page-agenda-dia .btn-ocultar,
-body.page-agenda-dia .btn-mostrar {
+body.page-agenda-dia .btn-icon {
   flex-shrink: 0;
-  padding: 5px 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
   border-radius: 8px;
-  font-size: 11px;
-  font-weight: 700;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #64748b;
   cursor: pointer;
-  line-height: 1.2;
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
-body.page-agenda-dia .btn-ocultar {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  color: #64748b;
+body.page-agenda-dia .btn-icon .icon {
+  display: block;
+  pointer-events: none;
 }
 
-body.page-agenda-dia .btn-ocultar:hover {
+body.page-agenda-dia .btn-icon.btn-ocultar:hover {
   background: #fef2f2;
   border-color: #fecaca;
   color: #b91c1c;
 }
 
-body.page-agenda-dia .btn-mostrar {
+body.page-agenda-dia .btn-icon.btn-ativar {
   background: #eff6ff;
-  border: 1px solid #bfdbfe;
+  border-color: #bfdbfe;
   color: #1d4ed8;
 }
 
-body.page-agenda-dia .btn-mostrar:hover {
+body.page-agenda-dia .btn-icon.btn-ativar:hover {
   background: #dbeafe;
   border-color: #93c5fd;
+  color: #1e40af;
 }
 
-/* Painel de ocultos */
+/* Painel / tabela de ocultos */
 body.page-agenda-dia .hidden-panel {
-  margin-top: 20px;
-  padding-top: 16px;
+  margin-top: 24px;
+  padding-top: 18px;
   border-top: 1px solid #e5e7eb;
 }
 
-body.page-agenda-dia .hidden-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+body.page-agenda-dia .hidden-empty {
+  margin: 0 0 10px;
 }
 
-body.page-agenda-dia .hidden-user-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 8px 6px 12px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
+body.page-agenda-dia .table-wrap-ocultos {
+  border-style: dashed !important;
+  background: #f8fafc !important;
 }
 
-body.page-agenda-dia .hidden-user-name {
-  font-size: 13px;
+body.page-agenda-dia .table-ocultos thead th {
+  background: #f1f5f9 !important;
+  color: #64748b !important;
+}
+
+body.page-agenda-dia tbody tr.row-oculto td {
+  background: #f8fafc !important;
+  color: #64748b !important;
+}
+
+body.page-agenda-dia tbody tr.row-oculto:hover td {
+  background: #f1f5f9 !important;
+}
+
+body.page-agenda-dia tbody tr.row-oculto .analista-nome {
+  color: #64748b;
   font-weight: 600;
-  color: #475569;
 }
 
 @media (max-width: 720px) {
   .agenda-dia-kpis {
     grid-template-columns: 1fr;
-  }
-
-  body.page-agenda-dia .analista-cell {
-    flex-direction: column;
-    align-items: flex-start;
   }
 }

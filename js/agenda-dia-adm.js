@@ -24,7 +24,6 @@ const db = getFirestore(app);
 
 /* =========================
    USERS (MESMA LISTA DO INDEX)
-   - Inclui Tenório
 ========================= */
 const USERS = [
   "Alex",
@@ -44,19 +43,35 @@ const USERS = [
   "Andre"
 ];
 
-/** Ocultos por padrão na visualização admin (ex.: Victor) */
+/** Ocultos por padrão na visualização admin */
 const OCULTOS_PADRAO = ["Victor"];
-const STORAGE_KEY = "agendaDiaAdm_ocultos";
+const STORAGE_KEY = "agendaDiaAdm_ocultos_v2";
+
+/* Ícones SVG (olho cortado = ocultar / olho = ativar) */
+const ICON_HIDE = `
+  <svg class="icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+    <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+    <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/>
+    <line x1="1" y1="1" x2="23" y2="23"/>
+  </svg>`;
+
+const ICON_SHOW = `
+  <svg class="icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+    <circle cx="12" cy="12" r="3"/>
+  </svg>`;
 
 /* =========================
    UI
 ========================= */
 const tbody = document.getElementById("tbody");
+const tbodyOcultos = document.getElementById("tbodyOcultos");
 const hint = document.getElementById("hint");
 const todayLabel = document.getElementById("todayLabel");
 const errorBox = document.getElementById("errorBox");
 const hiddenPanel = document.getElementById("hiddenPanel");
-const hiddenList = document.getElementById("hiddenList");
+const hiddenEmpty = document.getElementById("hiddenEmpty");
 
 const kpiUsers = document.getElementById("kpiUsers");
 const kpiOk = document.getElementById("kpiOk");
@@ -65,22 +80,17 @@ const statusPill = document.getElementById("statusPill");
 
 const btnReload = document.getElementById("btnReload");
 
-/* Cache do último mapa Firestore para re-render sem nova query */
 let lastMapByUser = {};
 let lastRegistrosCount = 0;
 
 /* =========================
-   HELPERS (DATA LOCAL - SEM UTC)
+   HELPERS
 ========================= */
 function pad2(n){ return String(n).padStart(2, "0"); }
 
 function todayISO_LOCAL(){
-  // ✅ data local do navegador (Brasil), sem UTC
   const d = new Date();
-  const y = d.getFullYear();
-  const m = pad2(d.getMonth() + 1);
-  const day = pad2(d.getDate());
-  return `${y}-${m}-${day}`;
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 }
 
 function formatBR(iso){
@@ -113,13 +123,12 @@ function statusBadge(hasDoc, preenchido){
 }
 
 /* =========================
-   OCULTAR / MOSTRAR
+   OCULTAR / ATIVAR
 ========================= */
 function loadOcultos(){
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw === null) {
-      // primeira visita: aplica padrão (Victor oculto)
       saveOcultos(OCULTOS_PADRAO);
       return new Set(OCULTOS_PADRAO.map(u => u.toLowerCase()));
     }
@@ -155,30 +164,46 @@ function ocultarUsuario(nome){
   renderFromCache();
 }
 
-function mostrarUsuario(nome){
+function ativarUsuario(nome){
   const atuais = getOcultosNomes().filter(u => u.toLowerCase() !== nome.toLowerCase());
   saveOcultos(atuais);
   renderFromCache();
 }
 
-function renderHiddenPanel(){
-  if (!hiddenPanel || !hiddenList) return;
+function renderTabelaOcultos(mapByUser){
+  if (!tbodyOcultos || !hiddenPanel) return;
+
   const ocultos = getOcultosNomes();
-  if (!ocultos.length) {
-    hiddenPanel.hidden = true;
-    hiddenList.innerHTML = "";
-    return;
-  }
   hiddenPanel.hidden = false;
-  hiddenList.innerHTML = "";
-  for (const nome of ocultos) {
-    const li = document.createElement("li");
-    li.className = "hidden-user-item";
-    li.innerHTML = `
-      <span class="hidden-user-name">${nome}</span>
-      <button type="button" class="btn-mostrar" data-mostrar="${nome}">Mostrar</button>
+  tbodyOcultos.innerHTML = "";
+
+  if (hiddenEmpty) {
+    hiddenEmpty.hidden = ocultos.length > 0;
+  }
+
+  for (const user of ocultos){
+    const r = mapByUser[user.toLowerCase()] || null;
+    const cd = normalize(r?.cd);
+    const atividade = normalize(r?.atividade);
+    const hasDoc = !!r;
+    const preenchido = !!(cd || atividade);
+
+    const tr = document.createElement("tr");
+    tr.className = "row-oculto";
+    tr.innerHTML = `
+      <td>
+        <div class="analista-cell">
+          <span class="analista-nome">${user}</span>
+          <button type="button" class="btn-icon btn-ativar" data-ativar="${user}" title="Ativar na visualização" aria-label="Ativar ${user}">
+            ${ICON_SHOW}
+          </button>
+        </div>
+      </td>
+      <td>${statusBadge(hasDoc, preenchido)}</td>
+      <td>${cd || `<span class="cell-empty">—</span>`}</td>
+      <td>${atividade || `<span class="cell-empty">—</span>`}</td>
     `;
-    hiddenList.appendChild(li);
+    tbodyOcultos.appendChild(tr);
   }
 }
 
@@ -193,15 +218,13 @@ function renderTabela(mapByUser, registrosCount){
   let okCount = 0;
 
   if (!visiveis.length) {
-    tbody.innerHTML = `<tr><td colspan="4" class="cell-empty">Todos os analistas estão ocultos. Use “Mostrar” abaixo para restaurar.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="4" class="cell-empty">Nenhum analista visível. Ative alguém na tabela de ocultos abaixo.</td></tr>`;
   }
 
   for (const user of visiveis){
     const r = mapByUser[user.toLowerCase()] || null;
-
     const cd = normalize(r?.cd);
     const atividade = normalize(r?.atividade);
-
     const hasDoc = !!r;
     const preenchido = !!(cd || atividade);
 
@@ -217,7 +240,9 @@ function renderTabela(mapByUser, registrosCount){
       <td>
         <div class="analista-cell">
           <span class="analista-nome">${user}</span>
-          <button type="button" class="btn-ocultar" data-ocultar="${user}" title="Ocultar da visualização">Ocultar</button>
+          <button type="button" class="btn-icon btn-ocultar" data-ocultar="${user}" title="Ocultar da visualização" aria-label="Ocultar ${user}">
+            ${ICON_HIDE}
+          </button>
         </div>
       </td>
       <td>${statusBadge(hasDoc, preenchido)}</td>
@@ -227,10 +252,9 @@ function renderTabela(mapByUser, registrosCount){
     tbody.appendChild(tr);
   }
 
-  // KPIs só dos visíveis
   kpiUsers.textContent = String(visiveis.length);
   kpiOk.textContent = String(okCount);
-  kpiPend.textContent = String(visiveis.length - okCount);
+  kpiPend.textContent = String(Math.max(0, visiveis.length - okCount));
 
   hint.textContent = `Última atualização • ${registrosCount} registro(s) no Firebase hoje`;
   if (statusPill) {
@@ -238,7 +262,7 @@ function renderTabela(mapByUser, registrosCount){
     statusPill.textContent = `${okCount}/${visiveis.length} lançados`;
   }
 
-  renderHiddenPanel();
+  renderTabelaOcultos(mapByUser);
 }
 
 /* =========================
@@ -251,7 +275,6 @@ async function loadAgendaDia(){
   todayLabel.textContent = "Data: " + formatBR(hoje);
   hint.textContent = "Buscando agenda do time…";
 
-  // 1) Busca tudo que foi lançado HOJE (somente quem registrou)
   let registros = [];
   try{
     const q = query(
@@ -271,11 +294,10 @@ async function loadAgendaDia(){
     kpiUsers.textContent = vis.length;
     kpiOk.textContent = "0";
     kpiPend.textContent = vis.length;
-    renderHiddenPanel();
+    renderTabelaOcultos({});
     return;
   }
 
-  // 2) Indexa por usuarioNome
   const mapByUser = {};
   for (const r of registros){
     const u = normalize(r.usuarioNome);
@@ -285,8 +307,6 @@ async function loadAgendaDia(){
 
   lastMapByUser = mapByUser;
   lastRegistrosCount = registros.length;
-
-  // 3) Render (respeitando ocultos)
   renderTabela(mapByUser, registros.length);
 }
 
@@ -298,16 +318,17 @@ if (btnReload) btnReload.onclick = loadAgendaDia;
 document.addEventListener("click", (e) => {
   const btnOcultar = e.target.closest("[data-ocultar]");
   if (btnOcultar) {
+    e.preventDefault();
     const nome = btnOcultar.getAttribute("data-ocultar");
     if (nome) ocultarUsuario(nome);
     return;
   }
-  const btnMostrar = e.target.closest("[data-mostrar]");
-  if (btnMostrar) {
-    const nome = btnMostrar.getAttribute("data-mostrar");
-    if (nome) mostrarUsuario(nome);
+  const btnAtivar = e.target.closest("[data-ativar]");
+  if (btnAtivar) {
+    e.preventDefault();
+    const nome = btnAtivar.getAttribute("data-ativar");
+    if (nome) ativarUsuario(nome);
   }
 });
 
-// init
 loadAgendaDia();
