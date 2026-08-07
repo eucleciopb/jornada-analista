@@ -10,9 +10,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../css/bundle-admin.css?v=20260807a" />
-  <link rel="stylesheet" href="../css/pages/admin-painel-entregas.css?v=20260807a" />
-  <link rel="stylesheet" href="../css/pages/admin-painel-entregas-hub.css?v=20260807a" />
+  <link rel="stylesheet" href="../css/bundle-admin.css?v=20260807b" />
+  <link rel="stylesheet" href="../css/pages/admin-painel-entregas.css?v=20260807b" />
+  <link rel="stylesheet" href="../css/pages/admin-painel-entregas-hub.css?v=20260807b" />
 </head>
 
 <body class="theme-admin app-shell page-entregas">
@@ -188,7 +188,7 @@
   const db = getFirestore(app);
 
   const PATH_INDEX = "../index5.html";
-  const PATH_MENU = "../html%20menus/menueverson.html?v=20260807a";
+  const PATH_MENU = "../html%20menus/menueverson.html?v=20260807b";
   const COLLECTION = "apuracoes_treinamentos";
   const TIPO_ENTREGA = "entrega_everson";
   const TIPO_BLOCO = "entrega_bloco_everson";
@@ -199,8 +199,8 @@
   if (localStorage.getItem("everson_painel_version") !== APP_VERSION) {
     localStorage.setItem("everson_painel_version", APP_VERSION);
     const u = new URL(window.location.href);
-    if (u.searchParams.get("v") !== "20260807a") {
-      u.searchParams.set("v", "20260807a");
+    if (u.searchParams.get("v") !== "20260807b") {
+      u.searchParams.set("v", "20260807b");
       window.location.replace(u.toString());
     }
   }
