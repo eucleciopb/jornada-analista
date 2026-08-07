@@ -1,0 +1,694 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>Painel de Entregas | Everson Casagrande</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/bundle-admin.css?v=20260807a" />
+  <link rel="stylesheet" href="../css/pages/admin-painel-entregas.css?v=20260807a" />
+  <link rel="stylesheet" href="../css/pages/admin-painel-entregas-hub.css?v=20260807a" />
+</head>
+
+<body class="theme-admin app-shell page-entregas">
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div>
+      <h2>Painel de Entregas — Everson Casagrande</h2>
+      <div id="userInfo" class="hint"></div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-ghost" id="btnMenu" type="button">Voltar ao Menu</button>
+      <button class="btn btn-ghost" id="btnLogout" type="button">Sair</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="card">
+    <div class="row-between">
+      <div>
+        <h3 style="margin:0 0 6px">Seu painel de entregas</h3>
+        <div class="hint">Painel exclusivo do Everson Casagrande. Crie blocos, lance entregas e acompanhe o progresso — separado dos demais painéis.</div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-primary" id="btnNovoBloco" type="button">+ Criar bloco</button>
+        <button class="btn btn-ghost" id="btnReload" type="button">Atualizar</button>
+      </div>
+    </div>
+
+    <div class="filters" style="max-width:240px">
+    </div>
+
+    <div class="msg" id="msg"></div>
+    <div class="hub-grid" id="hubGrid"></div>
+
+    <div class="quick-list" id="quickListSection">
+      <div class="quick-list-head">
+        <div>
+          <h3>Pendentes e do dia</h3>
+          <div class="hint">Edite o progresso ou finalize sem precisar entrar no bloco.</div>
+        </div>
+        <div class="quick-filters">
+          <select id="quickFiltro" class="field">
+            <option value="pendentes_hoje" selected>Pendentes + prazo hoje</option>
+            <option value="pendentes">Só pendentes</option>
+            <option value="hoje">Só prazo hoje</option>
+            <option value="atrasadas">Só atrasadas</option>
+          </select>
+        </div>
+      </div>
+      <div class="quick-table-wrap">
+        <table class="quick-table">
+          <thead>
+            <tr>
+              <th>Entrega</th>
+              <th>Bloco</th>
+              <th>Responsável</th>
+              <th>Prazo</th>
+              <th>Progresso</th>
+              <th>Status</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="quickTbody">
+            <tr><td colspan="7" class="quick-empty">Carregando…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- Modal edição rápida -->
+<div id="quickEditBackdrop" class="modal-backdrop" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <h3>Editar entrega</h3>
+        <div class="sub">Ajuste rápido sem entrar no bloco</div>
+      </div>
+      <button class="modal-close" id="qeClose" type="button">Fechar</button>
+    </div>
+    <form id="formQuickEdit" class="modal-body" autocomplete="off">
+      <div class="form-grid">
+        <div class="full">
+          <label for="qeTitulo">Título *</label>
+          <input id="qeTitulo" class="field" type="text" />
+        </div>
+        <div>
+          <label for="qeResponsavel">Responsável</label>
+          <input id="qeResponsavel" class="field" type="text" />
+        </div>
+        <div>
+          <label for="qePrazo">Prazo</label>
+          <input id="qePrazo" class="field" type="date" />
+        </div>
+        <div>
+          <label for="qeProgresso">Progresso (%)</label>
+          <input id="qeProgresso" class="field" type="number" min="0" max="100" />
+        </div>
+        <div class="full">
+          <label for="qeObs">Observações</label>
+          <textarea id="qeObs" class="field" rows="2"></textarea>
+        </div>
+        <div class="full"><div id="qeMsg" class="msg" style="margin:0;min-height:18px"></div></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-mini" id="qeCancel" type="button">Cancelar</button>
+        <button class="btn-mini danger" id="qeSave" type="button">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal criar bloco -->
+<div id="modalBackdrop" class="modal-backdrop" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <h3>Novo bloco</h3>
+        <div class="sub">Dê um nome ao bloco de demandas (ex.: Rotina semanal, Projeto X)</div>
+      </div>
+      <button class="modal-close" id="mClose" type="button">Fechar</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="full">
+          <label for="mTitulo">Nome do bloco *</label>
+          <input id="mTitulo" class="field" type="text" maxlength="80" placeholder="Ex: Demandas da semana" />
+        </div>
+        <div class="full">
+          <label for="mDescricao">Descrição</label>
+          <textarea id="mDescricao" class="field" rows="3" placeholder="Para que serve este bloco..."></textarea>
+        </div>
+        <div class="full">
+          <div id="mMsg" class="msg" style="margin:0;min-height:18px"></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-mini" id="btnCancelModal" type="button">Cancelar</button>
+      <button class="btn-mini danger" id="btnSaveModal" type="button">Criar bloco</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+  import {
+    getFirestore,
+    collection,
+    getDocs,
+    query,
+    where,
+    doc,
+    setDoc,
+    deleteDoc,
+    writeBatch,
+    serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
+    authDomain: "jornada-portal.firebaseapp.com",
+    projectId: "jornada-portal",
+    storageBucket: "jornada-portal.firebasestorage.app",
+    messagingSenderId: "669362296644",
+    appId: "1:669362296644:web:f590d9834a8e4e60012911"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  const PATH_INDEX = "../index5.html";
+  const PATH_MENU = "../html%20menus/menueverson.html?v=20260807a";
+  const COLLECTION = "apuracoes_treinamentos";
+  const TIPO_ENTREGA = "entrega_everson";
+  const TIPO_BLOCO = "entrega_bloco_everson";
+  const ESCOPO = "everson";
+  const APP_VERSION = "everson-painel-v1";
+
+  // Força sair da versão antiga em cache do navegador
+  if (localStorage.getItem("everson_painel_version") !== APP_VERSION) {
+    localStorage.setItem("everson_painel_version", APP_VERSION);
+    const u = new URL(window.location.href);
+    if (u.searchParams.get("v") !== "20260807a") {
+      u.searchParams.set("v", "20260807a");
+      window.location.replace(u.toString());
+    }
+  }
+
+  function safeParse(raw) { try { return JSON.parse(raw); } catch { return null; } }
+  function getSession() {
+    const s = safeParse(localStorage.getItem("user_session"));
+    if (s?.nome && s.perfil === "everson") return s;
+    return null;
+  }
+
+  const session = getSession();
+  if (!session) {
+    localStorage.clear();
+    window.location.href = PATH_INDEX;
+  }
+
+  const usuario = session.nome;
+  document.getElementById("userInfo").textContent = `Everson: ${usuario}`;
+
+  document.getElementById("btnMenu").onclick = () => window.location.href = PATH_MENU;
+  document.getElementById("btnLogout").onclick = () => {
+    localStorage.removeItem("user_session");
+    localStorage.removeItem("usuarioLogado");
+    window.location.href = PATH_INDEX;
+  };
+
+  const hubGrid = document.getElementById("hubGrid");
+  const msg = document.getElementById("msg");
+  const modalBackdrop = document.getElementById("modalBackdrop");
+  const mTitulo = document.getElementById("mTitulo");
+  const mDescricao = document.getElementById("mDescricao");
+  const mMsg = document.getElementById("mMsg");
+  const btnSaveModal = document.getElementById("btnSaveModal");
+
+  let CUSTOM_BLOCOS = [];
+  let ENTREGAS = [];
+
+  function setMsg(text, type = "info") {
+    msg.textContent = text || "";
+    msg.style.color = type === "success" ? "#22c55e" : (type === "error" ? "#ef4444" : "#d1d5db");
+  }
+  function setModalMsg(text, type = "info") {
+    mMsg.textContent = text || "";
+    mMsg.style.color = type === "success" ? "#22c55e" : (type === "error" ? "#ef4444" : "#d1d5db");
+  }
+
+  function pad2(n) { return String(n).padStart(2, "0"); }
+  function currentPeriodo() {
+    const d = new Date();
+    return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}`;
+  }
+  function todayISO() {
+    const d = new Date();
+    return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+  }
+  function escapeHtml(s) {
+    return (s || "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+  function slug(s) {
+    return String(s || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_|_$/g, "")
+      .slice(0, 48) || `bloco_${Date.now()}`;
+  }
+  function makeId() {
+    if (globalThis.crypto?.randomUUID) return crypto.randomUUID();
+    return `${Date.now()}_${Math.random().toString(16).slice(2)}`;
+  }
+
+  function resolveGrupo(e) {
+    return String(e.grupo || "").trim();
+  }
+
+  function deriveStatus(e) {
+    const prog = Number(e.progresso) || 0;
+    if (prog >= 100) return "concluida";
+    const prazo = String(e.prazo || "").slice(0, 10);
+    if (prazo && todayISO() > prazo) return "atrasada";
+    if (prog > 0) return "em_andamento";
+    return "pendente";
+  }
+
+  function computeStats(list) {
+    const withStatus = list.map(e => ({ ...e, statusEfetivo: deriveStatus(e) }));
+    const total = withStatus.length;
+    const done = withStatus.filter(e => e.statusEfetivo === "concluida").length;
+    const late = withStatus.filter(e => e.statusEfetivo === "atrasada").length;
+    const avgPct = total > 0
+      ? Math.round(withStatus.reduce((s, e) => s + (Number(e.progresso) || 0), 0) / total)
+      : 0;
+    return { total, done, late, avgPct };
+  }
+
+  function allBlocos() {
+    return CUSTOM_BLOCOS.map(b => ({
+      key: b.blocoKey,
+      titulo: b.titulo,
+      descricao: b.descricao || "Bloco criado por Everson Casagrande.",
+      ico: "📦",
+      cls: "custom",
+      custom: true
+    }));
+  }
+
+  function cardHtml(bloco, stats) {
+    const href = `./painel-entregas.html?grupo=${encodeURIComponent(bloco.key)}`;
+    let pillClass = "pill";
+    let pillText = "Sem itens";
+    let barClass = "progress-bar warn";
+    if (stats.total === 0) {
+      pillText = "Sem itens";
+    } else if (stats.avgPct >= 100) {
+      pillClass = "pill pill-ok";
+      pillText = "Tudo entregue";
+      barClass = "progress-bar";
+    } else if (stats.late > 0) {
+      pillClass = "pill pill-bad";
+      pillText = `${stats.late} atrasada(s)`;
+      barClass = "progress-bar bad";
+    } else {
+      pillClass = "pill pill-info";
+      pillText = "Em andamento";
+      barClass = stats.avgPct >= 50 ? "progress-bar warn" : "progress-bar bad";
+    }
+
+    return `
+      <div class="hub-card ${escapeHtml(bloco.cls || "")}" style="position:relative">
+        <button type="button" class="btn-mini danger btn-del-bloco" data-del-bloco="${escapeHtml(bloco.key)}" title="Excluir bloco" style="position:absolute;top:12px;right:12px;z-index:2">Excluir</button>
+        <a href="${href}" style="display:block;text-decoration:none;color:inherit">
+          <div class="hub-ico">${bloco.ico || "📦"}</div>
+          <h3>${escapeHtml(bloco.titulo)}</h3>
+          <p>${escapeHtml(bloco.descricao || "")}</p>
+          <div class="hub-meta">
+            <div>
+              <div class="hub-pct">${stats.avgPct}%</div>
+              <div class="hub-stats">${stats.total} entrega(s) · ${stats.done} concluída(s)</div>
+            </div>
+            <span class="${pillClass}">${pillText}</span>
+          </div>
+          <div class="${barClass}"><span style="width:${stats.avgPct}%"></span></div>
+        </a>
+      </div>
+    `;
+  }
+
+  function renderHub() {
+    const doPeriodo = ENTREGAS;
+    const blocos = allBlocos();
+
+    if (!blocos.length) {
+      hubGrid.innerHTML = `
+        <div class="aniversariantes-empty" style="grid-column:1/-1;padding:28px;text-align:center;opacity:.85">
+          <strong style="display:block;margin-bottom:6px;font-size:16px">Painel novo — ainda sem blocos</strong>
+          <p style="margin:0">Clique em <b>+ Criar bloco</b> para começar a lançar suas demandas.</p>
+        </div>`;
+      return;
+    }
+
+    hubGrid.innerHTML = blocos.map(b => {
+      const list = doPeriodo.filter(e => resolveGrupo(e) === b.key);
+      return cardHtml(b, computeStats(list));
+    }).join("");
+
+    hubGrid.querySelectorAll("[data-del-bloco]").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        excluirBloco(btn.dataset.delBloco);
+      });
+    });
+  }
+
+  async function excluirBloco(blocoKey) {
+    const bloco = CUSTOM_BLOCOS.find(b => b.blocoKey === blocoKey);
+    if (!bloco) return;
+    const qtd = ENTREGAS.filter(e => resolveGrupo(e) === blocoKey).length;
+    const msgConfirm = qtd
+      ? `Excluir o bloco "${bloco.titulo}" e as ${qtd} entrega(s) dele?`
+      : `Excluir o bloco "${bloco.titulo}"?`;
+    if (!confirm(msgConfirm)) return;
+
+    setMsg("Excluindo bloco…");
+    try {
+      const batch = writeBatch(db);
+      if (bloco.id) batch.delete(doc(db, COLLECTION, bloco.id));
+      ENTREGAS.filter(e => resolveGrupo(e) === blocoKey).forEach(e => {
+        if (e.id) batch.delete(doc(db, COLLECTION, e.id));
+      });
+      await batch.commit();
+      setMsg("Bloco excluído.", "success");
+      await loadData();
+    } catch (err) {
+      console.error(err);
+      setMsg(err?.message || "Erro ao excluir bloco.", "error");
+    }
+  }
+
+
+  function blocoTitulo(key) {
+    const b = CUSTOM_BLOCOS.find(x => x.blocoKey === key);
+    return b?.titulo || key || "—";
+  }
+
+  function toBR(iso) {
+    if (!iso) return "—";
+    const [y, m, d] = String(iso).split("-");
+    return `${d}/${m}/${y}`;
+  }
+
+  function statusLabel(st) {
+    return ({ pendente: "Pendente", em_andamento: "Em andamento", concluida: "Concluída", atrasada: "Atrasada" })[st] || st;
+  }
+
+  function statusPill(st) {
+    if (st === "concluida") return `<span class="pill pill-ok">${statusLabel(st)}</span>`;
+    if (st === "atrasada") return `<span class="pill pill-bad">${statusLabel(st)}</span>`;
+    if (st === "em_andamento") return `<span class="pill pill-info">${statusLabel(st)}</span>`;
+    return `<span class="pill pill-warn">${statusLabel(st)}</span>`;
+  }
+
+  function quickListItems() {
+    const modo = (document.getElementById("quickFiltro")?.value || "pendentes_hoje");
+    const hoje = todayISO();
+    return ENTREGAS
+      .map(e => ({ ...e, statusEfetivo: deriveStatus(e) }))
+      .filter(e => {
+        const st = e.statusEfetivo;
+        const prazo = String(e.prazo || "").slice(0, 10);
+        const pendente = st !== "concluida";
+        const hojePrazo = prazo === hoje;
+        if (modo === "pendentes") return pendente;
+        if (modo === "hoje") return hojePrazo;
+        if (modo === "atrasadas") return st === "atrasada";
+        // pendentes_hoje
+        return pendente || hojePrazo;
+      })
+      .sort((a, b) => {
+        const order = { atrasada: 0, pendente: 1, em_andamento: 2, concluida: 3 };
+        const oa = order[a.statusEfetivo] ?? 9;
+        const ob = order[b.statusEfetivo] ?? 9;
+        if (oa !== ob) return oa - ob;
+        return String(a.prazo || "").localeCompare(String(b.prazo || ""));
+      });
+  }
+
+  function renderQuickList() {
+    const tbody = document.getElementById("quickTbody");
+    if (!tbody) return;
+    const list = quickListItems();
+    if (!list.length) {
+      tbody.innerHTML = `<tr><td colspan="7" class="quick-empty">Nenhuma entrega pendente ou com prazo hoje.</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = list.map(e => {
+      const pct = Number(e.progresso) || 0;
+      const rowClass = e.statusEfetivo === "atrasada" ? "row-late" : "";
+      return `
+        <tr class="${rowClass}" data-qid="${escapeHtml(e.id)}">
+          <td><strong>${escapeHtml(e.titulo || "—")}</strong></td>
+          <td>${escapeHtml(blocoTitulo(resolveGrupo(e)))}</td>
+          <td>${escapeHtml(e.responsavel || "—")}</td>
+          <td>${toBR(e.prazo)}</td>
+          <td>
+            <div class="quick-prog">
+              <input type="number" min="0" max="100" value="${pct}" data-qprog="${escapeHtml(e.id)}" />
+              <span>%</span>
+            </div>
+          </td>
+          <td>${statusPill(e.statusEfetivo)}</td>
+          <td>
+            <div class="quick-actions">
+              <button type="button" class="btn-mini" data-qsave="${escapeHtml(e.id)}">Salvar %</button>
+              <button type="button" class="btn-mini" data-qdone="${escapeHtml(e.id)}" style="background:rgba(34,197,94,.9);border-color:transparent">Finalizar</button>
+              <button type="button" class="btn-mini" data-qedit="${escapeHtml(e.id)}">Editar</button>
+            </div>
+          </td>
+        </tr>`;
+    }).join("");
+
+    tbody.querySelectorAll("[data-qsave]").forEach(btn => {
+      btn.addEventListener("click", () => salvarProgressoRapido(btn.dataset.qsave));
+    });
+    tbody.querySelectorAll("[data-qdone]").forEach(btn => {
+      btn.addEventListener("click", () => finalizarEntrega(btn.dataset.qdone));
+    });
+    tbody.querySelectorAll("[data-qedit]").forEach(btn => {
+      btn.addEventListener("click", () => openQuickEdit(btn.dataset.qedit));
+    });
+  }
+
+  async function patchEntrega(id, patch) {
+    await setDoc(doc(db, COLLECTION, id), {
+      ...patch,
+      updatedAt: serverTimestamp(),
+      updatedBy: usuario
+    }, { merge: true });
+    const e = ENTREGAS.find(x => x.id === id);
+    if (e) Object.assign(e, patch);
+  }
+
+  async function salvarProgressoRapido(id) {
+    const input = document.querySelector(`[data-qprog="${id}"]`);
+    const progresso = Math.min(100, Math.max(0, Number(input?.value) || 0));
+    setMsg("Salvando…");
+    try {
+      await patchEntrega(id, { progresso });
+      setMsg("Progresso atualizado!", "success");
+      renderHub();
+      renderQuickList();
+    } catch (err) {
+      console.error(err);
+      setMsg(err?.message || "Erro ao salvar.", "error");
+    }
+  }
+
+  async function finalizarEntrega(id) {
+    setMsg("Finalizando…");
+    try {
+      await patchEntrega(id, { progresso: 100 });
+      setMsg("Entrega finalizada!", "success");
+      renderHub();
+      renderQuickList();
+    } catch (err) {
+      console.error(err);
+      setMsg(err?.message || "Erro ao finalizar.", "error");
+    }
+  }
+
+  let quickEditId = null;
+  const qeBackdrop = document.getElementById("quickEditBackdrop");
+  const qeTitulo = document.getElementById("qeTitulo");
+  const qeResponsavel = document.getElementById("qeResponsavel");
+  const qePrazo = document.getElementById("qePrazo");
+  const qeProgresso = document.getElementById("qeProgresso");
+  const qeObs = document.getElementById("qeObs");
+  const qeMsg = document.getElementById("qeMsg");
+
+  function setQeMsg(text, type = "info") {
+    qeMsg.textContent = text || "";
+    qeMsg.style.color = type === "success" ? "#22c55e" : (type === "error" ? "#ef4444" : "#d1d5db");
+  }
+
+  function openQuickEdit(id) {
+    const e = ENTREGAS.find(x => x.id === id);
+    if (!e) return;
+    quickEditId = id;
+    qeTitulo.value = e.titulo || "";
+    qeResponsavel.value = e.responsavel || "";
+    qePrazo.value = String(e.prazo || "").slice(0, 10);
+    qeProgresso.value = String(Number(e.progresso) || 0);
+    qeObs.value = e.observacoes || "";
+    setQeMsg("");
+    qeBackdrop.classList.add("open");
+  }
+
+  function closeQuickEdit() {
+    qeBackdrop.classList.remove("open");
+    quickEditId = null;
+  }
+
+  async function saveQuickEdit() {
+    if (!quickEditId) return;
+    const titulo = (qeTitulo.value || "").trim();
+    if (!titulo) { setQeMsg("Informe o título.", "error"); return; }
+    const progresso = Math.min(100, Math.max(0, Number(qeProgresso.value) || 0));
+    setQeMsg("Salvando…");
+    try {
+      await patchEntrega(quickEditId, {
+        titulo,
+        responsavel: (qeResponsavel.value || "").trim(),
+        prazo: (qePrazo.value || "").trim(),
+        progresso,
+        observacoes: (qeObs.value || "").trim()
+      });
+      setQeMsg("");
+      setMsg("Entrega atualizada!", "success");
+      closeQuickEdit();
+      renderHub();
+      renderQuickList();
+    } catch (err) {
+      console.error(err);
+      setQeMsg(err?.message || "Erro ao salvar.", "error");
+    }
+  }
+
+  async function loadData() {
+    setMsg("Carregando…");
+    try {
+      const [snapEnt, snapBlocos] = await Promise.all([
+        getDocs(query(collection(db, COLLECTION), where("tipo", "==", TIPO_ENTREGA))),
+        getDocs(query(collection(db, COLLECTION), where("tipo", "==", TIPO_BLOCO)))
+      ]);
+      ENTREGAS = snapEnt.docs.map(d => ({ id: d.id, ...d.data() }));
+      CUSTOM_BLOCOS = snapBlocos.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .filter(b => b.blocoKey && b.titulo)
+        .sort((a, b) => String(a.titulo).localeCompare(String(b.titulo), "pt-BR"));
+      setMsg("");
+      renderHub();
+      renderQuickList();
+    } catch (err) {
+      console.error(err);
+      setMsg("Erro ao carregar. Verifique a conexão com o Firebase.", "error");
+    }
+  }
+
+  function openModal() {
+    setModalMsg("");
+    mTitulo.value = "";
+    mDescricao.value = "";
+    modalBackdrop.classList.add("open");
+    mTitulo.focus();
+  }
+  function closeModal() {
+    modalBackdrop.classList.remove("open");
+  }
+
+  async function salvarBloco() {
+    const titulo = (mTitulo.value || "").trim();
+    if (!titulo) {
+      setModalMsg("Informe o nome do bloco.", "error");
+      return;
+    }
+
+    let key = slug(titulo);
+    const existentes = new Set(allBlocos().map(b => b.key));
+    if (existentes.has(key)) key = `${key}_${makeId().slice(0, 8)}`;
+
+    const id = `bloco_everson_${key}`;
+    btnSaveModal.disabled = true;
+    setModalMsg("Salvando…");
+
+    try {
+      await setDoc(doc(db, COLLECTION, id), {
+        tipo: TIPO_BLOCO,
+        escopo: ESCOPO,
+        blocoKey: key,
+        titulo,
+        descricao: (mDescricao.value || "").trim(),
+        createdBy: usuario,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+
+      setModalMsg("");
+      setMsg("Bloco criado!", "success");
+      closeModal();
+      await loadData();
+    } catch (err) {
+      console.error(err);
+      const detail = err?.code === "permission-denied"
+        ? "Sem permissão no Firestore."
+        : (err?.message || "Erro ao criar bloco.");
+      setModalMsg(detail, "error");
+    } finally {
+      btnSaveModal.disabled = false;
+    }
+  }
+
+  document.getElementById("btnNovoBloco").onclick = openModal;
+  document.getElementById("btnReload").onclick = loadData;
+  document.getElementById("mClose").onclick = closeModal;
+  document.getElementById("btnCancelModal").onclick = closeModal;
+  btnSaveModal.onclick = salvarBloco;
+  modalBackdrop.addEventListener("click", (e) => {
+    if (e.target === modalBackdrop) closeModal();
+  });
+  document.getElementById("quickFiltro").addEventListener("change", renderQuickList);
+  document.getElementById("qeClose").onclick = closeQuickEdit;
+  document.getElementById("qeCancel").onclick = closeQuickEdit;
+  document.getElementById("qeSave").onclick = saveQuickEdit;
+  document.getElementById("formQuickEdit").addEventListener("submit", (e) => {
+    e.preventDefault();
+    saveQuickEdit();
+  });
+  qeBackdrop.addEventListener("click", (e) => {
+    if (e.target === qeBackdrop) closeQuickEdit();
+  });
+  loadData();
+</script>
+</body>
+</html>
