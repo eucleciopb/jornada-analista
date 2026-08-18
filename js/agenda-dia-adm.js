@@ -40,7 +40,8 @@ const USERS = [
   "Tenório",
   "Victor",
   "Marcio",
-  "Andre"
+  "Andre",
+  "Ana Paula"
 ];
 
 /** Ocultos por padrão na visualização admin */

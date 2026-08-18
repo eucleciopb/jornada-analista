@@ -14,7 +14,7 @@ export const USUARIOS_CONHECIDOS = [
   // Analistas
   "Alex", "Daniel", "Emerson", "Euclecio", "Felipe", "Joice", "Maiello",
   "Michel", "Muller", "Robert", "Rodrigo", "Rosilene", "Tenório", "Victor",
-  "Marcio", "Andre",
+  "Marcio", "Andre", "Ana Paula",
   // Admins
   "Bruna", "Elaine", "Pedro"
 ];
