@@ -55,6 +55,29 @@
   object-fit: cover;
 }
 
+.course-cover-copy {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 18px;
+  color: #fff;
+}
+
+.course-cover-copy strong {
+  display: block;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+}
+
+.course-cover-copy span {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.85;
+}
+
 .course-cover-badge {
   position: absolute;
   top: 14px;

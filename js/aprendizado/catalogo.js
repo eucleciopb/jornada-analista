@@ -52,6 +52,10 @@ for (const curso of CURSOS) {
       <div class="course-cover">
         <img src="${curso.capa}" alt="Capa ${escapeHtml(curso.titulo)}" />
         <span class="course-cover-badge">${escapeHtml(curso.selo)}</span>
+        <div class="course-cover-copy">
+          <strong>${escapeHtml(curso.titulo)}</strong>
+          <span>Jornada Comercial</span>
+        </div>
       </div>
       <div class="course-body">
         <div>
