@@ -825,6 +825,12 @@
       .quick-actions{grid-template-columns:repeat(2,1fr);}
     }
 
+    @media(max-width:400px){
+      .bottom-nav{padding:8px 4px;}
+      .bottom-nav a,
+      .bottom-nav button{min-width:46px;font-size:9px;}
+    }
+
     @media(max-width:620px){
       .main{padding:14px 14px 90px;}
       .top-header{margin:-14px -14px 16px;padding:14px;}
