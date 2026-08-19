@@ -1,5 +1,63 @@
 import { escapeHtml } from "./usuario.js";
 
+function hashSeed(text) {
+  let h = 2166136261;
+  for (let i = 0; i < text.length; i++) {
+    h ^= text.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+function seededRandom(seed) {
+  let s = seed >>> 0;
+  return () => {
+    s = (Math.imul(s, 1664525) + 1013904223) >>> 0;
+    return s / 4294967296;
+  };
+}
+
+/** Embaralha opções de forma estável por aula/atividade (mesma ordem ao recarregar). */
+export function shuffleOptions(opcoes, seedKey) {
+  const rand = seededRandom(hashSeed(String(seedKey)));
+  const items = (opcoes || []).map((text, originalIndex) => ({ text, originalIndex }));
+  for (let i = items.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [items[i], items[j]] = [items[j], items[i]];
+  }
+  return items;
+}
+
+export function shuffleStrings(items, seedKey) {
+  const rand = seededRandom(hashSeed(String(seedKey)));
+  const arr = [...(items || [])];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+export function displayIndexForCorrect(shuffled, correctOriginalIndex) {
+  return shuffled.findIndex((item) => item.originalIndex === correctOriginalIndex);
+}
+
+function quizShuffle(aula) {
+  const shuffled = shuffleOptions(aula.quiz.opcoes, `${aula.id}:quiz`);
+  return {
+    shuffled,
+    correctDisplayIndex: displayIndexForCorrect(shuffled, aula.quiz.correta)
+  };
+}
+
+function evalShuffle(aula, pIdx, pergunta) {
+  const shuffled = shuffleOptions(pergunta.opcoes, `${aula.id}:avaliacao:${pIdx}`);
+  return {
+    shuffled,
+    correctDisplayIndex: displayIndexForCorrect(shuffled, pergunta.correta)
+  };
+}
+
 function list(items = []) {
   return `<ul>${items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`;
 }
@@ -137,13 +195,14 @@ export function renderAula(aula) {
   }
 
   if (aula.quiz) {
+    const { shuffled, correctDisplayIndex } = quizShuffle(aula);
     parts.push(`
-      <section class="quiz-box" data-activity="quiz" data-lesson="${escapeHtml(aula.id)}">
+      <section class="quiz-box" data-activity="quiz" data-lesson="${escapeHtml(aula.id)}" data-correct-index="${correctDisplayIndex}">
         <h3>${escapeHtml(aula.quiz.titulo || "Pergunta rápida")}</h3>
         <p>${escapeHtml(aula.quiz.pergunta)}</p>
         <div class="quiz-options">
-          ${aula.quiz.opcoes.map((op, idx) => `
-            <button class="choice-btn" type="button" data-index="${idx}">${escapeHtml(op)}</button>
+          ${shuffled.map((item, idx) => `
+            <button class="choice-btn" type="button" data-index="${idx}">${escapeHtml(item.text)}</button>
           `).join("")}
         </div>
         <div class="feedback" hidden></div>
@@ -152,12 +211,13 @@ export function renderAula(aula) {
   }
 
   if (aula.ordem) {
+    const ordemItens = shuffleStrings(aula.ordem.itens, `${aula.id}:ordem`);
     parts.push(`
       <section class="order-box" data-activity="ordem" data-lesson="${escapeHtml(aula.id)}">
         <h3>${escapeHtml(aula.ordem.titulo || "Atividade")}</h3>
         <p>${escapeHtml(aula.ordem.enunciado)}</p>
         <div class="quiz-options" data-order-list>
-          ${aula.ordem.itens.map((item, idx) => `
+          ${ordemItens.map((item, idx) => `
             <button class="order-item" type="button" data-id="${escapeHtml(item)}">${idx + 1}. ${escapeHtml(item)}</button>
           `).join("")}
         </div>
@@ -182,7 +242,7 @@ export function renderAula(aula) {
               ${escapeHtml(campo.label)}
               <select data-field="${escapeHtml(campo.id)}">
                 <option value="">Selecione...</option>
-                ${campo.opcoes.map((op) => `<option value="${escapeHtml(op)}">${escapeHtml(op)}</option>`).join("")}
+                ${shuffleStrings(campo.opcoes, `${aula.id}:cenario:${campo.id}`).map((op) => `<option value="${escapeHtml(op)}">${escapeHtml(op)}</option>`).join("")}
               </select>
             </label>
           `).join("")}
@@ -235,7 +295,7 @@ export function renderAula(aula) {
           Qual orientação deve ser feita?
           <select data-painel-acao>
             <option value="">Selecione...</option>
-            ${aula.painel.acoes.map((acao) => `<option value="${escapeHtml(acao)}">${escapeHtml(acao)}</option>`).join("")}
+            ${shuffleStrings(aula.painel.acoes, `${aula.id}:painel:acoes`).map((acao) => `<option value="${escapeHtml(acao)}">${escapeHtml(acao)}</option>`).join("")}
           </select>
         </label>
         <button class="btn-primary" type="button" data-painel-check>Conferir priorização</button>
@@ -280,16 +340,19 @@ export function renderAula(aula) {
       <section class="quiz-box" data-activity="avaliacao" data-lesson="${escapeHtml(aula.id)}">
         <h3>Avaliação de conhecimento</h3>
         <p>Responda às perguntas essenciais da integração. Você precisa acertar pelo menos ${aula.avaliacao.minimo} de ${aula.avaliacao.perguntas.length}.</p>
-        ${aula.avaliacao.perguntas.map((perg, pIdx) => `
-          <article data-eval-q="${pIdx}">
+        ${aula.avaliacao.perguntas.map((perg, pIdx) => {
+          const { shuffled, correctDisplayIndex } = evalShuffle(aula, pIdx, perg);
+          return `
+          <article data-eval-q="${pIdx}" data-correct-index="${correctDisplayIndex}">
             <p><strong>${pIdx + 1}. ${escapeHtml(perg.pergunta)}</strong></p>
             <div class="quiz-options">
-              ${perg.opcoes.map((op, oIdx) => `
-                <button class="choice-btn" type="button" data-eval-opt="${oIdx}">${escapeHtml(op)}</button>
+              ${shuffled.map((item, oIdx) => `
+                <button class="choice-btn" type="button" data-eval-opt="${oIdx}">${escapeHtml(item.text)}</button>
               `).join("")}
             </div>
           </article>
-        `).join("")}
+        `;
+        }).join("")}
         <button class="btn-primary" type="button" data-eval-check>Corrigir avaliação</button>
         <div class="feedback" hidden></div>
       </section>
@@ -319,15 +382,16 @@ function showFeedback(el, ok, text) {
 export function bindActivities(root, aula, savedAnswer, onAnswer) {
   const quiz = root.querySelector('[data-activity="quiz"]');
   if (quiz && aula.quiz) {
+    const correctIdx = Number(quiz.dataset.correctIndex);
     const buttons = [...quiz.querySelectorAll(".choice-btn")];
     const feedback = quiz.querySelector(".feedback");
     const apply = (idx) => {
       buttons.forEach((btn, i) => {
         btn.classList.toggle("is-selected", i === idx);
-        btn.classList.toggle("is-correct", i === aula.quiz.correta);
-        btn.classList.toggle("is-wrong", i === idx && i !== aula.quiz.correta);
+        btn.classList.toggle("is-correct", i === correctIdx);
+        btn.classList.toggle("is-wrong", i === idx && i !== correctIdx);
       });
-      const ok = idx === aula.quiz.correta;
+      const ok = idx === correctIdx;
       showFeedback(feedback, ok, ok ? aula.quiz.acerto : aula.quiz.erro);
       onAnswer({ tipo: "quiz", index: idx, ok });
     };
@@ -340,7 +404,7 @@ export function bindActivities(root, aula, savedAnswer, onAnswer) {
     const listEl = ordem.querySelector("[data-order-list]");
     const feedback = ordem.querySelector(".feedback");
     let selected = null;
-    const items = savedAnswer?.itens || [...aula.ordem.itens];
+    const items = savedAnswer?.itens || shuffleStrings(aula.ordem.itens, `${aula.id}:ordem`);
 
     const paint = () => {
       listEl.innerHTML = items.map((item, idx) => `
@@ -472,13 +536,14 @@ export function bindActivities(root, aula, savedAnswer, onAnswer) {
     });
     avaliacao.querySelector("[data-eval-check]")?.addEventListener("click", () => {
       let acertos = 0;
-      aula.avaliacao.perguntas.forEach((perg, idx) => {
+      aula.avaliacao.perguntas.forEach((_perg, idx) => {
         const qEl = avaliacao.querySelector(`[data-eval-q="${idx}"]`);
+        const correctIdx = Number(qEl.dataset.correctIndex);
         qEl.querySelectorAll(".choice-btn").forEach((btn, oIdx) => {
-          btn.classList.toggle("is-correct", oIdx === perg.correta);
-          btn.classList.toggle("is-wrong", Number(answers[idx]) === oIdx && oIdx !== perg.correta);
+          btn.classList.toggle("is-correct", oIdx === correctIdx);
+          btn.classList.toggle("is-wrong", Number(answers[idx]) === oIdx && oIdx !== correctIdx);
         });
-        if (Number(answers[idx]) === perg.correta) acertos += 1;
+        if (Number(answers[idx]) === correctIdx) acertos += 1;
       });
       const ok = acertos >= aula.avaliacao.minimo;
       showFeedback(
