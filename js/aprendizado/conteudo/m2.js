@@ -446,7 +446,7 @@ export const M2 = {
       mensagem: "Matinal → Rota → Acompanhamento → Vespertina → Análise → Plano de ação.",
       ordem: {
         titulo: "Coloque o dia na ordem",
-        enunciado: "Toque em uma etapa e use Subir/Descer até chegar na sequência correta. Depois confira.",
+        enunciado: "Use as setas ↑ ↓ ao lado de cada etapa para reorganizar. Depois confira.",
         itens: ["Análise", "Rota", "Plano de ação", "Matinal", "Vespertina", "Acompanhamento"],
         correta: ["Matinal", "Rota", "Acompanhamento", "Vespertina", "Análise", "Plano de ação"],
         acerto: "Sequência correta. Esse é o filme do dia comercial.",

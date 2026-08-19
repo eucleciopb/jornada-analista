@@ -510,6 +510,52 @@
   cursor: pointer;
 }
 
+.order-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: #f8fafc;
+}
+
+.order-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.order-controls {
+  display: flex;
+  gap: 6px;
+}
+
+.order-move {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.order-move:hover:not(:disabled) {
+  background: #dbeafe;
+  border-color: #2563eb;
+}
+
+.order-move:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
 .choice-btn:hover,
 .order-item:hover {
   border-color: #bfdbfe;

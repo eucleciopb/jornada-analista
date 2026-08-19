@@ -211,19 +211,12 @@ export function renderAula(aula) {
   }
 
   if (aula.ordem) {
-    const ordemItens = shuffleStrings(aula.ordem.itens, `${aula.id}:ordem`);
     parts.push(`
       <section class="order-box" data-activity="ordem" data-lesson="${escapeHtml(aula.id)}">
         <h3>${escapeHtml(aula.ordem.titulo || "Atividade")}</h3>
         <p>${escapeHtml(aula.ordem.enunciado)}</p>
-        <div class="quiz-options" data-order-list>
-          ${ordemItens.map((item, idx) => `
-            <button class="order-item" type="button" data-id="${escapeHtml(item)}">${idx + 1}. ${escapeHtml(item)}</button>
-          `).join("")}
-        </div>
+        <div class="quiz-options" data-order-list></div>
         <div class="page-actions">
-          <button class="btn-secondary" type="button" data-order-up>Subir</button>
-          <button class="btn-secondary" type="button" data-order-down>Descer</button>
           <button class="btn-primary" type="button" data-order-check>Conferir ordem</button>
         </div>
         <div class="feedback" hidden></div>
@@ -403,36 +396,35 @@ export function bindActivities(root, aula, savedAnswer, onAnswer) {
   if (ordem && aula.ordem) {
     const listEl = ordem.querySelector("[data-order-list]");
     const feedback = ordem.querySelector(".feedback");
-    let selected = null;
     const items = savedAnswer?.itens || shuffleStrings(aula.ordem.itens, `${aula.id}:ordem`);
+
+    const moveItem = (index, direction) => {
+      const target = index + direction;
+      if (target < 0 || target >= items.length) return;
+      [items[index], items[target]] = [items[target], items[index]];
+      paint();
+    };
 
     const paint = () => {
       listEl.innerHTML = items.map((item, idx) => `
-        <button class="order-item${item === selected ? " is-selected" : ""}" type="button" data-id="${escapeHtml(item)}">${idx + 1}. ${escapeHtml(item)}</button>
+        <div class="order-row">
+          <span class="order-label">${idx + 1}. ${escapeHtml(item)}</span>
+          <div class="order-controls" aria-label="Mover ${escapeHtml(item)}">
+            <button class="order-move" type="button" data-move="up" data-index="${idx}" ${idx === 0 ? "disabled" : ""} aria-label="Subir ${escapeHtml(item)}">↑</button>
+            <button class="order-move" type="button" data-move="down" data-index="${idx}" ${idx === items.length - 1 ? "disabled" : ""} aria-label="Descer ${escapeHtml(item)}">↓</button>
+          </div>
+        </div>
       `).join("");
-      listEl.querySelectorAll(".order-item").forEach((btn) => {
+
+      listEl.querySelectorAll("[data-move]").forEach((btn) => {
         btn.addEventListener("click", () => {
-          selected = btn.dataset.id;
-          paint();
+          const index = Number(btn.dataset.index);
+          moveItem(index, btn.dataset.move === "up" ? -1 : 1);
         });
       });
     };
     paint();
 
-    ordem.querySelector("[data-order-up]")?.addEventListener("click", () => {
-      const i = items.indexOf(selected);
-      if (i > 0) {
-        [items[i - 1], items[i]] = [items[i], items[i - 1]];
-        paint();
-      }
-    });
-    ordem.querySelector("[data-order-down]")?.addEventListener("click", () => {
-      const i = items.indexOf(selected);
-      if (i >= 0 && i < items.length - 1) {
-        [items[i + 1], items[i]] = [items[i], items[i + 1]];
-        paint();
-      }
-    });
     ordem.querySelector("[data-order-check]")?.addEventListener("click", () => {
       const ok = items.join("|") === aula.ordem.correta.join("|");
       showFeedback(feedback, ok, ok ? aula.ordem.acerto : aula.ordem.erro);
