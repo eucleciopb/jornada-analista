@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="robots" content="noindex,nofollow" />
+  <meta name="theme-color" content="#c62828" />
+  <title>Calculadora de Diluição e Dose</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #f3f4f6;
+      --bg-soft: #eef0f3;
+      --surface: #ffffff;
+      --text: #1f2937;
+      --text-muted: #6b7280;
+      --border: #e5e7eb;
+      --red: #c62828;
+      --red-dark: #a31f1f;
+      --red-soft: #fdecea;
+      --green: #2e7d32;
+      --green-soft: #e8f5e9;
+      --shadow: 0 8px 24px rgba(31, 41, 55, 0.08);
+      --radius: 18px;
+      --radius-sm: 12px;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
+      background:
+        radial-gradient(ellipse 120% 80% at 0% 0%, rgba(198, 40, 40, 0.06), transparent 50%),
+        radial-gradient(ellipse 100% 60% at 100% 0%, rgba(46, 125, 50, 0.05), transparent 45%),
+        linear-gradient(180deg, #fafbfc 0%, var(--bg) 40%, var(--bg-soft) 100%);
+      color: var(--text);
+      font-family: "DM Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 16px;
+      line-height: 1.45;
+      -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+      padding: 20px 16px calc(28px + var(--safe-bottom));
+    }
+
+    .wrap {
+      width: 100%;
+      max-width: 520px;
+      margin: 0 auto;
+    }
+
+    header.page-header {
+      margin-bottom: 20px;
+      text-align: left;
+    }
+
+    header.page-header .eyebrow {
+      display: inline-block;
+      margin: 0 0 8px;
+      color: var(--red);
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    header.page-header h1 {
+      margin: 0;
+      font-size: clamp(1.45rem, 5.2vw, 1.85rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+
+    header.page-header p {
+      margin: 8px 0 0;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px 16px;
+      margin-bottom: 16px;
+    }
+
+    .card h2 {
+      margin: 0 0 14px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    .field {
+      margin-bottom: 14px;
+    }
+
+    .field:last-of-type {
+      margin-bottom: 0;
+    }
+
+    .field label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .input-row {
+      display: flex;
+      align-items: stretch;
+      gap: 0;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: #fafafa;
+      overflow: hidden;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    }
+
+    .input-row:focus-within {
+      border-color: var(--red);
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(198, 40, 40, 0.12);
+    }
+
+    .input-row input {
+      flex: 1;
+      min-width: 0;
+      border: 0;
+      outline: none;
+      background: transparent;
+      padding: 16px 14px;
+      font-size: 1.35rem;
+      font-weight: 600;
+      font-family: inherit;
+      color: var(--text);
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    .input-row .unit {
+      display: flex;
+      align-items: center;
+      padding: 0 14px;
+      background: var(--bg-soft);
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      font-weight: 700;
+      border-left: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    .btn {
+      display: block;
+      width: 100%;
+      border: 0;
+      border-radius: 14px;
+      padding: 16px 18px;
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      transition: transform 0.12s ease, background 0.15s ease, box-shadow 0.15s ease;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    .btn:active {
+      transform: scale(0.985);
+    }
+
+    .btn-primary {
+      margin-top: 16px;
+      background: var(--red);
+      color: #fff;
+      box-shadow: 0 10px 20px rgba(198, 40, 40, 0.22);
+    }
+
+    .btn-primary:hover {
+      background: var(--red-dark);
+    }
+
+    .btn-secondary {
+      margin-top: 4px;
+      background: #fff;
+      color: var(--red);
+      border: 1.5px solid rgba(198, 40, 40, 0.35);
+    }
+
+    .btn-secondary:hover {
+      background: var(--red-soft);
+    }
+
+    .result-card {
+      border-color: transparent;
+      background: linear-gradient(160deg, #fff 0%, var(--green-soft) 100%);
+      box-shadow: var(--shadow), inset 0 0 0 1.5px rgba(46, 125, 50, 0.18);
+      transition: background 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .result-card.is-error {
+      background: linear-gradient(160deg, #fff 0%, var(--red-soft) 100%);
+      box-shadow: var(--shadow), inset 0 0 0 1.5px rgba(198, 40, 40, 0.2);
+    }
+
+    .result-card.is-fresh:not(.is-error) {
+      animation: pulseFresh 0.45s ease;
+    }
+
+    @keyframes pulseFresh {
+      0% { transform: scale(1); }
+      40% { transform: scale(1.012); }
+      100% { transform: scale(1); }
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 14px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(46, 125, 50, 0.12);
+      color: var(--green);
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .result-card.is-error .status-pill {
+      background: rgba(198, 40, 40, 0.12);
+      color: var(--red);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .metric {
+      margin-bottom: 14px;
+    }
+
+    .metric:last-child {
+      margin-bottom: 0;
+    }
+
+    .metric .label {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      font-weight: 600;
+    }
+
+    .metric .value {
+      display: block;
+      font-size: clamp(1.55rem, 6vw, 1.9rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      word-break: break-word;
+    }
+
+    .result-card.is-error .metric .value {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--red);
+      letter-spacing: 0;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 300px;
+      background: #fff;
+    }
+
+    th, td {
+      padding: 13px 10px;
+      text-align: left;
+      font-size: 0.92rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    th {
+      background: var(--bg-soft);
+      color: var(--text-muted);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    td {
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+    }
+
+    td.dose {
+      color: var(--red);
+      font-weight: 700;
+    }
+
+    tr:last-child th,
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .summary-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: var(--radius-sm);
+      background: var(--bg-soft);
+    }
+
+    .summary-row span {
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      font-weight: 600;
+    }
+
+    .summary-row strong {
+      font-size: 1.05rem;
+      font-weight: 700;
+      text-align: right;
+      color: var(--text);
+    }
+
+    .disclaimer {
+      margin: 8px 4px 0;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      line-height: 1.5;
+      text-align: center;
+    }
+
+    @media (min-width: 640px) {
+      body {
+        padding: 32px 24px 40px;
+      }
+
+      .card {
+        padding: 22px 22px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="page-header">
+      <p class="eyebrow">Ferramenta rápida</p>
+      <h1>Calculadora de Diluição e Dose</h1>
+      <p>Informe os dados do frasco e visualize concentração, equivalência U-100 e volumes.</p>
+    </header>
+
+    <section class="card" aria-labelledby="titulo-dados">
+      <h2 id="titulo-dados">1. Informe os dados</h2>
+
+      <div class="field">
+        <label for="qtdMg">Quantidade total no frasco/ampola</label>
+        <div class="input-row">
+          <input
+            id="qtdMg"
+            name="qtdMg"
+            type="text"
+            inputmode="decimal"
+            autocomplete="off"
+            autocapitalize="off"
+            autocorrect="off"
+            spellcheck="false"
+            value="40"
+            aria-describedby="unit-mg"
+          />
+          <span class="unit" id="unit-mg">mg</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="volMl">Volume final da diluição</label>
+        <div class="input-row">
+          <input
+            id="volMl"
+            name="volMl"
+            type="text"
+            inputmode="decimal"
+            autocomplete="off"
+            autocapitalize="off"
+            autocorrect="off"
+            spellcheck="false"
+            value="1"
+            aria-describedby="unit-ml"
+          />
+          <span class="unit" id="unit-ml">mL</span>
+        </div>
+      </div>
+
+      <button type="button" class="btn btn-primary" id="btnAtualizar">ATUALIZAR FÓRMULA</button>
+    </section>
+
+    <section class="card result-card" id="resultadoCard" aria-live="polite">
+      <div class="status-pill" id="statusPill">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span id="statusText">Cálculo atualizado</span>
+      </div>
+      <div class="metric">
+        <span class="label">Concentração</span>
+        <span class="value" id="concentracaoValor">—</span>
+      </div>
+      <div class="metric" id="equivMetric">
+        <span class="label">Equivalência</span>
+        <span class="value" id="equivalenciaValor">—</span>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="titulo-tabela">
+      <h2 id="titulo-tabela">2. Tabela automática de doses</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Dose</th>
+              <th scope="col">Volume a aspirar</th>
+              <th scope="col">Seringa U-100</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaDoses">
+            <tr><td colspan="3">—</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <button type="button" class="btn btn-secondary" id="btnRecalcular" style="margin-top:16px;">RECALCULAR TABELA</button>
+    </section>
+
+    <section class="card" aria-labelledby="titulo-resumo">
+      <h2 id="titulo-resumo">3. Dados que você informou</h2>
+      <div class="summary-list">
+        <div class="summary-row">
+          <span>Quantidade na ampola</span>
+          <strong id="resumoQtd">—</strong>
+        </div>
+        <div class="summary-row">
+          <span>Volume da diluição</span>
+          <strong id="resumoVol">—</strong>
+        </div>
+        <div class="summary-row">
+          <span>Concentração calculada</span>
+          <strong id="resumoConc">—</strong>
+        </div>
+        <div class="summary-row">
+          <span>Equivalência U-100</span>
+          <strong id="resumoEquiv">—</strong>
+        </div>
+      </div>
+    </section>
+
+    <p class="disclaimer">
+      Esta ferramenta realiza apenas conversões matemáticas. Confirme sempre a concentração, a prescrição e a graduação da seringa utilizada.
+    </p>
+  </div>
+
+  <script>
+    (function () {
+      "use strict";
+
+      var DOSES_MG = [2.5, 5, 7.5, 10];
+
+      var elQtd = document.getElementById("qtdMg");
+      var elVol = document.getElementById("volMl");
+      var elConc = document.getElementById("concentracaoValor");
+      var elEquiv = document.getElementById("equivalenciaValor");
+      var elEquivMetric = document.getElementById("equivMetric");
+      var elTabela = document.getElementById("tabelaDoses");
+      var elResumoQtd = document.getElementById("resumoQtd");
+      var elResumoVol = document.getElementById("resumoVol");
+      var elResumoConc = document.getElementById("resumoConc");
+      var elResumoEquiv = document.getElementById("resumoEquiv");
+      var elResultado = document.getElementById("resultadoCard");
+      var elStatusText = document.getElementById("statusText");
+      var btnAtualizar = document.getElementById("btnAtualizar");
+      var btnRecalcular = document.getElementById("btnRecalcular");
+
+      function parseNumeroBR(valor) {
+        if (valor == null) return NaN;
+        var texto = String(valor).trim().replace(/\s/g, "");
+        if (!texto) return NaN;
+
+        // Aceita 2,5 e 2.5; remove milhares tipo 1.200,5 → 1200.5
+        if (texto.indexOf(",") >= 0 && texto.indexOf(".") >= 0) {
+          if (texto.lastIndexOf(",") > texto.lastIndexOf(".")) {
+            texto = texto.replace(/\./g, "").replace(",", ".");
+          } else {
+            texto = texto.replace(/,/g, "");
+          }
+        } else if (texto.indexOf(",") >= 0) {
+          texto = texto.replace(",", ".");
+        }
+
+        if (!/^-?\d+(\.\d+)?$/.test(texto)) return NaN;
+        return Number(texto);
+      }
+
+      function formatarBR(num, maxCasas) {
+        if (!isFinite(num)) return "—";
+        var casas = typeof maxCasas === "number" ? maxCasas : 4;
+        var arred = Number(num.toFixed(casas));
+        var texto = String(arred);
+        if (texto.indexOf("e") >= 0 || texto.indexOf("E") >= 0) {
+          texto = arred.toFixed(casas);
+        }
+        // Remove zeros à direita desnecessários
+        if (texto.indexOf(".") >= 0) {
+          texto = texto.replace(/\.?0+$/, "");
+        }
+        return texto.replace(".", ",");
+      }
+
+      function limparResultados(mensagem) {
+        elResultado.classList.add("is-error");
+        elResultado.classList.remove("is-fresh");
+        elStatusText.textContent = "Valores inválidos";
+        elConc.textContent = mensagem;
+        elEquivMetric.style.display = "none";
+        elEquiv.textContent = "";
+        elTabela.innerHTML = '<tr><td colspan="3">' + mensagem + "</td></tr>";
+        elResumoQtd.textContent = "—";
+        elResumoVol.textContent = "—";
+        elResumoConc.textContent = "—";
+        elResumoEquiv.textContent = "—";
+      }
+
+      function calcularTudo() {
+        // Sempre relê os inputs no momento da execução
+        var qtdMg = parseNumeroBR(elQtd.value);
+        var volMl = parseNumeroBR(elVol.value);
+
+        if (
+          !isFinite(qtdMg) ||
+          !isFinite(volMl) ||
+          qtdMg <= 0 ||
+          volMl <= 0
+        ) {
+          limparResultados("Informe valores válidos maiores que zero.");
+          return;
+        }
+
+        var concentracao = qtdMg / volMl;
+        if (!isFinite(concentracao) || concentracao <= 0) {
+          limparResultados("Informe valores válidos maiores que zero.");
+          return;
+        }
+
+        var mgPorUnidade = concentracao / 100;
+
+        elResultado.classList.remove("is-error");
+        elEquivMetric.style.display = "";
+        elStatusText.textContent = "Cálculo atualizado";
+
+        elConc.textContent = formatarBR(concentracao, 4) + " mg/mL";
+        elEquiv.textContent = formatarBR(mgPorUnidade, 4) + " mg por unidade U-100";
+
+        var html = "";
+        for (var i = 0; i < DOSES_MG.length; i++) {
+          var dose = DOSES_MG[i];
+          var volumeEmMl = dose / concentracao;
+          var unidadesU100 = volumeEmMl * 100;
+
+          if (!isFinite(volumeEmMl) || !isFinite(unidadesU100)) {
+            limparResultados("Informe valores válidos maiores que zero.");
+            return;
+          }
+
+          html +=
+            "<tr>" +
+            '<td class="dose">' + formatarBR(dose, 2) + " mg</td>" +
+            "<td>" + formatarBR(volumeEmMl, 4) + " mL</td>" +
+            "<td>" + formatarBR(unidadesU100, 4) + " unidades</td>" +
+            "</tr>";
+        }
+        elTabela.innerHTML = html;
+
+        elResumoQtd.textContent = formatarBR(qtdMg, 4) + " mg";
+        elResumoVol.textContent = formatarBR(volMl, 4) + " mL";
+        elResumoConc.textContent = formatarBR(concentracao, 4) + " mg/mL";
+        elResumoEquiv.textContent = formatarBR(mgPorUnidade, 4) + " mg/unidade";
+
+        // Confirmação visual de atualização
+        elResultado.classList.remove("is-fresh");
+        // force reflow for animation restart (Safari-safe)
+        void elResultado.offsetWidth;
+        elResultado.classList.add("is-fresh");
+      }
+
+      btnAtualizar.addEventListener("click", calcularTudo);
+      btnRecalcular.addEventListener("click", calcularTudo);
+      elQtd.addEventListener("input", calcularTudo);
+      elQtd.addEventListener("change", calcularTudo);
+      elVol.addEventListener("input", calcularTudo);
+      elVol.addEventListener("change", calcularTudo);
+
+      calcularTudo();
+    })();
+  </script>
+</body>
+</html>
