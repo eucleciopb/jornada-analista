@@ -361,6 +361,18 @@
       color: var(--text);
     }
 
+    .section-hint {
+      margin: -6px 0 14px;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      line-height: 1.4;
+    }
+
+    td.duracao {
+      color: var(--green);
+      font-weight: 700;
+    }
+
     .disclaimer {
       margin: 8px 4px 0;
       color: var(--text-muted);
@@ -488,6 +500,25 @@
       </div>
     </section>
 
+    <section class="card" aria-labelledby="titulo-duracao">
+      <h2 id="titulo-duracao">4. Duração do frasco (1× por semana)</h2>
+      <p class="section-hint">Quanto tempo o frasco dura se cada dose for aplicada uma vez por semana.</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Dose</th>
+              <th scope="col">Duração</th>
+              <th scope="col">Aproximação</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaDuracao">
+            <tr><td colspan="3">—</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
     <p class="disclaimer">
       Esta ferramenta realiza apenas conversões matemáticas. Confirme sempre a concentração, a prescrição e a graduação da seringa utilizada.
     </p>
@@ -497,7 +528,7 @@
     (function () {
       "use strict";
 
-      var DOSES_MG = [2.5, 5, 7.5, 10];
+      var DOSES_MG = [2.5, 5, 7.5, 10, 15];
 
       var elQtd = document.getElementById("qtdMg");
       var elVol = document.getElementById("volMl");
@@ -505,6 +536,7 @@
       var elEquiv = document.getElementById("equivalenciaValor");
       var elEquivMetric = document.getElementById("equivMetric");
       var elTabela = document.getElementById("tabelaDoses");
+      var elTabelaDuracao = document.getElementById("tabelaDuracao");
       var elResumoQtd = document.getElementById("resumoQtd");
       var elResumoVol = document.getElementById("resumoVol");
       var elResumoConc = document.getElementById("resumoConc");
@@ -549,6 +581,19 @@
         return texto.replace(".", ",");
       }
 
+      function formatarDuracao(semanas) {
+        if (!isFinite(semanas) || semanas <= 0) return "—";
+
+        var textoSemanas = formatarBR(semanas, 2) + (semanas === 1 ? " semana" : " semanas");
+        var meses = semanas / 4.345;
+        var textoMeses = formatarBR(meses, 1) + (meses === 1 ? " mês" : " meses");
+
+        return {
+          principal: textoSemanas,
+          aproximacao: "≈ " + textoMeses
+        };
+      }
+
       function limparResultados(mensagem) {
         elResultado.classList.add("is-error");
         elResultado.classList.remove("is-fresh");
@@ -557,6 +602,7 @@
         elEquivMetric.style.display = "none";
         elEquiv.textContent = "";
         elTabela.innerHTML = '<tr><td colspan="3">' + mensagem + "</td></tr>";
+        elTabelaDuracao.innerHTML = '<tr><td colspan="3">' + mensagem + "</td></tr>";
         elResumoQtd.textContent = "—";
         elResumoVol.textContent = "—";
         elResumoConc.textContent = "—";
@@ -594,12 +640,20 @@
         elEquiv.textContent = formatarBR(mgPorUnidade, 4) + " mg por unidade U-100";
 
         var html = "";
+        var htmlDuracao = "";
         for (var i = 0; i < DOSES_MG.length; i++) {
           var dose = DOSES_MG[i];
           var volumeEmMl = dose / concentracao;
           var unidadesU100 = volumeEmMl * 100;
+          var semanas = qtdMg / dose;
+          var duracao = formatarDuracao(semanas);
 
-          if (!isFinite(volumeEmMl) || !isFinite(unidadesU100)) {
+          if (
+            !isFinite(volumeEmMl) ||
+            !isFinite(unidadesU100) ||
+            !isFinite(semanas) ||
+            semanas <= 0
+          ) {
             limparResultados("Informe valores válidos maiores que zero.");
             return;
           }
@@ -610,8 +664,16 @@
             "<td>" + formatarBR(volumeEmMl, 4) + " mL</td>" +
             "<td>" + formatarBR(unidadesU100, 4) + " unidades</td>" +
             "</tr>";
+
+          htmlDuracao +=
+            "<tr>" +
+            '<td class="dose">' + formatarBR(dose, 2) + " mg</td>" +
+            '<td class="duracao">' + duracao.principal + "</td>" +
+            "<td>" + duracao.aproximacao + "</td>" +
+            "</tr>";
         }
         elTabela.innerHTML = html;
+        elTabelaDuracao.innerHTML = htmlDuracao;
 
         elResumoQtd.textContent = formatarBR(qtdMg, 4) + " mg";
         elResumoVol.textContent = formatarBR(volMl, 4) + " mL";
