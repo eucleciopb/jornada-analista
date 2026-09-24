@@ -74,7 +74,8 @@ export const MATRICULA_POR_USUARIO = {
   Victor: "V82",
   Marcio: "M83",
   Andre: "A84",
-  "Ana Paula": "A85"
+  "Ana Paula": "A85",
+  Ribamar: "R86"
 };
 
 /** Rotas / páginas exclusivas de gestão por SV (bloquear para treinamento_produtos) */

@@ -41,7 +41,8 @@ const USERS = [
   "Victor",
   "Marcio",
   "Andre",
-  "Ana Paula"
+  "Ana Paula",
+  "Ribamar"
 ];
 
 /** Ocultos por padrão na visualização admin */
