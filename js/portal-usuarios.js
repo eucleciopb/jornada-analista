@@ -270,6 +270,47 @@ export function nomesOrdenados(mapaUsuarios, { somenteAtivos = true } = {}) {
   return nomes.sort((a, b) => a.localeCompare(b, "pt-BR"));
 }
 
+/**
+ * Nomes de analistas ativos do portal (para selects admin).
+ * Se o banco falhar/vazio, devolve o fallback informado.
+ */
+export async function listarNomesAnalistasAtivos(db, fs, fallback = []) {
+  return listarNomesUsuariosAtivos(db, fs, {
+    perfis: [PERFIL_ANALISTA],
+    fallback
+  });
+}
+
+/**
+ * Nomes de usuários ativos do portal (analistas e/ou admins).
+ */
+export async function listarNomesUsuariosAtivos(db, fs, {
+  perfis = null,
+  fallback = []
+} = {}) {
+  try {
+    const lista = await listarUsuariosPortal(db, fs);
+    const filtroPerfis = Array.isArray(perfis) && perfis.length
+      ? perfis.map(normalizarPerfil)
+      : null;
+    const nomes = lista
+      .filter((u) => {
+        if (u.ativo === false) return false;
+        if (filtroPerfis && !filtroPerfis.includes(normalizarPerfil(u.perfil))) return false;
+        return true;
+      })
+      .map((u) => normalizarNome(u.nome))
+      .filter(Boolean);
+    if (nomes.length) {
+      return [...new Set(nomes)].sort((a, b) => a.localeCompare(b, "pt-BR"));
+    }
+  } catch (err) {
+    console.warn("Falha ao listar usuários do portal:", err);
+  }
+  return [...new Set((fallback || []).filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b, "pt-BR"));
+}
+
 /** Sugere próxima matrícula no padrão Letra+número (ex.: A86). */
 export function sugerirMatricula(nome, usuariosExistentes = []) {
   const letra = String(nome || "U").trim().charAt(0).toUpperCase() || "U";

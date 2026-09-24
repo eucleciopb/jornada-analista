@@ -135,6 +135,7 @@
       where,
       serverTimestamp
     } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+    import { listarNomesAnalistasAtivos } from "../js/portal-usuarios.js?v=20260924c";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
@@ -147,6 +148,7 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    const fs = { collection, getDocs, query, where, doc, setDoc, serverTimestamp };
 
     const COLLECTION = "apuracoes_treinamentos";
     const TIPO = "responsavel_cd";
@@ -154,7 +156,7 @@
     const PATH_INDEX = "../index.html";
     const PATH_MENU = "../html menus/menuadm.html";
 
-    const RESPONSAVEIS = [
+    const RESPONSAVEIS_FALLBACK = [
       "Alex",
       "Daniel",
       "Emerson",
@@ -173,6 +175,8 @@
       "Andre",
       "Ana Paula"
     ];
+
+    let RESPONSAVEIS = [...RESPONSAVEIS_FALLBACK];
 
     const CDS_BASE = [
       "CD - Alagoinhas","CD - Andradina","CD - Angra dos Reis","CD - Aparecida de Goiânia","CD - Araçatuba","CD - Arapiraca","CD - Araraquara",
@@ -313,8 +317,13 @@
     }
 
     function buildResponsavelOptions(selected=""){
+      const nomes = [...RESPONSAVEIS];
+      const sel = normalize(selected);
+      if (sel && !nomes.some((r) => normalizeKey(r) === normalizeKey(sel))) {
+        nomes.push(sel);
+      }
       return `<option value="">Sem responsável</option>` +
-        RESPONSAVEIS.map(r =>
+        nomes.map(r =>
           `<option value="${escapeHtml(r)}" ${r === selected ? "selected" : ""}>${escapeHtml(r)}</option>`
         ).join("");
     }
@@ -729,9 +738,17 @@
 
     filtroResponsavel.addEventListener("change", render);
     busca.addEventListener("input", render);
-    btnRecarregar.addEventListener("click", carregar);
+    btnRecarregar.addEventListener("click", async () => {
+      await carregarResponsaveisPortal();
+      await carregar();
+    });
 
-    popularSelects();
+    async function carregarResponsaveisPortal() {
+      RESPONSAVEIS = await listarNomesAnalistasAtivos(db, fs, RESPONSAVEIS_FALLBACK);
+      popularSelects();
+    }
+
+    await carregarResponsaveisPortal();
     await carregar();
   </script>
 </body>
