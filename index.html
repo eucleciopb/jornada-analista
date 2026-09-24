@@ -25,24 +25,7 @@
     <div class="form-group">
       <label for="usuario">Usuário</label>
       <select id="usuario">
-        <option value="" disabled selected>Selecione...</option>
-        <option>Alex</option>
-        <option>Daniel</option>
-        <option>Emerson</option>
-        <option>Euclecio</option>
-        <option>Felipe</option>
-        <option>Joice</option>
-        <option>Maiello</option>
-        <option>Michel</option>
-        <option>Muller</option>
-        <option>Robert</option>
-        <option>Rodrigo</option>
-        <option>Rosilene</option>
-        <option>Tenório</option>
-        <option>Victor</option>
-        <option>Marcio</option>
-        <option>Andre</option>
-        <option>Ana Paula</option>
+        <option value="" disabled selected>Carregando usuários...</option>
       </select>
     </div>
 
@@ -96,7 +79,10 @@
     serverTimestamp,
     doc,
     getDoc,
-    setDoc
+    setDoc,
+    getDocs,
+    query,
+    where
   } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
   import {
     parseDataNascimento,
@@ -104,13 +90,18 @@
     marcarNascimentoNaSessao,
     buscarDataNascimentoSalva,
     obterNascimentoRapido
-  } from "./js/aniversario.js?v=20260818a";
+  } from "./js/aniversario.js?v=20260924b";
   import {
     montarSessaoLogin,
     salvarSessao,
     destinoMenuPorPerfil,
     PERFIL_TREINAMENTO_PRODUTOS
-  } from "./js/perfil-acesso.js?v=20260818a";
+  } from "./js/perfil-acesso.js?v=20260924b";
+  import {
+    carregarUsuariosLogin,
+    nomesOrdenados,
+    PERFIL_ANALISTA
+  } from "./js/portal-usuarios.js?v=20260924b";
 
   const firebaseConfig = {
     apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
@@ -123,7 +114,7 @@
 
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
-  const fs = { doc, getDoc, setDoc, serverTimestamp };
+  const fs = { doc, getDoc, setDoc, serverTimestamp, collection, getDocs, query, where };
 
   const usuarioSelect = document.getElementById("usuario");
   const senhaInput = document.getElementById("senha");
@@ -140,26 +131,34 @@
 
   let usuarioAtual = "";
   let perfilAtual = "analista";
+  /** @type {Map<string, {nome:string,senha:string,matricula:string,perfil:string,ativo:boolean,uidKey:string}>} */
+  let USUARIOS = new Map();
 
-  const USUARIOS = {
-    Alex: "A70",
-    Daniel: "D71",
-    Emerson: "B70",
-    Euclecio: "E72",
-    Felipe: "F73",
-    Joice: "J74",
-    Maiello: "M75",
-    Michel: "M76",
-    Muller: "M77",
-    Robert: "R78",
-    Rodrigo: "R79",
-    Rosilene: "R80",
-    Tenório: "T81",
-    Victor: "V82",
-    Marcio: "M83",
-    Andre: "A84",
-    "Ana Paula": "A85"
-  };
+  function popularSelect() {
+    const nomes = nomesOrdenados(USUARIOS, { somenteAtivos: true });
+    const atual = usuarioSelect.value;
+    usuarioSelect.innerHTML = `<option value="" disabled selected>Selecione...</option>`;
+    nomes.forEach((nome) => {
+      const opt = document.createElement("option");
+      opt.value = nome;
+      opt.textContent = nome;
+      usuarioSelect.appendChild(opt);
+    });
+    if (atual && nomes.includes(atual)) usuarioSelect.value = atual;
+  }
+
+  async function carregarUsuarios() {
+    try {
+      USUARIOS = await carregarUsuariosLogin(db, fs, PERFIL_ANALISTA);
+      popularSelect();
+      if (!nomesOrdenados(USUARIOS, { somenteAtivos: true }).length) {
+        setMsg("Nenhum analista ativo cadastrado. Peça ao admin para liberar o acesso.");
+      }
+    } catch (err) {
+      console.error(err);
+      setMsg("Não foi possível carregar os usuários. Tente recarregar a página.");
+    }
+  }
 
   function setMsg(text, ok = false){
     msg.textContent = text || "";
@@ -275,14 +274,15 @@
   async function entrar(){
     const usuario = (usuarioSelect.value || "").trim();
     const senha = (senhaInput.value || "").trim();
+    const registro = USUARIOS.get(usuario);
 
     if(!usuario){
       setMsg("Selecione um usuário.");
       return;
     }
 
-    if(!USUARIOS[usuario]){
-      setMsg("Usuário não autorizado.");
+    if(!registro || registro.ativo === false){
+      setMsg("Usuário não autorizado ou inativo.");
       return;
     }
 
@@ -292,7 +292,7 @@
       return;
     }
 
-    if(USUARIOS[usuario] !== senha){
+    if(registro.senha !== senha){
       setMsg("Senha incorreta.");
       senhaInput.focus();
       senhaInput.select();
@@ -305,6 +305,8 @@
 
     try{
       const sessao = montarSessaoLogin(usuario);
+      sessao.matricula = registro.matricula || sessao.matricula;
+      sessao.uidKey = registro.uidKey || sessao.uidKey;
       perfilAtual = sessao.perfil;
       salvarSessao(sessao);
 
@@ -367,6 +369,8 @@
       btnEntrar.style.opacity = "1";
     }
   }
+
+  carregarUsuarios();
 </script>
 </body>
 </html>
