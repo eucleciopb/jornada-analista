@@ -6,6 +6,11 @@ import {
   query,
   where
 } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+import {
+  listarUsuariosPortal,
+  normalizarPerfil,
+  PERFIL_ANALISTA
+} from "./portal-usuarios.js?v=20260924b";
 
 /* =========================
    FIREBASE CONFIG (SEU)
@@ -21,11 +26,12 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const fs = { collection, getDocs, query, where };
 
 /* =========================
-   USERS (MESMA LISTA DO INDEX)
+   USERS (portal Firestore + fallback)
 ========================= */
-const USERS = [
+const USERS_FALLBACK = [
   "Alex",
   "Daniel",
   "Emerson",
@@ -43,6 +49,8 @@ const USERS = [
   "Andre",
   "Ana Paula"
 ];
+
+let USERS = [...USERS_FALLBACK];
 
 /** Ocultos por padrão na visualização admin */
 const OCULTOS_PADRAO = ["Victor"];
@@ -332,4 +340,23 @@ document.addEventListener("click", (e) => {
   }
 });
 
-loadAgendaDia();
+async function carregarUsuariosAgenda() {
+  try {
+    const lista = await listarUsuariosPortal(db, fs);
+    const nomes = lista
+      .filter((u) => normalizarPerfil(u.perfil) === PERFIL_ANALISTA && u.ativo !== false)
+      .map((u) => String(u.nome || "").trim())
+      .filter(Boolean);
+    if (nomes.length) {
+      USERS = [...new Set(nomes)].sort((a, b) => a.localeCompare(b, "pt-BR"));
+    }
+  } catch (err) {
+    console.warn("Agenda do dia usando lista local de analistas:", err);
+    USERS = [...USERS_FALLBACK];
+  }
+}
+
+(async () => {
+  await carregarUsuariosAgenda();
+  await loadAgendaDia();
+})();

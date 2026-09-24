@@ -27,11 +27,7 @@
   <label>Usuário</label>
 
   <select id="usuarioSelect">
-    <option value="">Selecione...</option>
-    <option value="Bruna">Bruna</option>
-    <option value="Elaine">Elaine</option>
-    <option value="Euclecio">Euclecio</option>
-    <option value="Pedro">Pedro</option>
+    <option value="">Carregando...</option>
   </select>
 
   <label>Senha</label>
@@ -77,6 +73,10 @@ import {
   doc,
   getDoc,
   setDoc,
+  collection,
+  getDocs,
+  query,
+  where,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 import {
@@ -85,7 +85,12 @@ import {
   marcarNascimentoNaSessao,
   buscarDataNascimentoSalva,
   obterNascimentoRapido
-} from "./js/aniversario.js?v=20260721a";
+} from "./js/aniversario.js?v=20260924b";
+import {
+  carregarUsuariosLogin,
+  nomesOrdenados,
+  PERFIL_ADMIN
+} from "./js/portal-usuarios.js?v=20260924b";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
@@ -98,9 +103,9 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const fs = { doc, getDoc, setDoc, serverTimestamp };
+const fs = { doc, getDoc, setDoc, serverTimestamp, collection, getDocs, query, where };
 
-const MENU_URL = "html%20menus/menuadm.html?v=20260723q";
+const MENU_URL = "html%20menus/menuadm.html?v=20260924b";
 
 const btn = document.getElementById("btnEntrar");
 const select = document.getElementById("usuarioSelect");
@@ -115,13 +120,32 @@ const btnSalvarNasc = document.getElementById("btnSalvarNasc");
 const msgNasc = document.getElementById("msgNasc");
 
 let usuarioAtual = "";
+/** @type {Map<string, {nome:string,senha:string,matricula:string,perfil:string,ativo:boolean,uidKey:string}>} */
+let USUARIOS = new Map();
 
-const USUARIOS = {
-  Bruna: "B7N4GP26",
-  Elaine: "E9L2JP26",
-  Euclecio: "U6C8AD26",
-  Pedro: "P3D5GP26"
-};
+function popularSelect() {
+  const nomes = nomesOrdenados(USUARIOS, { somenteAtivos: true });
+  const atual = select.value;
+  select.innerHTML = `<option value="">Selecione...</option>`;
+  nomes.forEach((nome) => {
+    const opt = document.createElement("option");
+    opt.value = nome;
+    opt.textContent = nome;
+    select.appendChild(opt);
+  });
+  if (atual && nomes.includes(atual)) select.value = atual;
+}
+
+async function carregarUsuarios() {
+  try {
+    USUARIOS = await carregarUsuariosLogin(db, fs, PERFIL_ADMIN);
+    popularSelect();
+  } catch (err) {
+    console.error(err);
+    errorMsg.textContent = "Não foi possível carregar os usuários admin.";
+    errorMsg.style.display = "block";
+  }
+}
 
 btn.addEventListener("click", login);
 
@@ -198,6 +222,7 @@ formNascimento.addEventListener("submit", async (e) => {
 async function login(){
   const usuario = select.value.trim();
   const senhaDigitada = senha.value.trim();
+  const registro = USUARIOS.get(usuario);
 
   errorMsg.style.display = "none";
 
@@ -207,13 +232,13 @@ async function login(){
     return;
   }
 
-  if(!USUARIOS[usuario]){
-    errorMsg.textContent = "Usuário não autorizado.";
+  if(!registro || registro.ativo === false){
+    errorMsg.textContent = "Usuário não autorizado ou inativo.";
     errorMsg.style.display = "block";
     return;
   }
 
-  if(USUARIOS[usuario] !== senhaDigitada){
+  if(registro.senha !== senhaDigitada){
     errorMsg.textContent = "Senha incorreta.";
     errorMsg.style.display = "block";
     senha.focus();
@@ -226,6 +251,8 @@ async function login(){
   const session = {
     nome: usuario,
     usuario: usuario,
+    matricula: registro.matricula || "",
+    uidKey: registro.uidKey || "",
     perfil: "admin",
     login: new Date().toISOString(),
     nascimentoOk: false
@@ -260,6 +287,8 @@ async function login(){
   mostrarFormNascimento(usuario);
   btn.disabled = false;
 }
+
+carregarUsuarios();
 </script>
 
 </body>

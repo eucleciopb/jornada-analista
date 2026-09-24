@@ -1,0 +1,470 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <title>Usuários | Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/bundle-admin.css" />
+  <link rel="stylesheet" href="../css/pages/termo-ciencia.css?v=20260924b" />
+  <style>
+    .usuarios-filtros {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: end;
+    }
+    .usuarios-filtros > div { min-width: 160px; }
+    .usuarios-senha {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+    .usuarios-row-inativo td { opacity: 0.55; }
+  </style>
+</head>
+
+<body class="theme-admin app-shell">
+
+<header class="topbar">
+  <div>
+    <h2>Cadastro de Usuários</h2>
+    <div id="userInfo" class="hint" style="color:#d1d5db;margin-top:4px;"></div>
+  </div>
+
+  <div class="top-actions">
+    <button id="btnMenu" class="btn-secondary" type="button">Voltar ao Menu</button>
+    <button id="btnLogout" class="btn-secondary" type="button">Sair</button>
+  </div>
+</header>
+
+<main class="card wide">
+
+  <section class="row-between">
+    <div>
+      <h3 id="formTitle">Novo usuário</h3>
+      <p class="hint">
+        Cadastre analistas (index) ou admins (index2). Usuários inativos não aparecem no login.
+      </p>
+    </div>
+  </section>
+
+  <hr class="sep" />
+
+  <section class="form-grid">
+    <div>
+      <label for="nome">Nome</label>
+      <input id="nome" type="text" maxlength="80" placeholder="Ex: Ribamar" autocomplete="off" />
+    </div>
+
+    <div>
+      <label for="perfil">Perfil / login</label>
+      <select id="perfil">
+        <option value="analista">Analista (index)</option>
+        <option value="admin">Admin (index2)</option>
+      </select>
+    </div>
+
+    <div>
+      <label for="senha">Senha</label>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <input id="senha" type="text" maxlength="40" placeholder="Ex: R86" autocomplete="off" style="flex:1;" />
+        <button id="btnSugerirSenha" class="btn-secondary" type="button" title="Sugerir matrícula">Sugerir</button>
+      </div>
+      <small class="hint" style="display:block;margin-top:6px;">
+        No modo edição, deixe em branco para manter a senha atual.
+      </small>
+    </div>
+
+    <div class="page-actions" style="grid-column:1/-1; justify-content:flex-end; gap:10px; flex-wrap:wrap;">
+      <button id="btnCancelar" class="btn-secondary" type="button" style="display:none;">Cancelar</button>
+      <button id="btnSalvar" class="btn-primary" type="button">Cadastrar</button>
+    </div>
+  </section>
+
+  <p id="msg" class="msg"></p>
+
+  <hr class="sep" />
+
+  <section class="row-between" style="align-items:end; gap:16px; flex-wrap:wrap;">
+    <div>
+      <h3>Usuários cadastrados</h3>
+      <p class="hint" id="resumoLista">Carregando…</p>
+    </div>
+
+    <div class="usuarios-filtros">
+      <div>
+        <label for="filtroPerfil">Perfil</label>
+        <select id="filtroPerfil">
+          <option value="">Todos</option>
+          <option value="analista">Analistas</option>
+          <option value="admin">Admins</option>
+        </select>
+      </div>
+      <div>
+        <label for="filtroStatus">Status</label>
+        <select id="filtroStatus">
+          <option value="">Todos</option>
+          <option value="ativo">Ativos</option>
+          <option value="inativo">Inativos</option>
+        </select>
+      </div>
+      <div>
+        <label for="busca">Buscar</label>
+        <input id="busca" type="text" placeholder="Filtrar por nome…" />
+      </div>
+    </div>
+  </section>
+
+  <div class="table-wrap" style="margin-top:12px;">
+    <table class="table table-sticky">
+      <thead>
+        <tr>
+          <th style="width:90px;">Status</th>
+          <th>Nome</th>
+          <th style="width:140px;">Perfil</th>
+          <th style="width:140px;">Senha</th>
+          <th style="width:140px;">Criado por</th>
+          <th style="width:240px;">Ações</th>
+        </tr>
+      </thead>
+      <tbody id="tbody">
+        <tr><td colspan="6" style="opacity:.8;">Carregando…</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</main>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+  import {
+    getFirestore,
+    collection,
+    getDocs,
+    query,
+    where,
+    doc,
+    getDoc,
+    setDoc,
+    serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+  import {
+    listarUsuariosPortal,
+    salvarUsuarioPortal,
+    alternarAtivoUsuario,
+    garantirSeedUsuarios,
+    sugerirMatricula,
+    normalizarNome,
+    normalizarPerfil,
+    PERFIL_ANALISTA,
+    PERFIL_ADMIN
+  } from "../js/portal-usuarios.js?v=20260924b";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
+    authDomain: "jornada-portal.firebaseapp.com",
+    projectId: "jornada-portal",
+    storageBucket: "jornada-portal.firebasestorage.app",
+    messagingSenderId: "669362296644",
+    appId: "1:669362296644:web:f590d9834a8e4e60012911"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const fs = { collection, getDocs, query, where, doc, getDoc, setDoc, serverTimestamp };
+
+  const PATH_INDEX = "../index2.html";
+  const PATH_MENU = "../html%20menus/menuadm.html";
+
+  function safeParse(raw) {
+    try { return JSON.parse(raw); } catch { return null; }
+  }
+
+  function getCurrentUserName() {
+    const s = safeParse(localStorage.getItem("user_session"));
+    if (s?.nome) return String(s.nome).trim();
+    return (localStorage.getItem("usuarioLogado") || "").trim();
+  }
+
+  function escapeHtml(s) {
+    return String(s ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  const session = safeParse(localStorage.getItem("user_session"));
+  const usuario = getCurrentUserName();
+  if (!usuario || session?.perfil !== "admin") {
+    window.location.href = PATH_INDEX;
+  }
+
+  document.getElementById("userInfo").textContent = `Admin: ${usuario}`;
+  document.getElementById("btnMenu").addEventListener("click", () => {
+    window.location.href = PATH_MENU;
+  });
+  document.getElementById("btnLogout").addEventListener("click", () => {
+    localStorage.removeItem("usuarioLogado");
+    localStorage.removeItem("user_session");
+    localStorage.removeItem("analistaLogado");
+    localStorage.removeItem("usuarioSelecionado");
+    window.location.replace(PATH_INDEX);
+  });
+
+  const formTitle = document.getElementById("formTitle");
+  const nomeInput = document.getElementById("nome");
+  const perfilSelect = document.getElementById("perfil");
+  const senhaInput = document.getElementById("senha");
+  const btnSalvar = document.getElementById("btnSalvar");
+  const btnCancelar = document.getElementById("btnCancelar");
+  const btnSugerirSenha = document.getElementById("btnSugerirSenha");
+  const tbody = document.getElementById("tbody");
+  const busca = document.getElementById("busca");
+  const filtroPerfil = document.getElementById("filtroPerfil");
+  const filtroStatus = document.getElementById("filtroStatus");
+  const resumoLista = document.getElementById("resumoLista");
+  const msg = document.getElementById("msg");
+
+  let editKey = null; // `${perfil}::${nome}`
+  let CACHE = [];
+
+  function setMsg(text, type = "info") {
+    msg.textContent = text || "";
+    msg.style.color = type === "success" ? "#4ade80" : (type === "error" ? "#f87171" : "#d1d5db");
+  }
+
+  function resetForm() {
+    editKey = null;
+    formTitle.textContent = "Novo usuário";
+    btnSalvar.textContent = "Cadastrar";
+    btnCancelar.style.display = "none";
+    nomeInput.value = "";
+    nomeInput.disabled = false;
+    perfilSelect.value = PERFIL_ANALISTA;
+    perfilSelect.disabled = false;
+    senhaInput.value = "";
+    senhaInput.placeholder = "Ex: R86";
+    nomeInput.focus();
+  }
+
+  function startEdit(item) {
+    editKey = `${normalizarPerfil(item.perfil)}::${normalizarNome(item.nome)}`;
+    formTitle.textContent = `Editar: ${item.nome}`;
+    btnSalvar.textContent = "Salvar alterações";
+    btnCancelar.style.display = "";
+    nomeInput.value = item.nome || "";
+    nomeInput.disabled = true;
+    perfilSelect.value = normalizarPerfil(item.perfil);
+    perfilSelect.disabled = true;
+    senhaInput.value = "";
+    senhaInput.placeholder = `Atual: ${item.senha || item.matricula || "—"} (deixe em branco para manter)`;
+    senhaInput.focus();
+    setMsg("");
+  }
+
+  async function loadAll() {
+    await garantirSeedUsuarios(db, fs, { criadoPor: usuario }).catch((err) => {
+      console.warn("Seed de usuários:", err);
+    });
+    CACHE = await listarUsuariosPortal(db, fs);
+    return CACHE;
+  }
+
+  function filtrados() {
+    const q = (busca.value || "").toLowerCase().trim();
+    const fp = (filtroPerfil.value || "").toLowerCase();
+    const fsStatus = (filtroStatus.value || "").toLowerCase();
+
+    return CACHE.filter((u) => {
+      if (fp && normalizarPerfil(u.perfil) !== fp) return false;
+      const ativo = u.ativo !== false;
+      if (fsStatus === "ativo" && !ativo) return false;
+      if (fsStatus === "inativo" && ativo) return false;
+      if (q && !String(u.nome || "").toLowerCase().includes(q)) return false;
+      return true;
+    });
+  }
+
+  function render() {
+    const lista = filtrados();
+    const ativos = CACHE.filter((u) => u.ativo !== false).length;
+    const inativos = CACHE.length - ativos;
+    resumoLista.textContent = `${CACHE.length} cadastrado(s) — ${ativos} ativo(s), ${inativos} inativo(s).`;
+
+    tbody.innerHTML = "";
+    if (!lista.length) {
+      tbody.innerHTML = `<tr><td colspan="6" style="opacity:.8;">Nenhum usuário encontrado.</td></tr>`;
+      return;
+    }
+
+    lista.forEach((item) => {
+      const ativo = item.ativo !== false;
+      const perfil = normalizarPerfil(item.perfil);
+      const pill = ativo
+        ? `<span class="termo-status-pill ativo">Ativo</span>`
+        : `<span class="termo-status-pill inativo">Inativo</span>`;
+      const perfilLabel = perfil === PERFIL_ADMIN ? "Admin (index2)" : "Analista (index)";
+      const tr = document.createElement("tr");
+      if (!ativo) tr.classList.add("usuarios-row-inativo");
+      tr.innerHTML = `
+        <td>${pill}</td>
+        <td><strong>${escapeHtml(item.nome || "—")}</strong></td>
+        <td>${escapeHtml(perfilLabel)}</td>
+        <td class="usuarios-senha">${escapeHtml(item.senha || item.matricula || "—")}</td>
+        <td style="opacity:.9;">${escapeHtml(item.criadoPor || "—")}</td>
+        <td style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="btn-secondary" type="button" data-edit="${escapeHtml(perfil)}|${escapeHtml(item.nome)}">Editar</button>
+          <button class="btn-secondary" type="button" data-toggle="${escapeHtml(perfil)}|${escapeHtml(item.nome)}"
+            style="${ativo ? "border-color:rgba(248,113,113,.35);color:#f87171;" : "border-color:rgba(74,222,128,.35);color:#4ade80;"}">
+            ${ativo ? "Inativar" : "Reativar"}
+          </button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    tbody.querySelectorAll("[data-edit]").forEach((btn) => {
+      btn.onclick = () => {
+        const [perfil, ...rest] = btn.getAttribute("data-edit").split("|");
+        const nome = rest.join("|");
+        const item = CACHE.find(
+          (u) => normalizarPerfil(u.perfil) === perfil && normalizarNome(u.nome) === nome
+        );
+        if (item) startEdit(item);
+      };
+    });
+
+    tbody.querySelectorAll("[data-toggle]").forEach((btn) => {
+      btn.onclick = () => {
+        const [perfil, ...rest] = btn.getAttribute("data-toggle").split("|");
+        const nome = rest.join("|");
+        toggleAtivo(nome, perfil);
+      };
+    });
+  }
+
+  async function toggleAtivo(nome, perfil) {
+    const item = CACHE.find(
+      (u) => normalizarPerfil(u.perfil) === normalizarPerfil(perfil) && normalizarNome(u.nome) === normalizarNome(nome)
+    );
+    if (!item) return;
+
+    const ativoAtual = item.ativo !== false;
+    const acao = ativoAtual ? "inativar" : "reativar";
+    if (!confirm(`Deseja ${acao} o usuário "${item.nome}"?`)) return;
+
+    btnSalvar.disabled = true;
+    setMsg(`${ativoAtual ? "Inativando" : "Reativando"}...`);
+    try {
+      await alternarAtivoUsuario(db, fs, {
+        nome: item.nome,
+        perfil: item.perfil,
+        ativo: !ativoAtual,
+        atualizadoPor: usuario
+      });
+      await loadAll();
+      render();
+      setMsg(`Usuário "${item.nome}" ${ativoAtual ? "inativado" : "reativado"} com sucesso.`, "success");
+    } catch (err) {
+      console.error(err);
+      setMsg(err?.message || "Não foi possível alterar o status.", "error");
+    } finally {
+      btnSalvar.disabled = false;
+    }
+  }
+
+  btnSugerirSenha.addEventListener("click", () => {
+    const nome = normalizarNome(nomeInput.value) || "U";
+    senhaInput.value = sugerirMatricula(nome, CACHE);
+    senhaInput.focus();
+  });
+
+  btnCancelar.addEventListener("click", () => {
+    resetForm();
+    setMsg("");
+  });
+
+  btnSalvar.addEventListener("click", async () => {
+    const nome = normalizarNome(nomeInput.value);
+    const perfil = normalizarPerfil(perfilSelect.value);
+    const senha = String(senhaInput.value || "").trim();
+
+    if (!nome) {
+      setMsg("Informe o nome do usuário.", "error");
+      nomeInput.focus();
+      return;
+    }
+
+    if (!editKey && !senha) {
+      setMsg("Informe a senha (ou use Sugerir).", "error");
+      senhaInput.focus();
+      return;
+    }
+
+    const duplicado = !editKey && CACHE.some(
+      (u) => normalizarPerfil(u.perfil) === perfil && normalizarNome(u.nome).toLowerCase() === nome.toLowerCase()
+    );
+    if (duplicado) {
+      setMsg("Já existe um usuário com esse nome neste perfil. Edite o existente ou inative-o.", "error");
+      return;
+    }
+
+    btnSalvar.disabled = true;
+    setMsg(editKey ? "Salvando alterações..." : "Cadastrando...");
+
+    try {
+      const payload = { nome, perfil, ativo: true };
+      if (senha) {
+        payload.senha = senha;
+        payload.matricula = senha;
+      }
+
+      const result = await salvarUsuarioPortal(db, fs, payload, { criadoPor: usuario });
+      await loadAll();
+      render();
+      resetForm();
+      setMsg(
+        result.criado
+          ? `Usuário "${nome}" cadastrado e ativo no login.`
+          : `Usuário "${nome}" atualizado.`,
+        "success"
+      );
+    } catch (err) {
+      console.error(err);
+      setMsg(err?.message || "Não foi possível salvar o usuário.", "error");
+    } finally {
+      btnSalvar.disabled = false;
+    }
+  });
+
+  [busca, filtroPerfil, filtroStatus].forEach((el) => {
+    el.addEventListener("input", render);
+    el.addEventListener("change", render);
+  });
+
+  nomeInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") btnSalvar.click();
+  });
+  senhaInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") btnSalvar.click();
+  });
+
+  try {
+    await loadAll();
+    render();
+    resetForm();
+  } catch (err) {
+    console.error(err);
+    tbody.innerHTML = `<tr><td colspan="6" style="color:#f87171;">Erro ao carregar usuários. Verifique o Firebase.</td></tr>`;
+    setMsg(err?.message || "Erro ao carregar.", "error");
+  }
+</script>
+
+</body>
+</html>

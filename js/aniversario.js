@@ -19,6 +19,35 @@ export const USUARIOS_CONHECIDOS = [
   "Bruna", "Elaine", "Pedro"
 ];
 
+/**
+ * Junta a lista canônica com usuários do portal (Firestore).
+ * Usado em aniversariantes e telas admin que precisam de nomes atuais.
+ */
+export async function obterNomesUsuariosPortal(db, fs, {
+  incluirInativos = false,
+  perfis = null
+} = {}) {
+  const base = [...USUARIOS_CONHECIDOS];
+  if (!db || !fs) return base;
+
+  try {
+    const { listarUsuariosPortal, normalizarPerfil } = await import("./portal-usuarios.js");
+    const lista = await listarUsuariosPortal(db, fs);
+    for (const u of lista) {
+      if (!incluirInativos && u.ativo === false) continue;
+      if (Array.isArray(perfis) && perfis.length) {
+        if (!perfis.map(normalizarPerfil).includes(normalizarPerfil(u.perfil))) continue;
+      }
+      const nome = String(u.nome || "").trim();
+      if (nome) base.push(nome);
+    }
+  } catch (err) {
+    console.warn("Não foi possível mesclar usuários do portal:", err);
+  }
+
+  return [...new Set(base.filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR"));
+}
+
 export function slug(s) {
   return String(s || "")
     .toLowerCase()
@@ -434,7 +463,7 @@ export async function buscarDataNascimentoSalva(db, fs, nome) {
 export async function listarTodosAniversariantes(
   db,
   { collection, getDocs, doc, getDoc, query, where },
-  nomes = USUARIOS_CONHECIDOS
+  nomes = null
 ) {
   const anoAtual = new Date().getFullYear();
   const porId = new Map();
@@ -489,7 +518,10 @@ export async function listarTodosAniversariantes(
 
   // 2) Leitura individual por usuário conhecido (não exige list/query)
   if (typeof getDoc === "function" && typeof doc === "function") {
-    const nomesUnicos = [...new Set((nomes || USUARIOS_CONHECIDOS).filter(Boolean))];
+    const nomesBase = Array.isArray(nomes) && nomes.length
+      ? nomes
+      : await obterNomesUsuariosPortal(db, { collection, getDocs, query, where });
+    const nomesUnicos = [...new Set((nomesBase || USUARIOS_CONHECIDOS).filter(Boolean))];
     await Promise.all(
       nomesUnicos.map(async (nome) => {
         const id = slug(nome);
@@ -548,7 +580,7 @@ export async function listarAniversariantesDoMes(
   db,
   fs,
   mes = new Date().getMonth() + 1,
-  nomes = USUARIOS_CONHECIDOS
+  nomes = null
 ) {
   const todos = await listarTodosAniversariantes(db, fs, nomes);
   const mesNum = Number(mes);
