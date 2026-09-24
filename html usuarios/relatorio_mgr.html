@@ -285,11 +285,6 @@
       return usuarioKey.includes(respKey) || respKey.includes(usuarioKey);
     }
 
-    function usuarioConfere(item){
-      return normalizeKey(item.uidKey || item.analista) === normalizeKey(uidKey) ||
-             normalizeKey(item.analista) === normalizeKey(usuario);
-    }
-
     function notaBadge(nota){
       const n = Number(nota);
       if(!Number.isFinite(n)) return `<span class="badge">-</span>`;
