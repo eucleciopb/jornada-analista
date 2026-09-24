@@ -7,10 +7,8 @@ import {
   where
 } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 import {
-  listarUsuariosPortal,
-  normalizarPerfil,
-  PERFIL_ANALISTA
-} from "./portal-usuarios.js?v=20260924b";
+  listarNomesAnalistasAtivos
+} from "./portal-usuarios.js?v=20260924c";
 
 /* =========================
    FIREBASE CONFIG (SEU)
@@ -341,19 +339,7 @@ document.addEventListener("click", (e) => {
 });
 
 async function carregarUsuariosAgenda() {
-  try {
-    const lista = await listarUsuariosPortal(db, fs);
-    const nomes = lista
-      .filter((u) => normalizarPerfil(u.perfil) === PERFIL_ANALISTA && u.ativo !== false)
-      .map((u) => String(u.nome || "").trim())
-      .filter(Boolean);
-    if (nomes.length) {
-      USERS = [...new Set(nomes)].sort((a, b) => a.localeCompare(b, "pt-BR"));
-    }
-  } catch (err) {
-    console.warn("Agenda do dia usando lista local de analistas:", err);
-    USERS = [...USERS_FALLBACK];
-  }
+  USERS = await listarNomesAnalistasAtivos(db, fs, USERS_FALLBACK);
 }
 
 (async () => {

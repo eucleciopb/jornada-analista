@@ -124,8 +124,11 @@
     import {
       getFirestore,
       collection,
-      getDocs
+      getDocs,
+      query,
+      where
     } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+    import { listarNomesAnalistasAtivos } from "../js/portal-usuarios.js?v=20260924c";
     const firebaseConfig = {
       apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
       authDomain: "jornada-portal.firebaseapp.com",
@@ -136,17 +139,19 @@
     };
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    const fs = { collection, getDocs, query, where };
     const COLLECTION = "treinamentos_realizados";
     const PATH_INDEX = "../index.html";
     const PATH_MENU = "../html menus/menuadm.html";
     const ANALISTAS_OCULTOS = ["Ricardo"];
     const ANALISTAS_SEM_META = ["Alex"];
-    const ANALISTAS_FIXOS = [
+    const ANALISTAS_FIXOS_FALLBACK = [
       "Alex",
       "Marcio",
       "Andre",
       "Ana Paula"
     ];
+    let ANALISTAS_FIXOS = [...ANALISTAS_FIXOS_FALLBACK];
     const userInfo = document.getElementById("userInfo");
     const btnMenu = document.getElementById("btnMenu");
     const btnLogout = document.getElementById("btnLogout");
@@ -653,7 +658,11 @@
     anoFiltro.addEventListener("input", renderTudo);
     analistaFiltro.addEventListener("change", renderTudo);
     busca.addEventListener("input", renderTudo);
-    btnRecarregar.addEventListener("click", carregar);
+    btnRecarregar.addEventListener("click", async () => {
+      ANALISTAS_FIXOS = await listarNomesAnalistasAtivos(db, fs, ANALISTAS_FIXOS_FALLBACK);
+      await carregar();
+    });
+    ANALISTAS_FIXOS = await listarNomesAnalistasAtivos(db, fs, ANALISTAS_FIXOS_FALLBACK);
     await carregar();
   </script>
 </body>

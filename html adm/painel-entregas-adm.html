@@ -219,6 +219,11 @@
     deleteDoc,
     serverTimestamp
   } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+  import {
+    listarNomesUsuariosAtivos,
+    PERFIL_ANALISTA,
+    PERFIL_ADMIN
+  } from "../js/portal-usuarios.js?v=20260924c";
 
   const firebaseConfig = {
     apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
@@ -231,6 +236,7 @@
 
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
+  const fs = { collection, getDocs, query, where, doc, setDoc, deleteDoc, serverTimestamp };
 
   const PATH_INDEX = "../index2.html";
   const PATH_MENUADM = "../html%20menus/menuadm.html";
@@ -271,11 +277,13 @@
     window.location.href = PATH_HUB;
   }
 
-  const TEAM = [
+  const TEAM_FALLBACK = [
     "Alex", "Ana Paula", "Andre", "Bruna", "Daniel", "Elaine", "Emerson", "Euclecio",
     "Felipe", "Joice", "Maiello", "Marcio", "Michel", "Muller", "Pedro",
     "Robert", "Rodrigo", "Rosilene", "Tenório", "Victor"
   ].sort((a, b) => a.localeCompare(b, "pt-BR"));
+
+  let TEAM = [...TEAM_FALLBACK];
 
   function safeParse(raw) { try { return JSON.parse(raw); } catch { return null; } }
   function getCurrentUserName() {
@@ -736,7 +744,18 @@
   btnCancelModal.onclick = (e) => { e.preventDefault(); closeModal(); };
   btnSaveModal.onclick = (e) => { e.preventDefault(); saveEntrega(); };
   btnNova.onclick = (e) => { e.preventDefault(); openModalNew(); };
-  btnReload.onclick = loadData;
+  async function carregarTimePortal() {
+    TEAM = await listarNomesUsuariosAtivos(db, fs, {
+      perfis: [PERFIL_ANALISTA, PERFIL_ADMIN],
+      fallback: TEAM_FALLBACK
+    });
+    populateSelects();
+  }
+
+  btnReload.onclick = async () => {
+    await carregarTimePortal();
+    await loadData();
+  };
 
   [gestorFiltro, respFiltro, statusFiltro].forEach(el => {
     el.addEventListener("change", () => {
@@ -756,9 +775,9 @@
     closeModal();
   });
 
-  populateSelects();
   applyGrupoUI();
-  loadData();
+  await carregarTimePortal();
+  await loadData();
 </script>
 </body>
 </html>
