@@ -161,9 +161,10 @@
     sugerirMatricula,
     normalizarNome,
     normalizarPerfil,
+    invalidarCacheUsuariosPortal,
     PERFIL_ANALISTA,
     PERFIL_ADMIN
-  } from "../js/portal-usuarios.js?v=20260924b";
+  } from "../js/portal-usuarios.js?v=20260924e";
 
   const firebaseConfig = {
     apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
@@ -269,10 +270,12 @@
   }
 
   async function loadAll() {
+    // Seed só se ainda não rodou (flag) — não bloqueia com N leituras
     await garantirSeedUsuarios(db, fs, { criadoPor: usuario }).catch((err) => {
       console.warn("Seed de usuários:", err);
     });
-    CACHE = await listarUsuariosPortal(db, fs);
+    CACHE = await listarUsuariosPortal(db, fs, { force: true });
+    invalidarCacheUsuariosPortal();
     return CACHE;
   }
 
