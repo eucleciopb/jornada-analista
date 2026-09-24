@@ -8,7 +8,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 import {
   listarNomesAnalistasAtivos
-} from "./portal-usuarios.js?v=20260924c";
+} from "./portal-usuarios.js?v=20260924e";
 
 /* =========================
    FIREBASE CONFIG (SEU)

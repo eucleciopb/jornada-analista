@@ -89,8 +89,9 @@ import {
 import {
   carregarUsuariosLogin,
   nomesOrdenados,
+  mapaSeedLogin,
   PERFIL_ADMIN
-} from "./js/portal-usuarios.js?v=20260924b";
+} from "./js/portal-usuarios.js?v=20260924e";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
@@ -137,6 +138,9 @@ function popularSelect() {
 }
 
 async function carregarUsuarios() {
+  USUARIOS = mapaSeedLogin(PERFIL_ADMIN);
+  popularSelect();
+
   try {
     USUARIOS = await carregarUsuariosLogin(db, fs, PERFIL_ADMIN);
     popularSelect();

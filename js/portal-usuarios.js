@@ -10,6 +10,7 @@
 
 export const PORTAL_USUARIOS_COL = "apuracoes_treinamentos";
 export const TIPO_PORTAL_USUARIO = "portal_usuario";
+export const SEED_FLAG_DOC_ID = "portal_usuario_seed_v1";
 
 export const PERFIL_ANALISTA = "analista";
 export const PERFIL_ADMIN = "admin";
@@ -42,6 +43,13 @@ export const SEED_ADMINS = {
   Pedro: "P3D5GP26"
 };
 
+const LOGIN_CACHE_TTL_MS = 2 * 60 * 1000; // 2 min
+const LIST_CACHE_TTL_MS = 60 * 1000; // 1 min (memória da aba)
+
+/** Cache em memória da listagem (evita reconsultar na mesma página). */
+let _listaMemoria = null;
+let _listaMemoriaEm = 0;
+
 export function slug(s) {
   return String(s || "")
     .toLowerCase()
@@ -66,10 +74,59 @@ export function normalizarPerfil(perfil) {
   return PERFIL_ANALISTA;
 }
 
+function cacheKeyLogin(perfil) {
+  return `portal_usuarios_login_v1_${normalizarPerfil(perfil)}`;
+}
+
+function lerCacheLogin(perfil) {
+  try {
+    const raw = sessionStorage.getItem(cacheKeyLogin(perfil));
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    if (!data || !Array.isArray(data.lista)) return null;
+    if (Date.now() - Number(data.ts || 0) > LOGIN_CACHE_TTL_MS) return null;
+    return data.lista;
+  } catch {
+    return null;
+  }
+}
+
+function gravarCacheLogin(perfil, lista) {
+  try {
+    sessionStorage.setItem(
+      cacheKeyLogin(perfil),
+      JSON.stringify({ ts: Date.now(), lista })
+    );
+  } catch {
+    /* ignore quota */
+  }
+}
+
+/** Invalida caches locais (após cadastro/inativação no admin). */
+export function invalidarCacheUsuariosPortal() {
+  _listaMemoria = null;
+  _listaMemoriaEm = 0;
+  try {
+    sessionStorage.removeItem(cacheKeyLogin(PERFIL_ANALISTA));
+    sessionStorage.removeItem(cacheKeyLogin(PERFIL_ADMIN));
+  } catch {
+    /* ignore */
+  }
+}
+
 /**
  * Lista todos os usuários do portal (ativos e inativos).
+ * Usa cache em memória curto para não repetir a query na mesma tela.
  */
-export async function listarUsuariosPortal(db, fs) {
+export async function listarUsuariosPortal(db, fs, { force = false } = {}) {
+  if (
+    !force &&
+    Array.isArray(_listaMemoria) &&
+    Date.now() - _listaMemoriaEm < LIST_CACHE_TTL_MS
+  ) {
+    return _listaMemoria.slice();
+  }
+
   const { collection, getDocs, query, where } = fs;
   const lista = [];
   try {
@@ -88,7 +145,10 @@ export async function listarUsuariosPortal(db, fs) {
     if (pa !== 0) return pa;
     return String(a.nome || "").localeCompare(String(b.nome || ""), "pt-BR");
   });
-  return lista;
+
+  _listaMemoria = lista;
+  _listaMemoriaEm = Date.now();
+  return lista.slice();
 }
 
 export async function buscarUsuarioPorNome(db, fs, nome, perfil) {
@@ -111,7 +171,8 @@ export async function buscarUsuarioPorNome(db, fs, nome, perfil) {
  */
 export async function salvarUsuarioPortal(db, fs, dados, {
   criadoPor = null,
-  somenteSeNovo = false
+  somenteSeNovo = false,
+  skipExistCheck = false
 } = {}) {
   const { doc, getDoc, setDoc, serverTimestamp } = fs;
   const nome = normalizarNome(dados.nome);
@@ -121,7 +182,11 @@ export async function salvarUsuarioPortal(db, fs, dados, {
 
   const id = docIdUsuario(nome, perfil);
   const ref = doc(db, PORTAL_USUARIOS_COL, id);
-  const existente = await getDoc(ref);
+
+  let existente = { exists: () => false, data: () => ({}) };
+  if (!skipExistCheck) {
+    existente = await getDoc(ref);
+  }
 
   if (somenteSeNovo && existente.exists()) {
     return { id, criado: false, data: { id, ...existente.data() } };
@@ -164,6 +229,7 @@ export async function salvarUsuarioPortal(db, fs, dados, {
   }
 
   await setDoc(ref, payload, { merge: true });
+  invalidarCacheUsuariosPortal();
   return { id, criado: !existente.exists(), data: { id, ...payload } };
 }
 
@@ -176,49 +242,95 @@ export async function alternarAtivoUsuario(db, fs, { nome, perfil, ativo, atuali
   }, { criadoPor: atualizadoPor });
 }
 
-/**
- * Garante que o seed hardcoded exista no banco (não sobrescreve senha/status).
- */
-export async function garantirSeedUsuarios(db, fs, { criadoPor = "seed" } = {}) {
-  const resultados = [];
-
+function entradasSeed() {
+  const itens = [];
   for (const [nome, senha] of Object.entries(SEED_ANALISTAS)) {
-    resultados.push(
-      await salvarUsuarioPortal(db, fs, {
-        nome,
-        senha,
-        matricula: senha,
-        perfil: PERFIL_ANALISTA,
-        ativo: true
-      }, { criadoPor, somenteSeNovo: true })
-    );
+    itens.push({ nome, senha, matricula: senha, perfil: PERFIL_ANALISTA, ativo: true });
   }
-
   for (const [nome, senha] of Object.entries(SEED_ADMINS)) {
-    resultados.push(
-      await salvarUsuarioPortal(db, fs, {
-        nome,
-        senha,
-        matricula: senha,
-        perfil: PERFIL_ADMIN,
-        ativo: true
-      }, { criadoPor, somenteSeNovo: true })
-    );
+    itens.push({ nome, senha, matricula: senha, perfil: PERFIL_ADMIN, ativo: true });
   }
-
-  return resultados;
+  return itens;
 }
 
 /**
- * Carrega usuários para o select de login.
- * Prioriza Firestore; se falhar/vazio, usa seed local.
- * Retorna Map nome → { senha, matricula, perfil, ativo, uidKey }.
+ * Garante seed hardcoded no banco.
+ * - 1 listagem (ou flag) em vez de N getDocs sequenciais
+ * - grava só os faltantes em paralelo
+ * - marca flag para próximas aberturas pularem o trabalho
  */
-export async function carregarUsuariosLogin(db, fs, perfilDesejado) {
-  const perfil = normalizarPerfil(perfilDesejado);
-  const mapa = new Map();
+export async function garantirSeedUsuarios(db, fs, { criadoPor = "seed", force = false } = {}) {
+  const { doc, getDoc, setDoc, serverTimestamp } = fs;
 
+  if (!force) {
+    try {
+      const flag = await getDoc(doc(db, PORTAL_USUARIOS_COL, SEED_FLAG_DOC_ID));
+      if (flag.exists()) return [];
+    } catch {
+      /* segue para seed */
+    }
+  }
+
+  const existentes = await listarUsuariosPortal(db, fs, { force: true });
+  const ids = new Set(existentes.map((u) => u.id || docIdUsuario(u.nome, u.perfil)));
+
+  const faltantes = entradasSeed().filter((item) => !ids.has(docIdUsuario(item.nome, item.perfil)));
+
+  const resultados = await Promise.all(
+    faltantes.map((item) =>
+      salvarUsuarioPortal(db, fs, item, {
+        criadoPor,
+        somenteSeNovo: true,
+        skipExistCheck: true
+      })
+    )
+  );
+
+  try {
+    await setDoc(
+      doc(db, PORTAL_USUARIOS_COL, SEED_FLAG_DOC_ID),
+      {
+        tipo: "portal_usuario_seed_flag",
+        ok: true,
+        totalSeed: entradasSeed().length,
+        criadosAgora: resultados.filter((r) => r.criado).length,
+        atualizadoEmMs: Date.now(),
+        atualizadoEm: serverTimestamp(),
+        atualizadoPor: criadoPor
+      },
+      { merge: true }
+    );
+  } catch (err) {
+    console.warn("Não foi possível gravar flag de seed:", err);
+  }
+
+  invalidarCacheUsuariosPortal();
+  return resultados;
+}
+
+function mapaFromLista(lista, perfil) {
+  const mapa = new Map();
+  for (const u of lista) {
+    if (normalizarPerfil(u.perfil) !== perfil) continue;
+    const nome = normalizarNome(u.nome);
+    if (!nome) continue;
+    mapa.set(nome, {
+      nome,
+      senha: String(u.senha || u.matricula || "").trim(),
+      matricula: String(u.matricula || u.senha || "").trim(),
+      perfil,
+      ativo: u.ativo !== false,
+      uidKey: u.uidKey || slug(nome),
+      origem: "firestore",
+      id: u.id
+    });
+  }
+  return mapa;
+}
+
+function mapaFromSeed(perfil) {
   const seed = perfil === PERFIL_ADMIN ? SEED_ADMINS : SEED_ANALISTAS;
+  const mapa = new Map();
   for (const [nome, senha] of Object.entries(seed)) {
     mapa.set(nome, {
       nome,
@@ -230,35 +342,45 @@ export async function carregarUsuariosLogin(db, fs, perfilDesejado) {
       origem: "seed"
     });
   }
+  return mapa;
+}
+
+/** Seed síncrono para popular o select na hora (antes da rede). */
+export function mapaSeedLogin(perfilDesejado) {
+  return mapaFromSeed(normalizarPerfil(perfilDesejado));
+}
+
+/**
+ * Carrega usuários para o select de login.
+ * Rápido: 1 query (ou cache). NÃO faz seed no login.
+ */
+export async function carregarUsuariosLogin(db, fs, perfilDesejado) {
+  const perfil = normalizarPerfil(perfilDesejado);
+
+  const cached = lerCacheLogin(perfil);
+  if (cached) {
+    return mapaFromLista(cached, perfil);
+  }
+
+  // Seed local imediato como fallback (sem esperar rede)
+  const mapaSeed = mapaFromSeed(perfil);
 
   try {
-    // Garante seed no banco na primeira vez (não bloqueia login se falhar)
-    await garantirSeedUsuarios(db, fs, { criadoPor: "login_auto" }).catch(() => {});
     const lista = await listarUsuariosPortal(db, fs);
     const doPerfil = lista.filter((u) => normalizarPerfil(u.perfil) === perfil);
 
     if (doPerfil.length) {
-      mapa.clear();
-      for (const u of doPerfil) {
-        const nome = normalizarNome(u.nome);
-        if (!nome) continue;
-        mapa.set(nome, {
-          nome,
-          senha: String(u.senha || u.matricula || "").trim(),
-          matricula: String(u.matricula || u.senha || "").trim(),
-          perfil,
-          ativo: u.ativo !== false,
-          uidKey: u.uidKey || slug(nome),
-          origem: "firestore",
-          id: u.id
-        });
-      }
+      gravarCacheLogin(perfil, doPerfil);
+      return mapaFromLista(doPerfil, perfil);
     }
+
+    // Banco ainda vazio → usa seed local e popula em background (não bloqueia UI)
+    garantirSeedUsuarios(db, fs, { criadoPor: "login_auto" }).catch(() => {});
   } catch (err) {
     console.warn("Login usando seed local (Firestore indisponível):", err);
   }
 
-  return mapa;
+  return mapaSeed;
 }
 
 export function nomesOrdenados(mapaUsuarios, { somenteAtivos = true } = {}) {

@@ -100,8 +100,9 @@
   import {
     carregarUsuariosLogin,
     nomesOrdenados,
+    mapaSeedLogin,
     PERFIL_ANALISTA
-  } from "./js/portal-usuarios.js?v=20260924b";
+  } from "./js/portal-usuarios.js?v=20260924e";
 
   const firebaseConfig = {
     apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
@@ -148,6 +149,10 @@
   }
 
   async function carregarUsuarios() {
+    // Lista imediata (seed/cache visual) enquanto busca no banco
+    USUARIOS = mapaSeedLogin(PERFIL_ANALISTA);
+    popularSelect();
+
     try {
       USUARIOS = await carregarUsuariosLogin(db, fs, PERFIL_ANALISTA);
       popularSelect();
