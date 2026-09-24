@@ -91,9 +91,14 @@
           </p>
         </div>
 
-        <button id="btnSalvarTudo" type="button" class="primary">
-          Salvar Tudo
-        </button>
+        <div class="table-actions">
+          <button id="btnLimparTudo" type="button" class="danger">
+            Limpar Tudo
+          </button>
+          <button id="btnSalvarTudo" type="button" class="primary">
+            Salvar Tudo
+          </button>
+        </div>
       </div>
 
       <div class="table-wrap">
@@ -133,6 +138,7 @@
       where,
       doc,
       setDoc,
+      deleteDoc,
       serverTimestamp
     } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
@@ -159,6 +165,7 @@
     const msg = document.getElementById("msg");
     const statusLinha = document.getElementById("statusLinha");
     const btnSalvarTudo = document.getElementById("btnSalvarTudo");
+    const btnLimparTudo = document.getElementById("btnLimparTudo");
 
     const cardCds = document.getElementById("cardCds");
     const cardAvaliados = document.getElementById("cardAvaliados");
@@ -468,9 +475,19 @@
             </td>
 
             <td class="action-col">
-              <button type="button" class="primary" data-save="${idx}">
-                Salvar
-              </button>
+              <div class="row-actions">
+                <button type="button" class="primary" data-save="${idx}">
+                  Salvar
+                </button>
+                <button
+                  type="button"
+                  class="danger"
+                  data-limpar="${idx}"
+                  ${item.salvo || item.nota !== "" || item.observacao ? "" : "disabled"}
+                >
+                  Limpar
+                </button>
+              </div>
             </td>
           </tr>
         `).join("");
@@ -502,18 +519,54 @@
         });
       });
 
+      tbody.querySelectorAll("[data-limpar]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          limparLinha(Number(btn.dataset.limpar));
+        });
+      });
+
+      tbody.querySelectorAll("[data-nota]").forEach(input => {
+        input.addEventListener("input", () => {
+          atualizarCards();
+          atualizarBotoesLimpar();
+        });
+      });
+
       tbody.querySelectorAll("[data-obs]").forEach(input => {
-        input.addEventListener("input", atualizarCards);
+        input.addEventListener("input", () => {
+          atualizarCards();
+          atualizarBotoesLimpar();
+        });
       });
 
       atualizarCards();
     }
 
     function lerLinhaTela(idx){
+      const notaInput = tbody.querySelector(`input.nota-input[data-nota="${idx}"]`);
+
       return {
-        nota: tbody.querySelector(`[data-nota="${idx}"]`)?.value ?? "",
+        nota: notaInput?.value ?? "",
         observacao: normalize(tbody.querySelector(`[data-obs="${idx}"]`)?.value ?? "")
       };
+    }
+
+    function linhaTemConteudo(idx){
+      const item = LINHAS[idx];
+      const form = lerLinhaTela(idx);
+
+      return !!(
+        item?.salvo ||
+        form.nota !== "" ||
+        form.observacao
+      );
+    }
+
+    function atualizarBotoesLimpar(){
+      tbody.querySelectorAll("[data-limpar]").forEach(btn => {
+        const idx = Number(btn.dataset.limpar);
+        btn.disabled = !linhaTemConteudo(idx);
+      });
     }
 
     function atualizarCards(){
@@ -601,6 +654,77 @@ const notas = preenchidos
       }
     }
 
+    async function limparLinha(idx){
+      const item = LINHAS[idx];
+
+      if(!item){
+        setMsg("Linha não encontrada.", "err");
+        return;
+      }
+
+      if(!linhaTemConteudo(idx)){
+        setMsg(`Nada para limpar em ${item.cd}.`, "err");
+        return;
+      }
+
+      if(!confirm(`Limpar a avaliação de ${item.cd} em ${mesLabel(mesFiltro.value)}?`)){
+        return;
+      }
+
+      const mesAtual = mesFiltro.value;
+
+      try{
+        setMsg(`Limpando avaliação de ${item.cd}...`);
+
+        if(item.salvo){
+          await deleteDoc(doc(db, COLLECTION, docId(mesAtual, item.cd)));
+        }
+
+        await carregarAvaliacoes();
+        render();
+        setMsg(`Avaliação de ${item.cd} removida ✅`, "ok");
+
+      }catch(error){
+        console.error(error);
+        setMsg("Erro ao limpar. Verifique conexão e regras do Firestore.", "err");
+      }
+    }
+
+    async function limparTudo(){
+      const mesAtual = mesFiltro.value;
+      const salvos = LINHAS.filter(item => item.salvo);
+
+      if(!salvos.length){
+        setMsg("Nenhuma avaliação salva para limpar neste mês.", "err");
+        return;
+      }
+
+      if(!confirm(`Limpar todas as ${salvos.length} avaliação(ões) salvas de ${mesLabel(mesAtual)}?`)){
+        return;
+      }
+
+      btnLimparTudo.disabled = true;
+
+      try{
+        let removidos = 0;
+
+        for(const item of salvos){
+          await deleteDoc(doc(db, COLLECTION, docId(mesAtual, item.cd)));
+          removidos++;
+        }
+
+        await carregarAvaliacoes();
+        render();
+        setMsg(`Limpeza concluída ✅ ${removidos} avaliação(ões) removida(s).`, "ok");
+
+      }catch(error){
+        console.error(error);
+        setMsg("Erro ao limpar tudo. Verifique conexão e regras do Firestore.", "err");
+      }finally{
+        btnLimparTudo.disabled = false;
+      }
+    }
+
     async function salvarTudo(){
       if(!LINHAS.length){
         setMsg("Nenhum CD disponível para salvar.", "err");
@@ -670,6 +794,7 @@ const notas = preenchidos
     });
 
     btnSalvarTudo.addEventListener("click", salvarTudo);
+    btnLimparTudo.addEventListener("click", limparTudo);
 
     popularMeses();
 
