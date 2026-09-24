@@ -346,10 +346,10 @@
     }
 
     function buscarAvaliacao(cd, mesKey){
+      // Nota por CD/mês — independente de quem lançou
       return AVALIACOES.find(item =>
         item.mesKey === mesKey &&
-        normalizeKey(item.cd) === normalizeKey(cd) &&
-        usuarioConfere(item)
+        normalizeKey(item.cd) === normalizeKey(cd)
       );
     }
 
@@ -362,10 +362,7 @@
         .filter(cd => !cdSelecionado || normalize(cd) === normalize(cdSelecionado))
         .map(cd => {
           const atual = buscarAvaliacao(cd, mesAtual);
-          const anterior = buscarAvaliacao(cd, mesAnterior) || AVALIACOES.find(item =>
-            item.mesKey === mesAnterior &&
-            normalizeKey(item.cd) === normalizeKey(cd)
-          );
+          const anterior = buscarAvaliacao(cd, mesAnterior);
 
           const notaAtual = atual?.nota ?? null;
           const notaAnterior = anterior?.nota ?? null;

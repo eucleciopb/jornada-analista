@@ -395,10 +395,10 @@
       const mesAnterior = mesAnteriorKey(mesAtual);
 
       LINHAS = MEUS_CDS.map(cd => {
+        // Nota por CD/mês (visível para qualquer responsável do CD, não só quem lançou)
         const atual = AVALIACOES.find(item =>
           item.mesKey === mesAtual &&
-          normalizeKey(item.cd) === normalizeKey(cd) &&
-          normalizeKey(item.uidKey || item.analista) === normalizeKey(uidKey)
+          normalizeKey(item.cd) === normalizeKey(cd)
         );
 
         const anterior = AVALIACOES.find(item =>
@@ -411,8 +411,9 @@
           notaAnterior: anterior?.nota ?? null,
           nota: atual?.nota ?? "",
           observacao: atual?.observacao ?? "",
-          salvo: !!atual,
-          id: docId(mesAtual, cd)
+          salvo: !!atual && Number.isFinite(Number(atual.nota)),
+          id: docId(mesAtual, cd),
+          lancadoPor: atual?.analista || atual?.uidKey || ""
         };
       });
     }
