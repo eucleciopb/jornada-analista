@@ -76,7 +76,7 @@ const REPETIDORES = {
     grid: "",
     campos: [
       { key: "supervisor", label: "Supervisor acompanhado", placeholder: "Opcional" },
-      { key: "vendedor", label: "Vendedor acompanhado", placeholder: "Opcional" },
+      { key: "vendedor", label: "Matrícula do vendedor acompanhado", placeholder: "Até 6 dígitos", tipo: "matricula" },
       { key: "data", label: "Data", tipo: "date" },
       { key: "cidade", label: "Cidade / região", placeholder: "Opcional" },
       { key: "tipo", label: "Tipo de acompanhamento", placeholder: "Ex.: Coaching, rota, leitura de loja", full: true },
@@ -400,6 +400,9 @@ function iniciar() {
     if (campo.dataset.rep) {
       const lista = estado.form[campo.dataset.rep];
       const indice = Number(campo.dataset.i);
+      if (campo.dataset.tipo === "matricula") {
+        campo.value = campo.value.replace(/\D/g, "").slice(0, 6);
+      }
       if (lista?.[indice]) lista[indice][campo.dataset.key] = campo.value;
       estado.sujo = true;
       return;
@@ -501,6 +504,8 @@ function iniciar() {
       controle = `<input type="date" data-rep="${nome}" data-i="${indice}" data-key="${campo.key}" value="${val}">`;
     } else if (campo.tipo === "number") {
       controle = `<input type="number" min="0" step="1" data-rep="${nome}" data-i="${indice}" data-key="${campo.key}" value="${val}" placeholder="${ph}">`;
+    } else if (campo.tipo === "matricula") {
+      controle = `<input type="text" inputmode="numeric" pattern="[0-9]{1,6}" maxlength="6" autocomplete="off" data-tipo="matricula" data-rep="${nome}" data-i="${indice}" data-key="${campo.key}" value="${val}" placeholder="${ph}">`;
     }
     return `<label class="${classe}"><span>${escapeHtml(campo.label)}</span>${controle}</label>`;
   }
