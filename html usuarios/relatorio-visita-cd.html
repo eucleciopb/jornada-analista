@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/bundle-user.css" />
-  <link rel="stylesheet" href="../css/pages/user-relatorio-visita-cd.css?v=20260930b" />
+  <link rel="stylesheet" href="../css/pages/user-relatorio-visita-cd.css?v=20260930d" />
 </head>
 <body class="theme-user app-shell">
   <header class="topbar">
@@ -219,10 +219,12 @@
         <section class="rv-block">
           <p class="rv-kicker">8 · Treinamentos</p>
           <h3>Treinamentos Realizados</h3>
-          <p class="rv-help">Registre os treinamentos aplicados durante a visita.</p>
+          <p class="rv-help">Os treinamentos já cadastrados pelo Analista para este CD e dentro do período da visita aparecem automaticamente aqui.</p>
+          <p id="treinamentosStatus" class="rv-msg info" role="status">Selecione o CD e informe o período da visita.</p>
           <div id="listaTreinamentos"></div>
           <div class="rv-inline-actions">
-            <button type="button" class="btn-secondary" data-add="treinamentos">+ Adicionar Treinamento</button>
+            <button id="btnRegistrarTreinamento" type="button" class="btn-primary">+ Registrar treinamento</button>
+            <button id="btnAtualizarTreinamentos" type="button" class="btn-secondary">Atualizar treinamentos</button>
           </div>
         </section>
 
@@ -306,6 +308,6 @@
 
   <style id="rvDocCss"></style>
   <script type="module" src="../js/alex-guard.js?v=20260930b"></script>
-  <script type="module" src="../js/relatorio-visita-cd.js?v=20260930c"></script>
+  <script type="module" src="../js/relatorio-visita-cd.js?v=20260930d"></script>
 </body>
 </html>

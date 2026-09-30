@@ -195,6 +195,30 @@
   font-size: 13px;
 }
 
+.rv-training-source {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 6px;
+  border-radius: 999px;
+  padding: 3px 8px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.rv-training-list {
+  margin: 10px 0 12px;
+}
+
+.rv-training-list .table-wrap {
+  margin-top: 0;
+}
+
+.rv-training-list td strong {
+  display: block;
+}
+
 .rv-inline-actions {
   display: flex;
   flex-wrap: wrap;

@@ -18,7 +18,7 @@
  *  - processos[] { tema, situacao, orientacao }
  *  - rotas[] { supervisor, vendedor (matrícula), data, cidade, tipo, registro }
  *  - ocorrenciasPercentual, ocorrenciasVendedores, ocorrenciasTipos, ocorrenciasComentarios
- *  - treinamentos[] { tema, data, publico, participantes, observacoes }
+ *  - treinamentos[] { origemId, cd, tema, data, modalidade, publico, participantes, observacoes }
  *  - apoioJornada
  *  - combinados[] { combinado, responsavel, apoio, prazo }
  *  - consideracoes
@@ -40,7 +40,7 @@ const MESES = [
 const CHAVES = {
   processos: ["tema", "situacao", "orientacao"],
   rotas: ["supervisor", "vendedor", "data", "cidade", "tipo", "registro"],
-  treinamentos: ["tema", "data", "publico", "participantes", "observacoes"],
+  treinamentos: ["origemId", "cd", "tema", "data", "modalidade", "publico", "participantes", "observacoes"],
   combinados: ["combinado", "responsavel", "apoio", "prazo"],
   proximos: ["tema", "responsavel", "prazo", "observacao"]
 };
@@ -262,6 +262,44 @@ export function chaveCd(cd) {
     .replace(/[^a-z0-9]+/g, "");
 }
 
+export function normalizarTreinamentoRealizado(raw) {
+  const item = raw || {};
+  const participantes = Number(item.totalPessoas);
+  return {
+    origemId: texto(item.id),
+    cd: texto(item.cd),
+    tema: texto(item.treinamento || item.tema),
+    data: texto(item.data),
+    modalidade: texto(item.tipoTreinamento || item.modalidade),
+    publico: texto(item.publico),
+    participantes: Number.isFinite(participantes) && participantes >= 0
+      ? String(participantes)
+      : texto(item.participantes),
+    observacoes: textoLivre(item.obs || item.observacoes)
+  };
+}
+
+export function filtrarTreinamentosDaVisita(lista, {
+  cd,
+  dataInicial,
+  dataFinal
+} = {}) {
+  const cdKey = chaveCd(cd);
+  if (!cdKey || !dataInicial || !dataFinal) return [];
+
+  return (lista || [])
+    .map(normalizarTreinamentoRealizado)
+    .filter((item) =>
+      chaveCd(item.cd) === cdKey &&
+      item.data >= dataInicial &&
+      item.data <= dataFinal
+    )
+    .sort((a, b) =>
+      String(a.data).localeCompare(String(b.data)) ||
+      String(a.tema).localeCompare(String(b.tema), "pt-BR")
+    );
+}
+
 export function filtrarRelatorios(lista, filtros = {}) {
   const cd = texto(filtros.cd);
   const analista = texto(filtros.analista);
@@ -382,6 +420,7 @@ function htmlTreinamentos(r) {
     <tr>
       <td>${escapeHtml(t.tema || "—")}</td>
       <td>${escapeHtml(t.data ? formatarDataCurta(t.data) : "—")}</td>
+      <td>${escapeHtml(t.modalidade || "—")}</td>
       <td>${escapeHtml(t.publico || "—")}</td>
       <td>${escapeHtml(t.participantes || "—")}</td>
       <td>${escapeHtml(t.observacoes || "—")}</td>
@@ -393,6 +432,7 @@ function htmlTreinamentos(r) {
         <tr>
           <th>Tema</th>
           <th>Data</th>
+          <th>Modalidade</th>
           <th>Público</th>
           <th>Participantes</th>
           <th>Observações</th>
