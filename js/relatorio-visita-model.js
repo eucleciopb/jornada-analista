@@ -16,7 +16,7 @@
  *  - reuniaoMatinal, reuniaoVespertina
  *  - rotinasTexto
  *  - processos[] { tema, situacao, orientacao }
- *  - rotas[] { supervisor, vendedor, data, cidade, tipo, registro }
+ *  - rotas[] { supervisor, vendedor (matrícula), data, cidade, tipo, registro }
  *  - ocorrenciasPercentual, ocorrenciasVendedores, ocorrenciasTipos, ocorrenciasComentarios
  *  - treinamentos[] { tema, data, publico, participantes, observacoes }
  *  - apoioJornada
@@ -221,6 +221,9 @@ export function validarRelatorio(relatorio, { finalizar = false } = {}) {
   if (r.dataInicial && r.dataFinal && r.dataFinal < r.dataInicial) {
     erros.push("A data final precisa ser igual ou posterior à data inicial.");
   }
+  if (r.rotas.some((rota) => rota.vendedor && !/^\d{1,6}$/.test(rota.vendedor))) {
+    erros.push("A matrícula do vendedor deve conter somente números e no máximo 6 dígitos.");
+  }
 
   if (finalizar) {
     if (!r.responsavelCd) {
@@ -347,7 +350,7 @@ function htmlRotas(r) {
   return r.rotas.map((rota) => {
     const metas = [
       rota.supervisor ? `Supervisor: ${rota.supervisor}` : "",
-      rota.vendedor ? `Vendedor: ${rota.vendedor}` : "",
+      rota.vendedor ? `Matrícula do vendedor: ${rota.vendedor}` : "",
       rota.data ? `Data: ${formatarDataCurta(rota.data)}` : "",
       rota.cidade ? `Cidade / região: ${rota.cidade}` : "",
       rota.tipo ? `Tipo: ${rota.tipo}` : ""
