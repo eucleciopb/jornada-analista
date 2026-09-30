@@ -40,8 +40,9 @@ import {
   escapeHtml,
   htmlCorpoDocumento,
   abrirPdfRelatorio,
-  texto
-} from "./relatorio-visita-model.js";
+  texto,
+  filtrarTreinamentosDaVisita
+} from "./relatorio-visita-model.js?v=20260930d";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
@@ -58,6 +59,8 @@ const CAMPOS = [
   "ocorrenciasPercentual", "ocorrenciasVendedores", "ocorrenciasTipos", "ocorrenciasComentarios",
   "apoioJornada", "consideracoes", "status"
 ];
+
+const COLECAO_TREINAMENTOS = "treinamentos_realizados";
 
 const REPETIDORES = {
   processos: {
@@ -81,18 +84,6 @@ const REPETIDORES = {
       { key: "cidade", label: "Cidade / região", placeholder: "Opcional" },
       { key: "tipo", label: "Tipo de acompanhamento", placeholder: "Ex.: Coaching, rota, leitura de loja", full: true },
       { key: "registro", label: "Registro do acompanhamento", placeholder: "Descreva o acompanhamento realizado em rota, comportamentos observados, orientações realizadas e oportunidades identificadas.", tipo: "area", full: true }
-    ]
-  },
-  treinamentos: {
-    box: "listaTreinamentos",
-    titulo: "Treinamento",
-    grid: "",
-    campos: [
-      { key: "tema", label: "Tema", placeholder: "Ex.: Foco em RGB" },
-      { key: "data", label: "Data", tipo: "date" },
-      { key: "publico", label: "Público", placeholder: "Ex.: Vendedores, supervisores" },
-      { key: "participantes", label: "Quantidade de participantes", tipo: "number", placeholder: "Ex.: 18" },
-      { key: "observacoes", label: "Observações", tipo: "area", full: true, placeholder: "Opcional" }
     ]
   },
   combinados: {
@@ -144,7 +135,9 @@ function iniciar() {
     sujo: false,
     preenchendo: false,
     salvando: false,
-    navegou: false
+    navegou: false,
+    treinamentosPorAnalista: new Map(),
+    sincronizacaoTreinamentos: 0
   };
 
   const el = {
@@ -164,6 +157,8 @@ function iniciar() {
     formHint: document.getElementById("formHintEdicao"),
     formMsg: document.getElementById("formMsg"),
     analista: document.getElementById("analista"),
+    treinamentosStatus: document.getElementById("treinamentosStatus"),
+    listaTreinamentos: document.getElementById("listaTreinamentos"),
     docAviso: document.getElementById("docAviso"),
     docCorpo: document.getElementById("docCorpo"),
     btnEditarDoc: document.getElementById("btnEditarDoc"),
@@ -205,6 +200,10 @@ function iniciar() {
   el.form?.addEventListener("submit", (evento) => evento.preventDefault());
   el.form?.addEventListener("input", aoDigitar);
   el.form?.addEventListener("click", aoClicarFormulario);
+  document.getElementById("btnRegistrarTreinamento")?.addEventListener("click", abrirCadastroTreinamento);
+  document.getElementById("btnAtualizarTreinamentos")?.addEventListener("click", () => {
+    sincronizarTreinamentosFormulario({ forcar: true, marcarAlteracao: true });
+  });
   document.getElementById("btnVoltarForm")?.addEventListener("click", () => irPara(""));
   document.getElementById("btnPrevia")?.addEventListener("click", abrirPreviaLocal);
   document.getElementById("btnRascunho")?.addEventListener("click", () => salvar(false));
@@ -225,6 +224,12 @@ function iniciar() {
     if (!estado.sujo) return;
     evento.preventDefault();
     evento.returnValue = "";
+  });
+
+  window.addEventListener("focus", () => {
+    if (estado.vista === "form" && criteriosTreinamentosCompletos(estado.form)) {
+      sincronizarTreinamentosFormulario({ forcar: true, marcarAlteracao: true });
+    }
   });
 
   let ignorarHash = false;
@@ -355,12 +360,13 @@ function iniciar() {
   }
 
   async function abrirVisualizacao(id) {
-    const registro = await obterRegistro(id);
+    let registro = await obterRegistro(id);
     if (!registro) {
       mostrar("lista");
       definirMsg(el.listaMsg, "Não encontramos este registro de visita.", "erro");
       return;
     }
+    registro = await sincronizarTreinamentosDoRegistro(registro);
     estado.form = registro;
     estado.sujo = false;
     renderDocumento(registro, { previa: false });
@@ -410,6 +416,9 @@ function iniciar() {
     if (CAMPOS.includes(campo.id)) {
       estado.form[campo.id] = campo.value;
       estado.sujo = true;
+      if (["cd", "dataInicial", "dataFinal"].includes(campo.id)) {
+        sincronizarTreinamentosFormulario({ marcarAlteracao: true });
+      }
     }
   }
 
@@ -463,8 +472,10 @@ function iniciar() {
     if (el.analista) el.analista.value = estado.form.analistaNome || usuario.nome;
     if (!estado.form.rotas.length) estado.form.rotas.push(itemVazio("rotas"));
     renderRepetidores();
+    renderTreinamentosVinculados();
     estado.preenchendo = false;
     estado.sujo = false;
+    sincronizarTreinamentosFormulario({ marcarAlteracao: true });
   }
 
   function renderRepetidores() {
@@ -508,6 +519,171 @@ function iniciar() {
       controle = `<input type="text" inputmode="numeric" pattern="[0-9]{1,6}" maxlength="6" autocomplete="off" data-tipo="matricula" data-rep="${nome}" data-i="${indice}" data-key="${campo.key}" value="${val}" placeholder="${ph}">`;
     }
     return `<label class="${classe}"><span>${escapeHtml(campo.label)}</span>${controle}</label>`;
+  }
+
+  function criteriosTreinamentosCompletos(relatorio) {
+    return Boolean(relatorio?.cd && relatorio?.dataInicial && relatorio?.dataFinal);
+  }
+
+  function uidTreinamentos(relatorio) {
+    const uid = texto(relatorio?.analistaUidKey);
+    if (uid) return uid;
+    return texto(relatorio?.analistaNome).toLowerCase() === texto(usuario.nome).toLowerCase()
+      ? texto(usuario.uidKey)
+      : "";
+  }
+
+  async function carregarTreinamentosDoAnalista(uidKey, { forcar = false } = {}) {
+    if (!uidKey) return [];
+    if (!forcar && estado.treinamentosPorAnalista.has(uidKey)) {
+      return estado.treinamentosPorAnalista.get(uidKey);
+    }
+
+    const snap = await getDocs(query(
+      collection(db, COLECAO_TREINAMENTOS),
+      where("uidKey", "==", uidKey)
+    ));
+    const lista = [];
+    snap.forEach((item) => lista.push({ id: item.id, ...item.data() }));
+    estado.treinamentosPorAnalista.set(uidKey, lista);
+    return lista;
+  }
+
+  async function sincronizarTreinamentosDoRegistro(relatorio, { forcar = false } = {}) {
+    if (!criteriosTreinamentosCompletos(relatorio)) return relatorio;
+    const uidKey = uidTreinamentos(relatorio);
+    if (!uidKey) return relatorio;
+
+    try {
+      const cadastrados = await carregarTreinamentosDoAnalista(uidKey, { forcar });
+      const vinculados = filtrarTreinamentosDaVisita(cadastrados, {
+        cd: relatorio.cd,
+        dataInicial: relatorio.dataInicial,
+        dataFinal: relatorio.dataFinal
+      });
+      return normalizarRelatorio({ ...relatorio, treinamentos: vinculados });
+    } catch (erro) {
+      console.error("Treinamentos da visita:", erro);
+      return relatorio;
+    }
+  }
+
+  async function sincronizarTreinamentosFormulario({
+    forcar = false,
+    marcarAlteracao = false
+  } = {}) {
+    const token = ++estado.sincronizacaoTreinamentos;
+    if (!criteriosTreinamentosCompletos(estado.form)) {
+      const tinhaTreinamentos = Boolean(estado.form.treinamentos?.length);
+      estado.form.treinamentos = [];
+      renderTreinamentosVinculados();
+      definirMsg(
+        el.treinamentosStatus,
+        "Selecione o CD e informe a data inicial e a data final da visita.",
+        "info"
+      );
+      if (marcarAlteracao && tinhaTreinamentos) estado.sujo = true;
+      return;
+    }
+
+    definirMsg(el.treinamentosStatus, "Buscando treinamentos já cadastrados...", "info");
+    try {
+      const antes = JSON.stringify(estado.form.treinamentos || []);
+      const atualizado = await sincronizarTreinamentosDoRegistro(estado.form, { forcar });
+      if (token !== estado.sincronizacaoTreinamentos) return;
+      estado.form.treinamentos = atualizado.treinamentos;
+      renderTreinamentosVinculados();
+
+      const quantidade = estado.form.treinamentos.length;
+      const pessoas = estado.form.treinamentos.reduce(
+        (total, item) => total + (Number(item.participantes) || 0),
+        0
+      );
+      definirMsg(
+        el.treinamentosStatus,
+        quantidade
+          ? `${quantidade} treinamento(s) encontrado(s) · ${pessoas} participante(s).`
+          : "Nenhum treinamento cadastrado para este CD no período informado.",
+        quantidade ? "ok" : "info"
+      );
+      if (marcarAlteracao && antes !== JSON.stringify(estado.form.treinamentos)) {
+        estado.sujo = true;
+      }
+    } catch (erro) {
+      console.error("Sincronização de treinamentos:", erro);
+      if (token !== estado.sincronizacaoTreinamentos) return;
+      renderTreinamentosVinculados();
+      definirMsg(
+        el.treinamentosStatus,
+        "Não foi possível atualizar os treinamentos agora. Os dados já vinculados foram mantidos.",
+        "erro"
+      );
+    }
+  }
+
+  function renderTreinamentosVinculados() {
+    if (!el.listaTreinamentos) return;
+    const lista = estado.form.treinamentos || [];
+    if (!lista.length) {
+      el.listaTreinamentos.innerHTML = `
+        <div class="rv-training-list">
+          <p class="rv-empty-row">Nenhum treinamento vinculado.</p>
+        </div>
+      `;
+      return;
+    }
+
+    el.listaTreinamentos.innerHTML = `
+      <div class="rv-training-list">
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Treinamento</th>
+                <th>Modalidade</th>
+                <th>Público</th>
+                <th>Participantes</th>
+                <th>Observações</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${lista.map((item) => `
+                <tr>
+                  <td>${escapeHtml(formatarDataRegistro(item.data))}</td>
+                  <td>
+                    <strong>${escapeHtml(item.tema || "—")}</strong>
+                    <span class="rv-training-source">Cadastro de Treinamentos</span>
+                  </td>
+                  <td>${escapeHtml(item.modalidade || "—")}</td>
+                  <td>${escapeHtml(item.publico || "—")}</td>
+                  <td>${escapeHtml(item.participantes || "—")}</td>
+                  <td>${escapeHtml(item.observacoes || "—")}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }
+
+  function abrirCadastroTreinamento() {
+    const novaAba = window.open("treinamentos.html", "_blank");
+    if (!novaAba) {
+      definirMsg(
+        el.treinamentosStatus,
+        "Permita pop-ups para abrir o cadastro de treinamentos.",
+        "erro"
+      );
+      return;
+    }
+    novaAba.opener = null;
+    definirMsg(
+      el.treinamentosStatus,
+      "Cadastro aberto em outra aba. Ao retornar, a lista será atualizada automaticamente.",
+      "info"
+    );
   }
 
   function renderLista() {
@@ -566,6 +742,10 @@ function iniciar() {
 
   async function salvar(finalizar) {
     if (estado.salvando) return;
+    await sincronizarTreinamentosFormulario({
+      forcar: true,
+      marcarAlteracao: false
+    });
     const statusAnterior = estado.form.status || "rascunho";
     const statusPretendido = finalizar ? "finalizado" : "rascunho";
     estado.form.status = statusPretendido;
