@@ -10,6 +10,7 @@ import {
   doc,
   getDoc,
   setDoc,
+  deleteDoc,
   query,
   where,
   serverTimestamp
@@ -162,6 +163,7 @@ function iniciar() {
     docAviso: document.getElementById("docAviso"),
     docCorpo: document.getElementById("docCorpo"),
     btnEditarDoc: document.getElementById("btnEditarDoc"),
+    btnExcluirDoc: document.getElementById("btnExcluirDoc"),
     btnRascunho: document.getElementById("btnRascunho"),
     btnFinalizar: document.getElementById("btnFinalizar")
   };
@@ -212,6 +214,9 @@ function iniciar() {
   document.getElementById("btnEditarDoc")?.addEventListener("click", () => {
     const id = estado.doc?.id || estado.form?.id;
     if (id) irPara(`editar/${encodeURIComponent(id)}`);
+  });
+  document.getElementById("btnExcluirDoc")?.addEventListener("click", () => {
+    excluirRelatorio(estado.doc || estado.form);
   });
   document.getElementById("btnPdfDoc")?.addEventListener("click", () => {
     if (!abrirPdfRelatorio(estado.doc || estado.form)) {
@@ -449,6 +454,7 @@ function iniciar() {
     if (!registro) return;
     if (botao.dataset.acao === "ver") irPara(`ver/${encodeURIComponent(id)}`);
     if (botao.dataset.acao === "editar") irPara(`editar/${encodeURIComponent(id)}`);
+    if (botao.dataset.acao === "excluir") excluirRelatorio(registro);
     if (botao.dataset.acao === "pdf") {
       if (!abrirPdfRelatorio(registro)) {
         definirMsg(el.listaMsg, "Permita pop-ups para gerar o PDF.", "erro");
@@ -705,8 +711,12 @@ function iniciar() {
     }
 
     el.tbody.innerHTML = filtrados.map((item) => {
-      const editar = podeEditarRelatorio(item, usuario)
+      const podeAlterar = podeEditarRelatorio(item, usuario);
+      const editar = podeAlterar
         ? `<button type="button" class="btn-act" data-acao="editar" data-id="${escapeHtml(item.id)}">Editar</button>`
+        : "";
+      const excluir = podeAlterar
+        ? `<button type="button" class="btn-act danger" data-acao="excluir" data-id="${escapeHtml(item.id)}">Excluir</button>`
         : "";
       const status = normalizarRelatorio(item).status;
       return `
@@ -722,6 +732,7 @@ function iniciar() {
               <button type="button" class="btn-act" data-acao="ver" data-id="${escapeHtml(item.id)}">Visualizar</button>
               ${editar}
               <button type="button" class="btn-act" data-acao="pdf" data-id="${escapeHtml(item.id)}">Gerar PDF</button>
+              ${excluir}
             </div>
           </td>
         </tr>
@@ -738,6 +749,40 @@ function iniciar() {
       : "";
     const pode = podeEditarRelatorio(estado.doc, usuario);
     el.btnEditarDoc.hidden = !estado.doc.id || !pode;
+    el.btnExcluirDoc.hidden = !estado.doc.id || !pode;
+  }
+
+  async function excluirRelatorio(relatorio) {
+    if (!relatorio?.id || !podeEditarRelatorio(relatorio, usuario)) return;
+    const periodo = formatarPeriodo(relatorio.dataInicial, relatorio.dataFinal);
+    const confirmado = window.confirm(
+      `Excluir definitivamente o relatório de visita de ${relatorio.cd || "CD não informado"} (${periodo})?\n\nEsta ação não pode ser desfeita.`
+    );
+    if (!confirmado) return;
+
+    if (el.btnExcluirDoc) el.btnExcluirDoc.disabled = true;
+    definirMsg(el.listaMsg, "Excluindo relatório de visita...", "info");
+    try {
+      await deleteDoc(doc(db, COLECAO_RELATORIO_VISITA, relatorio.id));
+      estado.lista = estado.lista.filter((item) => item.id !== relatorio.id);
+      estado.form = relatorioVazio(usuario);
+      estado.doc = null;
+      estado.sujo = false;
+      location.hash = "";
+      mostrar("lista");
+      renderLista();
+      definirMsg(el.listaMsg, "Relatório de visita excluído.", "ok");
+    } catch (erro) {
+      console.error("Exclusão do relatório:", erro);
+      const mensagem = "Não foi possível excluir o relatório. Tente novamente.";
+      definirMsg(el.listaMsg, mensagem, "erro");
+      if (estado.vista === "doc") {
+        el.docAviso.hidden = false;
+        definirMsg(el.docAviso, mensagem, "erro");
+      }
+    } finally {
+      if (el.btnExcluirDoc) el.btnExcluirDoc.disabled = false;
+    }
   }
 
   async function salvar(finalizar) {
