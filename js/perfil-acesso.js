@@ -84,6 +84,7 @@ export const ROTAS_EXCLUSIVAS_SV = [
   "avaliacao-matinal-geral.html",
   "relatorio_mgr.html",
   "acompanhamento-entregas.html",
+  "relatorio-visita-cd.html",
   "kpis-supervisores-importar.html",
   "kpis_cd_mes.html",
   "importar-kpis-cd.html",

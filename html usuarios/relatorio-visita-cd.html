@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <title>Relatório de Visita ao CD | Jornada</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/bundle-user.css" />
+  <link rel="stylesheet" href="../css/pages/user-relatorio-visita-cd.css?v=20260930b" />
+</head>
+<body class="theme-user app-shell">
+  <header class="topbar">
+    <div>
+      <h2>Relatório de Visita ao CD</h2>
+      <div id="userInfo" class="hint">Carregando...</div>
+    </div>
+    <div class="top-actions">
+      <button id="btnMenu" class="btn-secondary" type="button">Voltar ao Menu</button>
+      <button id="btnLogout" class="btn-secondary" type="button">Sair</button>
+    </div>
+  </header>
+
+  <main class="rv-wrap">
+    <section id="viewLista">
+      <div class="rv-hero">
+        <div>
+          <h2>Relatórios de Visita ao CD</h2>
+          <p>Registro das visitas e devolutivas realizadas pela Jornada Comercial.</p>
+        </div>
+        <button id="btnNovo" class="btn-primary" type="button">+ Novo Relatório de Visita</button>
+      </div>
+
+      <section class="rv-panel">
+        <div class="rv-filters">
+          <label>
+            <span>CD</span>
+            <select id="filtroCd">
+              <option value="">Todos os CDs</option>
+            </select>
+          </label>
+          <label>
+            <span>Analista</span>
+            <select id="filtroAnalista">
+              <option value="">Todos</option>
+            </select>
+          </label>
+          <label>
+            <span>Período — de</span>
+            <input id="filtroInicio" type="date" />
+          </label>
+          <label>
+            <span>Período — até</span>
+            <input id="filtroFim" type="date" />
+          </label>
+          <label>
+            <span>Status</span>
+            <select id="filtroStatus">
+              <option value="">Todos</option>
+              <option value="rascunho">Rascunho</option>
+              <option value="finalizado">Finalizado</option>
+            </select>
+          </label>
+          <button id="btnLimparFiltros" class="btn-secondary" type="button">Limpar</button>
+        </div>
+        <p id="listaMsg" class="rv-msg" role="status"></p>
+      </section>
+
+      <p id="listaContagem" class="rv-count">0 registros</p>
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>CD</th>
+              <th>Período da Visita</th>
+              <th>Analista</th>
+              <th>Responsável pelo CD</th>
+              <th>Data do Registro</th>
+              <th>Status</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyLista">
+            <tr><td colspan="7"><div class="rv-empty">Carregando registros...</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="viewForm" hidden>
+      <div class="rv-hero">
+        <div>
+          <h2>Registro de Visita ao CD</h2>
+          <p>Registre os principais acompanhamentos, orientações e combinados realizados durante a visita.</p>
+          <p id="formHintEdicao" class="rv-help" hidden>Você está atualizando um registro já salvo.</p>
+        </div>
+      </div>
+
+      <form id="formVisita" autocomplete="off" novalidate>
+        <section class="rv-block">
+          <p class="rv-kicker">1 · Identificação da visita</p>
+          <h3>Identificação da Visita</h3>
+          <p class="rv-help">Informe o CD, o período e quem foi acompanhado.</p>
+          <div class="rv-grid-2">
+            <label class="rv-field">
+              <span>CD Visitado</span>
+              <select id="cd" required>
+                <option value="">Selecione o CD...</option>
+              </select>
+            </label>
+            <label class="rv-field">
+              <span>Analista Responsável</span>
+              <input id="analista" type="text" readonly />
+            </label>
+            <label class="rv-field">
+              <span>Data Inicial</span>
+              <input id="dataInicial" type="date" required />
+            </label>
+            <label class="rv-field">
+              <span>Data Final</span>
+              <input id="dataFinal" type="date" required />
+            </label>
+            <label class="rv-field rv-span-2">
+              <span>Responsável pelo CD</span>
+              <input id="responsavelCd" type="text" maxlength="120" placeholder="Gerente, GG ou outro responsável acompanhado na visita" />
+            </label>
+          </div>
+        </section>
+
+        <section class="rv-block">
+          <p class="rv-kicker">2 · Destaques</p>
+          <h3>Destaques da Visita</h3>
+          <p class="rv-help">Registre os principais destaques, boas práticas ou pontos relevantes encontrados durante a visita.</p>
+          <label class="rv-field">
+            <span>Destaques da Visita</span>
+            <textarea id="destaques" placeholder="Boas práticas, pontos relevantes e o que chamou atenção."></textarea>
+          </label>
+        </section>
+
+        <section class="rv-block">
+          <p class="rv-kicker">3 · Resumo</p>
+          <h3>Resumo da Visita</h3>
+          <p class="rv-help">Faça um resumo das principais atividades realizadas durante o período no CD.</p>
+          <label class="rv-field">
+            <span>Resumo da Visita</span>
+            <textarea id="resumo" placeholder="Treinamentos, reuniões, acompanhamentos, rotas, indicadores e direcionamentos."></textarea>
+          </label>
+        </section>
+
+        <section class="rv-block">
+          <p class="rv-kicker">4 · Reuniões</p>
+          <h3>Reuniões</h3>
+          <p class="rv-help">Devolutiva descritiva do que foi observado ou orientado.</p>
+          <div class="rv-grid-2">
+            <div class="rv-sub">
+              <h4>Matinal</h4>
+              <p>O que foi observado ou orientado durante as Matinais acompanhadas?</p>
+              <textarea id="reuniaoMatinal" placeholder="Registro livre da Matinal."></textarea>
+            </div>
+            <div class="rv-sub">
+              <h4>Vespertina</h4>
+              <p>O que foi observado ou orientado durante as Vespertinas acompanhadas?</p>
+              <textarea id="reuniaoVespertina" placeholder="Registro livre da Vespertina."></textarea>
+            </div>
+          </div>
+        </section>
+
+        <section class="rv-block">
+          <p class="rv-kicker">5 · Rotinas e processos</p>
+          <h3>Rotinas e Processos</h3>
+          <p class="rv-help">Quais rotinas e processos foram acompanhados durante a visita e quais orientações foram realizadas?</p>
+          <p class="rv-help">Você pode citar, por exemplo, RPS, Coaching, Rota Curinga, Matinal, Vespertina, De Olho na Rota, Livro de Rota, AMS e o acompanhamento dos indicadores.</p>
+          <label class="rv-field">
+            <span>Registro geral</span>
+            <textarea id="rotinasTexto" placeholder="Descreva as rotinas acompanhadas e as orientações feitas."></textarea>
+          </label>
+          <div id="listaProcessos"></div>
+          <div class="rv-inline-actions">
+            <button type="button" class="btn-secondary" data-add="processos">+ Adicionar Processo / Tema</button>
+          </div>
+        </section>
+
+        <section class="rv-block">
+          <p class="rv-kicker">6 · Rota</p>
+          <h3>Acompanhamento em Rota</h3>
+          <p class="rv-help">Descreva o acompanhamento realizado em rota, comportamentos observados, orientações realizadas e oportunidades identificadas.</p>
+          <div id="listaRotas"></div>
+          <div class="rv-inline-actions">
+            <button type="button" class="btn-secondary" data-add="rotas">+ Adicionar acompanhamento</button>
+          </div>
+        </section>
+
+        <section class="rv-block">
+          <p class="rv-kicker">7 · Indicador</p>
+          <h3>De Olho na Rota</h3>
+          <p class="rv-help">Registre o cenário do indicador encontrado durante a visita.</p>
+          <div class="rv-grid-2">
+            <label class="rv-field">
+              <span>% de ocorrências do CD</span>
+              <input id="ocorrenciasPercentual" type="text" placeholder="Ex.: 16%" />
+            </label>
+            <label class="rv-field">
+              <span>Vendedores com maior concentração de ocorrências</span>
+              <input id="ocorrenciasVendedores" type="text" placeholder="Opcional" />
+            </label>
+            <label class="rv-field rv-span-2">
+              <span>Principais tipos de ocorrência</span>
+              <input id="ocorrenciasTipos" type="text" placeholder="Opcional" />
+            </label>
+            <label class="rv-field rv-span-2">
+              <span>Comentários / Orientações</span>
+              <textarea id="ocorrenciasComentarios" placeholder="Ex.: CD acumula 16% de ocorrências no mês. Foram identificados vendedores acima da média do CD e orientada a priorização dessas rotas nos próximos acompanhamentos de Coaching."></textarea>
+            </label>
+          </div>
+        </section>
+
+        <section class="rv-block">
+          <p class="rv-kicker">8 · Treinamentos</p>
+          <h3>Treinamentos Realizados</h3>
+          <p class="rv-help">Registre os treinamentos aplicados durante a visita.</p>
+          <div id="listaTreinamentos"></div>
+          <div class="rv-inline-actions">
+            <button type="button" class="btn-secondary" data-add="treinamentos">+ Adicionar Treinamento</button>
+          </div>
+        </section>
+
+        <section class="rv-block">
+          <p class="rv-kicker">9 · Apoio</p>
+          <h3>Como a Jornada Comercial pode apoiar o CD?</h3>
+          <p class="rv-help">Registre como a Jornada Comercial poderá apoiar o time após a visita.</p>
+          <label class="rv-field">
+            <span>Apoio da Jornada Comercial</span>
+            <textarea id="apoioJornada" placeholder="Treinamento, acompanhamento, material, análise de indicadores, processos ou um novo acompanhamento em campo."></textarea>
+          </label>
+        </section>
+
+        <section class="rv-block">
+          <p class="rv-kicker">10 · Combinados</p>
+          <h3>Combinados da Visita</h3>
+          <p class="rv-help">Compromissos definidos entre o CD e a Jornada Comercial durante a visita.</p>
+          <div id="listaCombinados"></div>
+          <div class="rv-inline-actions">
+            <button type="button" class="btn-secondary" data-add="combinados">+ Adicionar combinado</button>
+          </div>
+        </section>
+
+        <section class="rv-block">
+          <p class="rv-kicker">11 · Fechamento</p>
+          <h3>Considerações Finais do Analista</h3>
+          <p class="rv-help">Qual é a principal devolutiva que deve ficar registrada após esta visita?</p>
+          <label class="rv-field">
+            <span>Devolutiva final</span>
+            <textarea id="consideracoes" placeholder="Feche a visita com a principal devolutiva."></textarea>
+          </label>
+        </section>
+
+        <section class="rv-block">
+          <p class="rv-kicker">12 · Depois da visita</p>
+          <h3>Próximos Acompanhamentos</h3>
+          <p class="rv-help">Opcional. Registre pontos que a Jornada Comercial deve acompanhar depois da visita.</p>
+          <div id="listaProximos"></div>
+          <div class="rv-inline-actions">
+            <button type="button" class="btn-secondary" data-add="proximos">+ Adicionar acompanhamento</button>
+          </div>
+        </section>
+
+        <section class="rv-block">
+          <p class="rv-kicker">13 · Status do registro</p>
+          <h3>Status do Registro</h3>
+          <p class="rv-help">Finalizado significa apenas que o relatório foi concluído pelo Analista. Não significa que o CD foi aprovado ou avaliado.</p>
+          <label class="rv-field" style="max-width:280px;">
+            <span>Status</span>
+            <select id="status">
+              <option value="rascunho">Rascunho</option>
+              <option value="finalizado">Finalizado</option>
+            </select>
+          </label>
+          <p id="formMsg" class="rv-msg" role="status"></p>
+        </section>
+
+        <div class="rv-actions">
+          <button id="btnVoltarForm" class="btn-secondary" type="button">Voltar</button>
+          <div>
+            <button id="btnPrevia" class="btn-secondary" type="button">Visualizar devolutiva</button>
+            <button id="btnRascunho" class="btn-secondary" type="button">Salvar rascunho</button>
+            <button id="btnFinalizar" class="btn-primary" type="button">Finalizar registro</button>
+          </div>
+        </div>
+      </form>
+    </section>
+
+    <section id="viewDoc" hidden>
+      <div class="rv-doc-bar no-print">
+        <button id="btnVoltarDoc" class="btn-secondary" type="button">Voltar</button>
+        <div>
+          <button id="btnEditarDoc" class="btn-secondary" type="button">Editar</button>
+          <button id="btnPdfDoc" class="btn-primary" type="button">Gerar PDF</button>
+        </div>
+      </div>
+      <p id="docAviso" class="rv-banner" hidden></p>
+      <article id="docCorpo" class="rv-paper rv-paper-screen"></article>
+    </section>
+  </main>
+
+  <style id="rvDocCss"></style>
+  <script type="module" src="../js/alex-guard.js?v=20260930b"></script>
+  <script type="module" src="../js/relatorio-visita-cd.js?v=20260930b"></script>
+</body>
+</html>
