@@ -7,9 +7,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../css/bundle-admin.css" />
-  <link rel="stylesheet" href="../css/pages/admin-painel-entregas.css" />
-  <link rel="stylesheet" href="../css/pages/admin-painel-entregas-hub.css" />
+  <link rel="stylesheet" href="../css/bundle-admin.css?v=20261002a" />
+  <link rel="stylesheet" href="../css/pages/admin-painel-entregas.css?v=20261002a" />
+  <link rel="stylesheet" href="../css/pages/admin-painel-entregas-hub.css?v=20261002a" />
 </head>
 
 <body class="theme-admin app-shell page-entregas">
@@ -240,10 +240,11 @@
 
   const PATH_INDEX = "../index2.html";
   const PATH_MENUADM = "../html%20menus/menuadm.html";
-  const PATH_HUB = "./painel-entregas-hub-adm.html";
+  const PATH_HUB = "./painel-entregas-hub-adm.html?v=20261002a";
   // Usa a mesma coleção liberada nas Rules (padrão do portal)
   const COLLECTION = "apuracoes_treinamentos";
   const TIPO = "entrega_gestor";
+  const TIPO_BLOCO = "entrega_bloco_gestor";
 
   const GRUPO_META = {
     pedro_ferias: {
@@ -263,7 +264,7 @@
     }
   };
 
-  const GRUPOS_VALIDOS = ["pedro_ferias", "demandas_diarias", "rps_diretoria"];
+  let GRUPOS_VALIDOS = ["pedro_ferias", "demandas_diarias", "rps_diretoria"];
 
   function resolveGrupo(e) {
     const g = String(e?.grupo || "").trim();
@@ -273,7 +274,7 @@
 
   const params = new URLSearchParams(window.location.search);
   let CURRENT_GRUPO = params.get("grupo") || "";
-  if (!GRUPOS_VALIDOS.includes(CURRENT_GRUPO)) {
+  if (!CURRENT_GRUPO) {
     window.location.href = PATH_HUB;
   }
 
@@ -353,7 +354,11 @@
   let preselectResp = "";
 
   function applyGrupoUI() {
-    const meta = GRUPO_META[CURRENT_GRUPO] || GRUPO_META.pedro_ferias;
+    const meta = GRUPO_META[CURRENT_GRUPO] || {
+      titulo: CURRENT_GRUPO,
+      hint: "Acompanhe as entregas deste bloco.",
+      gestorDefault: ""
+    };
     grupoTitulo.textContent = meta.titulo;
     grupoHint.textContent = meta.hint;
     pageTitle.textContent = meta.titulo;
@@ -365,6 +370,18 @@
     });
   }
 
+  function renderGrupoControls() {
+    grupoTabs.innerHTML = GRUPOS_VALIDOS.map(grupo => {
+      const meta = GRUPO_META[grupo] || { titulo: grupo };
+      return `<button type="button" class="grupo-tab" data-grupo="${escapeHtml(grupo)}">${escapeHtml(meta.titulo)}</button>`;
+    }).join("");
+
+    mGrupo.innerHTML = GRUPOS_VALIDOS.map(grupo => {
+      const meta = GRUPO_META[grupo] || { titulo: grupo };
+      return `<option value="${escapeHtml(grupo)}">${escapeHtml(meta.titulo)}</option>`;
+    }).join("");
+  }
+
   function setGrupo(grupo) {
     CURRENT_GRUPO = grupo;
     const url = new URL(window.location.href);
@@ -374,8 +391,9 @@
     renderMain();
   }
 
-  grupoTabs.querySelectorAll(".grupo-tab").forEach(btn => {
-    btn.addEventListener("click", () => setGrupo(btn.dataset.grupo));
+  grupoTabs.addEventListener("click", (event) => {
+    const btn = event.target.closest("[data-grupo]");
+    if (btn) setGrupo(btn.dataset.grupo);
   });
 
   function setMsg(text, type = "info") {
@@ -744,6 +762,50 @@
   btnCancelModal.onclick = (e) => { e.preventDefault(); closeModal(); };
   btnSaveModal.onclick = (e) => { e.preventDefault(); saveEntrega(); };
   btnNova.onclick = (e) => { e.preventDefault(); openModalNew(); };
+
+  async function carregarBlocos() {
+    try {
+      const snap = await getDocs(query(
+        collection(db, COLLECTION),
+        where("tipo", "==", TIPO_BLOCO)
+      ));
+      const personalizados = snap.docs
+        .map(item => ({ id: item.id, ...item.data() }))
+        .filter(bloco => bloco.blocoKey && bloco.titulo)
+        .sort((a, b) => String(a.titulo).localeCompare(String(b.titulo), "pt-BR"));
+
+      personalizados.forEach(bloco => {
+        GRUPO_META[bloco.blocoKey] = {
+          titulo: bloco.titulo,
+          hint: bloco.descricao || "Bloco personalizado de entregas.",
+          gestorDefault: ""
+        };
+      });
+      GRUPOS_VALIDOS = [
+        "pedro_ferias",
+        "demandas_diarias",
+        "rps_diretoria",
+        ...personalizados.map(bloco => bloco.blocoKey)
+      ];
+
+      if (!GRUPOS_VALIDOS.includes(CURRENT_GRUPO)) {
+        window.location.replace(PATH_HUB);
+        return false;
+      }
+      renderGrupoControls();
+      return true;
+    } catch (err) {
+      console.error("Erro ao carregar blocos:", err);
+      if (!GRUPOS_VALIDOS.includes(CURRENT_GRUPO)) {
+        window.location.replace(PATH_HUB);
+        return false;
+      }
+      renderGrupoControls();
+      setMsg("Não foi possível atualizar a lista de blocos.", "error");
+      return true;
+    }
+  }
+
   async function carregarTimePortal() {
     TEAM = await listarNomesUsuariosAtivos(db, fs, {
       perfis: [PERFIL_ANALISTA, PERFIL_ADMIN],
@@ -775,9 +837,12 @@
     closeModal();
   });
 
-  applyGrupoUI();
-  await carregarTimePortal();
-  await loadData();
+  const blocosOk = await carregarBlocos();
+  if (blocosOk) {
+    applyGrupoUI();
+    await carregarTimePortal();
+    await loadData();
+  }
 </script>
 </body>
 </html>
