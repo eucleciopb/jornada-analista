@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/bundle-user.css" />
-  <link rel="stylesheet" href="../css/pages/user-boas-praticas.css?v=1" />
+  <link rel="stylesheet" href="../css/pages/user-boas-praticas.css?v=2" />
 </head>
 
 <body class="theme-user app-shell page-boas-praticas">
@@ -101,7 +101,8 @@ import {
   getDocs,
   query,
   where,
-  serverTimestamp
+  serverTimestamp,
+  writeBatch
 } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 import {
   getStorage,
@@ -110,6 +111,10 @@ import {
   getDownloadURL,
   deleteObject
 } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-storage.js";
+import {
+  getAuth,
+  signInAnonymously
+} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
@@ -123,14 +128,19 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const storage = getStorage(app);
+const auth = getAuth(app);
 
 const COL = "apuracoes_treinamentos";
 const TIPO = "boa_pratica";
+const TIPO_CHUNK = "boa_pratica_chunk";
 const PATH_INDEX = "../index.html";
 const PATH_MENU = "../html menus/menu.html";
 
 const MAX_ARQUIVO_MB = 25;
-const MAX_MIDIA_MB = 80;
+const MAX_MIDIA_MB = 40;
+const INLINE_LIMIT = 700 * 1024; // cabe no Firestore
+const CHUNK_LIMIT = 5 * 1024 * 1024; // até 5MB em pedaços
+const CHUNK_SIZE = 600 * 1024;
 
 const titulo = document.getElementById("titulo");
 const descricao = document.getElementById("descricao");
@@ -256,13 +266,115 @@ function isNovo(item){
   }
 }
 
-async function uploadArquivo(file, pasta){
+async function ensureAnonAuth(){
+  try{
+    if(auth.currentUser) return auth.currentUser;
+    const cred = await signInAnonymously(auth);
+    return cred.user;
+  }catch(e){
+    console.warn("Auth anônimo indisponível:", e);
+    return null;
+  }
+}
+
+function fileToDataUrl(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(reader.error || new Error("Falha ao ler arquivo"));
+    reader.readAsDataURL(file);
+  });
+}
+
+function splitDataUrl(dataUrl, size = CHUNK_SIZE){
+  const parts = [];
+  for(let i = 0; i < dataUrl.length; i += size){
+    parts.push(dataUrl.slice(i, i + size));
+  }
+  return parts;
+}
+
+async function salvarChunks(parentId, campo, file, dataUrl){
+  const chunks = splitDataUrl(dataUrl);
+  let batch = writeBatch(db);
+  let ops = 0;
+
+  for(let i = 0; i < chunks.length; i++){
+    const chunkId = `${parentId}__${campo}__${i}`;
+    batch.set(doc(db, COL, chunkId), {
+      tipo: TIPO_CHUNK,
+      parentId,
+      campo,
+      index: i,
+      total: chunks.length,
+      mime: file.type || "application/octet-stream",
+      nome: file.name || "",
+      data: chunks[i],
+      autorKey,
+      atualizadoEm: serverTimestamp()
+    }, { merge: true });
+
+    ops++;
+    if(ops === 400){
+      await batch.commit();
+      batch = writeBatch(db);
+      ops = 0;
+    }
+  }
+
+  if(ops > 0) await batch.commit();
+  return chunks.length;
+}
+
+async function carregarChunks(parentId, campo){
+  const snap = await getDocs(query(
+    collection(db, COL),
+    where("tipo", "==", TIPO_CHUNK),
+    where("parentId", "==", parentId),
+    where("campo", "==", campo)
+  ));
+
+  const chunks = [];
+  snap.forEach(d => chunks.push(d.data()));
+  chunks.sort((a, b) => Number(a.index) - Number(b.index));
+
+  if(!chunks.length) return null;
+  return chunks.map(c => c.data || "").join("");
+}
+
+async function excluirChunks(parentId){
+  const snap = await getDocs(query(
+    collection(db, COL),
+    where("tipo", "==", TIPO_CHUNK),
+    where("parentId", "==", parentId)
+  ));
+
+  let batch = writeBatch(db);
+  let ops = 0;
+
+  for(const d of snap.docs){
+    batch.delete(d.ref);
+    ops++;
+    if(ops === 400){
+      await batch.commit();
+      batch = writeBatch(db);
+      ops = 0;
+    }
+  }
+
+  if(ops > 0) await batch.commit();
+}
+
+async function uploadViaStorage(file, pasta){
+  await ensureAnonAuth();
+
   const safeName = String(file.name || "arquivo")
     .replace(/[^\w.\-()\sáéíóúâêôãõçÁÉÍÓÚÂÊÔÃÕÇ]/gi, "_")
     .slice(0, 80);
 
   const path = `boas-praticas/${autorKey}/${Date.now()}_${safeName}`;
   const storageRef = ref(storage, path);
+
   await uploadBytes(storageRef, file, {
     contentType: file.type || "application/octet-stream",
     customMetadata: {
@@ -270,8 +382,64 @@ async function uploadArquivo(file, pasta){
       pasta: pasta || "geral"
     }
   });
+
   const url = await getDownloadURL(storageRef);
-  return { url, path, nome: file.name, tamanho: file.size, tipo: detectarTipoArquivo(file) };
+  return {
+    url,
+    path,
+    nome: file.name,
+    tamanho: file.size,
+    tipo: detectarTipoArquivo(file),
+    storageMode: "storage",
+    dataUrl: "",
+    chunks: 0
+  };
+}
+
+async function uploadArquivo(file, pasta, parentId){
+  // 1) tenta Storage (melhor para vídeo/áudio)
+  try{
+    return await uploadViaStorage(file, pasta);
+  }catch(storageErr){
+    console.warn("Storage falhou, usando fallback Firestore:", storageErr);
+  }
+
+  // 2) arquivo pequeno: salva inline no próprio documento
+  if(file.size <= INLINE_LIMIT){
+    const dataUrl = await fileToDataUrl(file);
+    return {
+      url: dataUrl,
+      path: "",
+      nome: file.name,
+      tamanho: file.size,
+      tipo: detectarTipoArquivo(file),
+      storageMode: "inline",
+      dataUrl,
+      chunks: 0
+    };
+  }
+
+  // 3) arquivo médio: salva em chunks no Firestore
+  if(file.size <= CHUNK_LIMIT){
+    const dataUrl = await fileToDataUrl(file);
+    const total = await salvarChunks(parentId, pasta, file, dataUrl);
+    return {
+      url: "",
+      path: "",
+      nome: file.name,
+      tamanho: file.size,
+      tipo: detectarTipoArquivo(file),
+      storageMode: "chunks",
+      dataUrl: "",
+      chunks: total
+    };
+  }
+
+  throw new Error(
+    `Não foi possível enviar "${file.name}" (${formatBytes(file.size)}). ` +
+    `Sem acesso ao Storage, o limite é ${formatBytes(CHUNK_LIMIT)}. ` +
+    `Tente um arquivo menor ou peça para liberar o Firebase Storage.`
+  );
 }
 
 arquivoPrincipal.addEventListener("change", () => {
@@ -323,23 +491,25 @@ async function salvar(){
   if(erroMidia){ setMsg(erroMidia, "err"); return; }
 
   btnSalvar.disabled = true;
-  setMsg("Enviando arquivos e salvando...");
+  setMsg("Preparando envio...");
+
+  const id = `boa_pratica__${autorKey}__${Date.now()}`;
 
   try{
     let arquivoMeta = null;
     let midiaMeta = null;
 
     if(file){
-      setMsg("Enviando arquivo principal...");
-      arquivoMeta = await uploadArquivo(file, "arquivo");
+      setMsg(`Enviando arquivo principal (${formatBytes(file.size)})...`);
+      arquivoMeta = await uploadArquivo(file, "arquivo", id);
     }
 
     if(midia){
-      setMsg("Enviando vídeo/áudio...");
-      midiaMeta = await uploadArquivo(midia, "midia");
+      setMsg(`Enviando vídeo/áudio (${formatBytes(midia.size)})...`);
+      midiaMeta = await uploadArquivo(midia, "midia", id);
     }
 
-    const id = `boa_pratica__${autorKey}__${Date.now()}`;
+    setMsg("Salvando publicação...");
 
     await setDoc(doc(db, COL, id), {
       tipo: TIPO,
@@ -349,15 +519,21 @@ async function salvar(){
       autor: usuario,
       autorKey,
       arquivoNome: arquivoMeta?.nome || "",
-      arquivoUrl: arquivoMeta?.url || "",
+      arquivoUrl: arquivoMeta?.storageMode === "inline" ? "" : (arquivoMeta?.url || ""),
+      arquivoData: arquivoMeta?.storageMode === "inline" ? (arquivoMeta.dataUrl || "") : "",
       arquivoPath: arquivoMeta?.path || "",
       arquivoTipo: arquivoMeta?.tipo || "",
       arquivoTamanho: arquivoMeta?.tamanho || 0,
+      arquivoStorage: arquivoMeta?.storageMode || "",
+      arquivoChunks: arquivoMeta?.chunks || 0,
       midiaNome: midiaMeta?.nome || "",
-      midiaUrl: midiaMeta?.url || "",
+      midiaUrl: midiaMeta?.storageMode === "inline" ? "" : (midiaMeta?.url || ""),
+      midiaData: midiaMeta?.storageMode === "inline" ? (midiaMeta.dataUrl || "") : "",
       midiaPath: midiaMeta?.path || "",
       midiaTipo: midiaMeta?.tipo || "",
       midiaTamanho: midiaMeta?.tamanho || 0,
+      midiaStorage: midiaMeta?.storageMode || "",
+      midiaChunks: midiaMeta?.chunks || 0,
       criadoEm: serverTimestamp(),
       criadoEmIso: new Date().toISOString(),
       atualizadoEm: serverTimestamp()
@@ -368,12 +544,12 @@ async function salvar(){
     await carregar();
   }catch(e){
     console.error(e);
+    // limpa chunks órfãos se falhou no meio
+    try{ await excluirChunks(id); }catch(_){ /* ignore */ }
+
     let mensagem = e.message || "Erro ao salvar.";
-    if(String(e.code || "").includes("storage") || String(mensagem).toLowerCase().includes("storage")){
-      mensagem = "Falha no upload. Verifique as Rules do Firebase Storage ou o tamanho do arquivo.";
-    }
     if(e.code === "permission-denied"){
-      mensagem = "Sem permissão para salvar. Verifique as Rules do Firestore.";
+      mensagem = "Sem permissão para salvar. Verifique as Rules do Firestore/Storage.";
     }
     setMsg(mensagem, "err");
   }finally{
@@ -395,12 +571,14 @@ async function excluirItem(item){
 
     for(const path of [item.arquivoPath, item.midiaPath].filter(Boolean)){
       try{
+        await ensureAnonAuth();
         await deleteObject(ref(storage, path));
       }catch(err){
         console.warn("Falha ao remover arquivo do Storage:", path, err);
       }
     }
 
+    await excluirChunks(item.id);
     await deleteDoc(doc(db, COL, item.id));
     setMsg("Boa prática excluída.", "ok");
     await carregar();
@@ -419,6 +597,49 @@ function popularAutores(){
     nomes.map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join("");
 
   if(nomes.includes(atual)) filtroAutor.value = atual;
+}
+
+function resolverUrlArquivo(item, campo){
+  if(campo === "arquivo"){
+    if(item.arquivoData) return item.arquivoData;
+    if(item.arquivoUrl) return item.arquivoUrl;
+    if(item.arquivoStorage === "chunks") return `chunked:${item.id}:arquivo`;
+  }
+  if(campo === "midia"){
+    if(item.midiaData) return item.midiaData;
+    if(item.midiaUrl) return item.midiaUrl;
+    if(item.midiaStorage === "chunks") return `chunked:${item.id}:midia`;
+  }
+  return "";
+}
+
+async function abrirAnexo(item, campo){
+  const url = resolverUrlArquivo(item, campo);
+  if(!url){
+    setMsg("Anexo indisponível.", "err");
+    return;
+  }
+
+  if(url.startsWith("chunked:")){
+    setMsg("Montando arquivo...");
+    const dataUrl = await carregarChunks(item.id, campo);
+    if(!dataUrl){
+      setMsg("Não foi possível montar o arquivo.", "err");
+      return;
+    }
+    const a = document.createElement("a");
+    a.href = dataUrl;
+    a.download = campo === "midia" ? (item.midiaNome || "midia") : (item.arquivoNome || "arquivo");
+    a.target = "_blank";
+    a.rel = "noopener";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setMsg("");
+    return;
+  }
+
+  window.open(url, "_blank", "noopener");
 }
 
 function render(){
@@ -442,21 +663,23 @@ function render(){
   feed.innerHTML = lista.map(item => {
     const novo = isNovo(item);
     const podeExcluir = item.autorKey === autorKey;
+    const temArquivo = Boolean(item.arquivoData || item.arquivoUrl || item.arquivoStorage === "chunks");
+    const temMidia = Boolean(item.midiaData || item.midiaUrl || item.midiaStorage === "chunks");
 
     const chips = [];
-    if(item.arquivoUrl){
+    if(temArquivo){
       chips.push(`
-        <a class="file-chip" href="${escapeHtml(item.arquivoUrl)}" target="_blank" rel="noopener">
+        <button type="button" class="file-chip" data-open="${escapeHtml(item.id)}" data-campo="arquivo">
           📄 ${escapeHtml(item.arquivoNome || "Arquivo")}
-        </a>
+        </button>
       `);
     }
-    if(item.midiaUrl){
+    if(temMidia){
       const ico = item.midiaTipo === "audio" ? "🎧" : "🎬";
       chips.push(`
-        <a class="file-chip media" href="${escapeHtml(item.midiaUrl)}" target="_blank" rel="noopener">
+        <button type="button" class="file-chip media" data-open="${escapeHtml(item.id)}" data-campo="midia">
           ${ico} ${escapeHtml(item.midiaNome || "Mídia explicativa")}
-        </a>
+        </button>
       `);
     }
 
@@ -487,6 +710,14 @@ function render(){
     btn.onclick = () => {
       const item = CACHE.find(x => x.id === btn.getAttribute("data-del"));
       if(item) excluirItem(item);
+    };
+  });
+
+  feed.querySelectorAll("[data-open]").forEach(btn => {
+    btn.onclick = () => {
+      const item = CACHE.find(x => x.id === btn.getAttribute("data-open"));
+      const campo = btn.getAttribute("data-campo");
+      if(item && campo) abrirAnexo(item, campo);
     };
   });
 }
