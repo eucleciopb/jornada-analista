@@ -1,0 +1,525 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Boas Práticas | Jornada</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/bundle-user.css" />
+  <link rel="stylesheet" href="../css/pages/user-boas-praticas.css?v=1" />
+</head>
+
+<body class="theme-user app-shell page-boas-praticas">
+  <header class="topbar">
+    <div>
+      <h2>💡 Boas Práticas</h2>
+      <div id="userInfo" class="hint">Carregando usuário...</div>
+    </div>
+    <div class="top-actions">
+      <button type="button" id="btnMenu">Voltar ao Menu</button>
+      <button type="button" id="btnLogout" class="danger">Sair</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="card">
+      <h3>Compartilhar uma boa prática</h3>
+      <p class="hint">
+        Publique um relatório, HTML, arquivo, vídeo ou áudio com uma explicação rápida.
+        Toda a equipe verá no feed abaixo.
+      </p>
+
+      <div class="form-grid">
+        <div class="full">
+          <label for="titulo">Título da boa prática</label>
+          <input id="titulo" type="text" maxlength="120" placeholder="Ex: Dashboard de cobertura por CD" />
+        </div>
+
+        <div class="full">
+          <label for="descricao">Explicação / função</label>
+          <textarea id="descricao" maxlength="2000" placeholder="Explique por cima o que esse arquivo faz, quando usar e o que a equipe ganha com isso."></textarea>
+        </div>
+
+        <div>
+          <label for="arquivoPrincipal">Arquivo principal (HTML, PDF, Excel, imagem...)</label>
+          <div class="file-box">
+            <input id="arquivoPrincipal" type="file" accept=".html,.htm,.pdf,.xlsx,.xls,.csv,.png,.jpg,.jpeg,.webp,.doc,.docx" />
+            <div id="nomeArquivoPrincipal" class="file-name">Nenhum arquivo selecionado</div>
+          </div>
+        </div>
+
+        <div>
+          <label for="arquivoMidia">Vídeo ou áudio explicando (opcional)</label>
+          <div class="file-box">
+            <input id="arquivoMidia" type="file" accept="video/*,audio/*,.mp4,.webm,.mov,.mp3,.wav,.m4a" />
+            <div id="nomeArquivoMidia" class="file-name">Nenhum vídeo/áudio selecionado</div>
+          </div>
+        </div>
+
+        <div class="full" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <button type="button" id="btnSalvar" class="primary">Salvar e compartilhar</button>
+          <button type="button" id="btnLimpar">Limpar formulário</button>
+        </div>
+      </div>
+
+      <p id="msg" class="msg" style="margin-top:12px;"></p>
+    </section>
+
+    <section class="card">
+      <h3>Novidades da equipe</h3>
+      <p class="hint">Boas práticas publicadas por todos os analistas, das mais recentes para as mais antigas.</p>
+
+      <div class="toolbar">
+        <div>
+          <label for="busca">Buscar</label>
+          <input id="busca" type="text" placeholder="Título, autor ou descrição..." />
+        </div>
+        <div>
+          <label for="filtroAutor">Analista</label>
+          <select id="filtroAutor">
+            <option value="">Todos</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="feed" class="feed">
+        <div class="empty">Carregando...</div>
+      </div>
+    </section>
+  </main>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import {
+  getFirestore,
+  collection,
+  doc,
+  setDoc,
+  deleteDoc,
+  getDocs,
+  query,
+  where,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+import {
+  getStorage,
+  ref,
+  uploadBytes,
+  getDownloadURL,
+  deleteObject
+} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-storage.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
+  authDomain: "jornada-portal.firebaseapp.com",
+  projectId: "jornada-portal",
+  storageBucket: "jornada-portal.firebasestorage.app",
+  messagingSenderId: "669362296644",
+  appId: "1:669362296644:web:f590d9834a8e4e60012911"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const storage = getStorage(app);
+
+const COL = "apuracoes_treinamentos";
+const TIPO = "boa_pratica";
+const PATH_INDEX = "../index.html";
+const PATH_MENU = "../html menus/menu.html";
+
+const MAX_ARQUIVO_MB = 25;
+const MAX_MIDIA_MB = 80;
+
+const titulo = document.getElementById("titulo");
+const descricao = document.getElementById("descricao");
+const arquivoPrincipal = document.getElementById("arquivoPrincipal");
+const arquivoMidia = document.getElementById("arquivoMidia");
+const nomeArquivoPrincipal = document.getElementById("nomeArquivoPrincipal");
+const nomeArquivoMidia = document.getElementById("nomeArquivoMidia");
+const btnSalvar = document.getElementById("btnSalvar");
+const btnLimpar = document.getElementById("btnLimpar");
+const msg = document.getElementById("msg");
+const feed = document.getElementById("feed");
+const busca = document.getElementById("busca");
+const filtroAutor = document.getElementById("filtroAutor");
+
+let CACHE = [];
+
+function safeParse(raw){
+  try{ return JSON.parse(raw); }catch{ return null; }
+}
+
+function getUsuario(){
+  const s = safeParse(localStorage.getItem("user_session") || "{}");
+  if(s?.nome) return String(s.nome).trim();
+  return (localStorage.getItem("usuarioLogado") || "").trim();
+}
+
+function slug(s){
+  return String(s || "")
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+    .replace(/[^a-z0-9]+/g,"-")
+    .replace(/(^-|-$)/g,"");
+}
+
+function normalize(s){
+  return String(s ?? "").replace(/\s+/g," ").trim();
+}
+
+function escapeHtml(v){
+  return String(v ?? "")
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+}
+
+function setMsg(text, type="info"){
+  msg.textContent = text || "";
+  msg.className = `msg ${type === "ok" || type === "success" ? "ok" : type === "err" || type === "error" ? "err" : ""}`.trim();
+}
+
+const usuario = getUsuario();
+if(!usuario) window.location.href = PATH_INDEX;
+
+const autorKey = slug(usuario);
+document.getElementById("userInfo").textContent = `Usuário: ${usuario}`;
+document.getElementById("btnMenu").onclick = () => window.location.href = PATH_MENU;
+document.getElementById("btnLogout").onclick = () => {
+  localStorage.removeItem("user_session");
+  localStorage.removeItem("usuarioLogado");
+  window.location.href = PATH_INDEX;
+};
+
+function detectarTipoArquivo(file){
+  const nome = (file?.name || "").toLowerCase();
+  const mime = (file?.type || "").toLowerCase();
+
+  if(mime.startsWith("video/") || /\.(mp4|webm|mov|mkv)$/.test(nome)) return "video";
+  if(mime.startsWith("audio/") || /\.(mp3|wav|m4a|ogg)$/.test(nome)) return "audio";
+  if(mime.includes("html") || /\.(html|htm)$/.test(nome)) return "html";
+  if(mime.includes("pdf") || /\.pdf$/.test(nome)) return "pdf";
+  if(/\.(xlsx|xls|csv)$/.test(nome)) return "planilha";
+  if(mime.startsWith("image/") || /\.(png|jpe?g|webp|gif)$/.test(nome)) return "imagem";
+  return "arquivo";
+}
+
+function validarTamanho(file, maxMb){
+  if(!file) return "";
+  const mb = file.size / (1024 * 1024);
+  if(mb > maxMb) return `Arquivo muito grande (${mb.toFixed(1)} MB). Limite: ${maxMb} MB.`;
+  return "";
+}
+
+function limparForm(){
+  titulo.value = "";
+  descricao.value = "";
+  arquivoPrincipal.value = "";
+  arquivoMidia.value = "";
+  nomeArquivoPrincipal.textContent = "Nenhum arquivo selecionado";
+  nomeArquivoMidia.textContent = "Nenhum vídeo/áudio selecionado";
+}
+
+function formatBytes(n){
+  const v = Number(n) || 0;
+  if(v < 1024) return `${v} B`;
+  if(v < 1024 * 1024) return `${(v / 1024).toFixed(1)} KB`;
+  return `${(v / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function formatData(ts){
+  try{
+    let d = null;
+    if(ts?.toDate) d = ts.toDate();
+    else if(typeof ts === "string" || typeof ts === "number") d = new Date(ts);
+    if(!d || Number.isNaN(d.getTime())) return "-";
+    return d.toLocaleString("pt-BR", {
+      day:"2-digit", month:"2-digit", year:"numeric",
+      hour:"2-digit", minute:"2-digit"
+    });
+  }catch{
+    return "-";
+  }
+}
+
+function isNovo(item){
+  try{
+    const d = item.criadoEm?.toDate ? item.criadoEm.toDate() : new Date(item.criadoEmIso || 0);
+    if(!d || Number.isNaN(d.getTime())) return false;
+    return (Date.now() - d.getTime()) < (48 * 60 * 60 * 1000);
+  }catch{
+    return false;
+  }
+}
+
+async function uploadArquivo(file, pasta){
+  const safeName = String(file.name || "arquivo")
+    .replace(/[^\w.\-()\sáéíóúâêôãõçÁÉÍÓÚÂÊÔÃÕÇ]/gi, "_")
+    .slice(0, 80);
+
+  const path = `boas-praticas/${autorKey}/${Date.now()}_${safeName}`;
+  const storageRef = ref(storage, path);
+  await uploadBytes(storageRef, file, {
+    contentType: file.type || "application/octet-stream",
+    customMetadata: {
+      autor: usuario,
+      pasta: pasta || "geral"
+    }
+  });
+  const url = await getDownloadURL(storageRef);
+  return { url, path, nome: file.name, tamanho: file.size, tipo: detectarTipoArquivo(file) };
+}
+
+arquivoPrincipal.addEventListener("change", () => {
+  const f = arquivoPrincipal.files?.[0];
+  nomeArquivoPrincipal.textContent = f
+    ? `${f.name} (${formatBytes(f.size)})`
+    : "Nenhum arquivo selecionado";
+});
+
+arquivoMidia.addEventListener("change", () => {
+  const f = arquivoMidia.files?.[0];
+  nomeArquivoMidia.textContent = f
+    ? `${f.name} (${formatBytes(f.size)})`
+    : "Nenhum vídeo/áudio selecionado";
+});
+
+btnLimpar.onclick = () => {
+  limparForm();
+  setMsg("");
+};
+
+async function salvar(){
+  const t = normalize(titulo.value);
+  const d = normalize(descricao.value);
+  const file = arquivoPrincipal.files?.[0] || null;
+  const midia = arquivoMidia.files?.[0] || null;
+
+  if(!t){
+    setMsg("Informe o título da boa prática.", "err");
+    titulo.focus();
+    return;
+  }
+
+  if(!d){
+    setMsg("Escreva uma explicação rápida da função desse material.", "err");
+    descricao.focus();
+    return;
+  }
+
+  if(!file && !midia){
+    setMsg("Anexe pelo menos um arquivo principal ou um vídeo/áudio.", "err");
+    return;
+  }
+
+  const erroArquivo = validarTamanho(file, MAX_ARQUIVO_MB);
+  if(erroArquivo){ setMsg(erroArquivo, "err"); return; }
+
+  const erroMidia = validarTamanho(midia, MAX_MIDIA_MB);
+  if(erroMidia){ setMsg(erroMidia, "err"); return; }
+
+  btnSalvar.disabled = true;
+  setMsg("Enviando arquivos e salvando...");
+
+  try{
+    let arquivoMeta = null;
+    let midiaMeta = null;
+
+    if(file){
+      setMsg("Enviando arquivo principal...");
+      arquivoMeta = await uploadArquivo(file, "arquivo");
+    }
+
+    if(midia){
+      setMsg("Enviando vídeo/áudio...");
+      midiaMeta = await uploadArquivo(midia, "midia");
+    }
+
+    const id = `boa_pratica__${autorKey}__${Date.now()}`;
+
+    await setDoc(doc(db, COL, id), {
+      tipo: TIPO,
+      id,
+      titulo: t,
+      descricao: d,
+      autor: usuario,
+      autorKey,
+      arquivoNome: arquivoMeta?.nome || "",
+      arquivoUrl: arquivoMeta?.url || "",
+      arquivoPath: arquivoMeta?.path || "",
+      arquivoTipo: arquivoMeta?.tipo || "",
+      arquivoTamanho: arquivoMeta?.tamanho || 0,
+      midiaNome: midiaMeta?.nome || "",
+      midiaUrl: midiaMeta?.url || "",
+      midiaPath: midiaMeta?.path || "",
+      midiaTipo: midiaMeta?.tipo || "",
+      midiaTamanho: midiaMeta?.tamanho || 0,
+      criadoEm: serverTimestamp(),
+      criadoEmIso: new Date().toISOString(),
+      atualizadoEm: serverTimestamp()
+    }, { merge: true });
+
+    limparForm();
+    setMsg("Boa prática compartilhada com a equipe!", "ok");
+    await carregar();
+  }catch(e){
+    console.error(e);
+    let mensagem = e.message || "Erro ao salvar.";
+    if(String(e.code || "").includes("storage") || String(mensagem).toLowerCase().includes("storage")){
+      mensagem = "Falha no upload. Verifique as Rules do Firebase Storage ou o tamanho do arquivo.";
+    }
+    if(e.code === "permission-denied"){
+      mensagem = "Sem permissão para salvar. Verifique as Rules do Firestore.";
+    }
+    setMsg(mensagem, "err");
+  }finally{
+    btnSalvar.disabled = false;
+  }
+}
+
+async function excluirItem(item){
+  if(!item?.id) return;
+  if(item.autorKey !== autorKey){
+    setMsg("Você só pode excluir as boas práticas que você publicou.", "err");
+    return;
+  }
+
+  if(!confirm(`Excluir a boa prática "${item.titulo}"?`)) return;
+
+  try{
+    setMsg("Excluindo...");
+
+    for(const path of [item.arquivoPath, item.midiaPath].filter(Boolean)){
+      try{
+        await deleteObject(ref(storage, path));
+      }catch(err){
+        console.warn("Falha ao remover arquivo do Storage:", path, err);
+      }
+    }
+
+    await deleteDoc(doc(db, COL, item.id));
+    setMsg("Boa prática excluída.", "ok");
+    await carregar();
+  }catch(e){
+    console.error(e);
+    setMsg(`Erro ao excluir: ${e.message || e.code || ""}`, "err");
+  }
+}
+
+function popularAutores(){
+  const atual = filtroAutor.value;
+  const nomes = [...new Set(CACHE.map(x => x.autor).filter(Boolean))]
+    .sort((a,b) => a.localeCompare(b, "pt-BR"));
+
+  filtroAutor.innerHTML = `<option value="">Todos</option>` +
+    nomes.map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join("");
+
+  if(nomes.includes(atual)) filtroAutor.value = atual;
+}
+
+function render(){
+  const q = normalize(busca.value).toLowerCase();
+  const autor = normalize(filtroAutor.value);
+
+  const lista = CACHE.filter(item => {
+    if(autor && item.autor !== autor) return false;
+    if(!q) return true;
+    const blob = [item.titulo, item.descricao, item.autor, item.arquivoNome, item.midiaNome]
+      .join(" ")
+      .toLowerCase();
+    return blob.includes(q);
+  });
+
+  if(!lista.length){
+    feed.innerHTML = `<div class="empty">Nenhuma boa prática encontrada.</div>`;
+    return;
+  }
+
+  feed.innerHTML = lista.map(item => {
+    const novo = isNovo(item);
+    const podeExcluir = item.autorKey === autorKey;
+
+    const chips = [];
+    if(item.arquivoUrl){
+      chips.push(`
+        <a class="file-chip" href="${escapeHtml(item.arquivoUrl)}" target="_blank" rel="noopener">
+          📄 ${escapeHtml(item.arquivoNome || "Arquivo")}
+        </a>
+      `);
+    }
+    if(item.midiaUrl){
+      const ico = item.midiaTipo === "audio" ? "🎧" : "🎬";
+      chips.push(`
+        <a class="file-chip media" href="${escapeHtml(item.midiaUrl)}" target="_blank" rel="noopener">
+          ${ico} ${escapeHtml(item.midiaNome || "Mídia explicativa")}
+        </a>
+      `);
+    }
+
+    return `
+      <article class="post">
+        <div class="post-head">
+          <div>
+            <h4 class="post-title">
+              ${escapeHtml(item.titulo)}
+              ${novo ? '<span class="badge-new">Novo</span>' : ""}
+            </h4>
+            <div class="post-meta">
+              Publicado por <strong>${escapeHtml(item.autor || "-")}</strong>
+              · ${escapeHtml(formatData(item.criadoEm || item.criadoEmIso))}
+            </div>
+          </div>
+          ${podeExcluir
+            ? `<button type="button" class="danger" data-del="${escapeHtml(item.id)}">Excluir</button>`
+            : ""}
+        </div>
+        <p class="post-desc">${escapeHtml(item.descricao)}</p>
+        <div class="post-files">${chips.join("") || '<span class="hint">Sem anexos</span>'}</div>
+      </article>
+    `;
+  }).join("");
+
+  feed.querySelectorAll("[data-del]").forEach(btn => {
+    btn.onclick = () => {
+      const item = CACHE.find(x => x.id === btn.getAttribute("data-del"));
+      if(item) excluirItem(item);
+    };
+  });
+}
+
+async function carregar(){
+  const snap = await getDocs(query(collection(db, COL), where("tipo", "==", TIPO)));
+  const arr = [];
+  snap.forEach(d => arr.push({ id: d.id, ...d.data() }));
+
+  arr.sort((a, b) => {
+    const da = a.criadoEm?.toMillis?.() || Date.parse(a.criadoEmIso || 0) || 0;
+    const dbms = b.criadoEm?.toMillis?.() || Date.parse(b.criadoEmIso || 0) || 0;
+    return dbms - da;
+  });
+
+  CACHE = arr;
+  popularAutores();
+  render();
+}
+
+btnSalvar.onclick = salvar;
+busca.addEventListener("input", render);
+filtroAutor.addEventListener("change", render);
+
+try{
+  setMsg("Carregando boas práticas...");
+  await carregar();
+  setMsg(CACHE.length ? `${CACHE.length} boa(s) prática(s) na equipe.` : "Ainda não há publicações. Seja o primeiro!");
+}catch(e){
+  console.error(e);
+  setMsg("Erro ao carregar o feed. Verifique conexão e Rules.", "err");
+  feed.innerHTML = `<div class="empty">Falha ao carregar.</div>`;
+}
+</script>
+</body>
+</html>
