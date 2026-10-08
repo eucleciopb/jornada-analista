@@ -1,0 +1,532 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <title>Importar Treinamentos | Jornada</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/bundle-admin.css" />
+  <link rel="stylesheet" href="../css/pages/admin-importar-treinamentos.css" />
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+
+<body class="theme-admin app-shell">
+  <header class="topbar">
+    <div>
+      <h2>Importar treinamentos</h2>
+      <div id="userInfo" class="hint">Carregando usuário...</div>
+    </div>
+    <div class="top-actions">
+      <button type="button" id="btnMenu">Voltar ao Menu</button>
+      <button type="button" id="btnLogout" class="danger">Sair</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="card">
+      <h3 style="margin:0 0 6px;">Importação em lote (Excel / CSV)</h3>
+      <p class="hint">
+        Usa a coleção existente <b>treinamentos_realizados</b>. Não inventa CD, nota, desafio, meta ou data.
+        Treinamentos nacionais podem ficar sem CD. Linhas sem data exata ficam pendentes para tratamento administrativo.
+      </p>
+
+      <div class="grid" style="margin-top:16px; display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px;">
+        <div>
+          <label for="arquivoExcel">Arquivo (.xlsx ou .csv)</label>
+          <input id="arquivoExcel" type="file" accept=".xlsx,.xls,.csv,text/csv" />
+        </div>
+        <div>
+          <label>Modelo padrão</label>
+          <div class="import-actions" style="margin-top:0;">
+            <button type="button" id="btnModelo">Download do modelo</button>
+          </div>
+        </div>
+        <div>
+          <label>Ações</label>
+          <div class="import-actions" style="margin-top:0;">
+            <button type="button" id="btnValidar">Validar / Pré-visualizar</button>
+            <button type="button" id="btnExportErros" disabled>Exportar erros</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="userLinkBox" class="user-link-box" style="display:none;">
+        <strong>Usuário da planilha não encontrado</strong>
+        <p class="hint" id="userLinkHint" style="margin:6px 0 10px;"></p>
+        <div class="grid-link">
+          <div>
+            <label for="nomePlanilhaOrfao">Nome na planilha</label>
+            <input id="nomePlanilhaOrfao" type="text" readonly />
+          </div>
+          <div>
+            <label for="vincularUsuario">Vincular a usuário existente</label>
+            <select id="vincularUsuario">
+              <option value="">Selecione…</option>
+            </select>
+          </div>
+          <div>
+            <button type="button" id="btnVincular">Vincular e revalidar</button>
+          </div>
+        </div>
+        <p class="hint" style="margin-top:10px;">
+          Para cadastrar um usuário novo, use
+          <a href="usuarios-adm.html">Cadastro de Usuários</a>
+          (evita contas duplicadas automáticas).
+        </p>
+      </div>
+    </section>
+
+    <section class="import-kpis" id="kpis">
+      <div class="kpi"><span>Enviados</span><strong id="kpiEnviados">0</strong></div>
+      <div class="kpi"><span>Válidos</span><strong id="kpiValidos">0</strong></div>
+      <div class="kpi"><span>Duplicados</span><strong id="kpiDuplicados">0</strong></div>
+      <div class="kpi"><span>Possíveis dup.</span><strong id="kpiPossiveis">0</strong></div>
+      <div class="kpi"><span>Pendentes</span><strong id="kpiPendentes">0</strong></div>
+      <div class="kpi"><span>Erros</span><strong id="kpiErros">0</strong></div>
+    </section>
+
+    <section class="card">
+      <p id="msg" class="msg">Selecione um arquivo e clique em Validar / Pré-visualizar.</p>
+
+      <div id="confirmBox" style="display:none; margin-top:14px;">
+        <h3 style="margin:0 0 8px;">Confirmar importação</h3>
+        <p class="hint">
+          Importa todas as linhas válidas de uma vez. Registros idênticos já gravados são ignorados (idempotente).
+          Treinamentos legítimos no mesmo dia com públicos/obs diferentes não são eliminados automaticamente.
+        </p>
+        <div class="import-actions">
+          <label class="opt">
+            <input type="radio" name="modoImport" value="somente_novos" checked />
+            Importar apenas novos (ignorar possíveis duplicidades)
+          </label>
+          <label class="opt">
+            <input type="radio" name="modoImport" value="incluir_possiveis" />
+            Incluir possíveis duplicidades marcadas na pré-visualização
+          </label>
+        </div>
+        <div class="import-actions">
+          <button type="button" id="btnImportar" class="primary">Confirmar importação dos válidos</button>
+        </div>
+      </div>
+
+      <div id="resumoFinal" class="resumo-final" style="display:none; margin-top:16px;"></div>
+    </section>
+
+    <section class="card">
+      <h3 style="margin:0 0 12px;">Pré-visualização</h3>
+      <div class="table-wrap preview-wrap">
+        <table class="table table-sticky">
+          <thead>
+            <tr>
+              <th style="width:44px;">Inc.</th>
+              <th>Status</th>
+              <th>Linha</th>
+              <th>Data</th>
+              <th>Usuário</th>
+              <th>Público</th>
+              <th>Treinamento</th>
+              <th>Tipo</th>
+              <th>CD</th>
+              <th>Pessoas</th>
+              <th>Nota</th>
+              <th>Obs</th>
+              <th>Motivo</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyPreview">
+            <tr><td colspan="13" style="opacity:.75;">Nenhum arquivo validado.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import {
+      getFirestore,
+      collection,
+      getDocs,
+      getDoc,
+      query,
+      where,
+      doc,
+      setDoc,
+      writeBatch,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+    import {
+      listarUsuariosPortal,
+      garantirSeedUsuarios,
+      slug as slugPortal
+    } from "../js/portal-usuarios.js?v=20261008a";
+    import {
+      analisarLinhas,
+      gerarMatrizModelo,
+      registrosParaCsvErros,
+      baixarCsv,
+      carregarFingerprintsExistentes,
+      executarImportacao,
+      montarResumo
+    } from "../js/importar-treinamentos.js?v=20261008a";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
+      authDomain: "jornada-portal.firebaseapp.com",
+      projectId: "jornada-portal",
+      storageBucket: "jornada-portal.firebasestorage.app",
+      messagingSenderId: "669362296644",
+      appId: "1:669362296644:web:f590d9834a8e4e60012911"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const fs = { collection, getDocs, getDoc, query, where, doc, setDoc, writeBatch, serverTimestamp };
+
+    const PATH_INDEX = "../index.html";
+    const PATH_MENU = "../html menus/menuadm.html";
+
+    function safeParse(raw) {
+      try { return JSON.parse(raw); } catch { return null; }
+    }
+    function getSession() {
+      return safeParse(localStorage.getItem("user_session") || "null");
+    }
+    function getCurrentUserName() {
+      const s = getSession();
+      if (s?.nome) return String(s.nome).trim();
+      return (localStorage.getItem("usuarioLogado") || "").trim();
+    }
+
+    const admin = getCurrentUserName();
+    if (!admin) window.location.href = PATH_INDEX;
+
+    const sessao = getSession() || {};
+    const adminUid = sessao.uidKey || slugPortal(admin);
+
+    document.getElementById("userInfo").textContent = `Admin: ${admin}`;
+    document.getElementById("btnMenu").onclick = () => { window.location.href = PATH_MENU; };
+    document.getElementById("btnLogout").onclick = () => {
+      localStorage.removeItem("user_session");
+      localStorage.removeItem("usuarioLogado");
+      localStorage.removeItem("usuarioKey");
+      window.location.href = PATH_INDEX;
+    };
+
+    const arquivoExcel = document.getElementById("arquivoExcel");
+    const btnValidar = document.getElementById("btnValidar");
+    const btnImportar = document.getElementById("btnImportar");
+    const btnModelo = document.getElementById("btnModelo");
+    const btnExportErros = document.getElementById("btnExportErros");
+    const btnVincular = document.getElementById("btnVincular");
+    const tbodyPreview = document.getElementById("tbodyPreview");
+    const msg = document.getElementById("msg");
+    const confirmBox = document.getElementById("confirmBox");
+    const resumoFinal = document.getElementById("resumoFinal");
+    const userLinkBox = document.getElementById("userLinkBox");
+    const vincularUsuario = document.getElementById("vincularUsuario");
+    const nomePlanilhaOrfao = document.getElementById("nomePlanilhaOrfao");
+    const userLinkHint = document.getElementById("userLinkHint");
+
+    let USUARIOS = [];
+    let MATRIX = null;
+    let ARQUIVO_NOME = "";
+    let REGISTROS = [];
+    let VINCULOS = {}; // key nome planilha → { nome, uidKey }
+
+    function setMsg(text, type = "info") {
+      msg.textContent = text || "";
+      msg.style.color = type === "ok" || type === "success" ? "#166534"
+        : type === "error" ? "#b91c1c" : "#334155";
+    }
+
+    function statusPill(status) {
+      const map = {
+        valido: ["ok", "Válido"],
+        duplicado: ["dup", "Duplicado"],
+        possivel_duplicado: ["warn", "Possível dup."],
+        pendente: ["pend", "Pendente"],
+        erro: ["err", "Erro"],
+        sem_usuario: ["link", "Sem usuário"]
+      };
+      const [cls, label] = map[status] || ["err", status];
+      return `<span class="status-pill ${cls}">${label}</span>`;
+    }
+
+    function escapeHtml(s) {
+      return String(s ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function atualizarKpis(resumo) {
+      document.getElementById("kpiEnviados").textContent = String(resumo.enviados || 0);
+      document.getElementById("kpiValidos").textContent = String(resumo.validos || 0);
+      document.getElementById("kpiDuplicados").textContent = String(resumo.duplicados || 0);
+      document.getElementById("kpiPossiveis").textContent = String(resumo.possiveis || 0);
+      document.getElementById("kpiPendentes").textContent = String(resumo.pendentes || 0);
+      document.getElementById("kpiErros").textContent = String((resumo.invalidos || 0) + (resumo.semUsuario || 0));
+    }
+
+    function renderPreview(registros) {
+      if (!registros.length) {
+        tbodyPreview.innerHTML = `<tr><td colspan="13" style="opacity:.75;">Nenhum registro identificado.</td></tr>`;
+        return;
+      }
+      tbodyPreview.innerHTML = registros.map((r) => {
+        const canCheck = r.status === "possivel_duplicado";
+        const checked = canCheck ? "" : (r.status === "valido" ? "checked disabled" : "disabled");
+        const dataExib = r.data
+          ? r.data.split("-").reverse().join("/")
+          : (r.dataRaw || "—");
+        return `<tr>
+          <td style="text-align:center;">
+            <input type="checkbox" data-linha="${r.linha}" ${checked} ${canCheck ? "" : (r.status === "valido" ? "" : "")} />
+          </td>
+          <td>${statusPill(r.status)}</td>
+          <td>${r.linha}</td>
+          <td>${escapeHtml(dataExib)}</td>
+          <td>${escapeHtml(r.usuarioNome || r.usuarioPlanilha || "—")}</td>
+          <td>${escapeHtml(r.publico || "—")}</td>
+          <td>${escapeHtml(r.treinamento || "—")}</td>
+          <td>${escapeHtml(r.tipoTreinamento || "—")}</td>
+          <td>${escapeHtml(r.cd || (r.nacional ? "Nacional" : "—"))}</td>
+          <td>${r.totalPessoas == null ? "—" : r.totalPessoas}</td>
+          <td>${r.notaMedia == null ? "—" : r.notaMedia}</td>
+          <td class="obs-cell" title="${escapeHtml(r.obs || "")}">${escapeHtml(r.obs || "—")}</td>
+          <td>${escapeHtml(r.motivo || "")}</td>
+        </tr>`;
+      }).join("");
+    }
+
+    function mostrarVinculoSePreciso(registros) {
+      const orfaos = [...new Set(
+        registros.filter((r) => r.status === "sem_usuario").map((r) => r.usuarioPlanilha)
+      )];
+      if (!orfaos.length) {
+        userLinkBox.style.display = "none";
+        return;
+      }
+      userLinkBox.style.display = "block";
+      nomePlanilhaOrfao.value = orfaos[0];
+      userLinkHint.textContent = orfaos.length > 1
+        ? `Há ${orfaos.length} nomes sem vínculo. Resolva um por vez (atual: ${orfaos[0]}).`
+        : `Associe "${orfaos[0]}" a um usuário já cadastrado.`;
+      vincularUsuario.innerHTML = `<option value="">Selecione…</option>` +
+        USUARIOS
+          .filter((u) => u.ativo !== false)
+          .sort((a, b) => String(a.nome).localeCompare(String(b.nome), "pt-BR"))
+          .map((u) => `<option value="${escapeHtml(u.nome)}">${escapeHtml(u.nome)} (${escapeHtml(u.uidKey || "")})</option>`)
+          .join("");
+    }
+
+    function lerArquivoComoMatrix(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error("Falha ao ler o arquivo."));
+        reader.onload = (ev) => {
+          try {
+            const data = new Uint8Array(ev.target.result);
+            const wb = XLSX.read(data, { type: "array", cellDates: true });
+            const sheet = wb.Sheets[wb.SheetNames[0]];
+            const matrix = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: null, raw: true });
+            resolve(matrix);
+          } catch (e) {
+            reject(e);
+          }
+        };
+        reader.readAsArrayBuffer(file);
+      });
+    }
+
+    async function validar() {
+      resumoFinal.style.display = "none";
+      confirmBox.style.display = "none";
+      REGISTROS = [];
+
+      const file = arquivoExcel.files?.[0];
+      if (!file && !MATRIX) {
+        setMsg("Selecione um arquivo Excel ou CSV.", "error");
+        return;
+      }
+
+      try {
+        setMsg("Lendo arquivo e validando…");
+        if (file) {
+          ARQUIVO_NOME = file.name;
+          MATRIX = await lerArquivoComoMatrix(file);
+        }
+
+        const uidCandidates = USUARIOS.map((u) => u.uidKey).filter(Boolean);
+        // também inclui ercules antecipado
+        if (!uidCandidates.includes("ercules")) uidCandidates.push("ercules");
+
+        const { fortes, suaves } = await carregarFingerprintsExistentes(db, fs, uidCandidates);
+
+        const result = analisarLinhas(MATRIX, {
+          usuariosPortal: USUARIOS,
+          vinculosManuais: VINCULOS,
+          fingerprintsExistentes: fortes,
+          softExistentes: suaves
+        });
+
+        if (!result.ok) {
+          setMsg(result.erro || "Falha na validação.", "error");
+          atualizarKpis(montarResumo([]));
+          renderPreview([]);
+          btnExportErros.disabled = true;
+          return;
+        }
+
+        REGISTROS = result.registros;
+        atualizarKpis(result.resumo);
+        renderPreview(REGISTROS);
+        mostrarVinculoSePreciso(REGISTROS);
+
+        const temErroExport = REGISTROS.some((r) => r.status !== "valido");
+        btnExportErros.disabled = !temErroExport;
+
+        const podeImportar = result.resumo.validos > 0 || result.resumo.possiveis > 0;
+        confirmBox.style.display = podeImportar ? "block" : "none";
+
+        setMsg(
+          `Pré-visualização pronta: ${result.resumo.enviados} registro(s). ` +
+          `${result.resumo.validos} válido(s), ${result.resumo.duplicados} duplicado(s), ` +
+          `${result.resumo.pendentes} pendente(s), ${(result.resumo.invalidos || 0) + (result.resumo.semUsuario || 0)} com erro/vínculo.`,
+          podeImportar ? "ok" : "error"
+        );
+      } catch (e) {
+        console.error(e);
+        setMsg("Erro ao validar: " + (e.message || e), "error");
+      }
+    }
+
+    btnModelo.onclick = () => {
+      const matriz = gerarMatrizModelo();
+      const ws = XLSX.utils.aoa_to_sheet(matriz);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Modelo");
+      XLSX.writeFile(wb, "modelo_importacao_treinamentos.xlsx");
+    };
+
+    btnExportErros.onclick = () => {
+      if (!REGISTROS.length) return;
+      const matrix = registrosParaCsvErros(REGISTROS);
+      if (matrix.length <= 1) {
+        setMsg("Não há erros/pendências para exportar.", "info");
+        return;
+      }
+      baixarCsv(matrix, `erros_importacao_treinamentos_${Date.now()}.csv`);
+    };
+
+    btnVincular.onclick = async () => {
+      const nomePlanilha = (nomePlanilhaOrfao.value || "").trim();
+      const nomeAlvo = (vincularUsuario.value || "").trim();
+      if (!nomePlanilha || !nomeAlvo) {
+        setMsg("Selecione o usuário do portal para vincular.", "error");
+        return;
+      }
+      const u = USUARIOS.find((x) => x.nome === nomeAlvo);
+      if (!u) {
+        setMsg("Usuário selecionado inválido.", "error");
+        return;
+      }
+      const key = nomePlanilha.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      VINCULOS[key] = { nome: u.nome, uidKey: u.uidKey || slugPortal(u.nome) };
+      setMsg(`Vinculado: "${nomePlanilha}" → ${u.nome}. Revalidando…`, "ok");
+      await validar();
+    };
+
+    btnValidar.onclick = () => validar();
+    arquivoExcel.addEventListener("change", () => {
+      MATRIX = null;
+      REGISTROS = [];
+      resumoFinal.style.display = "none";
+      confirmBox.style.display = "none";
+      setMsg("Arquivo selecionado. Clique em Validar / Pré-visualizar.", "info");
+    });
+
+    btnImportar.onclick = async () => {
+      if (!REGISTROS.length) {
+        setMsg("Valide um arquivo antes de importar.", "error");
+        return;
+      }
+      const modo = document.querySelector('input[name="modoImport"]:checked')?.value || "somente_novos";
+      const selecionadosPossiveis = new Set();
+      tbodyPreview.querySelectorAll('input[type="checkbox"][data-linha]:not(:disabled)').forEach((el) => {
+        if (el.checked) selecionadosPossiveis.add(Number(el.getAttribute("data-linha")));
+      });
+
+      const qtd = REGISTROS.filter((r) => {
+        if (r.status === "valido") return true;
+        if (r.status === "possivel_duplicado") {
+          return modo === "incluir_possiveis" || selecionadosPossiveis.has(r.linha);
+        }
+        return false;
+      }).length;
+
+      if (!qtd) {
+        setMsg("Nenhum registro elegível para importar com o modo selecionado.", "error");
+        return;
+      }
+
+      if (!confirm(`Confirmar importação de ${qtd} registro(s) válidos?\n\nArquivo: ${ARQUIVO_NOME || "(memória)"}\nModo: ${modo}`)) {
+        return;
+      }
+
+      try {
+        btnImportar.disabled = true;
+        setMsg("Importando… aguarde.");
+        const result = await executarImportacao(db, fs, {
+          registros: REGISTROS,
+          modo,
+          selecionadosPossiveis,
+          arquivoNome: ARQUIVO_NOME,
+          importadoPor: admin,
+          importadoPorUid: adminUid
+        });
+
+        resumoFinal.style.display = "block";
+        resumoFinal.innerHTML = `
+          <h3>Importação concluída</h3>
+          <ul>
+            <li>Registros enviados: <strong>${result.enviados}</strong></li>
+            <li>Importados: <strong>${result.importados}</strong></li>
+            <li>Duplicados: <strong>${result.duplicados}</strong></li>
+            <li>Pendentes: <strong>${result.pendentes}</strong></li>
+            <li>Erros: <strong>${result.erros}</strong></li>
+          </ul>
+        `;
+        setMsg(`Importação concluída: ${result.importados} gravado(s).`, "ok");
+        confirmBox.style.display = "none";
+        // Revalida para marcar o que agora é duplicado (idempotência)
+        await validar();
+      } catch (e) {
+        console.error(e);
+        setMsg("Erro na importação: " + (e.message || e), "error");
+      } finally {
+        btnImportar.disabled = false;
+      }
+    };
+
+    // bootstrap
+    (async () => {
+      try {
+        setMsg("Carregando usuários do portal…");
+        await garantirSeedUsuarios(db, fs, { criadoPor: admin || "admin" });
+        USUARIOS = await listarUsuariosPortal(db, fs, { force: true });
+        setMsg("Pronto. Selecione a planilha e valide.", "ok");
+      } catch (e) {
+        console.error(e);
+        USUARIOS = [];
+        setMsg("Não foi possível carregar usuários. A validação de vínculo pode falhar.", "error");
+      }
+    })();
+  </script>
+</body>
+</html>
