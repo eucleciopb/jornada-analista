@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>Login AM | Inteligência de Mercado</title>
+  <meta name="version" content="20261008am1" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/bundle-login-admin.css?v=20261008am1" />
+  <link rel="stylesheet" href="css/pages/am-portal.css?v=20261008am1" />
+  <style>
+    body.login-page.theme-am {
+      background:
+        radial-gradient(900px 420px at 15% -10%, rgba(11,43,76,.18), transparent 55%),
+        radial-gradient(700px 360px at 100% 0%, rgba(139,30,45,.12), transparent 50%),
+        #f5f7fb !important;
+      font-family: "Montserrat", sans-serif;
+    }
+    body.theme-am .card {
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 16px 40px rgba(15,23,42,.08);
+    }
+    body.theme-am .logo {
+      background: linear-gradient(135deg, #0b2b4c, #8b1e2d);
+    }
+    body.theme-am h2 { color: #0b2b4c; }
+  </style>
+</head>
+<body class="login-page theme-admin theme-am">
+
+<div class="card" id="loginView">
+  <div class="logo">AM</div>
+  <h2>Portal Inteligência de Mercado</h2>
+  <small>Acesso exclusivo dos analistas AM e gestora</small>
+  <hr>
+
+  <label>Usuário</label>
+  <select id="usuarioSelect">
+    <option value="">Carregando usuários…</option>
+  </select>
+
+  <label>Senha</label>
+  <input type="password" id="senha" placeholder="Digite sua senha" autocomplete="current-password" />
+
+  <button id="btnEntrar">Entrar</button>
+  <div class="error" id="errorMsg"></div>
+  <div class="info">Grupo Petrópolis • Inteligência de Mercado</div>
+</div>
+
+<script type="module">
+  import { carregarLoginAm, autenticarAm, garantirSeedAm } from "./js/am/usuarios.js?v=20261008am1";
+  import { salvarSessaoAm, resolveHome } from "./js/am/auth.js?v=20261008am1";
+  import { PERFIL_AM_ANALISTA } from "./js/am/config.js?v=20261008am1";
+
+  const LOGIN_VERSION = "20261008am1";
+  if (localStorage.getItem("index11_login_version") !== LOGIN_VERSION) {
+    localStorage.setItem("index11_login_version", LOGIN_VERSION);
+    const u = new URL(location.href);
+    if (u.searchParams.get("v") !== LOGIN_VERSION) {
+      u.searchParams.set("v", LOGIN_VERSION);
+      location.replace(u.toString());
+    }
+  }
+
+  const select = document.getElementById("usuarioSelect");
+  const senha = document.getElementById("senha");
+  const btn = document.getElementById("btnEntrar");
+  const errorMsg = document.getElementById("errorMsg");
+  let users = [];
+
+  function setError(text) {
+    errorMsg.textContent = text || "";
+    errorMsg.style.display = text ? "block" : "none";
+  }
+
+  async function carregar() {
+    setError("");
+    try {
+      await garantirSeedAm();
+      users = await carregarLoginAm();
+      const nomes = users.map((u) => u.nome).sort((a, b) => a.localeCompare(b, "pt-BR"));
+      select.innerHTML = `<option value="">Selecione...</option>` +
+        nomes.map((n) => `<option value="${n.replace(/"/g, "&quot;")}">${n}</option>`).join("");
+      if (!nomes.length) setError("Nenhum usuário AM ativo encontrado.");
+    } catch (err) {
+      console.error(err);
+      setError("Não foi possível carregar os usuários. Verifique o Firebase.");
+      select.innerHTML = `<option value="">Indisponível</option>`;
+    }
+  }
+
+  async function login() {
+    const usuario = (select.value || "").trim();
+    const pass = (senha.value || "").trim();
+    setError("");
+    if (!usuario) return setError("Selecione o usuário.");
+    if (!pass) return setError("Digite a senha.");
+    btn.disabled = true;
+    try {
+      const result = await autenticarAm(usuario, pass);
+      if (!result.ok) {
+        setError(result.erro || "Falha no login.");
+        return;
+      }
+      const sessao = salvarSessaoAm(result.user);
+      if (sessao.deveTrocarSenha) {
+        window.location.replace(`html%20am/configuracoes.html?v=${LOGIN_VERSION}&trocar=1`);
+        return;
+      }
+      // Analista → visão geral; gestora/admin → painel gerencial
+      if (sessao.perfil === PERFIL_AM_ANALISTA) {
+        window.location.replace(`html%20am/visao-geral.html?v=${LOGIN_VERSION}`);
+      } else {
+        window.location.replace(`html%20am/gestao.html?v=${LOGIN_VERSION}`);
+      }
+    } catch (err) {
+      console.error(err);
+      setError(err?.message || "Erro ao entrar.");
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  btn.addEventListener("click", login);
+  senha.addEventListener("keydown", (e) => { if (e.key === "Enter") login(); });
+  select.addEventListener("change", () => { senha.value = ""; setError(""); senha.focus(); });
+  carregar();
+</script>
+</body>
+</html>
