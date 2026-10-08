@@ -1,7 +1,24 @@
 import { escapeHtml, logout, requireUser } from "./usuario.js";
 
+function sessionPerfil() {
+  try {
+    const s = JSON.parse(localStorage.getItem("user_session") || "null");
+    const nome = String(s?.nome || "").trim().toLowerCase();
+    const uid = String(s?.uidKey || "").toLowerCase();
+    const mat = String(s?.matricula || "").toUpperCase();
+    const perfil = String(s?.perfil || "").toLowerCase();
+    if (perfil === "logistica" || nome === "ercules" || uid === "ercules" || mat === "E87") {
+      return "logistica";
+    }
+    return perfil || "analista";
+  } catch {
+    return "analista";
+  }
+}
+
 function navItems(active) {
-  return [
+  const perfil = sessionPerfil();
+  const all = [
     { href: "../html menus/menu.html", label: "Dashboard", ico: "📊", key: "dashboard" },
     { href: "../html usuarios/criar-agenda.html", label: "Criar Agenda", ico: "➕", key: "agenda-criar" },
     { href: "../html usuarios/agenda.html", label: "Agenda", ico: "📅", key: "agenda" },
@@ -11,18 +28,43 @@ function navItems(active) {
     { href: "../html usuarios/avaliacao-matinal-geral.html", label: "Avaliar Matinal", ico: "⭐", key: "matinal" },
     { href: "../html usuarios/biblioteca-treinamentos.html", label: "Biblioteca", ico: "📚", key: "biblioteca" },
     { href: "../html usuarios/links-uteis.html", label: "Links Úteis", ico: "🔗", key: "links" },
+    { href: "../html usuarios/boas-praticas.html", label: "Boas Práticas", ico: "💡", key: "boas" },
     { href: "../html usuarios/acompanhamento-entregas.html", label: "Minhas Entregas", ico: "📦", key: "entregas" }
-  ].map((item) => ({ ...item, active: item.key === active }));
+  ];
+
+  const allowedLogistica = new Set([
+    "agenda-criar", "agenda", "treinamentos", "biblioteca", "boas", "entregas"
+  ]);
+
+  const items = perfil === "logistica"
+    ? [
+        { href: "../html menus/menu_logistica.html", label: "Início", ico: "🏠", key: "home" },
+        ...all.filter((item) => allowedLogistica.has(item.key))
+      ]
+    : all;
+
+  return items.map((item) => ({ ...item, active: item.key === active }));
 }
 
 function bottomItems(active) {
-  return [
+  const perfil = sessionPerfil();
+  const all = [
     { href: "../html menus/menu.html", label: "Dash", ico: "D", key: "dashboard" },
     { href: "../html usuarios/agenda.html", label: "Agenda", ico: "A", key: "agenda" },
     { href: "../html usuarios/treinamentos.html", label: "Treinos", ico: "T", key: "treinamentos" },
     { href: "../aprendizado/", label: "Aprender", ico: "L", key: "aprendizado" },
     { href: "../html usuarios/biblioteca-treinamentos.html", label: "Biblioteca", ico: "B", key: "biblioteca" }
-  ].map((item) => ({ ...item, active: item.key === active }));
+  ];
+  const items = perfil === "logistica"
+    ? [
+        { href: "../html menus/menu_logistica.html", label: "Início", ico: "H", key: "home" },
+        { href: "../html usuarios/agenda.html", label: "Agenda", ico: "A", key: "agenda" },
+        { href: "../html usuarios/treinamentos.html", label: "Treinos", ico: "T", key: "treinamentos" },
+        { href: "../html usuarios/biblioteca-treinamentos.html", label: "Biblioteca", ico: "B", key: "biblioteca" },
+        { href: "../html usuarios/acompanhamento-entregas.html", label: "Entregas", ico: "E", key: "entregas" }
+      ]
+    : all;
+  return items.map((item) => ({ ...item, active: item.key === active }));
 }
 
 export function mountPortal({

@@ -9,36 +9,84 @@ import { getSession, getSessionUser, slug, safeParse } from "./aniversario.js";
 export const PERFIL_ANALISTA = "analista";
 export const PERFIL_ADMIN = "admin";
 export const PERFIL_TREINAMENTO_PRODUTOS = "treinamento_produtos";
+export const PERFIL_LOGISTICA = "logistica";
 
 /**
  * Mapa estável: matrícula → perfil.
  * Menu exclusivo de treinamentos de produtos: Alex e Euclecio.
+ * Menu logística (visão reduzida): Ercules.
  */
 export const PERFIL_POR_MATRICULA = {
   A70: PERFIL_TREINAMENTO_PRODUTOS, // Alex
   ALEX: PERFIL_TREINAMENTO_PRODUTOS,
   E72: PERFIL_TREINAMENTO_PRODUTOS, // Euclecio
-  EUCLECIO: PERFIL_TREINAMENTO_PRODUTOS
+  EUCLECIO: PERFIL_TREINAMENTO_PRODUTOS,
+  E87: PERFIL_LOGISTICA, // Ercules
+  ERCULES: PERFIL_LOGISTICA
 };
 
 /** uidKeys com perfil exclusivo (fallback) */
 export const PERFIL_POR_UIDKEY = {
   alex: PERFIL_TREINAMENTO_PRODUTOS,
-  euclecio: PERFIL_TREINAMENTO_PRODUTOS
+  euclecio: PERFIL_TREINAMENTO_PRODUTOS,
+  ercules: PERFIL_LOGISTICA
 };
 
 /** Nomes canônicos do menu de produtos */
 export const NOMES_MENU_PRODUTOS = new Set(["alex", "euclecio"]);
+
+/** Nomes canônicos do menu logística */
+export const NOMES_MENU_LOGISTICA = new Set(["ercules"]);
+
+/** Rotas permitidas para logística (além do próprio menu) */
+export const ROTAS_LOGISTICA_PERMITIDAS = [
+  "menu_logistica.html",
+  "criar-agenda.html",
+  "agenda.html",
+  "treinamentos.html",
+  "biblioteca-treinamentos.html",
+  "boas-praticas.html",
+  "acompanhamento-entregas.html"
+];
 
 /** Identidade do menu de produtos (Alex ou Euclecio) */
 export function isIdentidadeMenuProdutos({ nome, matricula, uidKey } = {}) {
   const mat = String(matricula || matriculaDoUsuario(nome) || "").trim().toUpperCase();
   const key = String(uidKey || uidKeyDoUsuario(nome) || "").toLowerCase();
   const nomeKey = slug(nome);
-  if (PERFIL_POR_MATRICULA[mat]) return true;
-  if (PERFIL_POR_UIDKEY[key]) return true;
   if (NOMES_MENU_PRODUTOS.has(nomeKey)) return true;
+  if (key === "alex" || key === "euclecio") return true;
+  if (mat === "A70" || mat === "ALEX" || mat === "E72" || mat === "EUCLECIO") return true;
+  if (PERFIL_POR_MATRICULA[mat] === PERFIL_TREINAMENTO_PRODUTOS) return true;
+  if (PERFIL_POR_UIDKEY[key] === PERFIL_TREINAMENTO_PRODUTOS) return true;
   return false;
+}
+
+/** Identidade do menu logística (Ercules) */
+export function isIdentidadeLogistica({ nome, matricula, uidKey, perfil } = {}) {
+  const mat = String(matricula || matriculaDoUsuario(nome) || "").trim().toUpperCase();
+  const key = String(uidKey || uidKeyDoUsuario(nome) || "").toLowerCase();
+  const nomeKey = slug(nome);
+  const p = String(perfil || "").trim().toLowerCase();
+  if (p === PERFIL_LOGISTICA) return true;
+  if (NOMES_MENU_LOGISTICA.has(nomeKey)) return true;
+  if (key === "ercules") return true;
+  if (mat === "E87" || mat === "ERCULES") return true;
+  if (PERFIL_POR_MATRICULA[mat] === PERFIL_LOGISTICA) return true;
+  if (PERFIL_POR_UIDKEY[key] === PERFIL_LOGISTICA) return true;
+  return false;
+}
+
+export function normalizarSessaoLogistica(sessao, nomeUsuario) {
+  const nome = String(nomeUsuario || sessao?.nome || "Ercules").trim() || "Ercules";
+  return {
+    ...(sessao || {}),
+    nome,
+    matricula: "E87",
+    uidKey: "ercules",
+    perfil: PERFIL_LOGISTICA,
+    tipoUsuario: PERFIL_LOGISTICA
+  };
 }
 
 /** Corrige sessão para o menu de produtos preservando a identidade do usuário */
@@ -74,7 +122,8 @@ export const MATRICULA_POR_USUARIO = {
   Victor: "V82",
   Marcio: "M83",
   Andre: "A84",
-  "Ana Paula": "A85"
+  "Ana Paula": "A85",
+  Ercules: "E87"
 };
 
 /** Rotas / páginas exclusivas de gestão por SV (bloquear para treinamento_produtos) */
@@ -123,11 +172,13 @@ export function resolverPerfil({ nome, matricula, perfil, uidKey } = {}) {
   if (PERFIL_POR_MATRICULA[mat]) return PERFIL_POR_MATRICULA[mat];
   if (PERFIL_POR_UIDKEY[key]) return PERFIL_POR_UIDKEY[key];
   if (NOMES_MENU_PRODUTOS.has(nomeKey)) return PERFIL_TREINAMENTO_PRODUTOS;
+  if (NOMES_MENU_LOGISTICA.has(nomeKey)) return PERFIL_LOGISTICA;
 
   if (p === "alex_produtos" || p === PERFIL_TREINAMENTO_PRODUTOS) {
     // Sem identidade de produtos → analista
     return PERFIL_ANALISTA;
   }
+  if (p === PERFIL_LOGISTICA) return PERFIL_LOGISTICA;
   if (p === PERFIL_ADMIN) return PERFIL_ADMIN;
   if (p === PERFIL_ANALISTA) return PERFIL_ANALISTA;
 
@@ -157,18 +208,36 @@ export function isAnalista(perfil) {
   return String(perfil || perfilDaSessao()).toLowerCase() === PERFIL_ANALISTA;
 }
 
+export function isLogistica(perfil) {
+  return String(perfil || perfilDaSessao()).toLowerCase() === PERFIL_LOGISTICA;
+}
+
 /** Destino do menu após login / navegação */
 export function destinoMenuPorPerfil(perfil, { fromRoot = false, encoded = true } = {}) {
   const p = String(perfil || "").toLowerCase();
   let file = "menu.html";
   if (p === PERFIL_ADMIN) file = "menuadm.html";
   if (p === PERFIL_TREINAMENTO_PRODUTOS || p === "alex_produtos") file = "menu_alex.html";
+  if (p === PERFIL_LOGISTICA) file = "menu_logistica.html";
 
   if (fromRoot) {
     const folder = encoded ? "html%20menus" : "html menus";
     return `${folder}/${file}`;
   }
   return file;
+}
+
+/** Resolve caminho do menu a partir da sessão (páginas em html usuarios). */
+export function resolveMenuPathFromSession() {
+  const s = getSession() || {};
+  const nome = String(s.nome || s.usuario || "").trim();
+  const perfil = resolverPerfil({
+    nome,
+    matricula: s.matricula,
+    perfil: s.perfil,
+    uidKey: s.uidKey
+  });
+  return `../html menus/${destinoMenuPorPerfil(perfil, { fromRoot: false })}`;
 }
 
 export function caminhoMenuAtual({ fromRoot = false, encoded = true } = {}) {
@@ -231,7 +300,8 @@ export function obterUsuarioLogado() {
     nascimentoOk: Boolean(u.nascimentoOk),
     dataNascimento: u.dataNascimento || null,
     isAdmin: perfil === PERFIL_ADMIN,
-    isTreinamentoProdutos: perfil === PERFIL_TREINAMENTO_PRODUTOS
+    isTreinamentoProdutos: perfil === PERFIL_TREINAMENTO_PRODUTOS,
+    isLogistica: perfil === PERFIL_LOGISTICA
   };
 }
 
@@ -267,6 +337,12 @@ export function protegerPagina({
     user = obterUsuarioLogado();
   }
 
+  // Garante perfil logística (Ercules)
+  if (isIdentidadeLogistica(user) && user.perfil !== PERFIL_LOGISTICA) {
+    localStorage.setItem("user_session", JSON.stringify(normalizarSessaoLogistica(getSession() || {}, user.nome)));
+    user = obterUsuarioLogado();
+  }
+
   if (bloquearSvParaAlex && user.isTreinamentoProdutos && rotaAtualEhExclusivaSV()) {
     const dest = destinoMenuPorPerfil(PERFIL_TREINAMENTO_PRODUTOS, {
       fromRoot: pathEstaEmMenus(),
@@ -274,6 +350,13 @@ export function protegerPagina({
     });
     const prefix = pathEstaEmMenus() ? "" : pathEstaEmUsuariosAlex() ? "../../html menus/" : pathEstaEmUsuarios() ? "../html menus/" : "html menus/";
     window.location.replace(`${prefix}${dest.split("/").pop()}?v=20260720g`);
+    return null;
+  }
+
+  // Logística: só rotas permitidas
+  if (user.isLogistica && !rotaAtualPermitidaLogistica()) {
+    const prefix = pathEstaEmMenus() ? "" : pathEstaEmUsuariosAlex() ? "../../html menus/" : pathEstaEmUsuarios() ? "../html menus/" : "html menus/";
+    window.location.replace(`${prefix}menu_logistica.html?v=20261008a`);
     return null;
   }
 
@@ -288,6 +371,13 @@ export function protegerPagina({
   }
 
   return user;
+}
+
+export function rotaAtualPermitidaLogistica(pathname = window.location.pathname) {
+  const path = decodeURIComponent(String(pathname || "")).toLowerCase();
+  return ROTAS_LOGISTICA_PERMITIDAS.some(
+    (rota) => path.endsWith(rota.toLowerCase()) || path.includes(`/${rota.toLowerCase()}`)
+  );
 }
 
 function pathEstaEmMenus() {
@@ -334,9 +424,31 @@ export function podeAcessar(recurso, user = obterUsuarioLogado()) {
     return Boolean(regrasAlex[recurso]);
   }
 
+  if (user.isLogistica || user.perfil === PERFIL_LOGISTICA) {
+    const regrasLogistica = {
+      menu_logistica: true,
+      agenda_criar: true,
+      agenda: true,
+      treinamentos: true,
+      biblioteca: true,
+      boas_praticas: true,
+      entregas: true,
+      dashboard_sv: false,
+      relatorio_visita: false,
+      resultados_sv: false,
+      matinal: false,
+      aprendizado: false,
+      links: false,
+      menu_alex: false,
+      admin_permissoes: false,
+      admin_config: false
+    };
+    return Boolean(regrasLogistica[recurso]);
+  }
+
   // Analistas: recursos gerais do portal (sem menu Alex exclusivo)
   if (user.perfil === PERFIL_ANALISTA) {
-    const bloqueados = ["menu_alex", "admin_permissoes", "admin_config"];
+    const bloqueados = ["menu_alex", "menu_logistica", "admin_permissoes", "admin_config"];
     return !bloqueados.includes(recurso);
   }
 
