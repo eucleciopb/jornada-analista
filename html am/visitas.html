@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <title>Visitas aos CDs | Portal AM</title>
+  <link rel="stylesheet" href="../css/pages/am-portal.css?v=20261008am1" />
+</head>
+<body class="am-portal">
+  <div id="amPageBody">
+    <div class="am-card"><div class="hint">Carregando módulo…</div></div>
+  </div>
+  <p id="amMsg" class="am-msg" style="padding:0 22px"></p>
+  <script type="module">
+    import { bootstrapPage } from "../js/am/pages.js?v=20261008am1";
+    bootstrapPage("visitas", {
+      title: 'Visitas aos CDs',
+      subtitle: 'Visitas obrigatórias e extraordinárias'
+    });
+  </script>
+</body>
+</html>

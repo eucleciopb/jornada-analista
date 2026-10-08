@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <title>Menu AM | Inteligência de Mercado</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/pages/am-portal.css?v=20261008am1" />
+</head>
+<body class="am-portal">
+<script type="module">
+  import { getAmSession, resolveHome } from "../js/am/auth.js?v=20261008am1";
+  const s = getAmSession();
+  if (!s) location.replace("../index11.html");
+  else location.replace(resolveHome(s));
+</script>
+</body>
+</html>
