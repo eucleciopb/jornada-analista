@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <title>Menu | Logística</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/bundle-portal-user.css?v=20261008a" />
+  <link rel="stylesheet" href="../css/pages/cadastro-nascimento.css?v=20261008a" />
+  <link rel="stylesheet" href="../css/pages/termo-ciencia.css?v=20261008a" />
+</head>
+<body class="theme-user portal-page">
+  <script>
+  (function () {
+    try {
+      var raw = localStorage.getItem("user_session");
+      var s = raw ? JSON.parse(raw) : {};
+      var nome = String(s.nome || s.usuario || localStorage.getItem("usuarioLogado") || "").trim().toLowerCase();
+      var mat = String(s.matricula || "").trim().toUpperCase();
+      var uid = String(s.uidKey || "").trim().toLowerCase();
+      var perfil = String(s.perfil || "").trim().toLowerCase();
+      var isLog =
+        perfil === "logistica" ||
+        nome === "ercules" ||
+        mat === "E87" || mat === "ERCULES" ||
+        uid === "ercules";
+      if (isLog) {
+        s.nome = s.nome || "Ercules";
+        s.matricula = "E87";
+        s.uidKey = "ercules";
+        s.perfil = "logistica";
+        s.tipoUsuario = "logistica";
+        localStorage.setItem("user_session", JSON.stringify(s));
+        localStorage.setItem("usuarioLogado", s.nome);
+        return;
+      }
+      location.replace("menu.html?v=20261008a");
+    } catch (e) {}
+  })();
+  </script>
+
+  <div id="birthGateOverlay" class="birth-gate-overlay is-done" hidden aria-modal="true" role="dialog">
+    <div class="login-card nasc-card birth-gate-card">
+      <div class="logo-box">GP</div>
+      <h2>Complete seu perfil</h2>
+      <p class="hint">Informe sua data de nascimento para liberar o menu.</p>
+      <div class="nasc-user" id="birthGateUser">—</div>
+      <form id="birthGateForm" class="nasc-form" autocomplete="off" novalidate>
+        <div class="form-group">
+          <label for="birthGateInput">Data de nascimento</label>
+          <input id="birthGateInput" type="text" inputmode="numeric" maxlength="10" placeholder="DD/MM/AAAA" required />
+        </div>
+        <button id="birthGateSave" class="btn-primary" type="submit">Salvar e continuar</button>
+      </form>
+      <p id="birthGateMsg" class="msg" role="status"></p>
+    </div>
+  </div>
+
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <div class="portal-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-logo">GP</div>
+        <div>
+          <h2>Jornada</h2>
+          <small>Portal Logística</small>
+        </div>
+      </div>
+
+      <div class="user-card">
+        <div class="avatar" id="userAvatar">E</div>
+        <div class="user-meta">
+          <small>Logística</small>
+          <strong id="sidebarUserName">Carregando...</strong>
+        </div>
+      </div>
+
+      <nav class="side-nav">
+        <a class="side-link active" href="menu_logistica.html?v=20261008a"><span class="nav-ico">🏠</span>Início</a>
+        <a class="side-link" href="../html usuarios/criar-agenda.html"><span class="nav-ico">➕</span>Criar Agenda</a>
+        <a class="side-link" href="../html usuarios/agenda.html"><span class="nav-ico">📅</span>Agenda</a>
+        <a class="side-link" href="../html usuarios/treinamentos.html"><span class="nav-ico">🎓</span>Treinamentos</a>
+        <a class="side-link" href="../html usuarios/biblioteca-treinamentos.html"><span class="nav-ico">📚</span>Biblioteca</a>
+        <a class="side-link" href="../html usuarios/boas-praticas.html"><span class="nav-ico">💡</span>Boas Práticas</a>
+        <a class="side-link" href="../html usuarios/acompanhamento-entregas.html"><span class="nav-ico">📦</span>Minhas Entregas</a>
+      </nav>
+
+      <div class="side-footer">
+        <button id="btnLogoutSide" class="logout-side" type="button">Sair do Sistema</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="top-header">
+        <div class="hello">
+          <small>Olá,</small>
+          <h1 id="welcomeText">Carregando...</h1>
+        </div>
+        <span class="header-date" id="headerDate"></span>
+        <div class="mobile-logo">GP</div>
+      </header>
+
+      <div class="content">
+        <section id="acesso">
+          <div class="section-title">
+            <div>
+              <h3>Acesso rápido</h3>
+              <p>Visão logística — apenas as telas liberadas para o seu perfil.</p>
+            </div>
+          </div>
+
+          <div class="quick-actions">
+            <button class="quick-btn" type="button" onclick="goTo('../html usuarios/criar-agenda.html')">
+              <span class="q-ico">➕</span>Criar Agenda
+            </button>
+            <button class="quick-btn" type="button" onclick="goTo('../html usuarios/agenda.html')">
+              <span class="q-ico">📅</span>Agenda
+            </button>
+            <button class="quick-btn" type="button" onclick="goTo('../html usuarios/treinamentos.html')">
+              <span class="q-ico">🎓</span>Treinamentos
+            </button>
+            <button class="quick-btn" type="button" onclick="goTo('../html usuarios/biblioteca-treinamentos.html')">
+              <span class="q-ico">📚</span>Biblioteca
+            </button>
+            <button class="quick-btn" type="button" onclick="goTo('../html usuarios/boas-praticas.html')">
+              <span class="q-ico">💡</span>Boas Práticas
+            </button>
+            <button class="quick-btn" type="button" onclick="goTo('../html usuarios/acompanhamento-entregas.html')">
+              <span class="q-ico">📦</span>Minhas Entregas
+            </button>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <button class="mobile-toggle" id="mobileToggle" type="button" aria-label="Abrir menu">☰</button>
+
+  <nav class="bottom-nav">
+    <a class="active" href="menu_logistica.html?v=20261008a"><span class="ico">H</span><span>Início</span></a>
+    <a href="../html usuarios/agenda.html"><span class="ico">A</span><span>Agenda</span></a>
+    <a href="../html usuarios/treinamentos.html"><span class="ico">T</span><span>Treinos</span></a>
+    <a href="../html usuarios/biblioteca-treinamentos.html"><span class="ico">B</span><span>Biblioteca</span></a>
+    <a href="../html usuarios/acompanhamento-entregas.html"><span class="ico">E</span><span>Entregas</span></a>
+    <button id="btnLogoutMobile" type="button"><span class="ico">S</span><span>Sair</span></button>
+  </nav>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import {
+      getFirestore,
+      doc,
+      getDoc,
+      setDoc,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+    import { aplicarGatesPortal } from "../js/portal-gates.js?v=20261008a";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
+      authDomain: "jornada-portal.firebaseapp.com",
+      projectId: "jornada-portal",
+      storageBucket: "jornada-portal.firebasestorage.app",
+      messagingSenderId: "669362296644",
+      appId: "1:669362296644:web:f590d9834a8e4e60012911"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const fs = { doc, getDoc, setDoc, serverTimestamp };
+
+    function safeParse(raw) {
+      try { return JSON.parse(raw); } catch { return null; }
+    }
+
+    function getUser() {
+      const s = safeParse(localStorage.getItem("user_session"));
+      const nome = String(s?.nome || s?.usuario || localStorage.getItem("usuarioLogado") || "").trim();
+      return { nome: nome || "Ercules", perfil: "logistica" };
+    }
+
+    function logout() {
+      localStorage.removeItem("user_session");
+      localStorage.removeItem("usuarioLogado");
+      localStorage.removeItem("analistaLogado");
+      localStorage.removeItem("usuarioSelecionado");
+      window.location.replace("../index.html");
+    }
+
+    window.goTo = (href) => { window.location.href = href; };
+
+    const user = getUser();
+    if (!user.nome) {
+      window.location.replace("../index.html");
+    }
+
+    document.getElementById("sidebarUserName").textContent = user.nome;
+    document.getElementById("welcomeText").textContent = user.nome;
+    document.getElementById("userAvatar").textContent = user.nome.charAt(0).toUpperCase();
+    document.getElementById("headerDate").textContent = new Date().toLocaleDateString("pt-BR", {
+      weekday: "long", day: "numeric", month: "long"
+    });
+
+    document.getElementById("btnLogoutSide")?.addEventListener("click", logout);
+    document.getElementById("btnLogoutMobile")?.addEventListener("click", logout);
+
+    const sidebar = document.getElementById("sidebar");
+    const overlay = document.getElementById("sidebarOverlay");
+    document.getElementById("mobileToggle")?.addEventListener("click", () => {
+      sidebar?.classList.toggle("open");
+      overlay?.classList.toggle("open");
+    });
+    overlay?.addEventListener("click", () => {
+      sidebar?.classList.remove("open");
+      overlay?.classList.remove("open");
+    });
+
+    aplicarGatesPortal({
+      db,
+      fs,
+      nome: user.nome,
+      perfil: "logistica",
+      overlay: document.getElementById("birthGateOverlay"),
+      userEl: document.getElementById("birthGateUser"),
+      formEl: document.getElementById("birthGateForm"),
+      inputEl: document.getElementById("birthGateInput"),
+      saveBtn: document.getElementById("birthGateSave"),
+      msgEl: document.getElementById("birthGateMsg")
+    }).catch((err) => console.warn(err));
+  </script>
+</body>
+</html>

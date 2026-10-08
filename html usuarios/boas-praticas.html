@@ -135,7 +135,23 @@ const COL = "apuracoes_treinamentos";
 const TIPO = "boa_pratica";
 const TIPO_CHUNK = "boa_pratica_chunk";
 const PATH_INDEX = "../index.html";
-const PATH_MENU = "../html menus/menu.html";
+function resolveMenuPath(){
+  try{
+        const s = JSON.parse(localStorage.getItem("user_session") || "null");
+        const nome = String(s?.nome||"").trim().toLowerCase();
+        const uid = String(s?.uidKey||"").toLowerCase();
+        const perfil = String(s?.perfil || "").toLowerCase();
+        const mat = String(s?.matricula || "").toUpperCase();
+        if(perfil==="logistica"||nome==="ercules"||uid==="ercules"||mat==="E87"||mat==="ERCULES"){
+          return "../html menus/menu_logistica.html";
+        }
+        if(["alex","euclecio"].includes(nome)||["alex","euclecio"].includes(uid)||["A70","ALEX","E72","EUCLECIO"].includes(mat)){
+          return "../html menus/menu_alex.html";
+        }
+      }catch(e){}
+  return "../html menus/menu.html";
+}
+const PATH_MENU = resolveMenuPath();
 
 const MAX_ARQUIVO_MB = 25;
 const MAX_MIDIA_MB = 40;
@@ -753,5 +769,6 @@ try{
   feed.innerHTML = `<div class="empty">Falha ao carregar.</div>`;
 }
 </script>
+<script type="module" src="../js/logistica-guard.js?v=20261008a"></script>
 </body>
 </html>

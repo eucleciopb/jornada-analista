@@ -45,7 +45,8 @@ const USERS_FALLBACK = [
   "Victor",
   "Marcio",
   "Andre",
-  "Ana Paula"
+  "Ana Paula",
+  "Ercules"
 ];
 
 let USERS = [...USERS_FALLBACK];

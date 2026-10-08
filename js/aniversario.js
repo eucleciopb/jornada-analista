@@ -14,7 +14,7 @@ export const USUARIOS_CONHECIDOS = [
   // Analistas
   "Alex", "Daniel", "Emerson", "Euclecio", "Felipe", "Joice", "Maiello",
   "Michel", "Muller", "Robert", "Rodrigo", "Rosilene", "Tenório", "Victor",
-  "Marcio", "Andre", "Ana Paula",
+  "Marcio", "Andre", "Ana Paula", "Ercules",
   // Admins
   "Bruna", "Elaine", "Pedro"
 ];
@@ -149,6 +149,7 @@ export function destinoMenuPorPerfil(perfil) {
   const p = String(perfil || "").toLowerCase();
   if (p === "admin") return "menuadm.html";
   if (p === "treinamento_produtos" || p === "alex_produtos") return "menu_alex.html";
+  if (p === "logistica") return "menu_logistica.html";
   return "menu.html";
 }
 

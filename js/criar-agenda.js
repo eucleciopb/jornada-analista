@@ -81,9 +81,14 @@ const PATH_INDEX = "../index.html";
 function resolveMenuPathAlex(){
   try{
     const s = JSON.parse(localStorage.getItem("user_session") || "null");
+    const nome = String(s?.nome || "").trim().toLowerCase();
+    const uid = String(s?.uidKey || "").toLowerCase();
     const perfil = String(s?.perfil || "").toLowerCase();
     const mat = String(s?.matricula || "").toUpperCase();
-    if(["alex","euclecio"].includes(String(s?.nome||"").trim().toLowerCase())||["alex","euclecio"].includes(String(s?.uidKey||"").toLowerCase())||["A70","ALEX","E72","EUCLECIO"].includes(mat)){
+    if (perfil === "logistica" || nome === "ercules" || uid === "ercules" || mat === "E87" || mat === "ERCULES") {
+      return "../html menus/menu_logistica.html";
+    }
+    if(["alex","euclecio"].includes(nome)||["alex","euclecio"].includes(uid)||["A70","ALEX","E72","EUCLECIO"].includes(mat)){
       return "../html menus/menu_alex.html";
     }
   }catch(e){}

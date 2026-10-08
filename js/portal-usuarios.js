@@ -10,7 +10,9 @@
 
 export const PORTAL_USUARIOS_COL = "apuracoes_treinamentos";
 export const TIPO_PORTAL_USUARIO = "portal_usuario";
-export const SEED_FLAG_DOC_ID = "portal_usuario_seed_v1";
+export const SEED_FLAG_DOC_ID = "portal_usuario_seed_v2";
+/** Bump quando incluir novos usuários no seed (força sync dos faltantes). */
+export const SEED_VERSION = 2;
 
 export const PERFIL_ANALISTA = "analista";
 export const PERFIL_ADMIN = "admin";
@@ -33,7 +35,8 @@ export const SEED_ANALISTAS = {
   Victor: "V82",
   Marcio: "M83",
   Andre: "A84",
-  "Ana Paula": "A85"
+  "Ana Paula": "A85",
+  Ercules: "E87"
 };
 
 export const SEED_ADMINS = {
@@ -265,7 +268,9 @@ export async function garantirSeedUsuarios(db, fs, { criadoPor = "seed", force =
   if (!force) {
     try {
       const flag = await getDoc(doc(db, PORTAL_USUARIOS_COL, SEED_FLAG_DOC_ID));
-      if (flag.exists()) return [];
+      if (flag.exists() && Number(flag.data()?.seedVersion || 0) >= SEED_VERSION) {
+        return [];
+      }
     } catch {
       /* segue para seed */
     }
@@ -292,6 +297,7 @@ export async function garantirSeedUsuarios(db, fs, { criadoPor = "seed", force =
       {
         tipo: "portal_usuario_seed_flag",
         ok: true,
+        seedVersion: SEED_VERSION,
         totalSeed: entradasSeed().length,
         criadosAgora: resultados.filter((r) => r.criado).length,
         atualizadoEmMs: Date.now(),
@@ -366,16 +372,21 @@ export async function carregarUsuariosLogin(db, fs, perfilDesejado) {
   const mapaSeed = mapaFromSeed(perfil);
 
   try {
+    // Sync de novos seeds em background (não bloqueia o select)
+    garantirSeedUsuarios(db, fs, { criadoPor: "login_auto" }).catch(() => {});
+
     const lista = await listarUsuariosPortal(db, fs);
     const doPerfil = lista.filter((u) => normalizarPerfil(u.perfil) === perfil);
 
     if (doPerfil.length) {
-      gravarCacheLogin(perfil, doPerfil);
-      return mapaFromLista(doPerfil, perfil);
+      const mapa = mapaFromLista(doPerfil, perfil);
+      // Garante seed local (ex.: Ercules) mesmo se o flag antigo ainda não sincronizou
+      for (const [nome, reg] of mapaSeed.entries()) {
+        if (!mapa.has(nome)) mapa.set(nome, reg);
+      }
+      gravarCacheLogin(perfil, [...mapa.values()]);
+      return mapa;
     }
-
-    // Banco ainda vazio → usa seed local e popula em background (não bloqueia UI)
-    garantirSeedUsuarios(db, fs, { criadoPor: "login_auto" }).catch(() => {});
   } catch (err) {
     console.warn("Login usando seed local (Firestore indisponível):", err);
   }

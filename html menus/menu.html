@@ -428,9 +428,30 @@
         throw new Error("Redirecionando para menu de treinamentos de produtos.");
       }
 
+      const perfilSess = String(sess?.perfil || "").toLowerCase();
+      const isLogistica =
+        perfilSess === "logistica" ||
+        nome === "ercules" ||
+        mat === "E87" || mat === "ERCULES" ||
+        uid === "ercules";
+
+      if (isLogistica) {
+        try{
+          localStorage.setItem("user_session", JSON.stringify({
+            ...(sess || {}),
+            nome: user.nome || "Ercules",
+            matricula: "E87",
+            uidKey: "ercules",
+            perfil: "logistica",
+            tipoUsuario: "logistica"
+          }));
+        }catch{}
+        window.location.replace("menu_logistica.html?v=20261008a");
+        throw new Error("Redirecionando para menu logística.");
+      }
+
       // Outros com perfil antigo errado → corrige para analista
-      if (String(sess?.perfil || "").toLowerCase() === "treinamento_produtos" ||
-          String(sess?.perfil || "").toLowerCase() === "alex_produtos") {
+      if (perfilSess === "treinamento_produtos" || perfilSess === "alex_produtos") {
         try {
           localStorage.setItem("user_session", JSON.stringify({
             ...(sess || {}),

@@ -96,13 +96,13 @@
     salvarSessao,
     destinoMenuPorPerfil,
     PERFIL_TREINAMENTO_PRODUTOS
-  } from "./js/perfil-acesso.js?v=20260924b";
+  } from "./js/perfil-acesso.js?v=20261008a";
   import {
     carregarUsuariosLogin,
     nomesOrdenados,
     mapaSeedLogin,
     PERFIL_ANALISTA
-  } from "./js/portal-usuarios.js?v=20260924e";
+  } from "./js/portal-usuarios.js?v=20261008a";
 
   const firebaseConfig = {
     apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
@@ -215,12 +215,27 @@
       return;
     }
 
-    const dest = destinoMenuPorPerfil(perfilAtual, { fromRoot: true, encoded: true });
-    if (String(dest).includes("menu_alex")) {
-      window.location.replace("html%20menus/menu.html?v=20260818a");
+    // Ercules → menu logística (visão reduzida)
+    if (nomeKey === "ercules" || String(perfilAtual).toLowerCase() === "logistica") {
+      try {
+        const raw = localStorage.getItem("user_session");
+        const s = raw ? JSON.parse(raw) : {};
+        localStorage.setItem("user_session", JSON.stringify({
+          ...s,
+          nome: "Ercules",
+          matricula: "E87",
+          uidKey: "ercules",
+          perfil: "logistica",
+          tipoUsuario: "logistica"
+        }));
+        localStorage.setItem("usuarioLogado", "Ercules");
+      } catch {}
+      window.location.replace("html%20menus/menu_logistica.html?v=20261008a");
       return;
     }
-    window.location.replace(`${dest}?v=20260818a`);
+
+    const dest = destinoMenuPorPerfil(perfilAtual, { fromRoot: true, encoded: true });
+    window.location.replace(`${dest}?v=20261008a`);
   }
 
   function mascararData(valor){
