@@ -1,0 +1,261 @@
+/* agenda-semana-adm.html — tabelão semanal (admin) */
+
+body.page-agenda-semana {
+  --bg: #f6f8fb;
+  --surface: #ffffff;
+  --text: #0f172a;
+  --muted: #64748b;
+  background: #f6f8fb !important;
+  color: #0f172a !important;
+}
+
+body.page-agenda-semana .topbar {
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+body.page-agenda-semana .topbar h2,
+body.page-agenda-semana .section-head h3,
+body.page-agenda-semana .kpi-value {
+  color: #0f172a;
+}
+
+body.page-agenda-semana .hint {
+  color: #64748b;
+}
+
+body.page-agenda-semana .topbar-inner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+body.page-agenda-semana main.card.wide {
+  max-width: 1280px;
+  margin: 16px auto 32px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+}
+
+body.page-agenda-semana .btn-primary {
+  background: #2563eb;
+  color: #fff;
+}
+
+body.page-agenda-semana .btn-secondary {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  color: #334155;
+}
+
+body.page-agenda-semana .top-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.agenda-semana-kpis {
+  margin-bottom: 16px;
+}
+
+body.page-agenda-semana .kpi {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+body.page-agenda-semana .kpi-label {
+  color: #64748b;
+}
+
+body.page-agenda-semana .kpi-ok {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+}
+
+body.page-agenda-semana .kpi-pend {
+  border-color: #fecaca;
+  background: #fef2f2;
+}
+
+body.page-agenda-semana .kpi-ok .kpi-value {
+  color: #15803d;
+}
+
+body.page-agenda-semana .kpi-pend .kpi-value {
+  color: #b91c1c;
+}
+
+body.page-agenda-semana .error-box {
+  margin-top: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  font-size: 0.875rem;
+}
+
+body.page-agenda-semana .table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+body.page-agenda-semana .table-semana {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 0.875rem;
+}
+
+body.page-agenda-semana .table-semana thead th {
+  background: #f8fafc;
+  color: #0f172a;
+  font-weight: 700;
+  padding: 10px 8px;
+  border-bottom: 2px solid #e2e8f0;
+  text-align: center;
+  vertical-align: bottom;
+}
+
+body.page-agenda-semana .table-semana thead th.col-analista {
+  text-align: left;
+  width: 140px;
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: #f8fafc;
+}
+
+body.page-agenda-semana .table-semana thead th .th-date {
+  display: block;
+  font-weight: 500;
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+body.page-agenda-semana .table-semana tbody td {
+  padding: 8px 6px;
+  border-bottom: 1px solid #eef2f6;
+  text-align: center;
+  vertical-align: middle;
+  color: #0f172a;
+  word-break: break-word;
+}
+
+body.page-agenda-semana .table-semana tbody td.analista-nome {
+  text-align: left;
+  font-weight: 600;
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: #ffffff;
+  width: 140px;
+  padding-left: 10px;
+}
+
+body.page-agenda-semana .table-semana tbody tr:nth-child(even) td {
+  background: #fafbfc;
+}
+
+body.page-agenda-semana .table-semana tbody tr:nth-child(even) td.analista-nome {
+  background: #fafbfc;
+}
+
+body.page-agenda-semana .table-semana tbody tr:hover td {
+  background: #f1f5f9;
+}
+
+body.page-agenda-semana .table-semana tbody tr:hover td.analista-nome {
+  background: #f1f5f9;
+}
+
+body.page-agenda-semana .cell-empty {
+  text-align: center;
+  color: #94a3b8;
+  padding: 24px;
+}
+
+body.page-agenda-semana .cell-cd {
+  display: inline-block;
+  max-width: 100%;
+  font-weight: 600;
+  color: #0f172a;
+  line-height: 1.25;
+}
+
+body.page-agenda-semana .cell-pendente {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #b91c1c;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+
+body.page-agenda-semana .td-pendente {
+  background: #fffbfb;
+}
+
+body.page-agenda-semana .table-semana tbody tr:nth-child(even) .td-pendente {
+  background: #fef7f7;
+}
+
+body.page-agenda-semana .table-semana tbody tr.row-all-pendente td.analista-nome {
+  color: #b91c1c;
+}
+
+body.page-agenda-semana .pill-ok {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+body.page-agenda-semana .pill-bad {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+body.page-agenda-semana .pill-muted {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+@media (max-width: 900px) {
+  .agenda-semana-kpis {
+    grid-template-columns: 1fr;
+  }
+
+  body.page-agenda-semana .table-semana {
+    font-size: 0.8rem;
+    table-layout: auto;
+  }
+
+  body.page-agenda-semana .table-semana thead th.col-analista,
+  body.page-agenda-semana .table-semana tbody td.analista-nome {
+    width: 110px;
+    min-width: 110px;
+  }
+}
+
+@media print {
+  body.page-agenda-semana .top-actions {
+    display: none;
+  }
+
+  body.page-agenda-semana main.card.wide {
+    max-width: none;
+    border: none;
+    margin: 0;
+    box-shadow: none;
+  }
+
+  body.page-agenda-semana .table-semana {
+    font-size: 10pt;
+  }
+}
