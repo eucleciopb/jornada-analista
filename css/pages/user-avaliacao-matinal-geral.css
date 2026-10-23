@@ -214,6 +214,24 @@
       font-size:18px;
     }
 
+    .table-actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .row-actions{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+
+    .row-actions button{
+      width:100%;
+      padding:9px 10px;
+      font-size:12px;
+    }
+
     .table-wrap{
       overflow:auto;
       border:1px solid var(--line);
@@ -273,7 +291,7 @@
     }
 
     td.action-col{
-      width:110px;
+      width:120px;
       vertical-align:middle;
     }
 
