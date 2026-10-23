@@ -153,8 +153,104 @@ body.page-agenda-semana .table-semana tbody td.analista-nome {
   left: 0;
   z-index: 1;
   background: #ffffff;
-  width: 140px;
+  width: 160px;
   padding-left: 10px;
+}
+
+body.page-agenda-semana .analista-cell {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+body.page-agenda-semana .analista-cell > span {
+  font-weight: 700;
+  color: #0f172a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body.page-agenda-semana .btn-icon {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #64748b;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+body.page-agenda-semana .btn-icon .icon {
+  display: block;
+  pointer-events: none;
+}
+
+body.page-agenda-semana .btn-icon.btn-ocultar:hover {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+
+body.page-agenda-semana .btn-icon.btn-ativar {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d4ed8;
+}
+
+body.page-agenda-semana .btn-icon.btn-ativar:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+  color: #1e40af;
+}
+
+body.page-agenda-semana .hidden-panel {
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid #e5e7eb;
+}
+
+body.page-agenda-semana .hidden-empty {
+  margin: 0 0 10px;
+}
+
+body.page-agenda-semana .table-wrap-ocultos {
+  border: 1px dashed #e2e8f0;
+  border-radius: 10px;
+  background: #f8fafc;
+  padding: 4px;
+}
+
+body.page-agenda-semana .table-ocultos thead th {
+  background: #f1f5f9 !important;
+  color: #64748b !important;
+}
+
+body.page-agenda-semana .table-ocultos tbody tr.row-oculto td {
+  background: #f8fafc !important;
+  color: #64748b !important;
+}
+
+body.page-agenda-semana .table-ocultos tbody tr.row-oculto td.analista-nome {
+  background: #f8fafc !important;
+}
+
+body.page-agenda-semana .table-ocultos tbody tr.row-oculto:hover td,
+body.page-agenda-semana .table-ocultos tbody tr.row-oculto:hover td.analista-nome {
+  background: #f1f5f9 !important;
+}
+
+body.page-agenda-semana .table-ocultos .analista-cell > span {
+  color: #64748b;
+  font-weight: 600;
 }
 
 body.page-agenda-semana .table-semana tbody tr:nth-child(even) td {
