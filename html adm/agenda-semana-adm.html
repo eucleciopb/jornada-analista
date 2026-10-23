@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Agenda da Semana | Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/bundle-admin.css" />
+  <link rel="stylesheet" href="../css/pages/admin-agenda-semana-adm.css?v=1" />
+</head>
+
+<body class="theme-user app-shell page-agenda-semana">
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div>
+        <h2>Agenda da Semana — Analistas</h2>
+        <div class="hint" id="weekLabel">Semana: —</div>
+        <div class="hint" id="hint">Carregando…</div>
+        <div class="error-box" id="errorBox" hidden></div>
+      </div>
+
+      <div class="top-actions">
+        <button class="btn-secondary" id="btnPrev" type="button" title="Semana anterior">◀ Anterior</button>
+        <button class="btn-secondary" id="btnThis" type="button">Esta semana</button>
+        <button class="btn-secondary" id="btnNext" type="button" title="Próxima semana">Próxima ▶</button>
+        <button class="btn-primary" id="btnReload" type="button">Atualizar</button>
+        <button class="btn-secondary" type="button" onclick="location.href='../html menus/menuadm.html'">Voltar ao Menu</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="card wide">
+    <section class="kpi-grid agenda-semana-kpis">
+      <div class="kpi">
+        <span class="kpi-label">Analistas</span>
+        <div class="kpi-value" id="kpiUsers">0</div>
+      </div>
+      <div class="kpi kpi-ok">
+        <span class="kpi-label">Células preenchidas</span>
+        <div class="kpi-value" id="kpiOk">0</div>
+      </div>
+      <div class="kpi kpi-pend">
+        <span class="kpi-label">Pendentes</span>
+        <div class="kpi-value" id="kpiPend">0</div>
+      </div>
+    </section>
+
+    <div class="section-head">
+      <h3>Visão semanal (Seg–Sex)</h3>
+      <span class="pill pill-muted" id="statusPill">Aguardando dados…</span>
+    </div>
+
+    <div class="table-wrap">
+      <table class="table table-sticky table-semana">
+        <thead>
+          <tr>
+            <th class="col-analista">Analista</th>
+            <th class="col-dia" id="thSeg">Segunda</th>
+            <th class="col-dia" id="thTer">Terça</th>
+            <th class="col-dia" id="thQua">Quarta</th>
+            <th class="col-dia" id="thQui">Quinta</th>
+            <th class="col-dia" id="thSex">Sexta</th>
+          </tr>
+        </thead>
+        <tbody id="tbody">
+          <tr><td colspan="6" class="cell-empty">Carregando…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <script type="module" src="../js/agenda-semana-adm.js?v=1"></script>
+</body>
+</html>
