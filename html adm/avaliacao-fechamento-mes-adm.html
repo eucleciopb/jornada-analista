@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Avaliação Fechamento do Mês | Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/bundle-admin.css" />
+  <link rel="stylesheet" href="../css/pages/admin-avaliacao-fechamento-mes.css?v=1" />
+</head>
+
+<body class="theme-user app-shell page-fechamento-mes">
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div>
+        <h2>Avaliação — Fechamento do Mês</h2>
+        <div class="hint">Checklist padrão da apresentação do analista (deck de fechamento)</div>
+        <div class="hint" id="userInfo"></div>
+        <div class="error-box" id="errorBox" hidden></div>
+      </div>
+      <div class="top-actions">
+        <button class="btn-primary" id="btnSalvar" type="button">Salvar avaliação</button>
+        <button class="btn-secondary" id="btnMenu" type="button">Voltar ao Menu</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="card wide">
+    <section class="filters">
+      <div class="field-block">
+        <label for="analistaSelect">Analista</label>
+        <select id="analistaSelect" class="field">
+          <option value="">Carregando…</option>
+        </select>
+      </div>
+      <div class="field-block">
+        <label for="monthPicker">Mês de referência</label>
+        <input id="monthPicker" class="field" type="month" />
+      </div>
+      <div class="field-block field-block--status">
+        <label>Status</label>
+        <span class="pill pill-muted" id="statusPill">Selecione analista e mês</span>
+      </div>
+    </section>
+
+    <p class="msg" id="msg" role="status"></p>
+
+    <section class="kpi-grid fechamento-kpis">
+      <div class="kpi">
+        <span class="kpi-label">Itens OK</span>
+        <div class="kpi-value" id="kpiOk">0</div>
+      </div>
+      <div class="kpi">
+        <span class="kpi-label">Itens totais</span>
+        <div class="kpi-value" id="kpiTotal">0</div>
+      </div>
+      <div class="kpi kpi-score">
+        <span class="kpi-label">Pontuação</span>
+        <div class="kpi-value" id="kpiScore">—</div>
+      </div>
+      <div class="kpi kpi-conceito">
+        <span class="kpi-label">Conceito</span>
+        <div class="kpi-value" id="kpiConceito">—</div>
+      </div>
+    </section>
+
+    <div class="section-head">
+      <h3>Checklist do fechamento padrão</h3>
+      <span class="hint">Marque o que foi apresentado na deck</span>
+    </div>
+
+    <div class="checklist" id="checklist"></div>
+
+    <div class="section-head" style="margin-top:20px;">
+      <h3>Complementos</h3>
+    </div>
+
+    <section class="extras">
+      <div class="field-block">
+        <label for="visitasMes">Visitas realizadas no mês (meta: 3)</label>
+        <input id="visitasMes" class="field" type="number" min="0" max="99" step="1" placeholder="0" />
+      </div>
+      <div class="field-block">
+        <label for="aderenciaPct">Aderência dos CDs visitados (%)</label>
+        <input id="aderenciaPct" class="field" type="number" min="0" max="100" step="1" placeholder="Ex.: 85" />
+      </div>
+      <div class="field-block field-block--wide">
+        <label for="obsAvaliador">Observações do avaliador</label>
+        <textarea id="obsAvaliador" class="field" rows="3" maxlength="800" placeholder="Pontos fortes, gaps, combinados…"></textarea>
+      </div>
+    </section>
+
+    <div class="section-head" style="margin-top:20px;">
+      <h3>Feedback final</h3>
+      <button class="btn-secondary btn-sm" id="btnGerarFeedback" type="button">Gerar feedback</button>
+    </div>
+    <textarea id="feedbackFinal" class="field feedback-box" rows="6" maxlength="2000" placeholder="O feedback é gerado a partir dos checks e pode ser editado antes de salvar."></textarea>
+  </main>
+
+  <script type="module" src="../js/avaliacao-fechamento-mes-adm.js?v=1"></script>
+</body>
+</html>

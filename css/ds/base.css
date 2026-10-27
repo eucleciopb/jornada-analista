@@ -137,7 +137,8 @@ body.portal-page.theme-admin {
 /* Agendas admin — tema claro garantido */
 body.page-agenda-dia.app-shell,
 body.page-agenda-semana.app-shell,
-body.page-agenda-mensal.app-shell {
+body.page-agenda-mensal.app-shell,
+body.page-fechamento-mes.app-shell {
   --bg: #f6f8fb;
   --surface: #ffffff;
   --text: #0f172a;
