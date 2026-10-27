@@ -78,7 +78,7 @@ $adminOther = @(
   'html adm\rps-adm.html','html adm\processar-correlacao-treinamentos.html',
   'html adm\painel-matinal-geral-adm.html','html adm\kpis_cd_mes.html',
   'html adm\importar-kpis-cd.html','html adm\efetividade_treinamentos.html',
-  'html adm\agenda-dia-adm.html','html adm\agenda-semana-adm.html','html adm\Cobertura_treinamentos.html',
+  'html adm\agenda-dia-adm.html','html adm\agenda-semana-adm.html','html adm\avaliacao-fechamento-mes-adm.html','html adm\Cobertura_treinamentos.html',
   'html adm\Cadastro_grc_por_cd.html'
 )
 foreach ($f in $adminOther) {
