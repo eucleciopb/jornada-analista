@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Dash Fechamento do Mês | Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/bundle-admin.css" />
+  <link rel="stylesheet" href="../css/pages/admin-dash-fechamento-mes.css?v=1" />
+</head>
+
+<body class="theme-user app-shell page-dash-fechamento">
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div>
+        <h2>Dash — Fechamento do Mês</h2>
+        <div class="hint">Ranking por analista: do melhor ao a desenvolver</div>
+        <div class="hint" id="userInfo"></div>
+        <div class="error-box" id="errorBox" hidden></div>
+      </div>
+      <div class="top-actions">
+        <button class="btn-primary" id="btnReload" type="button">Atualizar</button>
+        <a class="btn-secondary" href="avaliacao-fechamento-mes-adm.html">Abrir avaliação</a>
+        <button class="btn-secondary" id="btnMenu" type="button">Voltar ao Menu</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="card wide">
+    <section class="filters">
+      <div class="field-block">
+        <label for="monthPicker">Mês</label>
+        <input id="monthPicker" class="field" type="month" />
+      </div>
+      <div class="field-block field-block--grow">
+        <label for="busca">Buscar</label>
+        <input id="busca" class="field" type="text" placeholder="Analista…" />
+      </div>
+      <div class="field-block field-block--status">
+        <label>Status</label>
+        <span class="pill pill-muted" id="statusPill">Carregando…</span>
+      </div>
+    </section>
+
+    <p class="msg" id="msg" role="status"></p>
+
+    <section class="kpi-grid dash-kpis">
+      <div class="kpi">
+        <span class="kpi-label">Na análise</span>
+        <div class="kpi-value" id="kpiAnalise">0</div>
+      </div>
+      <div class="kpi kpi-excelente">
+        <span class="kpi-label">Excelente / Bom</span>
+        <div class="kpi-value" id="kpiTop">0</div>
+      </div>
+      <div class="kpi kpi-atencao">
+        <span class="kpi-label">Atenção</span>
+        <div class="kpi-value" id="kpiAten">0</div>
+      </div>
+      <div class="kpi kpi-critico">
+        <span class="kpi-label">A desenvolver / pendente</span>
+        <div class="kpi-value" id="kpiDev">0</div>
+      </div>
+      <div class="kpi">
+        <span class="kpi-label">Isentos</span>
+        <div class="kpi-value" id="kpiIsentos">0</div>
+      </div>
+      <div class="kpi">
+        <span class="kpi-label">Média do mês</span>
+        <div class="kpi-value" id="kpiMedia">—</div>
+      </div>
+    </section>
+
+    <div class="section-head">
+      <h3>Ranking do mês</h3>
+      <span class="hint">Melhor → a desenvolver · isentos fora da média</span>
+    </div>
+
+    <div class="table-wrap">
+      <table class="table table-sticky">
+        <thead>
+          <tr>
+            <th style="width:56px;">#</th>
+            <th>Analista</th>
+            <th style="width:100px;">Pontuação</th>
+            <th style="width:130px;">Conceito</th>
+            <th style="width:110px;">Checks</th>
+            <th style="width:90px;">Visitas</th>
+            <th>Feedback (resumo)</th>
+            <th style="width:120px;">Ação</th>
+          </tr>
+        </thead>
+        <tbody id="tbody">
+          <tr><td colspan="8" class="cell-empty">Carregando…</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <section class="isentos-panel" id="isentosPanel" hidden>
+      <div class="section-head">
+        <h3>Isentos neste mês</h3>
+        <span class="hint">Fora do ranking e da média</span>
+      </div>
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Analista</th>
+              <th>Motivo</th>
+              <th style="width:140px;">Ação</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyIsentos"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="../js/dash-fechamento-mes-adm.js?v=1"></script>
+</body>
+</html>

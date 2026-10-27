@@ -138,7 +138,8 @@ body.portal-page.theme-admin {
 body.page-agenda-dia.app-shell,
 body.page-agenda-semana.app-shell,
 body.page-agenda-mensal.app-shell,
-body.page-fechamento-mes.app-shell {
+body.page-fechamento-mes.app-shell,
+body.page-dash-fechamento.app-shell {
   --bg: #f6f8fb;
   --surface: #ffffff;
   --text: #0f172a;
