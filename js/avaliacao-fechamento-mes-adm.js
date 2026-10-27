@@ -6,6 +6,7 @@ import {
   doc,
   getDoc,
   setDoc,
+  deleteDoc,
   serverTimestamp,
   query,
   where
@@ -27,7 +28,9 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const fs = { collection, getDocs, query, where };
 
-const COL = "avaliacoes_fechamento_mes";
+// Mesma coleção liberada nas Rules do portal (padrão das telas admin)
+const COLLECTION = "apuracoes_treinamentos";
+const TIPO = "avaliacao_fechamento_mes";
 const PATH_MENU = "../html menus/menuadm.html";
 const PATH_INDEX = "../index2.html";
 
@@ -73,12 +76,14 @@ const el = {
   kpiScore: document.getElementById("kpiScore"),
   kpiConceito: document.getElementById("kpiConceito"),
   btnSalvar: document.getElementById("btnSalvar"),
+  btnLimpar: document.getElementById("btnLimpar"),
   btnGerar: document.getElementById("btnGerarFeedback"),
   btnMenu: document.getElementById("btnMenu")
 };
 
 let USERS = [...USERS_FALLBACK];
 let suppressAutoFeedback = false;
+let currentDocExists = false;
 
 const avaliador = localStorage.getItem("usuarioLogado") || "";
 if (!avaliador) {
@@ -103,7 +108,12 @@ function slugNome(nome){
 }
 
 function docId(analista, yyyyMM){
-  return `${slugNome(analista)}_${yyyyMM}`;
+  return `fechamento_mes_${slugNome(analista)}_${yyyyMM}`;
+}
+
+function formatErr(err){
+  const code = err?.code ? ` [${err.code}]` : "";
+  return `${err?.message || String(err)}${code}`;
 }
 
 function showError(text){
@@ -230,7 +240,6 @@ function gerarFeedbackTexto(){
 }
 
 function onChecksChanged(){
-  // Sync meta visitas checkbox with number when user edits visitas
   updateScoreUI();
   if (!suppressAutoFeedback) {
     el.feedback.value = gerarFeedbackTexto();
@@ -259,30 +268,30 @@ function resetFormCampos(){
   el.obs.value = "";
   el.feedback.value = "";
   updateScoreUI();
-  el.statusPill.className = "pill pill-muted";
-  el.statusPill.textContent = "Nova avaliação";
 }
 
 async function carregarAvaliacao(){
   showError("");
   setMsg("");
+  currentDocExists = false;
   const analista = el.analista.value.trim();
   const mes = el.mes.value;
   if (!analista || !mes) {
     resetFormCampos();
-    el.statusPill.textContent = "Selecione analista e mês";
     el.statusPill.className = "pill pill-muted";
+    el.statusPill.textContent = "Selecione analista e mês";
     return;
   }
 
   setMsg("Carregando avaliação…");
   try {
-    const ref = doc(db, COL, docId(analista, mes));
+    const ref = doc(db, COLLECTION, docId(analista, mes));
     const snap = await getDoc(ref);
     suppressAutoFeedback = true;
 
     if (!snap.exists()) {
       resetFormCampos();
+      currentDocExists = false;
       setMsg("Nenhuma avaliação salva para este analista/mês. Preencha e salve.", true);
       el.statusPill.className = "pill pill-muted";
       el.statusPill.textContent = "Sem registro";
@@ -291,6 +300,7 @@ async function carregarAvaliacao(){
     }
 
     const data = snap.data() || {};
+    currentDocExists = true;
     setChecks(data.checks || {});
     el.visitas.value = data.visitasMes ?? "";
     el.aderencia.value = data.aderenciaPct ?? "";
@@ -303,8 +313,8 @@ async function carregarAvaliacao(){
     setMsg("Avaliação carregada.", true);
   } catch (err) {
     console.error(err);
-    showError(err?.message || String(err));
-    setMsg("Falha ao carregar. Verifique as Rules da coleção " + COL + ".");
+    showError(formatErr(err));
+    setMsg("Falha ao carregar a avaliação.");
     el.statusPill.className = "pill pill-bad";
     el.statusPill.textContent = "Erro ao carregar";
   } finally {
@@ -333,12 +343,18 @@ async function salvarAvaliacao(){
     el.feedback.value = gerarFeedbackTexto();
   }
 
+  const visitasRaw = el.visitas.value;
+  const aderenciaRaw = el.aderencia.value;
+  const visitasMes = visitasRaw === "" ? null : Number(visitasRaw);
+  const aderenciaPct = aderenciaRaw === "" ? null : Number(aderenciaRaw);
+
   const payload = {
+    tipo: TIPO,
     analista,
     yyyyMM: mes,
     checks,
-    visitasMes: el.visitas.value === "" ? null : Number(el.visitas.value),
-    aderenciaPct: el.aderencia.value === "" ? null : Number(el.aderencia.value),
+    visitasMes: Number.isFinite(visitasMes) ? visitasMes : null,
+    aderenciaPct: Number.isFinite(aderenciaPct) ? aderenciaPct : null,
     obsAvaliador: el.obs.value.trim(),
     feedbackFinal: el.feedback.value.trim(),
     pontuacao: score.pct,
@@ -353,19 +369,21 @@ async function salvarAvaliacao(){
   setMsg("Salvando…");
 
   try {
-    const ref = doc(db, COL, docId(analista, mes));
+    const id = docId(analista, mes);
+    const ref = doc(db, COLLECTION, id);
     const existing = await getDoc(ref);
     if (!existing.exists()) {
       payload.createdAt = serverTimestamp();
     }
     await setDoc(ref, payload, { merge: true });
+    currentDocExists = true;
     el.statusPill.className = "pill pill-ok";
     el.statusPill.textContent = "Avaliação salva";
     setMsg(`Salvo: ${analista} • ${mes} • ${score.pct}% (${score.conceito}).`, true);
   } catch (err) {
     console.error(err);
-    showError(err?.message || String(err));
-    setMsg("Falha ao salvar. Verifique as Rules da coleção " + COL + ".");
+    showError(formatErr(err));
+    setMsg("Falha ao salvar a avaliação.");
     el.statusPill.className = "pill pill-bad";
     el.statusPill.textContent = "Erro ao salvar";
   } finally {
@@ -373,8 +391,64 @@ async function salvarAvaliacao(){
   }
 }
 
+async function limparTudo(){
+  showError("");
+  const analista = el.analista.value.trim();
+  const mes = el.mes.value;
+
+  const temConteudo =
+    Object.values(getChecks()).some(Boolean) ||
+    el.visitas.value !== "" ||
+    el.aderencia.value !== "" ||
+    el.obs.value.trim() !== "" ||
+    el.feedback.value.trim() !== "" ||
+    currentDocExists;
+
+  if (!temConteudo) {
+    setMsg("Já está tudo limpo.", true);
+    return;
+  }
+
+  const confirmar = window.confirm(
+    currentDocExists
+      ? "Limpar tudo? Isso apaga os checks desta tela e remove a avaliação salva deste analista/mês."
+      : "Limpar todos os checks, campos e feedback desta tela?"
+  );
+  if (!confirmar) return;
+
+  suppressAutoFeedback = true;
+  resetFormCampos();
+  suppressAutoFeedback = false;
+
+  if (currentDocExists && analista && mes) {
+    el.btnLimpar.disabled = true;
+    setMsg("Removendo avaliação salva…");
+    try {
+      await deleteDoc(doc(db, COLLECTION, docId(analista, mes)));
+      currentDocExists = false;
+      el.statusPill.className = "pill pill-muted";
+      el.statusPill.textContent = "Sem registro";
+      setMsg("Tudo limpo. Avaliação removida do banco.", true);
+    } catch (err) {
+      console.error(err);
+      showError(formatErr(err));
+      setMsg("Formulário limpo, mas não foi possível apagar o registro salvo.");
+      el.statusPill.className = "pill pill-bad";
+      el.statusPill.textContent = "Erro ao limpar";
+    } finally {
+      el.btnLimpar.disabled = false;
+    }
+    return;
+  }
+
+  el.statusPill.className = "pill pill-muted";
+  el.statusPill.textContent = analista && mes ? "Sem registro" : "Selecione analista e mês";
+  setMsg("Tudo limpo.", true);
+}
+
 el.btnMenu.onclick = () => { window.location.href = PATH_MENU; };
 el.btnSalvar.onclick = salvarAvaliacao;
+el.btnLimpar.onclick = limparTudo;
 el.btnGerar.onclick = () => {
   el.feedback.value = gerarFeedbackTexto();
   setMsg("Feedback gerado. Você pode editar antes de salvar.", true);
