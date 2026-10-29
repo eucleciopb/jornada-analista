@@ -177,10 +177,23 @@ function buildRows(){
   }
 
   const naAnalise = rows.filter((r) => !r.isento);
+  // Ordena só por pontuação (maior → menor). Nome não desempata posição.
   naAnalise.sort((a, b) => {
     if (b.sortScore !== a.sortScore) return b.sortScore - a.sortScore;
-    return a.nome.localeCompare(b.nome, "pt-BR");
+    return a.nome.localeCompare(b.nome, "pt-BR"); // só para leitura estável na tabela
   });
+
+  // Ranking denso: mesma % = mesma colocação (ex.: vários em 1º com 100%)
+  let place = 0;
+  let lastScore = null;
+  for (const r of naAnalise) {
+    const key = r.hasAval ? r.sortScore : null;
+    if (key !== lastScore) {
+      place += 1;
+      lastScore = key;
+    }
+    r.place = place;
+  }
 
   const isentos = rows
     .filter((r) => r.isento)
@@ -215,7 +228,7 @@ function render(){
   if (!naAnalise.length) {
     el.tbody.innerHTML = `<tr><td colspan="8" class="cell-empty">Nenhum analista na análise deste mês.</td></tr>`;
   } else {
-    el.tbody.innerHTML = naAnalise.map((r, idx) => {
+    el.tbody.innerHTML = naAnalise.map((r) => {
       const c = conceitoFromScore(r.pontuacao ?? 0, r.hasAval);
       const scoreHtml = r.hasAval
         ? `<span class="score score-${c.classe}">${r.pontuacao}%</span>`
@@ -228,7 +241,7 @@ function render(){
 
       return `
         <tr class="row-${c.classe}">
-          <td class="rank">${idx + 1}</td>
+          <td class="rank">${r.place}</td>
           <td class="analista-nome">${escapeHtml(r.nome)}</td>
           <td>${scoreHtml}</td>
           <td><span class="pill pill-${c.classe}">${c.label}</span></td>
