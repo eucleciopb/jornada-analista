@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/bundle-admin.css" />
-  <link rel="stylesheet" href="../css/pages/termo-ciencia.css?v=20260924b" />
+  <link rel="stylesheet" href="../css/pages/termo-ciencia.css?v=20261029v" />
   <style>
     .usuarios-filtros {
       display: flex;
@@ -48,7 +48,9 @@
     <div>
       <h3 id="formTitle">Novo usuário</h3>
       <p class="hint">
-        Cadastre analistas (index) ou admins (index2). Usuários inativos não aparecem no login.
+        Cadastre analistas (index) ou admins (index2).
+        <b>Inativo</b> some dos logins e das listas.
+        <b>Oculto</b> continua ativo no login, mas some da Agenda do Dia e da Agenda da Semana.
       </p>
     </div>
   </section>
@@ -114,6 +116,14 @@
         </select>
       </div>
       <div>
+        <label for="filtroVisivel">Agenda</label>
+        <select id="filtroVisivel">
+          <option value="">Todos</option>
+          <option value="visivel">Visíveis</option>
+          <option value="oculto">Ocultos</option>
+        </select>
+      </div>
+      <div>
         <label for="busca">Buscar</label>
         <input id="busca" type="text" placeholder="Filtrar por nome…" />
       </div>
@@ -125,15 +135,16 @@
       <thead>
         <tr>
           <th style="width:90px;">Status</th>
+          <th style="width:100px;">Agenda</th>
           <th>Nome</th>
           <th style="width:140px;">Perfil</th>
           <th style="width:140px;">Senha</th>
-          <th style="width:140px;">Criado por</th>
-          <th style="width:240px;">Ações</th>
+          <th style="width:120px;">Criado por</th>
+          <th style="width:320px;">Ações</th>
         </tr>
       </thead>
       <tbody id="tbody">
-        <tr><td colspan="6" style="opacity:.8;">Carregando…</td></tr>
+        <tr><td colspan="7" style="opacity:.8;">Carregando…</td></tr>
       </tbody>
     </table>
   </div>
@@ -157,6 +168,7 @@
     listarUsuariosPortal,
     salvarUsuarioPortal,
     alternarAtivoUsuario,
+    alternarVisivelUsuario,
     garantirSeedUsuarios,
     sugerirMatricula,
     normalizarNome,
@@ -164,7 +176,7 @@
     invalidarCacheUsuariosPortal,
     PERFIL_ANALISTA,
     PERFIL_ADMIN
-  } from "../js/portal-usuarios.js?v=20260924e";
+  } from "../js/portal-usuarios.js?v=20261029v";
 
   const firebaseConfig = {
     apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
@@ -229,6 +241,7 @@
   const busca = document.getElementById("busca");
   const filtroPerfil = document.getElementById("filtroPerfil");
   const filtroStatus = document.getElementById("filtroStatus");
+  const filtroVisivel = document.getElementById("filtroVisivel");
   const resumoLista = document.getElementById("resumoLista");
   const msg = document.getElementById("msg");
 
@@ -283,12 +296,16 @@
     const q = (busca.value || "").toLowerCase().trim();
     const fp = (filtroPerfil.value || "").toLowerCase();
     const fsStatus = (filtroStatus.value || "").toLowerCase();
+    const fv = (filtroVisivel.value || "").toLowerCase();
 
     return CACHE.filter((u) => {
       if (fp && normalizarPerfil(u.perfil) !== fp) return false;
       const ativo = u.ativo !== false;
       if (fsStatus === "ativo" && !ativo) return false;
       if (fsStatus === "inativo" && ativo) return false;
+      const visivel = u.visivel !== false;
+      if (fv === "visivel" && !visivel) return false;
+      if (fv === "oculto" && visivel) return false;
       if (q && !String(u.nome || "").toLowerCase().includes(q)) return false;
       return true;
     });
@@ -298,31 +315,42 @@
     const lista = filtrados();
     const ativos = CACHE.filter((u) => u.ativo !== false).length;
     const inativos = CACHE.length - ativos;
-    resumoLista.textContent = `${CACHE.length} cadastrado(s) — ${ativos} ativo(s), ${inativos} inativo(s).`;
+    const ocultos = CACHE.filter((u) => u.ativo !== false && u.visivel === false).length;
+    resumoLista.textContent = `${CACHE.length} cadastrado(s) — ${ativos} ativo(s), ${inativos} inativo(s), ${ocultos} oculto(s) na agenda.`;
 
     tbody.innerHTML = "";
     if (!lista.length) {
-      tbody.innerHTML = `<tr><td colspan="6" style="opacity:.8;">Nenhum usuário encontrado.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="7" style="opacity:.8;">Nenhum usuário encontrado.</td></tr>`;
       return;
     }
 
     lista.forEach((item) => {
       const ativo = item.ativo !== false;
+      const visivel = item.visivel !== false;
       const perfil = normalizarPerfil(item.perfil);
       const pill = ativo
         ? `<span class="termo-status-pill ativo">Ativo</span>`
         : `<span class="termo-status-pill inativo">Inativo</span>`;
+      const pillAgenda = visivel
+        ? `<span class="termo-status-pill ativo">Visível</span>`
+        : `<span class="termo-status-pill inativo">Oculto</span>`;
       const perfilLabel = perfil === PERFIL_ADMIN ? "Admin (index2)" : "Analista (index)";
       const tr = document.createElement("tr");
       if (!ativo) tr.classList.add("usuarios-row-inativo");
       tr.innerHTML = `
         <td>${pill}</td>
+        <td>${pillAgenda}</td>
         <td><strong>${escapeHtml(item.nome || "—")}</strong></td>
         <td>${escapeHtml(perfilLabel)}</td>
         <td class="usuarios-senha">${escapeHtml(item.senha || item.matricula || "—")}</td>
         <td style="opacity:.9;">${escapeHtml(item.criadoPor || "—")}</td>
         <td style="display:flex; gap:8px; flex-wrap:wrap;">
           <button class="btn-secondary" type="button" data-edit="${escapeHtml(perfil)}|${escapeHtml(item.nome)}">Editar</button>
+          <button class="btn-secondary" type="button" data-visivel="${escapeHtml(perfil)}|${escapeHtml(item.nome)}"
+            title="Mostrar ou ocultar nas agendas"
+            style="${visivel ? "border-color:rgba(148,163,184,.45);color:#94a3b8;" : "border-color:rgba(96,165,250,.45);color:#60a5fa;"}">
+            ${visivel ? "Ocultar agenda" : "Tornar visível"}
+          </button>
           <button class="btn-secondary" type="button" data-toggle="${escapeHtml(perfil)}|${escapeHtml(item.nome)}"
             style="${ativo ? "border-color:rgba(248,113,113,.35);color:#f87171;" : "border-color:rgba(74,222,128,.35);color:#4ade80;"}">
             ${ativo ? "Inativar" : "Reativar"}
@@ -350,6 +378,14 @@
         toggleAtivo(nome, perfil);
       };
     });
+
+    tbody.querySelectorAll("[data-visivel]").forEach((btn) => {
+      btn.onclick = () => {
+        const [perfil, ...rest] = btn.getAttribute("data-visivel").split("|");
+        const nome = rest.join("|");
+        toggleVisivel(nome, perfil);
+      };
+    });
   }
 
   async function toggleAtivo(nome, perfil) {
@@ -360,7 +396,10 @@
 
     const ativoAtual = item.ativo !== false;
     const acao = ativoAtual ? "inativar" : "reativar";
-    if (!confirm(`Deseja ${acao} o usuário "${item.nome}"?`)) return;
+    const aviso = ativoAtual
+      ? `Inativar "${item.nome}"? Ele some dos logins (index/index2) e de todas as listas de escolha.`
+      : `Reativar "${item.nome}"?`;
+    if (!confirm(aviso)) return;
 
     btnSalvar.disabled = true;
     setMsg(`${ativoAtual ? "Inativando" : "Reativando"}...`);
@@ -377,6 +416,41 @@
     } catch (err) {
       console.error(err);
       setMsg(err?.message || "Não foi possível alterar o status.", "error");
+    } finally {
+      btnSalvar.disabled = false;
+    }
+  }
+
+  async function toggleVisivel(nome, perfil) {
+    const item = CACHE.find(
+      (u) => normalizarPerfil(u.perfil) === normalizarPerfil(perfil) && normalizarNome(u.nome) === normalizarNome(nome)
+    );
+    if (!item) return;
+
+    const visivelAtual = item.visivel !== false;
+    const aviso = visivelAtual
+      ? `Ocultar "${item.nome}" na Agenda do Dia e na Agenda da Semana? (continua podendo logar se estiver ativo)`
+      : `Tornar "${item.nome}" visível nas agendas novamente?`;
+    if (!confirm(aviso)) return;
+
+    btnSalvar.disabled = true;
+    setMsg(visivelAtual ? "Ocultando nas agendas..." : "Tornando visível...");
+    try {
+      await alternarVisivelUsuario(db, fs, {
+        nome: item.nome,
+        perfil: item.perfil,
+        visivel: !visivelAtual,
+        atualizadoPor: usuario
+      });
+      await loadAll();
+      render();
+      setMsg(
+        `Usuário "${item.nome}" ${visivelAtual ? "oculto nas agendas" : "visível nas agendas"}.`,
+        "success"
+      );
+    } catch (err) {
+      console.error(err);
+      setMsg(err?.message || "Não foi possível alterar a visibilidade.", "error");
     } finally {
       btnSalvar.disabled = false;
     }
@@ -446,7 +520,7 @@
     }
   });
 
-  [busca, filtroPerfil, filtroStatus].forEach((el) => {
+  [busca, filtroPerfil, filtroStatus, filtroVisivel].forEach((el) => {
     el.addEventListener("input", render);
     el.addEventListener("change", render);
   });

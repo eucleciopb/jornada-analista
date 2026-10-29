@@ -4,11 +4,17 @@ import {
   collection,
   getDocs,
   query,
-  where
+  where,
+  doc,
+  getDoc,
+  setDoc,
+  serverTimestamp
 } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 import {
-  listarNomesAnalistasAtivos
-} from "./portal-usuarios.js?v=20260924e";
+  listarAnalistasParaAgenda,
+  alternarVisivelUsuario,
+  PERFIL_ANALISTA
+} from "./portal-usuarios.js?v=20261029v";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDN7RF9UiFyDAFXsPsVQwSRONJB0t1Xpqg",
@@ -21,7 +27,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const fs = { collection, getDocs, query, where };
+const fs = { collection, getDocs, query, where, doc, getDoc, setDoc, serverTimestamp };
 
 const USERS_FALLBACK = [
   "Alex",
@@ -43,11 +49,10 @@ const USERS_FALLBACK = [
   "Ercules"
 ];
 
+/** Ativos do portal (inativos não entram). */
 let USERS = [...USERS_FALLBACK];
-
-/** Ocultos por padrão na visualização admin */
-const OCULTOS_PADRAO = ["Victor"];
-const STORAGE_KEY = "agendaSemanaAdm_ocultos_v1";
+/** Ativos com visivel=false no cadastro de usuários. */
+let OCULTOS = ["Victor"];
 
 const ICON_HIDE = `
   <svg class="icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
@@ -159,51 +164,48 @@ function cellHtml(registro){
 }
 
 /* =========================
-   OCULTAR / ATIVAR
+   OCULTAR / ATIVAR (regra do cadastro Usuários → visivel)
 ========================= */
-function loadOcultos(){
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw === null) {
-      saveOcultos(OCULTOS_PADRAO);
-      return new Set(OCULTOS_PADRAO.map(u => u.toLowerCase()));
-    }
-    const arr = JSON.parse(raw);
-    if (!Array.isArray(arr)) return new Set(OCULTOS_PADRAO.map(u => u.toLowerCase()));
-    return new Set(arr.map(u => String(u).toLowerCase()));
-  } catch {
-    return new Set(OCULTOS_PADRAO.map(u => u.toLowerCase()));
-  }
-}
-
-function saveOcultos(nomes){
-  const list = [...new Set((nomes || []).map(n => normalize(n)).filter(Boolean))];
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-}
-
 function getOcultosNomes(){
-  const set = loadOcultos();
-  return USERS.filter(u => set.has(u.toLowerCase()));
+  const set = new Set(OCULTOS.map((u) => u.toLowerCase()));
+  return USERS.filter((u) => set.has(u.toLowerCase()));
 }
 
 function getVisiveis(){
-  const set = loadOcultos();
-  return USERS.filter(u => !set.has(u.toLowerCase()));
+  const set = new Set(OCULTOS.map((u) => u.toLowerCase()));
+  return USERS.filter((u) => !set.has(u.toLowerCase()));
 }
 
-function ocultarUsuario(nome){
-  const atuais = getOcultosNomes();
-  if (!atuais.some(u => u.toLowerCase() === nome.toLowerCase())) {
-    atuais.push(nome);
+async function ocultarUsuario(nome){
+  try {
+    await alternarVisivelUsuario(db, fs, {
+      nome,
+      perfil: PERFIL_ANALISTA,
+      visivel: false,
+      atualizadoPor: localStorage.getItem("usuarioLogado") || "admin"
+    });
+    OCULTOS = [...new Set([...OCULTOS, nome])];
+    renderFromCache();
+  } catch (err) {
+    console.error(err);
+    showError(err?.message || "Não foi possível ocultar. Use Usuários do Portal.");
   }
-  saveOcultos(atuais);
-  renderFromCache();
 }
 
-function ativarUsuario(nome){
-  const atuais = getOcultosNomes().filter(u => u.toLowerCase() !== nome.toLowerCase());
-  saveOcultos(atuais);
-  renderFromCache();
+async function ativarUsuario(nome){
+  try {
+    await alternarVisivelUsuario(db, fs, {
+      nome,
+      perfil: PERFIL_ANALISTA,
+      visivel: true,
+      atualizadoPor: localStorage.getItem("usuarioLogado") || "admin"
+    });
+    OCULTOS = OCULTOS.filter((u) => u.toLowerCase() !== nome.toLowerCase());
+    renderFromCache();
+  } catch (err) {
+    console.error(err);
+    showError(err?.message || "Não foi possível tornar visível. Use Usuários do Portal.");
+  }
 }
 
 function rowCellsHtml(user, days, mapByUserDate){
@@ -395,7 +397,10 @@ document.addEventListener("click", (e) => {
 });
 
 async function carregarUsuariosAgenda() {
-  USERS = await listarNomesAnalistasAtivos(db, fs, USERS_FALLBACK);
+  const { visiveis, ocultos } = await listarAnalistasParaAgenda(db, fs, USERS_FALLBACK);
+  OCULTOS = ocultos;
+  USERS = [...new Set([...visiveis, ...ocultos])]
+    .sort((a, b) => a.localeCompare(b, "pt-BR"));
 }
 
 (async () => {
