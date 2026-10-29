@@ -5,7 +5,9 @@
  * (mesmo padrão de links úteis / termo de ciência).
  *
  * Campos:
- *  - nome, uidKey, matricula, senha, perfil (analista|admin), ativo
+ *  - nome, uidKey, matricula, senha, perfil (analista|admin), ativo, visivel
+ *  - ativo=false → some dos logins e das listas (index/index2 e selects)
+ *  - visivel=false → ativo, mas oculto em Agenda do Dia / Agenda da Semana
  */
 
 export const PORTAL_USUARIOS_COL = "apuracoes_treinamentos";
@@ -211,6 +213,10 @@ export async function salvarUsuarioPortal(db, fs, dados, {
     ? (base.ativo !== false)
     : Boolean(dados.ativo);
 
+  const visivel = dados.visivel === undefined
+    ? (base.visivel !== false)
+    : Boolean(dados.visivel);
+
   const payload = {
     ...base,
     tipo: TIPO_PORTAL_USUARIO,
@@ -220,6 +226,7 @@ export async function salvarUsuarioPortal(db, fs, dados, {
     matricula,
     senha,
     ativo,
+    visivel,
     atualizadoEmMs: agoraMs,
     atualizadoPor: criadoPor || base.atualizadoPor || null,
     atualizadoEm: serverTimestamp()
@@ -245,13 +252,35 @@ export async function alternarAtivoUsuario(db, fs, { nome, perfil, ativo, atuali
   }, { criadoPor: atualizadoPor });
 }
 
+/** Mostra ou oculta o analista nas agendas (dia/semana). */
+export async function alternarVisivelUsuario(db, fs, { nome, perfil, visivel, atualizadoPor = null }) {
+  return salvarUsuarioPortal(db, fs, {
+    nome,
+    perfil,
+    visivel: Boolean(visivel)
+  }, { criadoPor: atualizadoPor });
+}
+
+/** true se o usuário deve aparecer nas agendas (padrão: visível). */
+export function usuarioVisivelNaAgenda(u) {
+  return u?.visivel !== false;
+}
+
 function entradasSeed() {
   const itens = [];
   for (const [nome, senha] of Object.entries(SEED_ANALISTAS)) {
-    itens.push({ nome, senha, matricula: senha, perfil: PERFIL_ANALISTA, ativo: true });
+    itens.push({
+      nome,
+      senha,
+      matricula: senha,
+      perfil: PERFIL_ANALISTA,
+      ativo: true,
+      // Victor oculto por padrão nas agendas (mesmo padrão antigo local)
+      visivel: nome !== "Victor"
+    });
   }
   for (const [nome, senha] of Object.entries(SEED_ADMINS)) {
-    itens.push({ nome, senha, matricula: senha, perfil: PERFIL_ADMIN, ativo: true });
+    itens.push({ nome, senha, matricula: senha, perfil: PERFIL_ADMIN, ativo: true, visivel: true });
   }
   return itens;
 }
@@ -326,6 +355,7 @@ function mapaFromLista(lista, perfil) {
       matricula: String(u.matricula || u.senha || "").trim(),
       perfil,
       ativo: u.ativo !== false,
+      visivel: u.visivel !== false,
       uidKey: u.uidKey || slug(nome),
       origem: "firestore",
       id: u.id
@@ -344,6 +374,7 @@ function mapaFromSeed(perfil) {
       matricula: senha,
       perfil,
       ativo: true,
+      visivel: perfil === PERFIL_ANALISTA ? nome !== "Victor" : true,
       uidKey: slug(nome),
       origem: "seed"
     });
@@ -406,20 +437,62 @@ export function nomesOrdenados(mapaUsuarios, { somenteAtivos = true } = {}) {
 /**
  * Nomes de analistas ativos do portal (para selects admin).
  * Se o banco falhar/vazio, devolve o fallback informado.
+ * Inativos nunca entram. Use somenteVisiveis para filtrar agendas.
  */
-export async function listarNomesAnalistasAtivos(db, fs, fallback = []) {
+export async function listarNomesAnalistasAtivos(db, fs, fallback = [], {
+  somenteVisiveis = false
+} = {}) {
   return listarNomesUsuariosAtivos(db, fs, {
     perfis: [PERFIL_ANALISTA],
-    fallback
+    fallback,
+    somenteVisiveis
   });
 }
 
 /**
+ * Analistas ativos separados para Agenda do Dia / Semana.
+ * Inativos não entram. Ocultos = ativos com visivel=false.
+ */
+export async function listarAnalistasParaAgenda(db, fs, fallback = []) {
+  try {
+    const lista = await listarUsuariosPortal(db, fs);
+    const analistas = lista.filter((u) => {
+      if (u.ativo === false) return false;
+      return normalizarPerfil(u.perfil) === PERFIL_ANALISTA;
+    });
+
+    if (analistas.length) {
+      const visiveis = [];
+      const ocultos = [];
+      for (const u of analistas) {
+        const nome = normalizarNome(u.nome);
+        if (!nome) continue;
+        if (usuarioVisivelNaAgenda(u)) visiveis.push(nome);
+        else ocultos.push(nome);
+      }
+      const uniq = (arr) => [...new Set(arr)].sort((a, b) => a.localeCompare(b, "pt-BR"));
+      return { visiveis: uniq(visiveis), ocultos: uniq(ocultos) };
+    }
+  } catch (err) {
+    console.warn("Falha ao listar analistas para agenda:", err);
+  }
+
+  const fb = [...new Set((fallback || []).filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b, "pt-BR"));
+  // Fallback: Victor oculto por padrão (legado)
+  const ocultos = fb.filter((n) => n.toLowerCase() === "victor");
+  const visiveis = fb.filter((n) => n.toLowerCase() !== "victor");
+  return { visiveis, ocultos };
+}
+
+/**
  * Nomes de usuários ativos do portal (analistas e/ou admins).
+ * Inativos nunca entram nas listas/selects.
  */
 export async function listarNomesUsuariosAtivos(db, fs, {
   perfis = null,
-  fallback = []
+  fallback = [],
+  somenteVisiveis = false
 } = {}) {
   try {
     const lista = await listarUsuariosPortal(db, fs);
@@ -429,6 +502,7 @@ export async function listarNomesUsuariosAtivos(db, fs, {
     const nomes = lista
       .filter((u) => {
         if (u.ativo === false) return false;
+        if (somenteVisiveis && u.visivel === false) return false;
         if (filtroPerfis && !filtroPerfis.includes(normalizarPerfil(u.perfil))) return false;
         return true;
       })
