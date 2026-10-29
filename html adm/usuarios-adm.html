@@ -496,7 +496,7 @@
     setMsg(editKey ? "Salvando alterações..." : "Cadastrando...");
 
     try {
-      const payload = { nome, perfil, ativo: true };
+      const payload = { nome, perfil, ativo: true, visivel: true };
       if (senha) {
         payload.senha = senha;
         payload.matricula = senha;
