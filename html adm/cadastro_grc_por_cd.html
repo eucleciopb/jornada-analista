@@ -24,10 +24,11 @@
     ← Menu
 </button>
       <button class="ok" id="btnAdd">+ Adicionar linha</button>
+      <button class="btn" id="btnModelo" type="button">Baixar modelo Excel</button>
       <label class="btn" for="fileExcel">Importar Excel/CSV</label>
       <input id="fileExcel" type="file" accept=".xlsx,.xls,.csv"/>
       <button class="primary" id="btnSalvar">Salvar no Firebase</button>
-      <button class="bad" id="btnLimpar">Limpar tela</button>
+      <button class="bad" id="btnLimpar">Limpar tela e apagar base</button>
     </div>
   </section>
 
@@ -76,7 +77,8 @@ import {
   getDocs,
   doc,
   setDoc,
-  deleteDoc
+  deleteDoc,
+  writeBatch
 } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
 const firebaseConfig={
@@ -494,7 +496,7 @@ ${e.message}`
   }
 }
 
-async function salvar(){
+async function salvar({ pularConfirmacao=false }={}){
 
   const validos=DADOS
     .map(x=>({
@@ -506,7 +508,7 @@ async function salvar(){
 
   if(!validos.length){
     setMsg("Nenhum registro válido para salvar.","#991b1b");
-    return;
+    return false;
   }
 
   const mapa=new Map();
@@ -517,8 +519,8 @@ async function salvar(){
 
   const lista=[...mapa.values()];
 
-  if(!confirm(`Deseja salvar ${lista.length} CDs no Firebase?`)){
-    return;
+  if(!pularConfirmacao && !confirm(`Deseja salvar ${lista.length} CDs no Firebase?`)){
+    return false;
   }
 
   try{
@@ -538,6 +540,7 @@ async function salvar(){
     setMsg(`✅ ${gravados} registros gravados com sucesso.`,"#166534");
 
     await carregar();
+    return true;
 
   }catch(e){
 
@@ -571,13 +574,30 @@ ${mensagem}`
     );
 
     setMsg(`${e.code || "erro"} - ${mensagem}`,"#991b1b");
+    return false;
   }
+}
+
+function baixarModeloExcel(){
+  const modelo=[
+    { CD:"CD 3267", GRC:"CNS | Thiago Gerbasi", Diretor:"Diretor Norte" },
+    { CD:"CD 1001", GRC:"Exemplo GRC", Diretor:"Exemplo Diretor" }
+  ];
+
+  const ws=XLSX.utils.json_to_sheet(modelo, { header:["CD","GRC","Diretor"] });
+  ws["!cols"]=[{ wch:14 },{ wch:28 },{ wch:22 }];
+
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Modelo");
+  XLSX.writeFile(wb, "modelo_cadastro_grc_por_cd.xlsx");
+
+  setMsg("Modelo Excel baixado. Preencha CD, GRC e Diretor e importe o arquivo.","#166534");
 }
 
 function importarArquivo(file){
   const reader=new FileReader();
 
-  reader.onload=e=>{
+  reader.onload=async e=>{
     try{
       const data=new Uint8Array(e.target.result);
       const wb=XLSX.read(data,{type:"array"});
@@ -589,7 +609,7 @@ function importarArquivo(file){
         .filter(Boolean);
 
       if(!importados.length){
-        setMsg("Arquivo não reconhecido. Use colunas CD, GRC e Diretor (opcional).","#991b1b");
+        setMsg("Arquivo não reconhecido. Use o modelo com colunas CD, GRC e Diretor.","#991b1b");
         return;
       }
 
@@ -612,6 +632,10 @@ function importarArquivo(file){
 
       setMsg(`Importação concluída: ${importados.length} linhas lidas.`,"#166534");
 
+      if(confirm(`Importação concluída: ${importados.length} linhas.\n\nDeseja salvar agora no Firebase?`)){
+        await salvar({ pularConfirmacao:true });
+      }
+
     }catch(err){
       console.error("ERRO IMPORTAÇÃO",err);
 
@@ -629,18 +653,70 @@ ${err.message}`
   reader.readAsArrayBuffer(file);
 }
 
-$("btnAdd").onclick=()=>addLinha();
+async function limparTelaEBase(){
+  if(!confirm("Isso vai limpar a tela E apagar TODOS os registros da base no Firebase.\n\nDeseja continuar?")){
+    return;
+  }
 
-$("btnSalvar").onclick=salvar;
+  if(!confirm("Confirma a exclusão definitiva de todos os CDs cadastrados?")){
+    return;
+  }
 
-$("btnLimpar").onclick=()=>{
-  if(confirm("Limpar apenas a tela? Isso não apaga o Firebase.")){
+  try{
+    setMsg("Apagando registros do Firebase...");
+
+    const snap=await getDocs(collection(db,COLLECTION));
+    const docs=[...snap.docs];
+    let apagados=0;
+
+    // Até 2 deletes por CD (cadastro + apuração) → lotes de 200 = máx. 400 ops
+    for(let i=0; i<docs.length; i+=200){
+      const lote=docs.slice(i, i+200);
+      const batch=writeBatch(db);
+
+      lote.forEach(d=>{
+        batch.delete(d.ref);
+
+        const cd=clean(d.data()?.cd || "");
+        if(cd){
+          batch.delete(doc(db, COL_APURACOES, `cd_grc_diretor_${key(cd)}`));
+        }
+      });
+
+      await batch.commit();
+      apagados+=lote.length;
+      setMsg(`Apagando ${apagados} de ${docs.length}...`);
+    }
+
     DADOS=[];
     if($("busca")) $("busca").value = "";
     render();
-    setMsg("Tela limpa. Base do Firebase não foi apagada.");
+
+    setMsg(`✅ Tela limpa e ${apagados} registro(s) apagados do Firebase.`,"#166534");
+  }catch(e){
+    console.error("ERRO AO LIMPAR BASE",e);
+
+    alert(
+`Erro ao apagar base
+
+Código:
+${e.code || "sem código"}
+
+Mensagem:
+${e.message || "Erro desconhecido."}`
+    );
+
+    setMsg(`${e.code || "erro"} - ${e.message}`,"#991b1b");
   }
-};
+}
+
+$("btnAdd").onclick=()=>addLinha();
+
+$("btnModelo").onclick=baixarModeloExcel;
+
+$("btnSalvar").onclick=()=>salvar();
+
+$("btnLimpar").onclick=()=>limparTelaEBase();
 
 const buscaEl = $("busca");
 if(buscaEl){
