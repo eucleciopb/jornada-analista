@@ -28,7 +28,7 @@
     <section class="row-between">
       <div>
         <h3>Registrar Treinamento</h3>
-        <p class="hint">Preencha os dados do treinamento realizado. Salva no Firebase (Firestore).</p>
+        <p class="hint">Preencha o treinamento realizado. Pode digitar um nome novo (em MAIÚSCULAS) — cadastra na biblioteca ao salvar.</p>
       </div>
       <div>
         <button id="btnCancelEdit" class="btn-secondary" type="button" style="display:none;">Cancelar edição</button>
@@ -74,10 +74,20 @@
 
       <div style="grid-column: 1 / -1;">
         <label for="treinamento">Treinamento realizado</label>
-        <select id="treinamento" required>
-          <option value="" disabled selected>Carregando treinamentos...</option>
-        </select>
-        <div class="hint" id="hintTreinos" style="margin-top:6px; opacity:.9;"></div>
+        <input
+          id="treinamento"
+          type="text"
+          list="treinoList"
+          maxlength="160"
+          placeholder="Digite ou selecione… (sempre em MAIÚSCULAS)"
+          required
+          autocomplete="off"
+          style="text-transform: uppercase;"
+        />
+        <datalist id="treinoList"></datalist>
+        <div class="hint" id="hintTreinos" style="margin-top:6px; opacity:.9;">
+          Escolha da lista ou digite um nome novo — ao salvar, o nome já entra na biblioteca.
+        </div>
       </div>
 
       <div style="grid-column: 1 / -1;">
@@ -250,7 +260,11 @@
     const publico = document.getElementById("publico");
     const tipoTreinamento = document.getElementById("tipoTreinamento");
     const treinamento = document.getElementById("treinamento");
+    const treinoList = document.getElementById("treinoList");
     const hintTreinos = document.getElementById("hintTreinos");
+    const BIBLIOTECA_COL = "biblioteca_treinamentos";
+    /** @type {string[]} */
+    let CATALOGO_NOMES = [];
 
     const cdInput = document.getElementById("cdInput");
     const cdList = document.getElementById("cdList");
@@ -405,6 +419,17 @@
       return "";
     }
 
+    function toUpperNome(s){
+      return normalize(s).toLocaleUpperCase("pt-BR");
+    }
+
+    function refreshTreinoDatalist(){
+      if (!treinoList) return;
+      treinoList.innerHTML = CATALOGO_NOMES
+        .map((nome) => `<option value="${String(nome).replace(/"/g, "&quot;")}"></option>`)
+        .join("");
+    }
+
     async function loadCatalogoFirestoreRobusto(){
       for (const colName of CATALOGO_COLLECTIONS){
         try{
@@ -421,8 +446,8 @@
     }
 
     async function renderTreinosSelect(){
-      treinamento.innerHTML = `<option value="" disabled selected>Carregando treinamentos...</option>`;
-      hintTreinos.textContent = "";
+      treinamento.placeholder = "Carregando treinamentos…";
+      hintTreinos.textContent = "Carregando lista…";
 
       const fire = await loadCatalogoFirestoreRobusto();
       let catalogo = fire.data;
@@ -436,21 +461,71 @@
         origem = "localStorage";
       }
 
-      const nomes = Array.from(new Set((catalogo || []).map(x => (x?.nome || "").toString().trim()).filter(Boolean)))
-        .sort((a,b)=>a.localeCompare(b,"pt-BR"));
+      CATALOGO_NOMES = Array.from(
+        new Set(
+          (catalogo || [])
+            .map((x) => toUpperNome(x?.nome || ""))
+            .filter(Boolean)
+        )
+      ).sort((a, b) => a.localeCompare(b, "pt-BR"));
 
-      if (nomes.length === 0){
-        treinamento.innerHTML = `<option value="" disabled selected>Nenhum treinamento cadastrado</option>`;
-        hintTreinos.textContent = "Cadastre primeiro na Biblioteca.";
+      treinamento.placeholder = "Digite ou selecione… (sempre em MAIÚSCULAS)";
+      refreshTreinoDatalist();
+
+      if (CATALOGO_NOMES.length === 0){
+        hintTreinos.textContent = "Nenhum na lista ainda — digite o nome novo em maiúsculas e salve o lançamento.";
         return;
       }
 
-      treinamento.innerHTML =
-        `<option value="" disabled selected>Selecione...</option>` +
-        nomes.map(nome => `<option value="${nome}">${nome}</option>`).join("");
-
-      hintTreinos.textContent = `Treinamentos: ${nomes.length} | Origem: ${origem || "-"}`;
+      hintTreinos.textContent =
+        `Sugestões: ${CATALOGO_NOMES.length} | Origem: ${origem || "-"} · pode digitar um nome novo`;
     }
+
+    /** Se o nome ainda não existe na biblioteca, cadastra (analista pode criar no lançamento). */
+    async function garantirTreinamentoNoCatalogo(nomeUpper){
+      const nome = toUpperNome(nomeUpper);
+      if (!nome) return { criado: false, jaExistia: false };
+
+      const jaExistia = CATALOGO_NOMES.some((n) => n === nome);
+      if (jaExistia) return { criado: false, jaExistia: true };
+
+      const id = makeId();
+      await setDoc(doc(db, BIBLIOTECA_COL, id), {
+        nome,
+        linkTreino: null,
+        linkForms: null,
+        createdBy: usuario,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        origem: "analista"
+      }, { merge: true });
+
+      CATALOGO_NOMES.push(nome);
+      CATALOGO_NOMES.sort((a, b) => a.localeCompare(b, "pt-BR"));
+      refreshTreinoDatalist();
+
+      try {
+        const local = loadCatalogoLocal();
+        local.push({ nome });
+        localStorage.setItem("catalogo_treinamentos", JSON.stringify(local));
+      } catch { /* ignore */ }
+
+      return { criado: true, jaExistia: false };
+    }
+
+    treinamento.addEventListener("input", () => {
+      const start = treinamento.selectionStart;
+      const end = treinamento.selectionEnd;
+      const upper = String(treinamento.value || "").toLocaleUpperCase("pt-BR");
+      if (treinamento.value !== upper) {
+        treinamento.value = upper;
+        try { treinamento.setSelectionRange(start, end); } catch { /* ignore */ }
+      }
+    });
+
+    treinamento.addEventListener("blur", () => {
+      treinamento.value = toUpperNome(treinamento.value);
+    });
 
     let HIST_CACHE = [];
 
@@ -500,7 +575,7 @@
       dataApuracao.value = item.dataApuracao || "";
       publico.value = item.publico || "";
       tipoTreinamento.value = item.tipoTreinamento || "";
-      treinamento.value = item.treinamento || "";
+      treinamento.value = toUpperNome(item.treinamento || "");
       totalPessoas.value = item.totalPessoas ?? "";
       notaMedia.value = item.notaMedia ?? "";
       obs.value = item.obs || "";
@@ -608,13 +683,16 @@
     btnSalvar.onclick = async () => {
       setMsg("");
 
+      const nomeTreino = toUpperNome(treinamento.value);
+      treinamento.value = nomeTreino;
+
       const base = {
         data: dataTreino.value || todayISO(),
         dataApuracao: (dataApuracao.value || "").trim(),
 
         publico: publico.value,
         tipoTreinamento: tipoTreinamento.value,
-        treinamento: treinamento.value,
+        treinamento: nomeTreino,
 
         totalPessoas: Number(totalPessoas.value),
         notaMedia: Number(notaMedia.value),
@@ -655,6 +733,14 @@
         try{
           setMsg("Atualizando no Firebase…");
 
+          let novoNaBiblioteca = false;
+          try {
+            const r = await garantirTreinamentoNoCatalogo(base.treinamento);
+            novoNaBiblioteca = Boolean(r?.criado);
+          } catch (errCat) {
+            console.warn("Catálogo (edição):", errCat);
+          }
+
           await setDoc(doc(db, TREINOS_COLLECTION, EDITING_ID), {
             uidKey: usuarioKey,
             usuarioNome: usuario,
@@ -677,7 +763,12 @@
             atualizadoEm: serverTimestamp()
           }, { merge: true });
 
-          setMsg("Registro atualizado ✅", "success");
+          setMsg(
+            novoNaBiblioteca
+              ? "Registro atualizado ✅ · nome novo também cadastrado na biblioteca"
+              : "Registro atualizado ✅",
+            "success"
+          );
 
           EDITING_ID = null;
           setEditingMode(false);
@@ -706,6 +797,15 @@
 
       try{
         setMsg("Salvando no Firebase…");
+
+        let novoNaBiblioteca = false;
+        try {
+          const r = await garantirTreinamentoNoCatalogo(base.treinamento);
+          novoNaBiblioteca = Boolean(r?.criado);
+        } catch (errCat) {
+          console.warn("Catálogo (novo lançamento):", errCat);
+          // Segue o lançamento mesmo se a biblioteca negar escrita
+        }
 
         const ops = cdsValidos.map(async (cdItem) => {
           const id = makeId();
@@ -736,7 +836,12 @@
 
         await Promise.all(ops);
 
-        setMsg(`Treinamento registrado ✅ (${cdsValidos.length} CD(s) lançado(s))`, "success");
+        setMsg(
+          novoNaBiblioteca
+            ? `Treinamento registrado ✅ (${cdsValidos.length} CD(s)) · nome novo cadastrado na biblioteca`
+            : `Treinamento registrado ✅ (${cdsValidos.length} CD(s) lançado(s))`,
+          "success"
+        );
 
         resetFormKeepDate();
 
